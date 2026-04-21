@@ -1,0 +1,70 @@
+# === Runtime state — never commit ===
+state/
+logs/
+*.log
+*.log.*
+.sync-conflict-*
+
+# === Local config / secrets ===
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+config/local.*
+secrets/
+~/.restic-pass
+
+# === OS / editor ===
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# === Node (if any UI tooling later) ===
+node_modules/
+npm-debug.log*
+
+# === Local vault / user content ===
+# The reference implementation runs against an Obsidian vault.
+# Contributors should NEVER commit their own vault.
+vault/
+my_vault/
+obsidian_vault/
+*__profile.md
+raw_material/
+
+# === Local test artifacts ===
+tmp/
+tmp_*
+.tmp/
+scratch/
+fixtures/local_*
+
+# === Build / dist ===
+build/
+dist/
+*.tar.gz
+*.zip
+
+# === Platform-specific ===
+# Claude Code local settings (per-user, never shared)
+.claude/settings.local.json
