@@ -1,0 +1,4 @@
+# Chinese prompts are intentionally not shipped in the open-source tree.
+# The upstream private codebase was Chinese-first; the prompts that ship here
+# live in ../en/ (rewritten in English). Community translations are welcome
+# via PR — open a PR with zh/<name>.md matching the en/ structure.

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace {{...}} placeholders, then
+     launchctl bootstrap gui/$(id -u) <path-to-this-plist>
+     launchctl enable   gui/$(id -u)/com.example.throughline.rag-server
+     launchctl kickstart -k gui/$(id -u)/com.example.throughline.rag-server
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.throughline.rag-server</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{PYTHON}}</string>
+        <string>{{THROUGHLINE_HOME}}/rag_server/rag_server.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{THROUGHLINE_HOME}}</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+        <key>TOKENIZERS_PARALLELISM</key>
+        <string>false</string>
+        <!-- RAG_DEVICE: auto | mps | cuda | cpu (default: auto) -->
+        <key>RAG_DEVICE</key>
+        <string>auto</string>
+        <!-- Qdrant endpoint -->
+        <key>QDRANT_URL</key>
+        <string>http://127.0.0.1:6333</string>
+        <!-- Bind address for the FastAPI server -->
+        <key>RAG_BIND_HOST</key>
+        <string>127.0.0.1</string>
+        <key>RAG_BIND_PORT</key>
+        <string>8000</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/{{USER}}/Library/Logs/throughline/rag-server.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/{{USER}}/Library/Logs/throughline/rag-server.err.log</string>
+</dict>
+</plist>

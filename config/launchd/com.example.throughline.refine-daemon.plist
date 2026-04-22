@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace {{...}} placeholders, then
+     launchctl bootstrap gui/$(id -u) <path-to-this-plist>
+     launchctl enable   gui/$(id -u)/com.example.throughline.refine-daemon
+     launchctl kickstart -k gui/$(id -u)/com.example.throughline.refine-daemon
+
+     Required secrets: set OPENROUTER_API_KEY below (DO NOT commit the filled-in
+     plist to version control). For multi-user machines prefer reading from a
+     file via a wrapper script instead of embedding the key here.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.throughline.refine-daemon</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{PYTHON}}</string>
+        <string>{{THROUGHLINE_HOME}}/daemon/refine_daemon.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{THROUGHLINE_HOME}}</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+
+        <!-- REQUIRED: OpenRouter key for slice/refine/route LLM calls -->
+        <key>OPENROUTER_API_KEY</key>
+        <string>{{OPENROUTER_API_KEY}}</string>
+        <key>OPENAI_BASE_URL</key>
+        <string>https://openrouter.ai/api/v1</string>
+
+        <!-- Model choices (override only if you know what you're doing) -->
+        <key>REFINE_SLICE_MODEL</key>
+        <string>anthropic/claude-sonnet-4.6</string>
+        <key>REFINE_MODEL</key>
+        <string>anthropic/claude-sonnet-4.6</string>
+        <key>REFINE_ROUTE_MODEL</key>
+        <string>anthropic/claude-sonnet-4.6</string>
+        <key>ECHO_JUDGE_MODEL</key>
+        <string>anthropic/claude-haiku-4.5</string>
+        <key>EPHEMERAL_JUDGE_MODEL</key>
+        <string>anthropic/claude-haiku-4.5</string>
+
+        <!-- Paths -->
+        <key>THROUGHLINE_VAULT_ROOT</key>
+        <string>{{VAULT}}</string>
+        <key>THROUGHLINE_RAW_ROOT</key>
+        <string>{{THROUGHLINE_RAW_ROOT}}</string>
+        <key>THROUGHLINE_STATE_DIR</key>
+        <string>/Users/{{USER}}/.local/share/throughline/state</string>
+        <key>THROUGHLINE_LOG_DIR</key>
+        <string>/Users/{{USER}}/Library/Logs/throughline</string>
+        <key>THROUGHLINE_PACKS_DIR</key>
+        <string>{{THROUGHLINE_HOME}}/packs</string>
+
+        <!-- Qdrant + embedding endpoints (RAG server runs locally above) -->
+        <key>QDRANT_URL</key>
+        <string>http://127.0.0.1:6333</string>
+        <key>EMBED_URL</key>
+        <string>http://127.0.0.1:8000/v1</string>
+
+        <!-- Dedup / retention knobs -->
+        <key>DEDUP_ENABLED</key>
+        <string>true</string>
+        <key>DEDUP_THRESHOLD</key>
+        <string>0.90</string>
+        <key>QDRANT_UPSERT_ENABLED</key>
+        <string>true</string>
+
+        <!-- Optional: JSON array of vault-relative prefixes that must NEVER be
+             upserted to the default Qdrant collection -->
+        <key>THROUGHLINE_FORBIDDEN_PREFIXES_JSON</key>
+        <string>[]</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+
+    <key>StandardOutPath</key>
+    <string>/Users/{{USER}}/Library/Logs/throughline/refine-daemon.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/{{USER}}/Library/Logs/throughline/refine-daemon.err.log</string>
+</dict>
+</plist>

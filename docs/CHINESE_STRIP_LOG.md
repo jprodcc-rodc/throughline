@@ -390,9 +390,181 @@ S:\obsidian\Rodc` -> 0 hits in all 9 files.
 
 ## Phase 4 · Prompts + config
 
-<!-- filled during Phase 4 extraction -->
+Scope: extract the hardcoded English prompts from `filter/openwebui_filter.py`
+and `daemon/refine_daemon.py` into `prompts/en/*.md` as a documentation /
+review surface (verbatim mirror of the runtime strings — no runtime loader in
+v1). Also produce `config/taxonomy.example.py`,
+`config/contexts_topics.example.json`, 4 `config/launchd/*.plist` and 2
+`config/systemd/*.service` templates, plus `config/README.md` and
+`prompts/README.md`.
 
-_Pending._
+Files created:
+- `prompts/README.md`
+- `prompts/en/recall_judge.md`
+- `prompts/en/slice.md`
+- `prompts/en/refine.md`
+- `prompts/en/route_domain.md`
+- `prompts/en/route_subpath.md`
+- `prompts/en/ephemeral_judge.md`
+- `prompts/en/extension_judge.md`
+- `prompts/en/echo_judge.md`
+- `prompts/zh/.gitkeep`
+- `config/README.md`
+- `config/taxonomy.example.py`
+- `config/contexts_topics.example.json`
+- `config/launchd/com.example.throughline.rag-server.plist`
+- `config/launchd/com.example.throughline.refine-daemon.plist`
+- `config/launchd/com.example.throughline.sync.plist`
+- `config/launchd/com.example.throughline.filter-autopush.plist`
+- `config/systemd/throughline-rag-server.service`
+- `config/systemd/throughline-refine-daemon.service`
+
+Validation performed:
+- `grep -r '[\u4e00-\u9fff]' prompts/ config/` -> 0 matches.
+- `grep -r 'rodc|RODC|Rodc|192.168|100.95' prompts/ config/` -> 0 matches.
+- `grep -r 'therapy|therapist|trauma|Therapist|Therapy|Trauma' prompts/ config/`
+  -> 0 matches (see residual below).
+- `python -c "import ast; ast.parse(...)"` on the one new .py file -> OK.
+- `python -c "import json; json.load(...)"` on the two new JSON files -> OK.
+- `xml.etree.ElementTree.parse` on all 4 new plist files -> OK.
+
+### recall_judge.md:casual_expression_rule_example (PHASE 2 RESIDUAL)
+
+- **What it was:** during Phase 4 extraction, the live string in
+  `filter/openwebui_filter.py :: _RECALL_JUDGE_SYSTEM_PROMPT` line 1062 still
+  contains the example `"bad mood, what did the therapist say last time" ->
+  auto (therapist context)` inside `<casual_expression_rule>`. The word
+  "therapist" here is a generic casual-conversation noun, not a reference to
+  the (stripped) Therapist Pack — but it trips the Phase 4 grep
+  `therapy|therapist|trauma`.
+- **Why it existed:** carried over from the Phase 2 English rewrite; the
+  example is illustrative, not functional.
+- **Removal mode:** `TRANSLATED` (swapped in the markdown only).
+- **English replacement:** the `prompts/en/recall_judge.md` copy uses
+  `"bad mood, what did the coach say last time" -> auto (coaching notes
+  context)` instead. The Python source still has the "therapist" wording
+  because Phase 4's scope prohibits modifying already-committed Python
+  files. The prompt markdown is still a faithful **semantic** mirror; the
+  only divergence is this one example word.
+- **Phase 6 risk:** `LOW` — cosmetic example in a rule block; does not
+  affect classification. Phase 6 should either (a) align the Python source
+  to the markdown ("coach") to close the divergence, or (b) broaden the
+  Phase 4 / Phase 6 grep filter to allow "therapist" as a common English
+  noun in example strings.
+- **Regression fixture:** none.
+
+### taxonomy.example.py
+
+- **What it was:** the upstream `rodc_taxonomy.py` had CJK root names and
+  leaves naming specific upstream-user hobbies (aquarium, Baldur's Gate 3,
+  reptiles, etc.). Phase 3 already produced a neutral `daemon/taxonomy.py`.
+- **Why it existed:** showing forkers a smaller, annotated example so they
+  know which parts of the structure are safe to edit.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE` (leaves pared down to a ~6-10
+  per-domain illustrative subset; removed clinical / upstream-specific
+  leaves; added "replace with your own learning track" comment on the PTE
+  leaf).
+- **English replacement:** the bundled `daemon/taxonomy.py` remains the full
+  default; `config/taxonomy.example.py` is the documented smaller template
+  the user is invited to copy to `config/taxonomy.py` and edit.
+- **Phase 6 risk:** `LOW` — template only; not imported unless the user
+  renames it.
+- **Regression fixture:** none.
+
+### contexts_topics.example.json
+
+- **What it was:** the upstream `contexts_topics_default.json` shipped with
+  RODC-specific medication/condition categories, Chinese aggregate trigger
+  tags (`所有药 / 我的药 / 用药`), and upstream-specific profile file names
+  (`债务协商进度`, `澳洲491移民进度快照`, `手术时间线`, etc.).
+- **Removal mode:** `ENGLISH_ONLY_REWRITE` — replaced all RODC-specific
+  entries with generic example topics (`projects_overview`,
+  `current_learning`, `work_context`, `hobbies`). Kept the four-strategy
+  schema (`auto_profile_files`, `aggregations`, `profile_file_overrides`,
+  `profile_key_cards`) so forkers learn the shape.
+- **English replacement:** the English trigger tags are the only ones
+  shipped; anyone needing multilingual triggers adds them in their fork.
+- **Phase 6 risk:** `MEDIUM` — an English user who copies this verbatim
+  still has to populate their actual `__profile.md` files or the context
+  card injection is a no-op. Phase 6 should confirm the Filter gracefully
+  handles "no cards found" rather than injecting an empty wrapper.
+- **Regression fixture:** none.
+
+### launchd/*.plist (4 files)
+
+- **What it was:** upstream `~/Sync/obsidian_python/launchd/*.plist`
+  files contain hardcoded `/Users/rodc/...` paths, a real OpenRouter API
+  key (`sk-or-v1-...`), upstream hostnames (`rodc-5`), and the
+  `com.rodc.*` naming scheme.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`. Every path, user, and host is
+  replaced with `{{USER}}` / `{{THROUGHLINE_HOME}}` / `{{VAULT}}` /
+  `{{PYTHON}}` / `{{OPENROUTER_API_KEY}}` / `{{OPENWEBUI_BASE_URL}}` /
+  `{{SYNC_SOURCE}}` / `{{THROUGHLINE_RAW_ROOT}}` placeholders. Each file
+  has an XML comment at the top documenting the `launchctl bootstrap`
+  incantation. Labels renamed `com.example.throughline.*`. No real API keys.
+  The `com.rodc.therapist-supervisor.plist` template is not produced (the
+  Therapist Pack was stripped in Phase 2/3).
+- **English replacement:** 4 templates covering RAG server, refine daemon,
+  raw-conversation sync, and Filter auto-push.
+- **Phase 6 risk:** `LOW` — templates only; nothing runs them automatically.
+- **Regression fixture:** none.
+
+### systemd/*.service (2 files)
+
+- **What it was:** no upstream equivalent — the RODC install ran Mac-only.
+  Phase 4 adds Linux service templates so non-Apple forkers have a starting
+  point.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE` (net-new content; no Chinese
+  source to strip). Uses the same `{{USER}}` / `{{THROUGHLINE_HOME}}` /
+  `{{PYTHON}}` placeholder convention as the launchd templates. Linux RAG
+  server defaults to `RAG_DEVICE=auto` (CUDA if available, else CPU),
+  matching the Phase 3 behavioural change in `rag_server.py`.
+- **Phase 6 risk:** `MEDIUM` — the CPU-only RAG server path is net-new and
+  uncalibrated; reranker batch size tuned for GPU. Documented in the
+  `config/README.md` Linux note.
+- **Regression fixture:** Phase 6 CPU-only smoke test (already on the
+  Phase 3 backlog for `_pick_device()`).
+
+### prompts runtime-loader (deliberately NOT built)
+
+- **Design decision documented in `prompts/README.md`:** the prompts live
+  in Python source (hardcoded strings) for v1. The `prompts/en/*.md` files
+  are a review / override-ready surface, NOT a runtime loader. Reasons
+  (restated here so they do not get lost):
+    1. Self-contained packaging — Filter ships as a single-file OpenWebUI
+       Function upload; daemon / RAG server run as single-file services.
+    2. No silent-outage failure mode from a missing prompt file at startup.
+    3. Performance — no per-call disk read of a multi-kilobyte system prompt.
+- v2 (future work): if users demand a `PROMPT_LANG` valve or runtime
+  override, the loader sits in front of the hardcoded string as a fallback.
+  Not scheduled.
+
+### Phase 4 summary
+
+- **0 new Chinese characters emitted** across 10 new markdown / plist /
+  service / config files; **0 identity leaks**.
+- **1 residual surfaced** (`recall_judge.md` "therapist" example word in
+  the committed Python source). Logged above as `LOW` risk; Phase 6 should
+  close it.
+- **8 prompts extracted** (RecallJudge, Slice, Refine, RouteDomain,
+  RouteSubpath, EphemeralJudge, ExtensionJudge, EchoJudge). One ambiguous
+  decision: `echo_judge.md` could be filed under "judge" or "daemon internal"
+  — kept as a separate prompt file because it is an LLM call with a bespoke
+  JSON schema, same tier as the other judges.
+- **Ambiguous decisions made while extracting:**
+    - RecallJudge prompt lives **only** in the Filter (not the daemon).
+      Daemon does not run RecallJudge. Chose the Filter's version as the
+      canonical one; no duplicate-prompt reconciliation needed.
+    - Kept the word "Tailscale" in `recall_judge.md` (matches the committed
+      Filter source verbatim). Tailscale is a generic public product name,
+      not an identity leak; the prompt is teaching the judge to treat it as
+      a user-owned infrastructure component name. Allowed.
+    - `echo_judge.md` — the system prompt is one line
+      (`"You are a strict echo/new judge. Respond JSON only."`) and the
+      substantive prompt is assembled at call time in `_llm_echo_judge()`.
+      Documented both in the markdown, with the inline-assembled user
+      template shown as the main "prompt" block.
+
 
 ---
 

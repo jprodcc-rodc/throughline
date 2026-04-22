@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: replace {{...}} placeholders, then
+     launchctl bootstrap gui/$(id -u) <path-to-this-plist>
+     launchctl enable   gui/$(id -u)/com.example.throughline.filter-autopush
+
+     Purpose: whenever the Filter source file (openwebui_filter.py) is edited,
+     push the new version to the running OpenWebUI instance's Functions API so
+     the filter hot-reloads without an Admin Panel paste. RunAtLoad is false
+     because WatchPaths fires on the first edit.
+
+     Required one-time setup:
+       1. Obtain a JWT token from OpenWebUI and save it to:
+          /Users/{{USER}}/.config/throughline/openwebui_token
+       2. Set OPENWEBUI_BASE_URL below to your instance's base URL.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.throughline.filter-autopush</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{PYTHON}}</string>
+        <string>{{THROUGHLINE_HOME}}/scripts/push_filter_to_openwebui.py</string>
+    </array>
+
+    <key>WatchPaths</key>
+    <array>
+        <string>{{THROUGHLINE_HOME}}/filter/openwebui_filter.py</string>
+    </array>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/{{USER}}</string>
+        <key>OPENWEBUI_BASE_URL</key>
+        <string>{{OPENWEBUI_BASE_URL}}</string>
+        <key>OPENWEBUI_TOKEN_FILE</key>
+        <string>/Users/{{USER}}/.config/throughline/openwebui_token</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/throughline-filter-autopush.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/throughline-filter-autopush.err</string>
+</dict>
+</plist>

@@ -1,0 +1,68 @@
+# systemd user unit template.
+#
+# Installation:
+#   1. Replace every {{...}} placeholder below.
+#   2. Put your OpenRouter key in a readable-by-user-only file, e.g.
+#      /home/{{USER}}/.config/throughline/openrouter.env with:
+#        OPENROUTER_API_KEY=sk-or-v1-...
+#      chmod 600 that file.
+#   3. Install this unit to ~/.config/systemd/user/throughline-refine-daemon.service
+#   4. systemctl --user daemon-reload
+#   5. systemctl --user enable --now throughline-refine-daemon.service
+#
+# View logs:
+#   journalctl --user -u throughline-refine-daemon.service -f
+#
+# The daemon depends on the RAG server being up (for embedding + Qdrant
+# lookups during dedup / echo guard). Start the RAG server first, or rely on
+# systemd's restart-on-failure to eventually recover.
+
+[Unit]
+Description=Throughline refine daemon (slice -> refine -> route -> upsert)
+After=network-online.target throughline-rag-server.service
+Wants=network-online.target throughline-rag-server.service
+
+[Service]
+Type=simple
+WorkingDirectory={{THROUGHLINE_HOME}}
+ExecStart={{PYTHON}} {{THROUGHLINE_HOME}}/daemon/refine_daemon.py
+
+Restart=on-failure
+RestartSec=30
+
+# Secrets (read from a locked-down env file you create separately)
+EnvironmentFile=/home/{{USER}}/.config/throughline/openrouter.env
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=OPENAI_BASE_URL=https://openrouter.ai/api/v1
+
+# Model choices
+Environment=REFINE_SLICE_MODEL=anthropic/claude-sonnet-4.6
+Environment=REFINE_MODEL=anthropic/claude-sonnet-4.6
+Environment=REFINE_ROUTE_MODEL=anthropic/claude-sonnet-4.6
+Environment=ECHO_JUDGE_MODEL=anthropic/claude-haiku-4.5
+Environment=EPHEMERAL_JUDGE_MODEL=anthropic/claude-haiku-4.5
+
+# Paths
+Environment=THROUGHLINE_VAULT_ROOT={{VAULT}}
+Environment=THROUGHLINE_RAW_ROOT={{THROUGHLINE_RAW_ROOT}}
+Environment=THROUGHLINE_STATE_DIR=/home/{{USER}}/.local/share/throughline/state
+Environment=THROUGHLINE_LOG_DIR=/home/{{USER}}/.local/share/throughline/logs
+Environment=THROUGHLINE_PACKS_DIR={{THROUGHLINE_HOME}}/packs
+
+# Qdrant + embedding
+Environment=QDRANT_URL=http://127.0.0.1:6333
+Environment=EMBED_URL=http://127.0.0.1:8000/v1
+
+# Dedup / retention
+Environment=DEDUP_ENABLED=true
+Environment=DEDUP_THRESHOLD=0.90
+Environment=QDRANT_UPSERT_ENABLED=true
+
+# Optional: JSON array of vault-relative prefixes that must NEVER be
+# upserted to the default Qdrant collection
+Environment=THROUGHLINE_FORBIDDEN_PREFIXES_JSON=[]
+
+[Install]
+WantedBy=default.target

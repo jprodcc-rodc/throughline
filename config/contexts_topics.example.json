@@ -1,0 +1,100 @@
+{
+  "_comment": "Example Context Auto Builder config. Copy this file to `<VAULT>/00_Buffer/00.05_Profile/contexts_config.json` (or wherever your contexts_auto_builder points) and customize. See docs/CONTEXTS_AUTO_DESIGN.md for the full schema.",
+  "_doc_url": "docs/CONTEXTS_AUTO_DESIGN.md",
+
+  "auto_profile_files": {
+    "_comment": "Strategy 1 (zero-config): every file matching `**/*__profile.md` in your vault becomes one context card automatically. Name a pinned note `<topic>__profile.md` (two underscores before `profile`) and the builder picks it up on its next scan.",
+    "enabled": true,
+    "glob_patterns": ["**/*__profile.md"],
+    "exclude_dirs": ["09_Archive", "05_Assets", ".obsidian", ".trash", ".git"],
+    "max_body_chars": 2500,
+    "skip_if_frontmatter_auto_false": true
+  },
+
+  "aggregations": [
+    {
+      "_comment": "Strategy 2 (glob-merge): merge several __profile.md files into ONE context card. Useful when the user has multiple themed pinned notes that conceptually form a single 'all my X' surface. The `extra_trigger_tags` list teaches the Filter when to inject this combined card.",
+      "name": "projects_overview",
+      "sources": [
+        "01_Projects/*__profile.md",
+        "01_Projects/*/*__profile.md"
+      ],
+      "extra_trigger_tags": [
+        "projects",
+        "all projects",
+        "my projects",
+        "current projects",
+        "project list",
+        "what am I working on"
+      ],
+      "max_body_chars": 12000
+    },
+    {
+      "_comment": "Example: aggregate active learning threads across domains.",
+      "name": "current_learning",
+      "sources": [
+        "40_Cognition_PKM/40.03_Learning/*/*__profile.md"
+      ],
+      "extra_trigger_tags": [
+        "learning",
+        "study",
+        "what am I studying",
+        "current study",
+        "my study plan",
+        "learning plan"
+      ],
+      "max_body_chars": 10000
+    }
+  ],
+
+  "profile_file_overrides": {
+    "_comment": "Strategy 3 (per-file tag boost): add extra trigger tags to a SINGLE __profile.md card. The key is the card's slugified topic stem (the filename without `__profile.md`). Use this when the auto-extracted tags (from filename, table columns, frontmatter tags) are too narrow.",
+
+    "work_context": {
+      "extra_trigger_tags": [
+        "work",
+        "my job",
+        "my role",
+        "what do I do",
+        "team",
+        "employer"
+      ]
+    },
+
+    "hobbies": {
+      "extra_trigger_tags": [
+        "hobbies",
+        "what I do for fun",
+        "my interests",
+        "side interests",
+        "leisure",
+        "free time"
+      ]
+    }
+  },
+
+  "profile_key_cards": {
+    "_comment": "Strategy 4 (structured-profile pull): extract specific sections from a single master profile markdown file into their own small context cards. Useful when one long profile note has sections the user queries separately.",
+    "_enabled": false,
+    "source_file": "00_Buffer/00.05_Profile/user_profile.md",
+    "keys": [
+      {
+        "name": "basics",
+        "section_heading": "Basic Info",
+        "extra_trigger_tags": ["about me", "who am I", "bio", "basics"]
+      },
+      {
+        "name": "stack",
+        "section_heading": "Tech Stack",
+        "extra_trigger_tags": ["my stack", "my tools", "what I use", "tech stack"]
+      }
+    ]
+  },
+
+  "global_settings": {
+    "_comment": "Apply to all cards regardless of strategy.",
+    "max_triggers_per_card": 80,
+    "min_trigger_length": 2,
+    "strip_whitespace_in_tags": true
+  }
+}

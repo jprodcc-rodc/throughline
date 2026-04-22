@@ -1,0 +1,42 @@
+# systemd user unit template.
+#
+# Installation:
+#   1. Replace every {{...}} placeholder below.
+#   2. Install to ~/.config/systemd/user/throughline-rag-server.service
+#   3. systemctl --user daemon-reload
+#   4. systemctl --user enable --now throughline-rag-server.service
+#
+# View logs:
+#   journalctl --user -u throughline-rag-server.service -f
+#
+# The server binds on 127.0.0.1 by default; expose via a reverse proxy or
+# override RAG_BIND_HOST if you need remote access.
+
+[Unit]
+Description=Throughline RAG server (bge-m3 + bge-reranker-v2-m3)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory={{THROUGHLINE_HOME}}
+ExecStart={{PYTHON}} {{THROUGHLINE_HOME}}/rag_server/rag_server.py
+
+Restart=on-failure
+RestartSec=30
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=TOKENIZERS_PARALLELISM=false
+# RAG_DEVICE: auto | cuda | cpu (auto -> CUDA if available, else CPU)
+Environment=RAG_DEVICE=auto
+Environment=QDRANT_URL=http://127.0.0.1:6333
+Environment=RAG_BIND_HOST=127.0.0.1
+Environment=RAG_BIND_PORT=8000
+
+# Logs go to the journal by default; uncomment to use dedicated files:
+# StandardOutput=append:/home/{{USER}}/.local/share/throughline/logs/rag-server.out.log
+# StandardError=append:/home/{{USER}}/.local/share/throughline/logs/rag-server.err.log
+
+[Install]
+WantedBy=default.target
