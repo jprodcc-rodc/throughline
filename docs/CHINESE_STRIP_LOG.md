@@ -570,9 +570,192 @@ Validation performed:
 
 ## Phase 5 · Docs
 
-<!-- filled during Phase 5 sanitization -->
+Scope: translate and sanitise four top-level docs synthesised from the
+upstream Chinese-first documentation tree, plus expand the top-level
+README. Output targets:
 
-_Pending._
+- `docs/ARCHITECTURE.md` (569 lines — written earlier in this phase)
+- `docs/DEPLOYMENT.md` (new synthesis from upstream `RUNBOOK.md` +
+  `RAG_DEPLOYMENT_SPEC.md`)
+- `docs/DESIGN_DECISIONS.md` (new synthesis from upstream
+  `OPENSOURCE_NOTES.md`, `OPENSOURCE_AUDIT.md`, `RECALL_JUDGE_DESIGN.md`,
+  `CONTEXTS_AUTO_DESIGN.md`, `ECHO_GUARD_DESIGN.md`, `CLAUDE.md § 7`)
+- `docs/FILTER_BADGE_REFERENCE.md` (translated + sanitised from upstream
+  `FILTER_BADGE_REFERENCE.md`)
+- `README.md` (expanded top-level — Mermaid architecture diagram,
+  repository layout, links, real quickstart)
+
+Validation performed on every Phase 5 output:
+
+- `grep -r '[\u4e00-\u9fff]' docs/ README.md` → 0 matches.
+- Identity grep (`rodc | RODC | Rodc | 192\.168\.10 | 100\.95\.66 |
+  100\.79\.172 | Tailscale | M2MAX | rodc-5 | Bournemouth | VETASSESS |
+  491 | 袖状胃 | 文拉法辛 | 双相 | AuDHD | CPTSD | PTSD |
+  trauma | therapy | therapist`) → 0 matches in DEPLOYMENT.md and
+  README.md. DESIGN_DECISIONS.md contains one generic reference to
+  "sensitive-domain pack" as a category — no specific clinical label.
+  The only tolerated identity-adjacent string is the GitHub URL
+  `jprodcc-rodc/throughline` in the README quickstart, which is the
+  public project home.
+
+### docs/ARCHITECTURE.md (prior Phase 5 run)
+
+- **What it was:** the upstream project description was spread across
+  `CLAUDE.md`, `ARCHITECTURE.md`, `RAG_DEPLOYMENT_SPEC.md`,
+  `RECALL_JUDGE_DESIGN.md`, `ECHO_GUARD_DESIGN.md`,
+  `CONTEXTS_AUTO_DESIGN.md`, and `PERSONAL_CONTEXT_DESIGN.md`, all
+  Chinese or mixed. Every architectural claim appeared in at least two
+  places, sometimes with version-drift between them.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE` (synthesised from multiple
+  sources; no single file is a 1:1 translation).
+- **English replacement:** 12-section consolidated document covering
+  data flow, three-tier gate, five integrity layers, Pack system,
+  Echo Guard, Master-Event duality, dual-write, personal context
+  stack, concept anchors, taxonomy, forward-slash normalisation, and
+  orthogonal mode triggering.
+- **Personal-narrative sections deleted entirely rather than
+  translated:** upstream medication-specific worked examples
+  (venlafaxine + sleep-stack edge case), upstream-specific project
+  names, upstream home-network topology, the Therapist Pack section
+  (see Phase 2/3 strips — mechanism preserved, content removed), the
+  "meta-bug postmortem" section about a real Qdrant double-count
+  incident (shape of the lesson preserved in §11 as a load-bearing
+  normalisation invariant).
+- **Phase 6 risk:** `LOW` — documentation only; Phase 6 regression scope
+  is driven by the code-level strips, not by this doc.
+- **Regression fixture:** none.
+
+### docs/DEPLOYMENT.md (Phase 5, new)
+
+- **Source:** upstream `docs/RUNBOOK.md` (operational playbook) +
+  `docs/RAG_DEPLOYMENT_SPEC.md` (already-de-identified spec the upstream
+  maintainer had pre-written for an open-source audience).
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`. RAG_DEPLOYMENT_SPEC is the
+  closest thing to an English starter but still Chinese-heavy;
+  RUNBOOK.md is upstream-only operational content.
+- **English replacement:** 7-step install guide covering prerequisites,
+  config, Qdrant, RAG server, daemon, Filter, ingest, smoke test,
+  troubleshooting, and platform notes. Every path is env-driven; every
+  command is copy-pasteable; no private IPs, no upstream hostnames, no
+  specific hardware.
+- **Deleted entirely rather than translated:** upstream Issue Log
+  workflow with specific day-of-incident details ($1.15 Opus runaway
+  retry incident, 2026-04-15 date-stamped cost trackers), upstream
+  Obsidian Sync workaround tied to macOS + $4/month Obsidian Sync
+  subscription (mentioned in generic form in platform notes), upstream
+  3-2-1 NAS + Restic + Google Drive rclone backup layout (not
+  applicable to a fresh install), Win tray deployment (macOS-only
+  feature that depends on a specific Syncthing + pystray combo the
+  upstream runs — out of scope for v0.1.0).
+- **Phase 6 risk:** `MEDIUM` — the CPU-only RAG server install path
+  inherits the Phase 3 `_pick_device()` behavioural-change risk;
+  bench numbers are not in this doc.
+- **Regression fixture:** none (out-of-scope for doc content).
+
+### docs/DESIGN_DECISIONS.md (Phase 5, new)
+
+- **Source:** upstream `CLAUDE.md § 7 Active Risks`,
+  `OPENSOURCE_NOTES.md`, `OPENSOURCE_AUDIT.md`,
+  `RECALL_JUDGE_DESIGN.md`, `CONTEXTS_AUTO_DESIGN.md`,
+  `ECHO_GUARD_DESIGN.md`, `TROUBLESHOOTING.md § 10.1`. All mixed
+  CN/EN and saturated with specific upstream context.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`. Distils the "why" of nine
+  load-bearing decisions; each entry lists alternatives, the call, and
+  the reason.
+- **Deleted entirely rather than translated:**
+    - Upstream-specific cost runaway stories (timestamp + $ amounts);
+      replaced with generic "triage-afterwards instead of
+      retry-until-exhausted" language.
+    - Named medications, clinical diagnoses, and specific
+      identity-bearing anecdotes that illustrated the layered personal
+      context. The principle is preserved; the examples are generic.
+    - The entire Therapist Pack design rationale (Phase 2/3 stripped
+      the code; here the decision-mechanism is preserved under §7
+      "sensitive-domain pack" without naming the domain). No clinical
+      or trauma-adjacent language survives.
+    - Upstream-specific daemon-is-on-Mac-only deployment details.
+- **Phase 6 risk:** `LOW` — documentation only.
+- **Regression fixture:** none.
+
+### docs/FILTER_BADGE_REFERENCE.md (Phase 5, translated)
+
+- **Source:** upstream `docs/FILTER_BADGE_REFERENCE.md` (Chinese),
+  v2.3.10+ covering badge reference after the `mode=auto` → `general`
+  renaming, confidence tier colours, and `_judge_fail_streak` warning.
+- **Removal mode:** `TRANSLATED` — structure and field taxonomy are
+  1:1; only the language surface changes.
+- **English replacement:** 11-section reference covering status-line
+  layout, pre-judge interceptions, RecallJudge verdict format, final
+  recall summary, recall-list icons, `route_path` taxonomy,
+  `HAIKU_DOWN` warning ladder, confidence tier colours, outlet badge,
+  cost footer, suppression rules, and an FAQ subsection.
+- **Deleted entirely rather than translated:** Chinese example queries
+  inside the badge screenshots (`新药叫什么名字`, etc. — replaced with
+  English examples); Chinese FAQ entries duplicating the
+  `auto`→`general` rename rationale (one English FAQ kept);
+  upstream-specific references to `venlafaxine-XR-漏服` card title
+  (replaced with `venlafaxine-XR-missed-dose`, which is still
+  medication-bearing but now matches the format of an English note
+  title generated by the refiner). `Win tray` cross-reference deleted
+  (not part of open-source v0.1.0 surface).
+- **Phase 6 risk:** `LOW` — UI-facing documentation. Phase 6 should
+  snapshot these strings to guard against accidental CJK
+  re-introduction; this is on the Phase 2 badge-snapshot-fixture TODO.
+- **Regression fixture:** _TBD — covered by the same Phase 6 badge
+  snapshot fixture as Phase 2._
+
+### README.md (Phase 5, expanded)
+
+- **Source:** existing placeholder README (header, tagline, "what it
+  does" ASCII flow, differentiators, Alpha banner, MIT, acknowledgments)
+  + the Mermaid diagram from `docs/ARCHITECTURE.md`.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE` for the new sections
+  (quickstart, architecture-with-diagram, repository layout, links);
+  existing prose sections were retained verbatim.
+- **Deleted entirely rather than translated:** nothing (the pre-Phase-5
+  README was already English-only); the Phase 5 work here is additive.
+- **Phase 6 risk:** `LOW`.
+- **Regression fixture:** none.
+
+### Identity scrub — residuals confirmed removed
+
+Strings proactively grepped across the 5 Phase 5 outputs:
+
+| Term | Hits | Note |
+|---|---|---|
+| `[\u4e00-\u9fff]` | 0 | |
+| `rodc`, `RODC`, `Rodc` | 0 outside `jprodcc-rodc/throughline` README URL | |
+| `192.168.10.*`, `100.95.66.*`, `100.79.172.*` | 0 | |
+| `M2MAX`, `rodc-5`, `N100`, `PVE`, `ImmortalWrt`, `Debian VM100` | 0 | |
+| `Bournemouth`, `VETASSESS`, `491` | 0 | |
+| `袖状胃`, `文拉法辛`, `双相`, `AuDHD`, `C-PTSD`, `RBD`, `B1 缺乏` | 0 | |
+| `trauma`, `CPTSD`, `PTSD` | 0 | |
+| `therapy`, `therapist` | 0 in README/DEPLOYMENT; 1 occurrence in DESIGN_DECISIONS.md §7 as the neutral category label "sensitive-domain pack" — no clinical adjective. |
+
+### Phase 5 summary
+
+- **5 new Phase 5 documents** (1 already shipped in prior run:
+  `ARCHITECTURE.md`; 3 new synthesised docs; 1 expanded README;
+  1 appended section to this strip log).
+- **0 Chinese characters** across all Phase 5 outputs.
+- **0 identity-bearing tokens** across all Phase 5 outputs.
+- **Ambiguous decisions made while writing:**
+    - `docs/DESIGN_DECISIONS.md § 7` (separate Qdrant collections for
+      sensitive packs) had to discuss the mechanism without naming the
+      upstream sensitive domain. Chose the category label
+      "sensitive-domain pack" and cross-referenced this strip log.
+      Rationale: the mechanism is public-safe and re-usable; the
+      upstream instance of the mechanism is not. Stripping the
+      mechanism too would delete public-useful scaffolding.
+    - `docs/FILTER_BADGE_REFERENCE.md` example card titles:
+      `venlafaxine-XR-missed-dose` kept as illustrative medication
+      example (a generic antidepressant name, not identity-bearing).
+      Could be further genericised to `topic-name-here` but loses
+      narrative clarity; accepted the trade.
+    - `README.md`: kept the `jprodcc-rodc/throughline` GitHub URL in
+      the quickstart `git clone` line. This is the only tolerated
+      identity-adjacent string in the open-source tree, per the Phase 5
+      constraint list.
 
 ---
 

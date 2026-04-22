@@ -28,30 +28,73 @@ Three distinctive pieces you won't find glued together elsewhere:
 
 ---
 
-## 🚀 30-second demo
+## 🚀 Quickstart
 
-<!-- placeholder: animated gif of OpenWebUI badge + auto-refined card -->
+Full install guide is [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Five steps, roughly:
 
----
+1. **Clone and configure** — `git clone`, `cp config/.env.example .env`, fill in `OPENROUTER_API_KEY`, `VAULT_PATH`, and a few paths.
+2. **Start Qdrant** — one `docker run` line; the collection is created on first ingest.
+3. **Launch the RAG server** — `python rag_server/rag_server.py` (foreground) or install the `launchd` / `systemd` template under `config/`.
+4. **Launch the refine daemon** — `python daemon/refine_daemon.py` (foreground) or install the service template. On first start the daemon catches up on any raw conversations already on disk.
+5. **Install the Filter** — paste `filter/openwebui_filter.py` into OpenWebUI Admin → Functions, set `OPENROUTER_API_KEY` and `RAG_SERVER_URL` valves, enable for your models.
 
-## 📦 Quickstart
-
-<!-- filled in Phase 5 once code migration is stable -->
-
-```bash
-# Placeholder — see docs/DEPLOYMENT.md for the canonical path.
-git clone https://github.com/jprodcc-rodc/throughline
-cd throughline
-# TBD: install / configure / run
-```
+Smoke test: ask something in OpenWebUI that overlaps your existing notes. You should see a status line above the reply (`⚡ anchor pass` or `auto recall: mode=general · conf=0.82 · N cards`), an injected context in the answer, and a `🛰️ daemon · …` outlet badge when the daemon is running.
 
 ---
 
 ## 🏗️ Architecture
 
-<!-- placeholder: mermaid diagram -->
+```mermaid
+flowchart TD
+    user[User in OpenWebUI]
+    filter[Filter inlet<br/>3-tier gate]
+    rag[RAG server<br/>bge-m3 + bge-reranker-v2-m3]
+    qdrant[(Qdrant)]
+    llm[LLM<br/>Sonnet / Haiku / etc.]
+    exporter[Exporter<br/>periodic SQLite read]
+    raw[Raw Markdown<br/>per-conversation]
+    daemon[Refine daemon<br/>slice &rarr; refine &rarr; route]
+    vault[Markdown vault<br/>JD + XYZ taxonomy]
+    buffer[Buffer stub<br/>triage = pending]
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full story.
+    user -->|turn| filter
+    filter -->|cheap / judge / slash| rag
+    rag --> qdrant
+    rag -->|context cards| filter
+    filter -->|injected system prompt| llm
+    llm -->|reply + status badge| user
+
+    user -. conversation .-> exporter
+    exporter --> raw
+    raw --> daemon
+    daemon -->|formal note| vault
+    daemon -->|stub| buffer
+    daemon -->|upsert embeddings| qdrant
+    buffer -. human triage .-> vault
+```
+
+Two independent pipelines meet at Qdrant and the Markdown vault on disk. The Filter pipeline runs per-turn, in-band with the conversation, and never writes to the vault. The daemon pipeline runs out-of-band, produces knowledge cards from completed conversations, and never reads live chat sessions. Filter bugs cannot corrupt the vault; daemon bugs cannot pollute a live reply.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full story (three-tier recall gate, five integrity layers, Pack system, Echo Guard, Master-Event duality, 4-layer personal context, concept anchors, taxonomy, forward-slash normalisation, orthogonal mode triggering).
+
+---
+
+## 📁 Repository layout
+
+```
+throughline/
+  filter/           OpenWebUI Filter Function (single-file paste into Admin → Functions)
+  daemon/           Refine daemon (watches raw conversations, writes cards)
+  rag_server/       FastAPI service: embedding, reranking, RAG endpoint, refine-status
+  packs/            Pluggable domain packs (slicer/refiner/routing overrides; PTE example shipped)
+  scripts/          One-off tooling: vault ingest, concept-anchor cold start, context sync
+  prompts/en/       Verbatim mirror of the runtime prompt strings (review / translation surface)
+  config/           .env.example, taxonomy template, forbidden_prefixes, launchd / systemd templates
+  docs/             Architecture, deployment, design decisions, badge reference, strip log
+  examples/         Small walkthrough fixtures
+```
+
+Each top-level directory has its own `README.md` for local detail.
 
 ---
 
@@ -63,6 +106,16 @@ Most personal-knowledge tools either:
 - **Inject personal context** but leak it into the **public index** (your RAG now has your address in it)
 
 This project separates *mechanism* (system provides) from *content* (you provide) at every layer, so you can safely share the engine without sharing yourself.
+
+---
+
+## 🔗 Links
+
+- [Architecture](docs/ARCHITECTURE.md) — how the pieces fit
+- [Deployment](docs/DEPLOYMENT.md) — end-to-end install
+- [Design decisions](docs/DESIGN_DECISIONS.md) — why each call was made
+- [Filter badge reference](docs/FILTER_BADGE_REFERENCE.md) — complete UI legend
+- [Chinese-removal log](docs/CHINESE_STRIP_LOG.md) — what was stripped from the upstream private codebase and why (community re-i18n starts here)
 
 ---
 
