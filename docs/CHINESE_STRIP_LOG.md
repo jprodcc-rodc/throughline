@@ -55,7 +55,8 @@ paths. `python -c "import ast; ast.parse(…)"` → OK.
 - **Removal mode:** `ENGLISH_ONLY_REWRITE`
 - **English replacement:** full English rewrite preserving every defensive scaffolding block — injection-guard Steps 1-2, `named_entity_override`, `brainstorm_signals`, `aggregate_rules` (now `all / every / complete / entire`), `topic_shift_rules`, `meta_self_rule`, `proxy_person_rule`, `reformulation_rules`, `decision_rule`, `casual_expression_rule`, `fail_safe`, worked examples. JSON schema unchanged.
 - **Phase 6 risk:** `HIGH` — English judge has never been A/B'd against the Chinese original. Classification drift on English short turns, idiomatic brainstorms, and pronoun anaphora is plausible. Phase 6 must add an English 50-turn fixture matching the original Chinese 62-case matrix.
-- **Regression fixture:** _TBD — Phase 6 must create `fixtures/phase6/recall_judge_en.jsonl`._
+- **Regression fixture:** `fixtures/phase6/recall_judge_en.jsonl` — 48 calibrated cases, run via `fixtures/phase6/run_h1.py`.
+- **Phase 6 result (2026-04-23):** **45/48 PASS (93.8%)** against real Haiku 4.5. Remaining 3 FAIL are all brainstorm mode drift (B01 should-we, B02 what-if, B03 give-me-N-ideas all route to `native` instead of `brainstorm`). Impact: user misses auto-RAG on brainstorm-flavored English turns; must use `/recall` explicitly. No crash, no wrong injection, no privacy leak. Accepted as known limitation for v0.1.0. Analysis in `fixtures/phase6/H1_ANALYSIS.md`.
 
 ### openwebui_rag_tool.py:_BARE_PRONOUN_RE
 

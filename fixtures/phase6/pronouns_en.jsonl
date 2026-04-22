@@ -1,0 +1,20 @@
+{"id":"FT01","turn_idx":0,"context":[],"turn":"it","expected_cheap_path":"noise_or_short","should_call_judge":false,"tag":"single_pronoun"}
+{"id":"FT02","turn_idx":0,"context":[],"turn":"that","expected_cheap_path":"noise_or_short","should_call_judge":false,"tag":"single_pronoun_that"}
+{"id":"FT03","turn_idx":0,"context":[],"turn":"this","expected_cheap_path":"noise_or_short","should_call_judge":false,"tag":"single_pronoun_this"}
+{"id":"FT04","turn_idx":0,"context":[],"turn":"that one","expected_cheap_path":"short","should_call_judge":false,"tag":"two_word"}
+{"id":"FT05","turn_idx":0,"context":[],"turn":"what about it","expected_cheap_path":"short","should_call_judge":false,"tag":"bare_pronoun_phrase"}
+{"id":"FT06","turn_idx":0,"context":[],"turn":"what about that","expected_cheap_path":"short","should_call_judge":false,"tag":"bare_pronoun_that"}
+{"id":"FT07","turn_idx":0,"context":[],"turn":"how's it going","expected_cheap_path":"short_or_native","should_call_judge":false,"tag":"greeting"}
+{"id":"FT08","turn_idx":0,"context":[],"turn":"what's that","expected_cheap_path":"short","should_call_judge":false,"tag":"bare_whats_that"}
+{"id":"FT09","turn_idx":0,"context":[],"turn":"how about that","expected_cheap_path":"short","should_call_judge":false,"tag":"idiom_reaction"}
+{"id":"FT10","turn_idx":0,"context":[],"turn":"what do you think","expected_cheap_path":"short","should_call_judge":false,"tag":"meta_opinion"}
+{"id":"WC01","turn_idx":2,"context":[{"role":"user","content":"tell me about Qdrant"},{"role":"assistant","content":"Qdrant is a vector database..."}],"turn":"what about it","expected_cheap_path":"judge","should_call_judge":true,"tag":"pronoun_with_prior_context"}
+{"id":"WC02","turn_idx":2,"context":[{"role":"user","content":"I was comparing bge-m3 and e5"},{"role":"assistant","content":"here are the differences..."}],"turn":"that one","expected_cheap_path":"judge","should_call_judge":true,"tag":"that_one_with_context"}
+{"id":"WC03","turn_idx":4,"context":[{"role":"user","content":"what's the best reranker"},{"role":"assistant","content":"bge-reranker-v2-m3..."},{"role":"user","content":"thanks"},{"role":"assistant","content":"np"}],"turn":"how does it compare to Cohere","expected_cheap_path":"judge","should_call_judge":true,"tag":"it_with_deep_context"}
+{"id":"WC04","turn_idx":2,"context":[{"role":"user","content":"configured the daemon yesterday"},{"role":"assistant","content":"good"}],"turn":"how's it performing","expected_cheap_path":"judge","should_call_judge":true,"tag":"its_performing"}
+{"id":"WC05","turn_idx":2,"context":[{"role":"user","content":"reading about sertraline"},{"role":"assistant","content":"ok"}],"turn":"what are the side effects","expected_cheap_path":"judge","should_call_judge":true,"tag":"no_pronoun_but_followup"}
+{"id":"ED01","turn_idx":0,"context":[],"turn":"what is Docker","expected_cheap_path":"judge","should_call_judge":true,"tag":"short_substantive_first"}
+{"id":"ED02","turn_idx":0,"context":[],"turn":"explain RAG","expected_cheap_path":"judge","should_call_judge":true,"tag":"short_substantive_imperative"}
+{"id":"ED03","turn_idx":0,"context":[],"turn":"define embedding","expected_cheap_path":"judge","should_call_judge":true,"tag":"short_substantive_define"}
+{"id":"ED04","turn_idx":0,"context":[],"turn":"ok","expected_cheap_path":"noise","should_call_judge":false,"tag":"ack_only"}
+{"id":"ED05","turn_idx":0,"context":[],"turn":"thanks","expected_cheap_path":"noise","should_call_judge":false,"tag":"thanks_only"}

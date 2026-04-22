@@ -1,0 +1,1032 @@
+{
+  "total": 48,
+  "pass": 45,
+  "fail": 3,
+  "error": 0,
+  "prompt_tokens": 249432,
+  "completion_tokens": 2953,
+  "cost_usd": 0.2642,
+  "model": "anthropic/claude-haiku-4.5",
+  "results": [
+    {
+      "id": "N01",
+      "tag": "noise_greeting",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.95,
+        "reason": "greeting only, no query intent"
+      },
+      "mismatches": [],
+      "latency_s": 2.7
+    },
+    {
+      "id": "N02",
+      "tag": "noise_ack",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "acknowledgment only, no query"
+      },
+      "mismatches": [],
+      "latency_s": 2.55
+    },
+    {
+      "id": "N03",
+      "tag": "noise_thanks",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.95,
+        "reason": "gratitude only, no query intent"
+      },
+      "mismatches": [],
+      "latency_s": 2.41
+    },
+    {
+      "id": "N04",
+      "tag": "meta_self",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "meta-self: assistant identity query"
+      },
+      "mismatches": [],
+      "latency_s": 1.88
+    },
+    {
+      "id": "N05",
+      "tag": "meta_self",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "meta-self: assistant capability query"
+      },
+      "mismatches": [],
+      "latency_s": 4.89
+    },
+    {
+      "id": "N06",
+      "tag": "casual_reply",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "casual small talk, no vault entity"
+      },
+      "mismatches": [],
+      "latency_s": 2.09
+    },
+    {
+      "id": "N07",
+      "tag": "slash_native",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "generic ML concept, no personal anchor"
+      },
+      "mismatches": [],
+      "latency_s": 2.02
+    },
+    {
+      "id": "N08",
+      "tag": "noise_filler",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "minimal utterance, no query intent"
+      },
+      "mismatches": [],
+      "latency_s": 9.86
+    },
+    {
+      "id": "G01",
+      "tag": "tech_howto_no_anchor",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "generic docker/qdrant setup, no personal anchor"
+      },
+      "mismatches": [],
+      "latency_s": 2.02
+    },
+    {
+      "id": "G02",
+      "tag": "health_general",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "named drug sertraline + personal health query"
+      },
+      "mismatches": [],
+      "latency_s": 2.31
+    },
+    {
+      "id": "G03",
+      "tag": "tech_explain",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.88,
+        "reason": "user's embedding stack component"
+      },
+      "mismatches": [],
+      "latency_s": 2.02
+    },
+    {
+      "id": "G04",
+      "tag": "network_debug_no_anchor",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.88,
+        "reason": "generic OpenWrt troubleshooting, no personal device anchor"
+      },
+      "mismatches": [],
+      "latency_s": 1.75
+    },
+    {
+      "id": "G05",
+      "tag": "self_recall",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "personal infra config recall"
+      },
+      "mismatches": [],
+      "latency_s": 2.67
+    },
+    {
+      "id": "G06",
+      "tag": "followup_tech",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "which vector DB handles hybrid search best for my stack",
+        "needs_reformulation": true,
+        "confidence": 0.78,
+        "reason": "ellipsis 'which one' + user's infra context"
+      },
+      "mismatches": [],
+      "latency_s": 2.25
+    },
+    {
+      "id": "G07",
+      "tag": "tech_current_no_anchor",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "generic reranker rec, no personal anchor"
+      },
+      "mismatches": [],
+      "latency_s": 3.45
+    },
+    {
+      "id": "G08",
+      "tag": "slash_recall",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "explicit /recall command + study topic"
+      },
+      "mismatches": [],
+      "latency_s": 2.2
+    },
+    {
+      "id": "G09",
+      "tag": "ops_debug",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "named infra (refine daemon, OpenRouter) + personal issue"
+      },
+      "mismatches": [],
+      "latency_s": 9.92
+    },
+    {
+      "id": "G10",
+      "tag": "self_recall_summary",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "user's personal infra comparison notes"
+      },
+      "mismatches": [],
+      "latency_s": 2.89
+    },
+    {
+      "id": "B01",
+      "tag": "brainstorm_should_we",
+      "status": "FAIL",
+      "expected": {
+        "needs_rag": true,
+        "mode": "brainstorm"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "generic A/B test strategy, no personal anchor"
+      },
+      "mismatches": [
+        "needs_rag: expected=True got=False",
+        "mode: expected='brainstorm' got='native'"
+      ],
+      "latency_s": 2.11
+    },
+    {
+      "id": "B02",
+      "tag": "brainstorm_whatif",
+      "status": "FAIL",
+      "expected": {
+        "needs_rag": true,
+        "mode": "brainstorm"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.78,
+        "reason": "brainstorm without named entity anchor"
+      },
+      "mismatches": [
+        "needs_rag: expected=True got=False",
+        "mode: expected='brainstorm' got='native'"
+      ],
+      "latency_s": 2.3
+    },
+    {
+      "id": "B03",
+      "tag": "brainstorm_generate",
+      "status": "FAIL",
+      "expected": {
+        "mode": "brainstorm"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.82,
+        "reason": "generic creative brainstorm, no personal anchor"
+      },
+      "mismatches": [
+        "mode: expected='brainstorm' got='native'"
+      ],
+      "latency_s": 2.02
+    },
+    {
+      "id": "B04",
+      "tag": "decision_health_should_i",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.85,
+        "reason": "should-I + meds = named_entity_override"
+      },
+      "mismatches": [],
+      "latency_s": 2.06
+    },
+    {
+      "id": "D01",
+      "tag": "decision_explicit",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "decision"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "decision",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "firm choice: Qdrant named infra"
+      },
+      "mismatches": [],
+      "latency_s": 10.45
+    },
+    {
+      "id": "D02",
+      "tag": "slash_decision",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "decision"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "decision",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "firm deadline + target device locked in"
+      },
+      "mismatches": [],
+      "latency_s": 2.09
+    },
+    {
+      "id": "D03",
+      "tag": "decision_goal",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "decision"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "decision",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "firm target score announcement"
+      },
+      "mismatches": [],
+      "latency_s": 2.86
+    },
+    {
+      "id": "A01",
+      "tag": "aggregate_all",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.95,
+        "reason": "list-all meds, personal inventory"
+      },
+      "mismatches": [],
+      "latency_s": 3.19
+    },
+    {
+      "id": "A02",
+      "tag": "aggregate_every",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "list-all projects, aggregate inventory"
+      },
+      "mismatches": [],
+      "latency_s": 12.8
+    },
+    {
+      "id": "A03",
+      "tag": "aggregate_complete",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "refine daemon named infra + history = aggregate"
+      },
+      "mismatches": [],
+      "latency_s": 7.45
+    },
+    {
+      "id": "A04",
+      "tag": "aggregate_entire_explicit",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "list-all tags inventory across vault"
+      },
+      "mismatches": [],
+      "latency_s": 2.17
+    },
+    {
+      "id": "A05",
+      "tag": "aggregate_all_ever",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "list-all tags inventory across vault"
+      },
+      "mismatches": [],
+      "latency_s": 1.94
+    },
+    {
+      "id": "A06",
+      "tag": "aggregate_neg_specific",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.95,
+        "reason": "personal med query, anxiety domain"
+      },
+      "mismatches": [],
+      "latency_s": 8.05
+    },
+    {
+      "id": "T01",
+      "tag": "topic_shift_anchor",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto",
+        "topic_shift": true
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": true,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.9,
+        "reason": "vector DB is user's infra; named_entity_override"
+      },
+      "mismatches": [],
+      "latency_s": 7.36
+    },
+    {
+      "id": "T02",
+      "tag": "topic_shift_to_cooking",
+      "status": "PASS",
+      "expected": {
+        "topic_shift": true
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": true,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.82,
+        "reason": "salmon recipe in vault; topic shift marker"
+      },
+      "mismatches": [],
+      "latency_s": 14.88
+    },
+    {
+      "id": "T03",
+      "tag": "topic_shift_neg_continuation",
+      "status": "PASS",
+      "expected": {
+        "topic_shift": false
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": true,
+        "confidence": 0.75,
+        "reason": "ellipsis; nginx generic, no personal anchor"
+      },
+      "mismatches": [],
+      "latency_s": 2.17
+    },
+    {
+      "id": "P01",
+      "tag": "pronoun_its",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "Qdrant REST API",
+        "needs_reformulation": true,
+        "confidence": 0.88,
+        "reason": "ellipsis 'its' → Qdrant from history"
+      },
+      "mismatches": [],
+      "latency_s": 2.69
+    },
+    {
+      "id": "P02",
+      "tag": "pronoun_those",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": true,
+        "topic_shift": false,
+        "reformulated_query": "what are the doses for clonazepam and melatonin",
+        "needs_reformulation": true,
+        "confidence": 0.92,
+        "reason": "ellipsis pronoun 'those' + multi-entity dose query"
+      },
+      "mismatches": [],
+      "latency_s": 8.11
+    },
+    {
+      "id": "P05",
+      "tag": "pronoun_with_context",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": true,
+        "mode": "auto"
+      },
+      "verdict": {
+        "needs_rag": true,
+        "mode": "auto",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "Qdrant vs Weaviate comparison",
+        "needs_reformulation": true,
+        "confidence": 0.82,
+        "reason": "ellipsis pronoun; named infra entities in history"
+      },
+      "mismatches": [],
+      "latency_s": 2.25
+    },
+    {
+      "id": "M01",
+      "tag": "meta_self_window",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "meta-self: assistant capability query"
+      },
+      "mismatches": [],
+      "latency_s": 2.25
+    },
+    {
+      "id": "M02",
+      "tag": "meta_self_capability",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "meta-self: assistant capability query"
+      },
+      "mismatches": [],
+      "latency_s": 14.38
+    },
+    {
+      "id": "M03",
+      "tag": "meta_self_name",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "meta-self: assistant identity query"
+      },
+      "mismatches": [],
+      "latency_s": 4.11
+    },
+    {
+      "id": "PX01",
+      "tag": "proxy_person_friend",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.9,
+        "reason": "proxy-person: friend asking, not user's vault"
+      },
+      "mismatches": [],
+      "latency_s": 7.0
+    },
+    {
+      "id": "PX02",
+      "tag": "proxy_person_colleague",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.9,
+        "reason": "proxy-person: colleague's setup, not user's"
+      },
+      "mismatches": [],
+      "latency_s": 15.59
+    },
+    {
+      "id": "C01",
+      "tag": "casual_reaction",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "casual expression, no vault entity"
+      },
+      "mismatches": [],
+      "latency_s": 12.66
+    },
+    {
+      "id": "C02",
+      "tag": "casual_agreement",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": true,
+        "confidence": 0.75,
+        "reason": "ellipsis-only, needs recent_history context"
+      },
+      "mismatches": [],
+      "latency_s": 2.84
+    },
+    {
+      "id": "C03",
+      "tag": "casual_btw",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "generic time-zone lookup, no personal anchor"
+      },
+      "mismatches": [],
+      "latency_s": 1.86
+    },
+    {
+      "id": "F01",
+      "tag": "fail_safe_injection_attempt",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.99,
+        "reason": "injection attempt stripped; no vault query remains"
+      },
+      "mismatches": [],
+      "latency_s": 2.51
+    },
+    {
+      "id": "F02",
+      "tag": "fail_safe_role_override",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "injection attempt stripped; remainder is generic request"
+      },
+      "mismatches": [],
+      "latency_s": 2.24
+    },
+    {
+      "id": "F03",
+      "tag": "fail_safe_empty",
+      "status": "PASS",
+      "expected": {
+        "needs_rag": false,
+        "mode": "native"
+      },
+      "verdict": {
+        "needs_rag": false,
+        "mode": "native",
+        "aggregate": false,
+        "topic_shift": false,
+        "reformulated_query": "",
+        "needs_reformulation": false,
+        "confidence": 0.92,
+        "reason": "empty query, no content to evaluate"
+      },
+      "mismatches": [],
+      "latency_s": 1.7
+    }
+  ]
+}
