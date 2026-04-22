@@ -1,0 +1,187 @@
+{
+  "total": 20,
+  "matches": 10,
+  "gaps": 10,
+  "results": [
+    {
+      "id": "FT01",
+      "tag": "single_pronoun",
+      "turn": "it",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT02",
+      "tag": "single_pronoun_that",
+      "turn": "that",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT03",
+      "tag": "single_pronoun_this",
+      "turn": "this",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT04",
+      "tag": "two_word",
+      "turn": "that one",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT05",
+      "tag": "bare_pronoun_phrase",
+      "turn": "what about it",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT06",
+      "tag": "bare_pronoun_that",
+      "turn": "what about that",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT07",
+      "tag": "greeting",
+      "turn": "how's it going",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT08",
+      "tag": "bare_whats_that",
+      "turn": "what's that",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT09",
+      "tag": "idiom_reaction",
+      "turn": "how about that",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "FT10",
+      "tag": "meta_opinion",
+      "turn": "what do you think",
+      "status": "GAP",
+      "expected_calls_judge": false,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "WC01",
+      "tag": "pronoun_with_prior_context",
+      "turn": "what about it",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "WC02",
+      "tag": "that_one_with_context",
+      "turn": "that one",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "WC03",
+      "tag": "it_with_deep_context",
+      "turn": "how does it compare to Cohere",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "WC04",
+      "tag": "its_performing",
+      "turn": "how's it performing",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "WC05",
+      "tag": "no_pronoun_but_followup",
+      "turn": "what are the side effects",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "ED01",
+      "tag": "short_substantive_first",
+      "turn": "what is Docker",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "ED02",
+      "tag": "short_substantive_imperative",
+      "turn": "explain RAG",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "ED03",
+      "tag": "short_substantive_define",
+      "turn": "define embedding",
+      "status": "MATCH",
+      "expected_calls_judge": true,
+      "actual_calls_judge": true,
+      "cheap_path": "judge"
+    },
+    {
+      "id": "ED04",
+      "tag": "ack_only",
+      "turn": "ok",
+      "status": "MATCH",
+      "expected_calls_judge": false,
+      "actual_calls_judge": false,
+      "cheap_path": "noise_ack"
+    },
+    {
+      "id": "ED05",
+      "tag": "thanks_only",
+      "turn": "thanks",
+      "status": "MATCH",
+      "expected_calls_judge": false,
+      "actual_calls_judge": false,
+      "cheap_path": "noise_ack"
+    }
+  ]
+}

@@ -736,7 +736,8 @@ class Filter:
         r"sure|alright|"
         r"yes|no|yep|yeah|nope|"
         r"got it|understood|copy|copy that|roger|roger that|"
-        r"go on|go ahead"
+        r"go on|go ahead|"
+        r"thanks|thank you|thx|ty|cheers"
         r")[\s.!?,]*$",
         flags=re.IGNORECASE,
     )

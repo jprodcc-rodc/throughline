@@ -1,0 +1,79 @@
+{
+  "total": 9,
+  "pass": 9,
+  "fail": 0,
+  "results": [
+    {
+      "id": "CD01",
+      "tag": "card_contains_injection",
+      "status": "PASS",
+      "expected": "wrapped_as_data",
+      "render_len": 816,
+      "issues": []
+    },
+    {
+      "id": "CD02",
+      "tag": "card_datablock_injection",
+      "status": "PASS",
+      "expected": "wrapped_as_data",
+      "render_len": 847,
+      "issues": []
+    },
+    {
+      "id": "CD03",
+      "tag": "card_fake_turn_injection",
+      "status": "PASS",
+      "expected": "wrapped_as_data",
+      "render_len": 799,
+      "issues": []
+    },
+    {
+      "id": "CD04",
+      "tag": "card_eos_token",
+      "status": "PASS",
+      "expected": "wrapped_as_data",
+      "render_len": 789,
+      "issues": []
+    },
+    {
+      "id": "CD05",
+      "tag": "card_sql_injection_style",
+      "status": "PASS",
+      "expected": "wrapped_as_data",
+      "render_len": 821,
+      "issues": []
+    },
+    {
+      "id": "CD06",
+      "tag": "card_meta_claim",
+      "status": "PASS",
+      "expected": "wrapped_as_data",
+      "render_len": 818,
+      "issues": []
+    },
+    {
+      "id": "CD07",
+      "tag": "card_custom_delimiter",
+      "status": "PASS",
+      "expected": "wrapped_as_data",
+      "render_len": 823,
+      "issues": []
+    },
+    {
+      "id": "LN01",
+      "tag": "long_card_truncation",
+      "status": "PASS",
+      "expected": "truncated_at_card_content_max_chars",
+      "render_len": 2758,
+      "issues": []
+    },
+    {
+      "id": "LN02",
+      "tag": "long_card_single_char",
+      "status": "PASS",
+      "expected": "truncated_at_card_content_max_chars",
+      "render_len": 2759,
+      "issues": []
+    }
+  ]
+}
