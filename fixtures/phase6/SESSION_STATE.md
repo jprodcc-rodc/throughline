@@ -15,8 +15,8 @@ Phase 6 = **English-only regression** for the open-source `throughline` repo (re
 | **H1** | RecallJudge EN classification drift (48 cases × real Haiku 4.5) | ✅ **45/48 PASS (93.8%)** · 3 brainstorm drift accepted | `run_h1.py` · `recall_judge_en.jsonl` · `h1_results.json` · `H1_ANALYSIS.md` |
 | **H2** | Cheap-gate short-turn behavior (20 cases offline) | ✅ **10/20 MATCH** · 10 gaps = intentional bare-pronoun regex strip (accepted as v0.1.0 cost) | `run_h2.py` · `pronouns_en.jsonl` · `h2_results.json` |
 | **H3 code** | Card-injection wrapper + truncation (9 CD/LN cases offline) | ✅ **9/9 PASS** | `run_h3_code.py` · `h3_code_results.json` |
-| **H3 Haiku** | Injection/PII/roleplay resistance (31 cases × real Haiku 4.5) | 🔄 **running in bg** (bash ID `bge7ox65c`) | `run_h3_haiku.py` · `h3_haiku_results.json` |
-| **H4** | 4 refiner prompts on EN raws (8 sampled cases × real Sonnet 4.6) | 🔄 **Sonnet subagent running** (agent ID `a6193cbcfe6adfdcf`, model=sonnet) | `refiner_en.jsonl` · `h4_results.md` (pending) |
+| **H3 Haiku** | Injection/PII/roleplay resistance (31 cases × real Haiku 4.5) | ✅ **31/31 PASS (100%)** after retry of 2 network timeouts · $0.17 | `run_h3_haiku.py` · `retry_h3_errors.py` · `h3_haiku_results.json` · `H3_ANALYSIS.md` |
+| **H4** | 4 refiner prompts on EN raws (8 sampled cases × real Sonnet 4.6) | ✅ **15/16 PASS (93.8%)** · 1 WARN on personal/universal boundary, zero structural failures | `refiner_en.jsonl` · `h4_results.md` |
 
 ## Commits on this branch
 
@@ -59,13 +59,14 @@ H1 went through two fixture versions because the initial fixture confused displa
 
 ## Pending work (overnight batch)
 
-1. 🔄 H3 Haiku-side batch (expected: ~31 cases, ~$0.15, ~5 min)
-2. 🔄 H4 Sonnet subagent (expected: 8 cases refine+route, ~30 min, free via subscription)
-3. Pytest wrappers for all H1-H4 runners so `pytest fixtures/phase6/` works
+1. ✅ H3 Haiku-side batch (31/31 PASS · $0.17)
+2. ✅ H4 Sonnet subagent (15/16 PASS, 1 WARN)
+3. ✅ Pytest wrappers (`test_phase6.py`, 21 passed + 10 xfailed)
 4. EN fuzz probe pass (translate `bug_probes/fuzz_filter_inlet.py` from private repo)
 5. README Phase 6 public results section
 6. Private mirror `[mech]`-prefix commits back to obsidian_python
-7. Final `PHASE6_OVERNIGHT_REPORT.md`
+7. Update `docs/CHINESE_STRIP_LOG.md` with H2/H3/H4 results
+8. Final `PHASE6_OVERNIGHT_REPORT.md`
 
 ## Next session quick-start
 
