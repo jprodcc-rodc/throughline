@@ -116,6 +116,23 @@ This project separates *mechanism* (system provides) from *content* (you provide
 - [Design decisions](docs/DESIGN_DECISIONS.md) — why each call was made
 - [Filter badge reference](docs/FILTER_BADGE_REFERENCE.md) — complete UI legend
 - [Chinese-removal log](docs/CHINESE_STRIP_LOG.md) — what was stripped from the upstream private codebase and why (community re-i18n starts here)
+- [Phase 6 regression checklist](docs/PHASE_6_CHECKLIST.md) — English-only test gates for pre-v0.1.0
+
+---
+
+## 🧪 Phase 6 regression (pre-v0.1.0)
+
+The English rewrite has never been A/B'd against the original Chinese build. Phase 6 is the regression pass that validates the rewrite before tagging `v0.1.0`. Run `pytest fixtures/phase6/` for the offline gates or the individual `python fixtures/phase6/run_h*.py` scripts for live LLM gates.
+
+| Gate | Scope | Status |
+|---|---|---|
+| **H1** RecallJudge classification drift | 48 EN turns × real Haiku 4.5 | **45/48 PASS (93.8%)** — 3 brainstorm-mode drift accepted as known EN-tone limitation |
+| **H2** Cheap-gate short-turn routing | 20 EN turns offline | **10/20 MATCH + 10 documented gaps** — first-turn bare pronouns fall through to judge (accepted ~$0.003/turn cost) |
+| **H3 code** Card injection wrapper + truncation | 9 offline assertions | **9/9 PASS** — card bodies always wrapped as DATA not INSTRUCTIONS |
+| **H3 Haiku** Injection/PII/roleplay resistance | 31 EN turns × real Haiku 4.5 | **31/31 PASS (100%)** — zero compliance, zero leakage across 7 fingerprints |
+| **H4** 4 refiner prompts (refine + route_domain) | 8 EN fixtures × real Sonnet 4.6 | **15/16 PASS (93.8%)** — 1 WARN on universal-vs-personal tension, zero structural failures |
+
+Total phase-6 regression cost against live APIs: **~$0.44**. See [`fixtures/phase6/SESSION_STATE.md`](fixtures/phase6/SESSION_STATE.md) for the full run log and `H*_ANALYSIS.md` per-gate deep dives.
 
 ---
 
