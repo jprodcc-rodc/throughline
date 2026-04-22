@@ -1,6 +1,6 @@
-# knowledge-flywheel
+# throughline
 
-> Turn every LLM conversation into a searchable, reusable, self-growing personal knowledge asset.
+> The thread that turns every LLM conversation into searchable, self-growing personal knowledge.
 
 <!-- badges-placeholder: build / license / python-version -->
 
@@ -40,8 +40,8 @@ Three distinctive pieces you won't find glued together elsewhere:
 
 ```bash
 # Placeholder — see docs/DEPLOYMENT.md for the canonical path.
-git clone https://github.com/jprodcc-rodc/knowledge-flywheel
-cd knowledge-flywheel
+git clone https://github.com/jprodcc-rodc/throughline
+cd throughline
 # TBD: install / configure / run
 ```
 
