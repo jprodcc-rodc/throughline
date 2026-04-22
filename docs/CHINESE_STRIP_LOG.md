@@ -154,7 +154,237 @@ paths. `python -c "import ast; ast.parse(…)"` → OK.
 
 <!-- filled during Phase 3 migration -->
 
-_Pending._
+### rag_server.py:module_docstring + inline_comments
+
+- **What it was:** Chinese section banners ("硬件侦测：锁定 M2 Max 统一内存", "装载左脑：BAAI-M3", "装载右脑：BAAI BGE-Reranker-v2-m3", "搭建 FastAPI 异步非阻塞智能网关", "局域网广播防线") and Chinese inline comments explaining tokenizer truncation, reranker batch tuning, freshness bonus math, and badge archetype mapping.
+- **Why it existed:** maintainer comments for a Chinese-reading author.
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** 1:1 English translations preserving structure, intent callouts, and the seven-state badge rationale in the `BADGE_MAP` block. Section banners condensed to English headers ("Device detection", "Embedding model", "Reranker", "Qdrant configuration", etc.).
+- **Phase 6 risk:** `LOW` — documentation only; no runtime effect.
+- **Regression fixture:** none.
+
+### rag_server.py:print_banner_strings
+
+- **What it was:** Chinese startup banner ("🚀 [全域起飞] 侦测到 Apple M2 Max...", "📥 正在将 BAAI-M3 Embedding 矩阵载入统一内存", "BAAI 暴力全闭环 RAG 服务", "开火阵地", etc.) and Chinese error messages ("⚠️ [系统级错误] 未检测到 MPS 硬件加速").
+- **Why it existed:** CLI operator output for a Chinese reader. Some lines were stylistic flourish ("暴力全闭环", "开火阵地").
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** plain English status lines (`[rag_server] Using device: mps`, `[rag_server] Loading embedding model: ...`, the startup route table). The MPS-only `RuntimeError` was also relaxed — `_pick_device()` now falls back CUDA -> CPU so the server runs on non-Apple hosts.
+- **Phase 6 risk:** `LOW` — operator-facing; a stricter device-selection behavioural change is documented below.
+- **Regression fixture:** none.
+
+### rag_server.py:_pick_device (BEHAVIOURAL CHANGE)
+
+- **What it was:** hard assertion `torch.backends.mps.is_available()` or raise `RuntimeError`. Would fail to start on any non-macOS host.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`
+- **English replacement:** `_pick_device()` chooses MPS if available, else CUDA if available, else CPU. Optional `RAG_DEVICE` env var forces a specific device. This is the only behavioural change in the RAG server; justification: the file is named `rag_server.py` (not `macos_rag_server.py`) in the open-source layout and an MPS-only hard-fail would gate all non-Apple users out of the project.
+- **Phase 6 risk:** `MEDIUM` — the CPU code path has not been benchmarked; reranker batch size (100) is tuned for GPU/MPS and may be too large on CPU-only hosts. Document as a perf tuning knob if users report slow cold-start.
+- **Regression fixture:** none yet; add a CPU-only smoke test in Phase 6.
+
+### rag_server.py:therapy_memory allowlist
+
+- **What it was:** `ALLOWED_COLLECTIONS = {"obsidian_notes", "therapy_memory"}` — a whitelist binding the Therapist Pack to an isolated Qdrant collection.
+- **Why it existed:** upstream private-user clinical isolation boundary (see Phase 2 `_is_therapy_model` entry).
+- **Removal mode:** `STRIPPED`
+- **English replacement:** default whitelist now `{"obsidian_notes"}`, driven entirely by the `RAG_ALLOWED_COLLECTIONS` env var. Users who want additional collections supply them explicitly; the therapy-specific code path is not shipped.
+- **Phase 6 risk:** `LOW` — the enforcement logic is unchanged (whitelist check in `/v1/rag`); only the default set is narrowed.
+- **Regression fixture:** existing Phase 6 `/v1/rag` contract test covers the whitelist.
+
+### rag_server.py:hardcoded_paths_and_ips
+
+- **What it was:** `QDRANT_URL = "http://localhost:6333"` (the local URL happened to be fine), `REFINE_STATE_FILE` defaulted to `~/Sync/obsidian_python/state/refine_state.json` (identity-laden user path), app title `"M2 Max 专属局域网 BAAI RAG 服务器"`.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE` (paths) + `TRANSLATED` (title)
+- **English replacement:** `QDRANT_URL` env var (default unchanged), `REFINE_STATE_FILE` defaults to XDG-style `~/.local/share/throughline/state/refine_state.json`, app title `"Throughline RAG server (bge-m3 + bge-reranker-v2-m3)"`.
+- **Phase 6 risk:** `LOW` — fully env-driven.
+- **Regression fixture:** none.
+
+### ingest_qdrant.py:module_docstring + find_notes_comments
+
+- **What it was:** Chinese docstrings describing the JD scan rule, the `00.00_Overview` whitelist exception, a Chinese reference to `docs/ARCHITECTURE.md §4 Master-Event 双层架构`, and Chinese notification strings (`"🔄 Qdrant Ingest 启动"`, `"准备处理 {len(all_notes)} 张卡"`, `"✅ Qdrant Ingest 完成"`, `"⚠️ Qdrant Ingest 完成(有错误)"`).
+- **Why it existed:** comments for the maintainer + Mac-side terminal-notifier desktop notifications.
+- **Removal mode:** `TRANSLATED` (docstrings) + `STRIPPED` (notifications)
+- **English replacement:** English docstrings explaining the include-pattern + extra-whitelist model; the `rodc_notify` import block and every `notify(...)` call are removed entirely. The script now just prints completion stats to stdout.
+- **Phase 6 risk:** `LOW` — notifications were not on the correctness path.
+- **Regression fixture:** none.
+
+### ingest_qdrant.py:hardcoded_paths_and_ips
+
+- **What it was:** hardcoded `VAULT = r"S:\obsidian\Rodc\Rodc"`, `EMBED_URL = "http://192.168.10.165:8000/v1"`, `QDRANT_URL = "http://192.168.10.165:6333"`, and the identity-laden folder-name whitelist (`00_Buffer/00.00_Overview`).
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`
+- **English replacement:** all four values are env-driven (`VAULT_PATH`, `RAG_EMBED_URL`, `QDRANT_URL`, `INGEST_EXTRA_WHITELIST`). `VAULT_PATH` is required; missing it exits with a clear error. The hardcoded Johnny-Decimal `[1-9]0_*` scan pattern is kept as the default for `INGEST_INCLUDE` because the convention is public and well-documented; users on a different layout override the env var.
+- **Phase 6 risk:** `MEDIUM` — users with non-JD vaults must discover and set `INGEST_INCLUDE` or `INGEST_EXTRA_WHITELIST`. Documented prominently in `scripts/README.md`.
+- **Regression fixture:** none.
+
+### ingest_qdrant.py:forward_slash_normalisation (PRESERVED — critical)
+
+- **What it was:** a single-line comment in Chinese explaining that `path.replace(os.sep, "/")` prevents Windows/Mac point_id divergence ("Qdrant 全删事故老坑").
+- **Why it existed:** real incident where the upstream Qdrant collection grew to 2x expected point count before the root cause was found.
+- **Removal mode:** `TRANSLATED` — but the *code* is untouched. This is a correctness-critical line.
+- **English replacement:** extracted to a dedicated `_norm_path()` helper, documented in the module docstring (`CRITICAL: forward-slash path normalisation` section), called out in the `make_point_id()` comment, and explained with a reproduction-symptom paragraph in `scripts/README.md`. Preserving this behaviour is called out explicitly.
+- **Phase 6 risk:** `LOW` — the code semantics are unchanged; this is documentation reinforcement.
+- **Regression fixture:** Phase 6 should add a cross-platform fixture: ingest the same three-note vault from a Windows checkout and a Linux checkout, assert `points_count == 3` on both.
+
+### ingest_qdrant.py:chinese_stop_words
+
+- **What it was:** incidental Chinese-aware handling of body preview (the script previously stored `body[:500]` and `body[:2000]` without language-specific filtering, so there were no hard-coded stop-word sets in this file, but the upstream had a comment noting "中文字 vs tokens" character-count heuristics).
+- **Why it existed:** bge-m3 max_length=512 tokens ~ 1500-2000 Chinese chars; the slice cutoff was tuned for that.
+- **Removal mode:** `STRIPPED`
+- **English replacement:** same literal 2000-char cutoff retained (bge-m3 handles English at ~4 chars per token, so 2000 chars is ~500 tokens — comfortable headroom under the 512-token limit; still correct).
+- **Phase 6 risk:** `LOW` — preview text only; bge-m3 tokenises internally.
+- **Regression fixture:** none.
+
+---
+
+## Phase 3 · RAG server + Ingest summary
+
+- **9 load-bearing Chinese or identity-laden constructs removed from the two files above.**
+  - 4x `TRANSLATED` (docstrings/comments across both files, banner strings, app title, forward-slash-normalisation rationale).
+  - 3x `ENGLISH_ONLY_REWRITE` (device selection, hardcoded paths/IPs in both files).
+  - 2x `STRIPPED` (therapy_memory default allowlist, macOS `rodc_notify` desktop notifications).
+- **One behavioural change** (flagged above): `_pick_device()` no longer hard-fails on non-MPS hosts. Documented in the entry, in `rag_server/README.md` (env var `RAG_DEVICE`), and in the module docstring.
+- **Critical behaviour preserved:** forward-slash path normalisation in `ingest_qdrant.py` (`_norm_path()` + `make_point_id()`). This is called out in the module docstring, in `scripts/README.md`, and in this log so future refactors don't regress it.
+
+The daemon migration entries for Phase 3 are appended separately by the daemon-migration agent in its own sub-section.
+
+---
+
+## Phase 3 (cont.) · Daemon + packs
+
+Source: `refine_thinker_daemon_v9.py` (4774 lines, bilingual, identity-laden)
++ `rodc_taxonomy.py` + `rodc_notify.py` + `pack_source_model_guard.py`
++ `packs/pack_runtime.py` + `packs/pte/*`.
+
+Target:
+`daemon/refine_daemon.py` (1720 lines, English-only, identity-free)
++ `daemon/taxonomy.py` (~500 lines)
++ `daemon/notify.py` (~125 lines)
++ `daemon/pack_source_model_guard.py` (~230 lines)
++ `packs/pack_runtime.py` (~350 lines)
++ `packs/pte/{pack.yaml, slicer.md, refiner.md, skeleton.md}`.
+
+Validation (all 9 files): `ast.parse` OK; grep `[\u4e00-\u9fff]` -> 0; grep
+for `rodc / RODC / Rodc / 192.168.* / 100.* / sk-or-v1 / therapist /
+therapy_memory / THERAPY_ / /Users/rodc / /Volumes/rodc_990pro /
+S:\obsidian\Rodc` -> 0 hits in all 9 files.
+
+### refine_thinker_daemon_v9.py:four_major_prompts (SLICE/REFINE/DOMAIN/SUBPATH)
+
+- **What it was:** ~900 lines combined, mostly Chinese, instructing the LLM how to slice / refine / route. Preserved schemas: slicer `{slices:[{start_idx,end_idx,title_hint,keep,skip_reason}]}`; refiner `{title, primary_x, visible_x_tags, form_y, z_axis, knowledge_identity, body_markdown, claim_sources, pack_meta}`; domain / subpath `{domain}` / `{subpath, reason, fallback_path}`. Embedded `knowledge_identity` 4-value table, `claim_provenance` table, `anti_pollution_rule`, `pollution_case`, `brainstorm_no_decision` example, `de_individualization` guidance (IPs, paths, UNC, emails), `body_skeleton` six-section headings with Chinese emoji labels, `length_adaptive` guidance, and a `critical_output_rule` demanding straight ASCII quotes inside body_markdown instead of Chinese full-width `“…”`.
+- **Why it existed:** every refiner output needs the same policy scaffold; drift between system prompts and downstream validators ruins card quality.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`
+- **English replacement:** full English rewrite preserving every schema field, every policy rule, and every example, but replacing the Chinese heading emojis (🎯 🧠 🛠️ 🚧 💡 📏) and Chinese curly-quote warning with ASCII-only equivalents. Body skeleton headings now read `# Scene & Pain Point`, `# Core Knowledge & First Principles`, `# Detailed Execution Plan`, `# Pitfalls & Boundaries`, `# Insights & Mental Models`, `# Length Summary`, `# Key Supplementary Details`. The refiner prompt keeps `{valid_x}`, `{valid_y}`, `{valid_z}` placeholders and is formatted at call time from `VALID_X_SET / VALID_Y_SET / VALID_Z_SET`. Subpath router keeps the Bug #2 fallback semantics (`subpath == fallback_path` when no leaf fits, instead of raising).
+- **Phase 6 risk:** `HIGH` — the refiner drives every card written. Any semantic drift (e.g. an English heading that triggers `_count_sections_complete` differently from the original Chinese heading) causes silent retention-gate failures. Phase 6 must add an English-only 20-slice fixture matching the original card-shape expectations.
+- **Regression fixture:** _TBD — Phase 6 must create `fixtures/phase6/refiner_en.jsonl` exercising thin / medium / thick slices._
+
+### refine_thinker_daemon_v9.py:EPHEMERAL_JUDGE_SYSTEM_PROMPT
+
+- **What it was:** Chinese-only Haiku prompt classifying short user messages as `keep` (worth a card) or `skip` (ephemeral chatter). Contained Chinese filler-word lists and Chinese idiom patterns.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`
+- **English replacement:** English `keep_criteria` / `skip_criteria` / `fail_safe` / JSON output block. The filler-word list is not re-emitted because `_EPHEMERAL_PATTERNS` (see below) handles the hard-coded short-text skip and the judge now only fires on the grey zone (user text 10-79 chars).
+- **Phase 6 risk:** `MEDIUM` — English short-utterance judgement has not been empirically calibrated. If users report too many cards from single-line acknowledgements, tighten `_EPHEMERAL_PATTERNS` rather than the judge prompt.
+- **Regression fixture:** _TBD — Phase 6 add 10 English pleasantries + 10 English one-liner decisions._
+
+### refine_thinker_daemon_v9.py:_EPHEMERAL_PATTERNS + _STRUCTURE_KEYWORDS
+
+- **What it was:** compiled regexes matching Chinese pleasantries (`好的? / 嗯 / 谢谢 / ok / thanks`) and a Chinese `_STRUCTURE_KEYWORDS` list (`步骤 / 流程 / 配置 / 架构 ...`).
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** English-only patterns (`hi | hello | hey | thanks | ok | okay | got it | cool | nice`, plus punctuation-only) and English structure keywords (`step | steps | config | configuration | procedure | decision | architecture | module | api | schema | pipeline | install`).
+- **Phase 6 risk:** `LOW` — simple lexical heuristic; misses are safe (card is written anyway by judge).
+
+### refine_thinker_daemon_v9.py:_DAEMON_CONCEPT_ANCHOR_RE
+
+- **What it was:** compiled regex of Chinese + English technical nicknames used by the upstream maintainer (project-specific component names).
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`
+- **English replacement:** generic English anchor set — `qdrant | rag | llm | embedding | prompt | agent | pipeline | router | refiner | slicer | obsidian | taxonomy | filter | cache | kernel`. Matches the spirit of the Filter's `_FALLBACK_ANCHOR_TOKENS` (Phase 2).
+- **Phase 6 risk:** `LOW` — controls only which short conversations bypass ephemeral skip.
+
+### refine_thinker_daemon_v9.py:_llm_echo_judge user_prompt
+
+- **What it was:** bilingual Chinese/English Haiku prompt asking "is this new input substantively new knowledge, or an echo of the retrieved top-1 card?".
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** English-only prompt, same `{"verdict":"echo"|"new","reason":"..."}` schema. System prompt unchanged ("You are a strict echo/new judge. Respond JSON only.").
+- **Phase 6 risk:** `LOW` — one-shot binary judgement; English is the judge model's strongest language.
+
+### refine_thinker_daemon_v9.py:dashboard_strings
+
+- **What it was:** Chinese table headers + Chinese log messages in `00.02.04_Refine_Processing_Index.md`, `00.02.07_Daemon_Issues.md`, `00.02.08_Auto_Refine_Log.md`. Example: `"标题 | 状态 | 切片数 | 路由 | 备注"` / `"daemon 处理失败的 conv 记录在这里"` / `"Auto Refine 触发记录"`.
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** English table headers (`time | conv_id | title | status | slices | route_to | note`), English "Maintenance command" block, English prose explaining the log's purpose. Emoji preserved in status lines.
+- **Phase 6 risk:** `LOW` — dashboards are human-readable triage surfaces.
+
+### refine_thinker_daemon_v9.py:SYNAPSE_MARKER
+
+- **What it was:** `"> [!info] 🧠 神经突触连结"` — an Obsidian callout string used in buffer stubs to link back to the formal card.
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** `"> [!info] Synapse link"`. Environment variable `REFINE_SYNAPSE_MARKER` lets users restore any localised string.
+- **Phase 6 risk:** `LOW` — cosmetic marker text.
+
+### refine_thinker_daemon_v9.py:_QDRANT_DEFAULT_FORBIDDEN_PREFIXES
+
+- **What it was:** hard-coded tuple of vault paths that must never be upserted to the default Qdrant collection. Upstream listed the Therapist pack's private subtree.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`
+- **English replacement:** `_load_forbidden_prefixes()` reads `THROUGHLINE_FORBIDDEN_PREFIXES_JSON` (a JSON list), default empty tuple. `config/forbidden_prefixes.example.json` ships with the generic `00_Buffer/00.05_Profile/` prefix as a sample.
+- **Phase 6 risk:** `LOW` — fully opt-in.
+
+### refine_thinker_daemon_v9.py:_QDRANT_KNOWN_ISOLATED_COLLECTIONS + therapy_memory branches
+
+- **What it was:** `_QDRANT_KNOWN_ISOLATED_COLLECTIONS = ("therapy_memory",)` plus path-based branch in `_delete_note_from_qdrant` that redirected private-subtree deletions to the therapy collection.
+- **Removal mode:** `STRIPPED`
+- **English replacement:** none. The open-source daemon has a single default collection; packs can set `qdrant_collection:` in their `pack.yaml` to isolate their writes, but no hardcoded clinical-private collection is shipped.
+- **Phase 6 risk:** `LOW` — code path removed; no English equivalent to regress.
+
+### refine_thinker_daemon_v9.py:hardcoded paths + IPs
+
+- **What it was:** `VAULT_ROOT = "/Users/rodc/Documents/Obsidian Vault"`, `RAW_ROOT = "/Volumes/rodc_990pro/..."`, `BUFFER_ROOT`, Mac-specific OpenRouter title `"Rodc-Refine"`, Qdrant / embedding URLs on 192.168.10.165.
+- **Removal mode:** `ENGLISH_ONLY_REWRITE`
+- **English replacement:** every path is env-driven (`THROUGHLINE_VAULT_ROOT`, `THROUGHLINE_RAW_ROOT`, `THROUGHLINE_STATE_DIR`, `THROUGHLINE_LOG_DIR`, `THROUGHLINE_PACKS_DIR`). OpenRouter title = `THROUGHLINE_LLM_TITLE` (default `throughline-refine-daemon`). Qdrant / embedding default to `127.0.0.1`. `config/.env.example` documents all variables.
+- **Phase 6 risk:** `LOW` — environment-driven; unit tests override with temp dirs.
+
+### rodc_taxonomy.py -> daemon/taxonomy.py
+
+- **What it was:** JD root map with Chinese root names (`10_技术基建`, `20_健康`, etc.) and a Chinese leaf whitelist including upstream-specific subdirs (e.g. `50_Hobbies_Passions/50.01_Aquarium`, `80_Gaming/80.01_Baldurs_Gate_3`, `90_Life_Base/90.02_Reptiles_Care`). Also `VALID_X_SET / VALID_Y_SET / VALID_Z_SET` with some Chinese-only tags.
+- **Removal mode:** `TRANSLATED` (axis tags) + `ENGLISH_ONLY_REWRITE` (root map + subdirs)
+- **English replacement:** English JD root map (`10_Tech_Infrastructure` etc.), generic subdirs in `50_Hobbies_Passions` (`50.01_Workshop / 50.02_Outdoor / 50.03_Travel / 50.04_Food_Drink`), generic game titles (`80_Gaming/80.01_Title_A / 80.02_Title_B`), `90_Life_Base/90.02_Other_Pets` replacing the upstream-specific reptile subdir. Added `40_Cognition_PKM/40.03_Learning/40.03.04_PTE` so the PTE pack routes cleanly. XYZ sets are English only.
+- **Phase 6 risk:** `MEDIUM` — users with a different vault layout must edit `daemon/taxonomy.py` or (future work) supply a config file. Documented in `daemon/README.md`.
+
+### rodc_notify.py -> daemon/notify.py
+
+- **What it was:** macOS-first desktop notification helper. Hard-coded SSH host `rodc-5` for Linux/Win fallback, hard-coded notification group `rodc-flywheel`, Chinese title examples.
+- **Removal mode:** `TRANSLATED` (comments) + `ENGLISH_ONLY_REWRITE` (host handling)
+- **English replacement:** SSH host via `THROUGHLINE_NOTIFY_SSH_HOST` env var (default empty -> silently no-op). Notification group default `throughline-flywheel`. Silent-fail preserved (never crashes the daemon).
+- **Phase 6 risk:** `LOW` — optional feature.
+
+### pack_source_model_guard.py
+
+- **What it was:** default rule set included a `therapist` rule (match contains, action=allow, pack_hint=therapist) that routed therapy preset conversations into the Therapist Pack. Rationale text was Chinese.
+- **Removal mode:** `STRIPPED` (therapist rule) + `TRANSLATED` (rationale text)
+- **English replacement:** `_BUILTIN_DEFAULTS` now ships exactly one rule (PTE match contains, action=allow, pack_hint=pte). All other docstrings are English. `default_action: allow / default_reason: "no opt-out rule matched"`.
+- **Phase 6 risk:** `LOW` — guard is opt-in; the therapist rule is not referenced anywhere else in the tree.
+
+### packs/pack_runtime.py
+
+- **What it was:** Chinese docstrings explaining match precedence + example comment referencing `source_model: therapist`.
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** English docstrings; example changed to `source_model: pte`.
+- **Phase 6 risk:** `LOW` — documentation only.
+
+### packs/pte/{pack.yaml, slicer.md, refiner.md, skeleton.md}
+
+- **What it was:** mixed Chinese/English pack definition. `pack.yaml` had Chinese comments. `slicer.md` used Chinese phrasing for slice rules. `refiner.md` used Chinese headings in the body skeleton and Chinese `verbatim_preservation` mandate. `skeleton.md` had the six-section Chinese heading template. One topic pin `机经` (PTE question-bank slang).
+- **Removal mode:** `TRANSLATED`
+- **English replacement:** full English translation preserving `output_schema` (title prefix `<exam_type>:`, `primary_x: Study/Linguistics`, `visible_x_tags: [Study/Linguistics]`, `form_y: y/Reference`, `z_axis: z/Node`, `knowledge_identity: universal`, `pack_meta.exam_type`). The `Prompt (verbatim)` / `Reference answer` / `Analysis / breakdown` subsections are preserved verbatim since PTE cards score by reproducing exact templates. The `机经` topic pin is removed; English users route through `source_model: pte` or a leading `[PTE]` prefix.
+- **Phase 6 risk:** `LOW` — PTE is an English exam; English prompts are more natural for the task.
+
+---
+
+## Phase 3 (cont.) summary
+
+- **12 load-bearing Chinese or identity-laden constructs removed** from the daemon + packs.
+  - 4x `ENGLISH_ONLY_REWRITE` (four major prompts, ephemeral judge, concept anchor regex, forbidden-prefixes config, hardcoded paths, taxonomy)
+  - 6x `TRANSLATED` (ephemeral patterns + structure keywords, echo judge user prompt, dashboard strings, synapse marker, notify helper, pack_runtime docstrings, PTE pack files)
+  - 2x `STRIPPED` (therapy_memory isolated collection + paths, therapist rule in source-model guard)
+- **Phase 6 risk roll-up:** 1 × `HIGH` (four major prompts — card-shape validation), 2 × `MEDIUM` (ephemeral judge English calibration, taxonomy customisation for non-JD vaults), rest `LOW`.
+- **Safety gates preserved:** Bug #2 fallback (invalid subpath -> `JD_FALLBACK_PATH`), forward-slash path normalisation for Qdrant point IDs, three-gate Method H retention, three-tier Echo Guard (cosine + Haiku in grey zone), age bypass + `@refine` bypass, size-aware retention ratio. All are exercised in the ported pipeline.
+- **External knobs added:** `THROUGHLINE_FORBIDDEN_PREFIXES_JSON`, `THROUGHLINE_NOTIFY_SSH_HOST`, `THROUGHLINE_LLM_TITLE`, plus the `config/.env.example` reference.
 
 ---
 
