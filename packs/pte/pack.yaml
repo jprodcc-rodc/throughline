@@ -1,0 +1,139 @@
+# PTE exam-preparation pack
+#
+# Goal: user posts a PTE question + screenshot/audio in OpenWebUI → any capable
+# LLM answers → daemon routes to 40.03.04_PTE/<Skill>/<Type>/ with the literal
+# question / answer preserved verbatim (no de-individualization) so the user
+# ends up with memorization-grade review cards.
+#
+# The PTE-specialized prompts preserve question, answer, and analysis verbatim
+# (the opposite of the default refiner, which de-individualizes). The refiner
+# emits `pack_meta.exam_type` so daemon routing can land the card under the
+# correct Skill/Type subdir.
+
+name: pte
+version: 1
+
+prompts:
+  slicer: slicer.md
+  refiner: refiner.md
+  skeleton: skeleton.md
+
+trigger:
+  # Must appear at a command position (line-start or after whitespace).
+  # Scanned across ALL user messages, not just the first. The strict boundary
+  # rejects `@ptextual`.
+  prefixes:
+    - "@pte"
+    - "@PTE"
+
+  # Preset-model trigger. Case-insensitive substring match against
+  # conv.source_model. Two complementary channels: `@pte` marks a single
+  # message inside a mixed conversation; the Preset enters a PTE-only session
+  # where the system prompt is always active. Detection priority is
+  # prefix > source_model > topic_pin.
+  source_models:
+    - "pte"
+
+  # Keyword topic pins — matched with ASCII word boundaries (characters from
+  # other scripts still count as boundaries, so a topic pin still fires
+  # inside multilingual text). Short ambiguous tokens (WE, RO, RTS, RL) are
+  # deliberately excluded to avoid false positives in non-PTE chatter. Users
+  # can add them back after observing real-world match rates.
+  topic_pins:
+    - PTE
+    - Pearson
+    # Speaking
+    - RA
+    - RS
+    - DI
+    - ASQ
+    - SGD
+    # Writing
+    - SWT
+    # Reading
+    - FIB
+    # Listening
+    - SST
+    - WFD
+    - HCS
+    - SMW
+    - HIW
+
+  # A slice routed into this subtree also counts as a pack match (useful for
+  # re-filing).
+  route_prefix: "40_Cognition_PKM/40.03_Learning/40.03.04_PTE"
+
+routing:
+  base_path: "40_Cognition_PKM/40.03_Learning/40.03.04_PTE"
+
+  # exam_type (populated by the pack refiner) -> subdir under base_path.
+  # Four-skill convention: Speaking / Writing / Reading / Listening.
+  # MC-M / MC-S appear in both Reading and Listening; the slice meta
+  # disambiguates with a `-Reading` / `-Listening` suffix so they route to
+  # skill-scoped subdirs.
+  by_exam_type:
+    # Speaking (7)
+    RA: "Speaking/RA"
+    RS: "Speaking/RS"
+    DI: "Speaking/DI"
+    RL: "Speaking/RL"
+    ASQ: "Speaking/ASQ"
+    SGD: "Speaking/SGD"
+    RTS: "Speaking/RTS"
+
+    # Writing (2)
+    SWT: "Writing/SWT"
+    WE: "Writing/WE"
+
+    # Reading (5)
+    "FIB-Dropdown": "Reading/FIB-Dropdown"
+    "FIB-Drag": "Reading/FIB-Drag"
+    "MC-M-Reading": "Reading/MC-M"
+    "MC-S-Reading": "Reading/MC-S"
+    RO: "Reading/RO"
+
+    # Listening (8)
+    SST: "Listening/SST"
+    "FIB-L": "Listening/FIB-L"
+    "MC-M-Listening": "Listening/MC-M"
+    "MC-S-Listening": "Listening/MC-S"
+    HCS: "Listening/HCS"
+    SMW: "Listening/SMW"
+    HIW: "Listening/HIW"
+    WFD: "Listening/WFD"
+
+  # When the refiner does not emit exam_type (e.g. a pre-pack default refiner,
+  # or an ambiguous slice), cards land here. Users can triage them manually.
+  default_subdir: "_Unsorted"
+
+policies:
+  # PTE machine-generated exam material is inherently universal (not tied to
+  # any specific person). Force all PTE cards to `universal` regardless of
+  # what the refiner emits.
+  ki_force: universal
+
+  # Dedup OFF: flashcard / question-bank semantics benefit from multiple
+  # attempts at the same prompt. Near-duplicate cards track the user's
+  # evolving answers.
+  dedup_enabled: false
+
+  # Layer-1 provenance filter OFF: the pack needs to preserve literal
+  # question / answer / analysis verbatim; nothing is "speculation" in a
+  # memorization context.
+  provenance_filter_enabled: false
+
+  # Refine the conversation as usual (do not skip to archive-only mode).
+  skip_refine: false
+
+  # Currently unused (forward-looking); PTE stays in the main corpus for now.
+  qdrant_collection: obsidian_notes
+
+assets:
+  # DI questions carry the line-graph image; the refiner cannot reconstruct
+  # geometry without it. When the exporter asset-copy patch ships, the daemon
+  # will copy originals here. Until then this is declarative — the pack
+  # matches, but images do not physically land in the vault.
+  save_originals: true
+  dest_subdir: images
+  for_exam_types:
+    - DI
