@@ -19,6 +19,7 @@ Tests stub `builtins.input` to drive the interactive paths; `ui` uses
 from __future__ import annotations
 
 import sys
+from datetime import datetime
 from typing import Callable, Optional
 
 from . import ui
@@ -318,6 +319,48 @@ def _run_adapter_dry_run(cfg: WizardConfig):
     return summary
 
 
+def _import_source_tag(cfg: WizardConfig) -> str:
+    """Stable tag the adapter writes into every imported MD's
+    frontmatter. Exposed here so the U4 consent panel and step 16
+    summary display the exact string users would later pass to
+    bulk-purge tooling."""
+    return f"{cfg.import_source}-{datetime.now().strftime('%Y-%m-%d')}"
+
+
+def _privacy_consent_panel(cfg: WizardConfig) -> bool:
+    """U4 — explicit dry-run consent before any imported data leaves the
+    machine. Shown inline at the tail of step 10 so the user sees the
+    scan numbers AND the provider + privacy level on one screen before
+    agreeing.
+
+    Returns True on consent (or when privacy mode makes consent moot).
+    On False, the caller resets `import_source` to 'none' so nothing
+    is ever uploaded. The wizard itself continues — the user can still
+    finish config for a future manual import."""
+    if cfg.privacy == "local_only":
+        ui.info_line(
+            "[green]Privacy=local_only → all refine stays on this machine; "
+            "no consent gate required.[/]"
+        )
+        return True
+
+    tag = _import_source_tag(cfg)
+    tokens = cfg.import_est_tokens
+    cost = cfg.import_est_normal_cost_usd
+    provider = cfg.llm_provider_id
+    ui.warn_box(
+        "Privacy dry-run — explicit consent required",
+        f"About to send ~{tokens:,} tokens (~${cost:.2f}) from your "
+        f"{cfg.import_source} history to:\n"
+        f"    provider : {provider}\n"
+        f"    privacy  : {cfg.privacy}\n"
+        f"Every imported file will carry `import_source: {tag}` in its "
+        f"frontmatter so you can bulk-purge this batch later.\n"
+        f"Provider's data-retention policy applies once data leaves this machine."
+    )
+    return ui.ask_yes_no("Proceed with import?", default=True)
+
+
 def step_10_import_scan(cfg: WizardConfig) -> Optional[str]:
     """U2 — real dry-run scan. Stores counts + estimated cost on cfg
     so step 16 summary can cite them and the real import can kick off
@@ -352,6 +395,17 @@ def step_10_import_scan(cfg: WizardConfig) -> Optional[str]:
         for p in summary.sample_paths[:3]:
             ui.info_line(f"  {p}")
     ui.info_line("[dim]Nothing written yet. Real import runs after step 16 confirm.[/]")
+    # U4 — consent gate. If the user declines, we null the import
+    # source so step 16 never triggers the real import; subsequent
+    # steps proceed so the rest of the config still gets written.
+    if not _privacy_consent_panel(cfg):
+        ui.info_line(
+            "[yellow]Import declined. Config will still save, but no "
+            "conversations will be uploaded. Re-run the wizard and "
+            "answer yes to import later.[/]"
+        )
+        cfg.import_source = "none"
+        cfg.import_path = None
     return None
 
 

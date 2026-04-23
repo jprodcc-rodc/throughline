@@ -292,6 +292,7 @@ class TestStep10AdapterIntegration:
         cfg = WizardConfig()
         cfg.import_source = "claude"
         cfg.import_path = str(self._write_claude_jsonl(tmp_path))
+        cfg.privacy = "local_only"  # U4: bypass consent gate in unit test
         step_10_import_scan(cfg)
         assert cfg.import_scanned == 1
         assert cfg.import_emitted == 1
@@ -304,6 +305,7 @@ class TestStep10AdapterIntegration:
         cfg = WizardConfig()
         cfg.import_source = "chatgpt"
         cfg.import_path = str(self._write_chatgpt_json(tmp_path))
+        cfg.privacy = "local_only"
         step_10_import_scan(cfg)
         assert cfg.import_scanned == 1
         assert cfg.import_emitted == 1
@@ -313,6 +315,7 @@ class TestStep10AdapterIntegration:
         cfg = WizardConfig()
         cfg.import_source = "gemini"
         cfg.import_path = str(self._write_gemini_json(tmp_path))
+        cfg.privacy = "local_only"
         step_10_import_scan(cfg)
         # Gemini day-buckets: 1 event -> 1 day MD.
         assert cfg.import_scanned == 1
@@ -334,10 +337,105 @@ class TestStep10AdapterIntegration:
         cfg = WizardConfig()
         cfg.import_source = "claude"
         cfg.import_path = str(tmp_path / "nonexistent.jsonl")
+        cfg.privacy = "local_only"
         # Must not raise.
         step_10_import_scan(cfg)
         assert cfg.import_scanned == 0
         assert cfg.import_emitted == 0
+
+
+# ---------- U4 · privacy-consent dry-run panel ----------
+
+class TestU4PrivacyConsentPanel:
+    """U4 — explicit consent before any imported data leaves the machine.
+
+    Contract:
+    - privacy=local_only → consent is moot, returns True silently.
+    - privacy=hybrid | cloud_max → explicit prompt, default YES but
+      user must see the warning + press Enter.
+    - User answers no → step 10 resets import_source to 'none' so
+      step 16's real-import branch is bypassed; rest of wizard runs.
+    - Tag format is stable: `<source>-YYYY-MM-DD` — the frontmatter
+      tag adapters already write, shown so user can later bulk-purge.
+    """
+
+    def test_local_only_skips_prompt(self, monkeypatch):
+        from throughline_cli.wizard import _privacy_consent_panel
+        cfg = WizardConfig()
+        cfg.import_source = "claude"
+        cfg.privacy = "local_only"
+
+        def no_input(_=""):
+            raise AssertionError(
+                "local_only mode must not prompt the user"
+            )
+        monkeypatch.setattr("builtins.input", no_input)
+        assert _privacy_consent_panel(cfg) is True
+
+    def test_hybrid_prompts_and_accepts_yes(self, monkeypatch):
+        from throughline_cli.wizard import _privacy_consent_panel
+        cfg = WizardConfig()
+        cfg.import_source = "claude"
+        cfg.privacy = "hybrid"
+        cfg.import_est_tokens = 12_000
+        cfg.import_est_normal_cost_usd = 1.50
+        answers = iter(["y"])
+        monkeypatch.setattr("builtins.input", lambda _="": next(answers))
+        assert _privacy_consent_panel(cfg) is True
+
+    def test_hybrid_user_declines(self, monkeypatch):
+        from throughline_cli.wizard import _privacy_consent_panel
+        cfg = WizardConfig()
+        cfg.import_source = "claude"
+        cfg.privacy = "hybrid"
+        answers = iter(["n"])
+        monkeypatch.setattr("builtins.input", lambda _="": next(answers))
+        assert _privacy_consent_panel(cfg) is False
+
+    def test_cloud_max_prompts(self, monkeypatch):
+        from throughline_cli.wizard import _privacy_consent_panel
+        cfg = WizardConfig()
+        cfg.import_source = "gemini"
+        cfg.privacy = "cloud_max"
+        answers = iter(["y"])
+        monkeypatch.setattr("builtins.input", lambda _="": next(answers))
+        assert _privacy_consent_panel(cfg) is True
+
+    def test_decline_resets_import_source(self, monkeypatch, tmp_path):
+        """End-to-end: step 10 + decline → import_source wiped,
+        step 16 real-import branch cannot trigger."""
+        from throughline_cli.wizard import step_10_import_scan
+        cfg = WizardConfig()
+        cfg.import_source = "claude"
+        cfg.privacy = "hybrid"
+        # Minimal claude jsonl stub.
+        p = tmp_path / "c.jsonl"
+        import json as _json
+        p.write_text(_json.dumps({
+            "uuid": "x",
+            "name": "t",
+            "created_at": "2026-04-01T00:00:00Z",
+            "updated_at": "2026-04-01T00:00:00Z",
+            "chat_messages": [{"sender": "human", "text": "hi",
+                                "created_at": "2026-04-01T00:00:00Z"}],
+        }) + "\n", encoding="utf-8")
+        cfg.import_path = str(p)
+        answers = iter(["n"])  # decline
+        monkeypatch.setattr("builtins.input", lambda _="": next(answers))
+        step_10_import_scan(cfg)
+        assert cfg.import_source == "none"
+        assert cfg.import_path is None
+
+    def test_tag_format(self):
+        """The tag the panel shows must match the adapter's frontmatter
+        contract: `<source>-YYYY-MM-DD`. Users will grep this later."""
+        from throughline_cli.wizard import _import_source_tag
+        import re
+        cfg = WizardConfig()
+        cfg.import_source = "chatgpt"
+        tag = _import_source_tag(cfg)
+        assert tag.startswith("chatgpt-")
+        assert re.match(r"^chatgpt-\d{4}-\d{2}-\d{2}$", tag)
 
 
 class TestStep9PathValidation:
