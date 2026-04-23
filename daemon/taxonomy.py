@@ -519,6 +519,22 @@ def validate_machine_metadata(meta: Dict[str, str]) -> Dict[str, str]:
 # 8) Debug helper
 # =========================================================
 
+# =========================================================
+# 9) Aliases for daemon/refine_daemon.py import surface
+# =========================================================
+# refine_daemon.py was written against an earlier name convention and
+# imports JD_ROOT_MAP / JD_LEAF_WHITELIST / normalize_route_path /
+# is_valid_leaf_route. Expose those as aliases of the canonical names
+# so the daemon imports cleanly without touching every call site.
+# Keep both names available indefinitely — renaming back would break
+# downstream forks.
+
+JD_ROOT_MAP = JD_CODE_BY_ROOT          # dict[root_name -> code]; `in` membership
+JD_LEAF_WHITELIST = ALL_JD_LEAF_PATHS  # iterable of whitelisted leaf paths
+normalize_route_path = normalize_path  # path normaliser (back-slash → forward, trim)
+is_valid_leaf_route = is_valid_leaf_path  # membership check against the whitelist
+
+
 if __name__ == "__main__":
     print("taxonomy.py loaded")
     print(f"VALID_X_SET: {len(VALID_X_SET)}")
