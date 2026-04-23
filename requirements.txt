@@ -16,7 +16,7 @@ transformers>=4.40
 pydantic>=2.0
 
 # --- daemon + packs ---
-pyyaml>=6.0
+pyyaml>=6.0.3
 watchdog>=3.0
 
 # --- Filter (already bundled by OpenWebUI but useful for lint / local tests) ---
