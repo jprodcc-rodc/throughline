@@ -2,9 +2,12 @@
 
 > The thread that turns every LLM conversation into searchable, self-growing personal knowledge.
 
-<!-- badges-placeholder: build / license / python-version -->
+[![test](https://github.com/jprodcc-rodc/throughline/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/jprodcc-rodc/throughline/actions/workflows/test.yml)
+[![release](https://img.shields.io/github/v/release/jprodcc-rodc/throughline?include_prereleases&sort=semver)](https://github.com/jprodcc-rodc/throughline/releases/latest)
+[![license](https://img.shields.io/github/license/jprodcc-rodc/throughline)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 
-**Status:** 🚧 Alpha — the reference implementation runs 24/7 for the author, but docs and examples for external users are being cleaned up. Expect rough edges until v0.1.0 tag.
+**Status:** 🚧 Alpha — v0.2.0 shipped (`python install.py` wizard + import adapters + self-growing taxonomy). Reference implementation runs 24/7 for the author; external-user docs are being polished. See [`CHANGELOG.md`](CHANGELOG.md) for the version history.
 
 ---
 
