@@ -33,9 +33,11 @@ What the next session should start with:
    that U13 alone fits only the ~25% of users with 100+ cards at
    install. v0.2.0 must also ship a **self-growing taxonomy** loop
    (U27) — see `docs/TAXONOMY_GROWTH_DESIGN.md` for the spec.
-   Recommendation: **U27.1 + U27.2** (skeletal template + refiner
-   prompts grow `proposed_x_ideal` field) as the next pair; then
-   U27.3 (daemon observer) + U27.4 (CLI review) to close the loop.
+   **U27.1 shipped in `7518043`** — minimal skeletal taxonomy +
+   wizard default follows card-count heuristic (minimal for cold /
+   small; derive for 100+). Next: U27.2 refiner prompts grow
+   `proposed_x_ideal` field, then U27.3 (daemon observer) + U27.4
+   (CLI review) to close the loop.
    Outside taxonomy work: U23 / U3 / U4 / U12 / U20 / U21 still
    outstanding.
 
