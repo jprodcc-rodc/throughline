@@ -28,9 +28,16 @@ What ships on first-user hit:
 What the next session should start with:
 1. Read `fixtures/phase6/SESSION_STATE.md` (this file) FIRST.
 2. Check `git log --oneline origin/main..HEAD` — should be empty.
-3. Pick from still-outstanding (U13 / U23 / U12 / U20 / U21 / U3 / U4).
-   Recommendation: **U13 taxonomy LLM derivation** — single-shot
-   script, closes step 14 of the wizard.
+3. Pick from still-outstanding. U13 one-shot derivation **is shipped
+   (commit `7504638`)**; the 2026-04-24 evening design pass identified
+   that U13 alone fits only the ~25% of users with 100+ cards at
+   install. v0.2.0 must also ship a **self-growing taxonomy** loop
+   (U27) — see `docs/TAXONOMY_GROWTH_DESIGN.md` for the spec.
+   Recommendation: **U27.1 + U27.2** (skeletal template + refiner
+   prompts grow `proposed_x_ideal` field) as the next pair; then
+   U27.3 (daemon observer) + U27.4 (CLI review) to close the loop.
+   Outside taxonomy work: U23 / U3 / U4 / U12 / U20 / U21 still
+   outstanding.
 
 ---
 
