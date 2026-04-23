@@ -34,6 +34,7 @@ Usage:
 Sources:
     claude    Claude.ai data export (ZIP or conversations.jsonl|json)
     chatgpt   ChatGPT data export   (ZIP or conversations.json)
+    gemini    Google Takeout Gemini Apps (ZIP or MyActivity JSON)
 
 Options:
     --out PATH       Output root (default: $THROUGHLINE_RAW_ROOT or
@@ -57,6 +58,9 @@ def main(argv: list[str]) -> int:
     if source == "chatgpt":
         from . import chatgpt_export
         return chatgpt_export.cli(rest)
+    if source == "gemini":
+        from . import gemini_takeout
+        return gemini_takeout.cli(rest)
     print(f"Unknown source: {source!r}", file=sys.stderr)
     print(USAGE, file=sys.stderr)
     return 2

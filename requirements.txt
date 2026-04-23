@@ -25,5 +25,10 @@ watchdog>=3.0
 # --- install wizard (v0.2.0) ---
 rich>=13.0
 
+# --- Gemini Takeout adapter (v0.2.0) ---
+# Gemini's My Activity export stores responses as HTML; markdownify
+# (BeautifulSoup-based) converts them to clean Markdown.
+markdownify>=0.11
+
 # --- tests (Phase 6 regression) ---
 pytest>=8.0
