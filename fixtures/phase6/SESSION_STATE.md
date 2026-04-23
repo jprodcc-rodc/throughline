@@ -2,7 +2,37 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-23 (v0.1.0 shipped + v0.2.0 usability scoped)
+**Last updated:** 2026-04-24 (v0.2.0 usability green — P0 + P1 mostly shipped)
+
+## Where we are right now (TL;DR for next session)
+
+**Latest commit on `main`:** `8bc47e9` · **GitHub:** `jprodcc-rodc/throughline`
+
+What works today end-to-end:
+- `python install.py` → full 16-step wizard with banner + progress ticker
+- 3 import adapters (claude / chatgpt / gemini) dogfooded against a real
+  Gemini takeout; adapter trio is wired INTO step 10 + step 16 of the wizard
+- `python -m throughline_cli import <source> <path>` standalone CLI
+- Preview gate (step 13) calls real LLM via `throughline_cli/llm.py` with
+  OPENROUTER_API_KEY / OPENAI_API_KEY fallback
+- 8 refiner prompt variants (skim/normal/deep/rag_optimized × claude/generic)
+- Filter cold-start 🌱 / 🌿 status line with 5-min Qdrant count cache
+- Uninstall scripts for mac/linux + windows
+
+What ships on first-user hit:
+- `python -m throughline_cli import claude <zip>` → 48 MDs of their Claude
+  history in < 30s, zero API cost
+- Same for ChatGPT / Gemini (Gemini 7559 events → ~100 day MDs, ~$25 Normal)
+- `python install.py` config wizard with sensible all-Enter defaults
+
+What the next session should start with:
+1. Read `fixtures/phase6/SESSION_STATE.md` (this file) FIRST.
+2. Check `git log --oneline origin/main..HEAD` — should be empty.
+3. Pick from still-outstanding (U13 / U23 / U12 / U20 / U21 / U3 / U4).
+   Recommendation: **U13 taxonomy LLM derivation** — single-shot
+   script, closes step 14 of the wizard.
+
+---
 
 ## v0.1.0 shipped 🎉
 
