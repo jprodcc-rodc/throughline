@@ -22,5 +22,8 @@ watchdog>=3.0
 # --- Filter (already bundled by OpenWebUI but useful for lint / local tests) ---
 # pydantic covered above
 
+# --- install wizard (v0.2.0) ---
+rich>=13.0
+
 # --- tests (Phase 6 regression) ---
 pytest>=8.0
