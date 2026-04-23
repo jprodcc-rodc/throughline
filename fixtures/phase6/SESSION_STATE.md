@@ -2,11 +2,11 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 (v0.2.0 usability green; U27 MVP loop closed — U27.1 + U27.2 + U27.3 + U27.4 all shipped)
+**Last updated:** 2026-04-24 (v0.2.0 feature-complete — all 10 outstanding U items shipped: U4/U3/U23/U12/U20/U21 landed in this session + U27.1–.4 earlier)
 
 ## Where we are right now (TL;DR for next session)
 
-**Latest commit on `main`:** `a724449` (U27.3 shipped); U27.4 pending commit · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `1fb0e9c` (U20 shipped); U21 pending commit · **GitHub:** `jprodcc-rodc/throughline`
 
 What works today end-to-end:
 - `python install.py` → full 16-step wizard with banner + progress ticker
@@ -38,7 +38,7 @@ What the next session should start with:
    `a0a16ee`** — 8 refiner prompts now emit `proposed_x_ideal`.
    **U27.3 shipped in `a724449`** — `daemon/taxonomy_observer.py`
    appends to `state/taxonomy_observations.jsonl` on every refine.
-   **U27.4 shipped (this session)** — `throughline_cli/taxonomy.py`
+   **U27.4 shipped in `5026801`** — `throughline_cli/taxonomy.py`
    provides three commands: `taxonomy` (status), `taxonomy review`
    (interactive add/reject/name-as-different/skip walk-through),
    `taxonomy reject TAG` (unattended). Detector normalises tags
@@ -52,10 +52,41 @@ What the next session should start with:
    end-to-end round-trip (observe → detect → add → re-detect is
    empty). **U27 MVP loop now closed.** Remaining taxonomy work
    is v0.3+ only (U27.5 Filter hint, U27.6 batch re-refine,
-   U27.7 deprecation). Outside taxonomy: U23 / U3 / U4 / U12 /
-   U20 / U21 still outstanding.
-   Outside taxonomy work: U23 / U3 / U4 / U12 / U20 / U21 still
-   outstanding.
+   U27.7 deprecation).
+
+   **All remaining v0.2.0 U items shipped this session:**
+   - **U4** (`04f7fd0`) — wizard step 10 tail consent panel
+     showing provider + privacy + import_source tag + explicit
+     yes/no gate; local_only skips the prompt.
+   - **U3** (`1373bf6`) — `daemon/budget.py` resolves the cap
+     from env > config.toml; `process_raw_file` skips without
+     touching state when today's spend ≥ cap. Zero cap = kill
+     switch. Day rollover resets naturally.
+   - **U23** (`7cbc402`) — `daemon/dials.py` renders a
+     `<user_dials>` tail appended to every refiner system prompt
+     when any of the 5 dials (tone/length/sections/register/
+     keep_verbatim) are non-default. Wizard step 13's
+     `_dial_panel()` drives the cfg; empty-on-default keeps
+     untouched configs at zero token overhead.
+   - **U12** (`b666ff4`) — `rag_server/embedders.py` with
+     `BaseEmbedder` + `BgeM3Embedder` (lazy torch) +
+     `OpenAIEmbedder` (stdlib urllib). Registry + alias map.
+     `scripts/ingest_qdrant._resolve_vector_size()` now derives
+     from the active embedder.
+   - **U20** (`1fb0e9c`) — `rag_server/rerankers.py` with
+     `BaseReranker` + `BgeRerankerV2M3` + `CohereReranker` +
+     `SkipReranker`. Cohere re-aligns rel-sorted results to
+     input order; missing API key falls back to Skip.
+   - **U21** (this commit) — `rag_server/vector_stores.py` with
+     `BaseVectorStore` + `QdrantStore` (stdlib urllib, matches
+     wire calls the daemon already uses) + `ChromaStore`
+     (optional dep, stub on missing install). Registry + alias
+     map routes lancedb / duckdb_vss / sqlite_vec / pgvector →
+     qdrant for now; v0.3+ ships the real impls.
+
+   **v0.2.0 is feature-complete.** Next: tag + release, or
+   dogfood through the wizard against a clean machine to shake
+   out anything the test suite missed.
 
 ---
 
