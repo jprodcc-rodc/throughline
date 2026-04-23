@@ -38,60 +38,33 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import torch
-import torch.nn.functional as F
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from transformers import AutoModel, AutoModelForSequenceClassification, AutoTokenizer
+
+from rag_server.embedders import create_embedder
+from rag_server.rerankers import create_reranker
+from rag_server.vector_stores import create_vector_store
 
 
 # ==========================================
-# 1. Device detection: MPS (Apple) > CUDA > CPU
+# 1. Pluggable embedder (U12) + reranker (U20)
 # ==========================================
-def _pick_device() -> torch.device:
-    forced = os.getenv("RAG_DEVICE", "").strip().lower()
-    if forced == "mps" and torch.backends.mps.is_available():
-        return torch.device("mps")
-    if forced == "cuda" and torch.cuda.is_available():
-        return torch.device("cuda")
-    if forced == "cpu":
-        return torch.device("cpu")
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    return torch.device("cpu")
-
-
-device = _pick_device()
-print(f"[rag_server] Using device: {device}")
-
-# ==========================================
-# 2. Embedding model: bge-m3 (dense 1024-dim)
-# ==========================================
-EMBED_MODEL_PATH = os.getenv("EMBED_MODEL", "BAAI/bge-m3")
-print(f"[rag_server] Loading embedding model: {EMBED_MODEL_PATH}")
-embed_tokenizer = AutoTokenizer.from_pretrained(EMBED_MODEL_PATH)
-embed_model = AutoModel.from_pretrained(
-    EMBED_MODEL_PATH,
-    torch_dtype=torch.float16,
-).to(device)
-embed_model.eval()
-print("[rag_server] Embedding model ready.")
-
-# ==========================================
-# 3. Reranker: bge-reranker-v2-m3 (cross-encoder)
-# ==========================================
-RERANK_MODEL_PATH = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
-print(f"[rag_server] Loading reranker: {RERANK_MODEL_PATH}")
-rerank_tokenizer = AutoTokenizer.from_pretrained(RERANK_MODEL_PATH)
-rerank_model = AutoModelForSequenceClassification.from_pretrained(
-    RERANK_MODEL_PATH,
-    torch_dtype=torch.float16,
-).to(device)
-rerank_model.eval()
-print("[rag_server] Reranker ready.")
+# Backend chosen via EMBEDDER / RERANKER env vars; default is the
+# v0.1 behaviour (bge-m3 + bge-reranker-v2-m3). Swapping to openai /
+# cohere / skip flips the backend without editing code.
+#
+# Instantiation is free — ensure_loaded() runs on the first real
+# embed/rerank call so `import rag_server.rag_server` stays fast
+# for tests and for a cold deploy that might want to fail closed
+# on a bad config before it downloads a multi-GB model.
+EMBEDDER = create_embedder()
+RERANKER = create_reranker()
+VECTOR_STORE = create_vector_store()
+print(f"[rag_server] Embedder: {EMBEDDER.name} ({EMBEDDER.vector_size}-dim)")
+print(f"[rag_server] Reranker: {RERANKER.name}")
+print(f"[rag_server] Vector store: {VECTOR_STORE.name}")
+print("[rag_server] Models will load on first /v1/embeddings or /v1/rerank call.")
 
 # ==========================================
 # 4. Qdrant configuration
@@ -129,7 +102,8 @@ def qdrant_request(method: str, path: str, data: Optional[Dict[str, Any]] = None
 # ==========================================
 # 5. FastAPI app
 # ==========================================
-app = FastAPI(title="Throughline RAG server (bge-m3 + bge-reranker-v2-m3)")
+app = FastAPI(
+    title=f"Throughline RAG server ({EMBEDDER.name} + {RERANKER.name})")
 
 
 class EmbeddingRequest(BaseModel):
@@ -140,23 +114,11 @@ class EmbeddingRequest(BaseModel):
 @app.post("/v1/embeddings")
 async def create_embeddings(request: EmbeddingRequest):
     texts = request.input if isinstance(request.input, list) else [request.input]
-
-    def _compute_embeddings():
-        # Dehydrated (pre-trimmed) inputs: cap max_length to reduce needless
-        # attention-cache allocation.
-        inputs = embed_tokenizer(
-            texts, max_length=1024, padding=True, truncation=True, return_tensors="pt",
-        ).to(device)
-
-        with torch.no_grad():
-            outputs = embed_model(**inputs)
-            # Standard bge CLS pooling + L2 normalisation.
-            embeddings = outputs.last_hidden_state[:, 0]
-            embeddings = F.normalize(embeddings, p=2, dim=1)
-
-        return embeddings.cpu().tolist(), inputs["input_ids"].numel()
-
-    embeddings_list, total_tokens = await asyncio.to_thread(_compute_embeddings)
+    embeddings_list = await asyncio.to_thread(EMBEDDER.embed, texts)
+    # We no longer have direct access to the tokenizer's exact count
+    # (cloud embedders don't expose it at all); approximate at ~4
+    # chars/token so the usage field stays a rough cost proxy.
+    total_tokens = sum(len(t) for t in texts) // 4
     data = [
         {"object": "embedding", "embedding": emb, "index": i}
         for i, emb in enumerate(embeddings_list)
@@ -178,33 +140,9 @@ class RerankRequest(BaseModel):
 
 @app.post("/v1/rerank")
 async def create_reranking(request: RerankRequest):
-    pairs = [[request.query, doc] for doc in request.documents]
-
-    # Batch size tuned for a 0.6B cross-encoder on short pre-trimmed docs.
-    BATCH_SIZE = 100
-
-    def _compute_reranking():
-        all_scores: List[float] = []
-        with torch.no_grad():
-            for i in range(0, len(pairs), BATCH_SIZE):
-                batch_pairs = pairs[i:i + BATCH_SIZE]
-
-                inputs = rerank_tokenizer(
-                    # Short texts: clamp max_length tight so the cross-product finishes fast.
-                    batch_pairs, padding=True, truncation=True,
-                    max_length=512, return_tensors="pt",
-                ).to(device)
-
-                logits = rerank_model(**inputs, return_dict=True).logits.view(-1)
-                batch_scores = logits.float().cpu().tolist()
-
-                if isinstance(batch_scores, float):
-                    batch_scores = [batch_scores]
-                all_scores.extend(batch_scores)
-
-        return all_scores
-
-    all_scores = await asyncio.to_thread(_compute_reranking)
+    all_scores = await asyncio.to_thread(
+        RERANKER.rerank, request.query, request.documents,
+    )
 
     results = []
     for index in range(len(request.documents)):
@@ -240,75 +178,67 @@ class RAGRequest(BaseModel):
 
 @app.post("/v1/rag")
 async def rag_query(request: RAGRequest):
-    # Step 1: embed the query.
-    def _embed_query():
-        inputs = embed_tokenizer(
-            [request.query], max_length=512, padding=True, truncation=True, return_tensors="pt",
-        ).to(device)
-        with torch.no_grad():
-            outputs = embed_model(**inputs)
-            emb = outputs.last_hidden_state[:, 0]
-            emb = F.normalize(emb, p=2, dim=1)
-        return emb.cpu().tolist()[0]
-
-    query_vector = await asyncio.to_thread(_embed_query)
+    # Step 1: embed the query via the active embedder backend.
+    embeddings = await asyncio.to_thread(EMBEDDER.embed, [request.query])
+    if not embeddings:
+        return {"results": [], "error": "empty embedding"}
+    query_vector = embeddings[0]
 
     # Step 2: decide which collection to query. Whitelist-enforced.
     target_collection = COLLECTION
     if request.collection and request.collection in ALLOWED_COLLECTIONS:
         target_collection = request.collection
 
-    # Qdrant vector search (optionally pre-filtered by knowledge_identity).
-    search_body: Dict[str, Any] = {
-        "vector": query_vector,
-        "limit": request.candidate_k,
-        "with_payload": True,
-    }
+    # Vector search via the active backend (U21). The legacy
+    # qdrant_request helper is kept for the health endpoint below so
+    # the response shape stays Qdrant-specific, but the hot path is
+    # abstracted — VECTOR_STORE=chroma flips without code edits.
+    filter_: Optional[Dict[str, Any]] = None
     if request.knowledge_identity:
-        search_body["filter"] = {
-            "must": [
-                {
-                    "key": "knowledge_identity",
-                    "match": {"value": request.knowledge_identity},
-                }
-            ]
+        # Qdrant filter schema. Chroma's `where` uses a different
+        # shape; we pass None there and filter client-side below.
+        if VECTOR_STORE.name == "qdrant":
+            filter_ = {
+                "must": [
+                    {
+                        "key": "knowledge_identity",
+                        "match": {"value": request.knowledge_identity},
+                    }
+                ]
+            }
+
+    try:
+        hits = await asyncio.to_thread(
+            VECTOR_STORE.search, target_collection, query_vector,
+            int(request.candidate_k), filter_,
+        )
+    except Exception as e:
+        return {"results": [], "error": f"vector search failed: {e}"}
+
+    # Normalize to the legacy `{id, score, payload}` shape the rest of
+    # this handler expects.
+    candidates = [
+        {
+            "id": h.get("id"),
+            "score": h.get("score"),
+            "payload": h.get("payload") or {},
         }
-
-    search_result = await asyncio.to_thread(
-        qdrant_request, "POST",
-        f"/collections/{target_collection}/points/search",
-        search_body,
-    )
-
-    if not search_result or search_result.get("status") != "ok":
-        return {"results": [], "error": "Qdrant search failed"}
-
-    candidates = search_result.get("result", [])
+        for h in hits
+    ]
+    # Client-side knowledge_identity filter for non-Qdrant backends
+    # that can't express the filter server-side.
+    if request.knowledge_identity and VECTOR_STORE.name != "qdrant":
+        candidates = [
+            c for c in candidates
+            if (c["payload"].get("knowledge_identity")
+                == request.knowledge_identity)
+        ]
     if not candidates:
         return {"results": []}
 
-    # Step 3: cross-encoder rerank on body_preview.
+    # Step 3: rerank candidates via the active reranker backend.
     docs = [c["payload"].get("body_preview", "") for c in candidates]
-
-    def _rerank():
-        pairs = [[request.query, doc] for doc in docs]
-        all_scores: List[float] = []
-        BATCH_SIZE = 100
-        with torch.no_grad():
-            for i in range(0, len(pairs), BATCH_SIZE):
-                batch_pairs = pairs[i:i + BATCH_SIZE]
-                inputs = rerank_tokenizer(
-                    batch_pairs, padding=True, truncation=True,
-                    max_length=512, return_tensors="pt",
-                ).to(device)
-                logits = rerank_model(**inputs, return_dict=True).logits.view(-1)
-                batch_scores = logits.float().cpu().tolist()
-                if isinstance(batch_scores, float):
-                    batch_scores = [batch_scores]
-                all_scores.extend(batch_scores)
-        return all_scores
-
-    scores = await asyncio.to_thread(_rerank)
+    scores = await asyncio.to_thread(RERANKER.rerank, request.query, docs)
 
     # Step 4: freshness bonus + optional boosts + top_k cut.
     half_life = DEFAULT_FRESHNESS_HALF_LIFE_DAYS

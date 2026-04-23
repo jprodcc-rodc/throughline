@@ -71,7 +71,9 @@ class BgeM3Embedder(BaseEmbedder):
                   device: Optional[str] = None,
                   max_length: int = 1024) -> None:
         self.model_path = model_path or os.getenv("EMBED_MODEL", "BAAI/bge-m3")
-        self.device_override = device
+        # RAG_DEVICE is the legacy rag_server env var; honour it so
+        # existing deployments keep pinning cpu / mps / cuda.
+        self.device_override = device or os.getenv("RAG_DEVICE") or None
         self.max_length = max_length
         self._tokenizer = None
         self._model = None

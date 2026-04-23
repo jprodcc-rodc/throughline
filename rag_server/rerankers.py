@@ -92,7 +92,9 @@ class BgeRerankerV2M3(BaseReranker):
                   batch_size: int = 8) -> None:
         self.model_path = model_path or os.getenv(
             "RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
-        self.device_override = device
+        # RAG_DEVICE is the legacy rag_server env var; honour it so
+        # existing deployments keep pinning cpu / mps / cuda.
+        self.device_override = device or os.getenv("RAG_DEVICE") or None
         self.max_length = max_length
         self.batch_size = batch_size
         self._tokenizer = None
