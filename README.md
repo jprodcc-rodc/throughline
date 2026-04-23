@@ -30,6 +30,11 @@ Three distinctive pieces you won't find glued together elsewhere:
 
 ## 🚀 Quickstart
 
+> **Note:** Obsidian is optional. The refine daemon writes plain
+> Markdown files; any editor that reads Markdown works. Obsidian is
+> recommended for the graph + linking UI, but nothing downstream
+> requires it.
+
 Full install guide is [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Five steps, roughly:
 
 1. **Clone and configure** — `git clone`, `cp config/.env.example .env`, fill in `OPENROUTER_API_KEY`, `VAULT_PATH`, and a few paths.

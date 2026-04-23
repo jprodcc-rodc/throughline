@@ -33,6 +33,12 @@
 | OpenRouter account | free tier OK | Used for Haiku RecallJudge + Sonnet-class refiner. Add ~$5 credit to start. |
 | Markdown vault | any layout | Johnny-Decimal (`10_`, `20_`, …) is the default; any prefix pattern works via `INGEST_INCLUDE`. |
 
+> **Obsidian is optional.** The daemon writes plain Markdown files.
+> Any editor that reads Markdown (VS Code, nvim, iA Writer, TextEdit,
+> Sublime, Typora) works. Obsidian is recommended because its graph /
+> linking UI matches the knowledge-card style, but every file in the
+> vault is readable in Notepad.
+
 Disk footprint, reference system:
 
 - Qdrant storage: ~1 KB per card × 1024-dim vector ≈ <100 MB for a few thousand cards.
@@ -43,6 +49,25 @@ Disk footprint, reference system:
 GPU is optional. The RAG server picks MPS (Apple Silicon) > CUDA > CPU
 automatically. CPU-only works for small collections; large reranker
 batches can be slow.
+
+### Pre-flight: download the embedding models before first RAG-server start
+
+The RAG server downloads bge-m3 (~2.3 GB) and bge-reranker-v2-m3
+(~2.3 GB) on its first start. On a fast connection this is 2-5
+minutes; on a slow or throttled link it can take 30+ minutes during
+which the server appears to hang at startup. Pre-fetch the weights
+once so Step 3 (RAG server launch) is predictable:
+
+```bash
+pip install "huggingface_hub[cli]"
+huggingface-cli download BAAI/bge-m3
+huggingface-cli download BAAI/bge-reranker-v2-m3
+# Weights cached under ~/.cache/huggingface/; rag_server finds them
+# automatically on start.
+```
+
+Skippable if you trust your bandwidth and don't mind a long first-run
+wait.
 
 ---
 

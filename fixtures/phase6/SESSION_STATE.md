@@ -120,15 +120,66 @@ surfaces a user decision that some code path has to honour.
 - **U4** — privacy-consent dry-run + `import_source` tag (now lives
   inside the wizard as step 7b).
 
-### P1 (same v0.2.0 milestone, friction reducers)
+### P1 shipped 2026-04-24
 
-- **U5** — "Obsidian is optional" copy in README + DEPLOYMENT.
-- **U6** — bge-m3 preflight inside step 6 (suggest `huggingface-cli
-  download` before first rag_server start).
-- **U8** — `scripts/uninstall.sh` one-command nuke (stop services,
-  drop collection, delete state, optionally keep vault cards).
-- **~~U7~~** — taxonomy static templates is **subsumed by U13**;
+- **U5** — "Obsidian is optional" callout added to README.md top +
+  DEPLOYMENT.md prerequisites. Plain Markdown files work in any
+  editor; Obsidian is recommended, not required.
+- **U6** — bge-m3 preflight section in DEPLOYMENT.md prerequisites.
+  Suggests `pip install "huggingface_hub[cli]"` + two
+  `huggingface-cli download` commands so the ~4.6 GB download happens
+  once up front instead of blocking the first rag_server start.
+- **U8** — scripts/uninstall.sh (macOS + Linux) + scripts/uninstall.ps1
+  (Windows). Both prompt before each destructive step, default-keep
+  the refined vault (user content), default-keep the Qdrant
+  collection (--drop-collection to opt in), handle launchd / systemd
+  / Docker container stops, clean ~/.throughline + runtime dir, hand
+  off the OpenWebUI Filter removal as a manual step with a pointer.
+- **~~U7~~** — taxonomy static templates **subsumed by U13**;
   JD/PARA/Zettel live on as wizard fallback only.
+
+### v0.2.0 P0 shipped 2026-04-23 / 04-24
+
+- **U14** wizard skeleton + TUI polish + step-10 adapter integration
+- **U22** prompt family loader + normal/rag_optimized variants
+- **U25** RAG-optimized card format (claude + generic)
+- **U2** 3 import adapters (claude / chatgpt / gemini) — claude
+  dogfooded 5 real bugs, gemini 0 bugs
+- **U17** first-card preview (wizard step 13 calls real LLM via new
+  throughline_cli/llm.py)
+- **U15** tier matrix complete: skim / normal / deep × claude /
+  generic = 8 prompt files
+- **U1** cold-start status line in Filter (🌱 0-49 / 🌿 50-199 /
+  silent 200+) with 5-min Qdrant count cache
+- **U26** wizard banner + between-step progress ticker
+- **U24** mission branching (baked into U14)
+- **U3** daily USD cap scaffolded in wizard config; daemon
+  enforcement still pending
+
+### Still outstanding
+
+- **U23** 5-dial constrained edit (preview iteration)
+- **U13** taxonomy LLM derivation (wizard step 14 is currently
+  template-only)
+- **U3** daemon enforcement of THROUGHLINE_MAX_DAILY_USD
+- **U4** import privacy-consent dry-run panel (tag exists; the
+  interactive confirm pass needs stitching)
+- **U12** embedder backend swappable (rag_server refactor)
+- **U20** reranker swappable
+- **U21** vector DB abstraction (biggest engineering item)
+
+### Test counts (latest)
+
+289 passed + 10 xfailed (was 38 + 10 at v0.1.0 tag). New sub-suites
+across v0.2.0:
+  - test_wizard.py          35
+  - test_prompts.py         57
+  - test_adapters_claude.py 55
+  - test_adapters_chatgpt.py 41
+  - test_adapters_gemini.py 38
+  - test_preview.py         18
+  - test_cold_start.py      15
+Plus the 38 v0.1.0 Phase-6 cases still green.
 
 **Deferred from v0.2.0 to v0.2.x marketing phase:**
 - U9 — hero gif automation toolchain (Charm VHS + Remotion + OBS)
