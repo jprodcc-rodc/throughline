@@ -2,8 +2,192 @@
 
 > Planning doc for v0.2.0. Captures how a new user (empty vault OR
 > existing-chat-history user) gets from `git clone` to a working
-> flywheel. Adapters listed here are **not yet implemented** — this
-> file is the design spec before any code lands.
+> flywheel. Nothing below is implemented yet — this is the design
+> spec before any code lands.
+>
+> **v0.2.0 scope principle (2026-04-23):** every onboarding decision
+> happens inside a single `python -m throughline install` wizard
+> (13 steps, 1 default per step, all Enter for sensible defaults).
+> No separate `import`, `configure`, `setup` commands for v0.2.0 —
+> one entry point. The wizard is the deliverable.
+
+---
+
+## `python -m throughline install` — the single entry point
+
+The v0.2.0 onboarding is one wizard that collects every user decision
+in ordered steps. Each step has a recommended default — a fully
+hands-off user presses Enter 13 times and lands on a working config.
+Re-running the command (or `python -m throughline reconfigure`) lets
+the user revisit any step; the state lives in `~/.throughline/config.toml`.
+
+```
+[1/13]  Python + venv + dependencies check
+[2/13]  Qdrant (Docker) availability
+[3/13]  LLM provider API key (entered here, never written to a file
+        under git control)
+[4/13]  LLM provider matrix (Anthropic / OpenAI / Google / xAI /
+        DeepSeek / Qwen). Default: anthropic/claude-sonnet-4.6.
+[5/13]  Privacy level (Local-only / Hybrid / Cloud-max). Default:
+        Hybrid.
+[6/13]  Embedder backend (bge-m3 / nomic-embed / MiniLM / OpenAI /
+        Voyage). Default: bge-m3 local.
+[7/13]  Import source (ChatGPT / Claude / Gemini / multiple / none).
+        If none: cold-start warning + confirm.
+[8/13]  Import scan (count conversations, estimate token volume).
+[9/13]  Refine tier (Skim ~$0.005/conv, Normal ~$0.04/conv, Deep
+        ~$0.20/conv). Wizard suggests a tier based on corpus size +
+        daily budget.
+[10/13] Card structure (Compact / Standard 6-section / Detailed +
+        sidebar). Wizard runs a $0.04 test refine on one real
+        conversation and shows the result before committing.
+[11/13] Taxonomy source (derive from my existing vault / derive from
+        my imports after first 30 cards / Johnny Decimal / PARA /
+        Zettelkasten).
+[12/13] Daily budget cap (THROUGHLINE_MAX_DAILY_USD). Default $20.
+[13/13] Summary + y/N confirm. Writes config, kicks off first refine
+        if imports were selected.
+```
+
+The rest of this doc goes deeper on each non-trivial step.
+
+---
+
+## Step 4: LLM provider matrix
+
+Default goes through OpenRouter, so any of these work without extra
+code. The matrix helps users pick by context/cost rather than loyalty:
+
+| Provider | Representative models | Typical use |
+|---|---|---|
+| Anthropic | Sonnet 4.6, Haiku 4.5, Opus 4.7 | Refine main (balanced / cheap / deep) |
+| OpenAI | GPT-5, GPT-4o-mini | Backup / cheap |
+| Google | Gemini 3 Flash | Judgement tasks (cheap, fast) |
+| xAI | Grok 3 / Grok Code | Time-sensitive content, coding |
+| DeepSeek | v3.2 | Low-cost Sonnet alternative |
+| Qwen | 3.5 72B | Local alt via Ollama |
+
+Grok requires no code change — it's an OpenRouter model ID. This
+step is documentation, not engineering.
+
+---
+
+## Step 5: Privacy level (orthogonal to refine tier)
+
+Three levels, chosen separately from the refine tier. A
+health-conscious user can pick "Local-only" with the "Deep" tier —
+the two decisions are independent.
+
+| Level | Slice / refine / route | Embed / rerank | Typical user |
+|---|---|---|---|
+| Local-only | Ollama Qwen 72B | bge-m3 local | High-sensitivity content (health, therapy, legal) |
+| Hybrid (default) | OpenRouter API | bge-m3 local | Most users |
+| Cloud-max | OpenRouter API | OpenAI / Voyage API | Fastest; least private |
+
+---
+
+## Step 6: Embedder backends (swappable, Qdrant vector size binds)
+
+The default is bge-m3 (local, 1024d). Alternatives:
+
+| Backend | Dim | Cost | Quality | Use when |
+|---|---|---|---|---|
+| bge-m3 (local) | 1024 | $0 | 9/10 | Default; you have ~8 GB RAM |
+| OpenAI text-embedding-3-large | 3072 | API | 9/10 | No local GPU / no heavy RAM |
+| nomic-embed-text-v1.5 (local) | 768 | $0 | 8/10 | Limited RAM but decent quality |
+| all-MiniLM-L6-v2 (local) | 384 | $0 | 6/10 | CPU-only / absolute minimum |
+| Voyage voyage-3 | 1024 | API | 9/10 | Long-document retrieval |
+
+**Binding constraint:** the Qdrant collection's vector size must
+match the embedder's dimension. Switching embedders post-install
+requires rebuilding the collection. The wizard pins this as a
+one-time decision at step 6, and `python -m throughline reconfigure`
+for this step requires an explicit `--rebuild-qdrant` flag.
+
+**Code impact:** `rag_server/rag_server.py` needs a `BaseEmbedder`
+abstraction; `scripts/ingest_qdrant.py` derives `VECTOR_SIZE` from
+the active embedder rather than hardcoding 1024.
+
+---
+
+## Step 9: Refine tier (3 tiers, 40× cost spread)
+
+User picks upfront; can override per-import with `--tier`.
+
+| Tier | Output | Pipeline | Cost per conv | Use case |
+|---|---|---|---|---|
+| **Skim** | 1-paragraph summary + 1 tag, single card | Haiku 4.5 one call (skip slicer, skip reranker) | ~$0.005 | Index old chat history for searchable retrieval |
+| **Normal** | Standard 6-section card | Sonnet 4.6 slice → Sonnet 4.6 refine → Haiku 4.5 route | ~$0.04 | Daily use; default |
+| **Deep** | Multi-pass: slice → refine → self-critique → cross-ref | Opus 4.7 + Sonnet 4.6 three-pass | ~$0.20 | Research grade, decisions, long-term memory |
+
+Implementation is not three separate refiner scripts; it's the same
+pipeline parameterised along (model × prompt × stage count). Skim
+skips slicer and reranker; Deep adds a critique stage. The three
+refiner prompt variants live at `prompts/en/refiner.skim.md`,
+`refiner.normal.md` (current default), `refiner.deep.md`.
+
+Cost examples for a typical 1247-conversation ChatGPT import:
+
+- Skim: ~$6
+- Normal: ~$48
+- Deep: ~$240
+
+---
+
+## Step 10: Card structure (pick after seeing a real preview)
+
+The wizard doesn't ask "which structure do you want" in the abstract.
+It refines one real conversation ($0.04 at Normal tier) and shows
+the rendered card, then asks "does this fit?". If not, the user
+swaps structure and re-previews. Cycles until the user agrees.
+
+| Structure | Shape | Suits |
+|---|---|---|
+| Compact | Title + one paragraph + tags | Zettelkasten / single-claim style |
+| Standard (default) | 6-section skeleton (scenario / core / execution / avoid / insight / summary) | Balanced, most users |
+| Detailed | 6-section + sidebar (related cards, contradictions, open questions) | Power users, research-grade |
+
+Implementation: three refiner prompt variants, same pipeline.
+User's choice persisted to `~/.throughline/config.toml`.
+
+---
+
+## Step 11: Taxonomy derivation (not template selection)
+
+The wizard prefers to **derive the user's taxonomy from their
+content** rather than ship a generic template.
+
+- **Path A — user already has an Obsidian vault.** The wizard scans
+  top-level directory names plus 3-5 sampled notes per directory,
+  then runs a single Claude pass (~$0.02) that emits a suggested
+  `taxonomy.py`. The user reviews it in a diff view and edits. This
+  is the recommended path — users see "this was built from my
+  existing vault" and immediately trust it.
+- **Path B — user has imports but no prior vault.** The wizard
+  refines the first 30 imported conversations with the Normal-tier
+  pipeline, clusters the resulting cards, then derives a taxonomy
+  from those clusters. Subsequent re-refine of the full import uses
+  the derived taxonomy.
+- **Fallback templates.** Johnny Decimal, PARA, Zettelkasten
+  templates remain available for users who prefer a known shape or
+  want to skip the LLM-derivation step. These are the "I'll figure
+  it out later" escape hatch, not the default path.
+
+Tool: `scripts/derive_taxonomy.py`, one-shot, writes to
+`config/taxonomy.py`.
+
+---
+
+## Step 7b: First-card preview gate (before bulk refine)
+
+After import + configuration, before kicking off bulk refine, the
+wizard refines **one** randomly selected conversation at the chosen
+tier and shows the rendered card. The user sees actual quality,
+actual structure, actual token/cost footprint, and approves
+explicitly (y/N) before $0.04 becomes $42.
+
+A user who changes tier or card structure at this gate goes back to
+step 9/10 with the rerun cost absorbed by the preview envelope.
 
 ---
 

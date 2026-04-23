@@ -11,35 +11,73 @@
 - Phase 6 ship-blockers all green (see next section)
 - Post-v0.1.0 work rolled directly into v0.2.0 planning (below).
 
-## v0.2.0 scope (decided 2026-04-23 afternoon)
+## v0.2.0 scope (rev 2, decided 2026-04-23 evening)
 
-**One sentence:** lowest barrier + lowest cognitive load for a new
-user to actually USE the tool end to end. No marketing or visual
-polish until the usability path is green.
+**One sentence:** `python -m throughline install` is a 13-step wizard
+that collects every onboarding decision with a sensible default per
+step. All Enter = working config. Re-run any time to reconfigure.
 
-**P0 blockers (must ship in v0.2.0):**
-- **U1 — cold-start status line.** Filter emits 🌱 / 🌿 / full-recall
-  badges by Qdrant card count (0 / 1-49 / 50-199 / 200+). New users
-  know why RAG is silent on day one.
-- **U2 — three import adapters.** `python -m throughline import
-  {chatgpt,claude,gemini} <zip>`. ChatGPT/Claude: source data has
-  conv boundaries, direct translate. Gemini: calendar-day bucket +
-  cross-day bge-m3 cosine>0.5 stitch (no 30-min-gap heuristic).
-- **U3 — daily USD budget cap.** `THROUGHLINE_MAX_DAILY_USD` pauses
-  the daemon queue when hit; prevents a bulk import burning \$200.
-- **U4 — import privacy consent.** `--dry-run` shows conv count, est
-  tokens, est cost, target paths; requires explicit `y` to proceed.
-  Every emitted raw MD tagged `import_source: <adapter>-<date>` for
-  future bulk purge via manifest.
+**Everything in v0.2.0 orbits this one command.** The 13 steps
+summon the underlying mechanisms (U1, U2, U3, U11-U19) — each step
+surfaces a user decision that some code path has to honour.
 
-**P1 (same v0.2.0 milestone, friction reducers):**
-- U5 — make "Obsidian is optional" explicit in README + DEPLOYMENT
-- U6 — bge-m3 preflight: suggest `huggingface-cli download` before
-  first `rag_server` start so slow-network users see progress
-- U7 — 2-3 taxonomy templates (JD / PARA / Zettelkasten) + "how to
-  pick one" docs
-- U8 — `scripts/uninstall.sh` one-command nuke (stop services, drop
-  Qdrant collection, delete state, optionally keep vault cards)
+### The wizard's 13 steps
+
+```
+[1]  Python + venv + deps
+[2]  Docker / Qdrant
+[3]  API key
+[4]  LLM provider matrix (U11 — Anthropic / OpenAI / xAI / etc.)
+[5]  Privacy level (U18 — Local-only / Hybrid / Cloud-max)
+[6]  Embedder backend (U12 — bge-m3 / nomic / MiniLM / OpenAI)
+[7]  Import source (U2 — ChatGPT / Claude / Gemini / fresh) + cold-
+     start warning if fresh
+[8]  Import scan (count + token estimate)
+[9]  Refine tier (U15 — Skim / Normal / Deep, 40x cost spread)
+     + smart suggestion (U19)
+[10] Card structure (U16 — Compact / Standard / Detailed) via
+     first-card preview (U17)
+[11] Taxonomy (U13 — derive from vault / derive from imports /
+     templates fallback)
+[12] Daily budget cap (U3 — THROUGHLINE_MAX_DAILY_USD)
+[13] Summary + confirm
+```
+
+### P0 work that underlies the wizard
+
+- **U14** — the wizard itself (Rich-based CLI, config persistence
+  to `~/.throughline/config.toml`).
+- **U11** — LLM provider matrix (Grok via OpenRouter; doc-only, no
+  code change).
+- **U12** — embedder abstraction in `rag_server/rag_server.py`;
+  `ingest_qdrant.py` derives VECTOR_SIZE from active embedder;
+  Qdrant-rebuild flag on embedder change.
+- **U13** — `scripts/derive_taxonomy.py` (LLM-derived from vault or
+  imports); JD/PARA/Zettel templates demoted to fallback.
+- **U15** — three refiner prompt variants (`refiner.skim.md`,
+  `refiner.normal.md`, `refiner.deep.md`); pipeline
+  parameterisation for stage count (Skim skips slicer, Deep adds
+  critique).
+- **U16** — same three-structure variant + first-card preview gate.
+- **U17** — preview gate between step 10 and bulk refine.
+- **U18** — privacy level as separate config axis; filters which
+  models/endpoints the pipeline can use.
+- **U19** — smart tier suggestion from corpus size + budget.
+- **U2** — three adapters (see import section below).
+- **U1** — cold-start Filter status line (🌱/🌿/full by card count).
+- **U3** — daily budget cap enforced by daemon queue.
+- **U4** — privacy-consent dry-run + `import_source` tag (now lives
+  inside the wizard as step 7b).
+
+### P1 (same v0.2.0 milestone, friction reducers)
+
+- **U5** — "Obsidian is optional" copy in README + DEPLOYMENT.
+- **U6** — bge-m3 preflight inside step 6 (suggest `huggingface-cli
+  download` before first rag_server start).
+- **U8** — `scripts/uninstall.sh` one-command nuke (stop services,
+  drop collection, delete state, optionally keep vault cards).
+- **~~U7~~** — taxonomy static templates is **subsumed by U13**;
+  JD/PARA/Zettel live on as wizard fallback only.
 
 **Deferred from v0.2.0 to v0.2.x marketing phase:**
 - U9 — hero gif automation toolchain (Charm VHS + Remotion + OBS)
