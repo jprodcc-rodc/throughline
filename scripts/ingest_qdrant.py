@@ -60,8 +60,35 @@ if not VAULT:
 EMBED_URL = os.getenv("RAG_EMBED_URL", "http://localhost:8000/v1")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.getenv("RAG_COLLECTION", "obsidian_notes")
-VECTOR_SIZE = int(os.getenv("INGEST_VECTOR_SIZE", "1024"))
 BATCH_SIZE = int(os.getenv("INGEST_BATCH_SIZE", "20"))
+
+
+def _resolve_vector_size() -> int:
+    """U12 — let the active embedder declare its dimensionality.
+
+    Precedence:
+      1. INGEST_VECTOR_SIZE env var (explicit override wins)
+      2. Active EMBEDDER's declared vector_size (via create_embedder)
+      3. 1024 (bge-m3 default)
+    """
+    override = os.getenv("INGEST_VECTOR_SIZE", "").strip()
+    if override:
+        try:
+            return int(override)
+        except ValueError:
+            pass
+    try:
+        # Local import so we don't pull torch in unless we actually
+        # need to ask an embedder for its size.
+        from rag_server.embedders import create_embedder  # type: ignore
+        return create_embedder().vector_size or 1024
+    except Exception as e:
+        print(f"[ingest] embedder size lookup failed, defaulting to 1024: {e}",
+              file=sys.stderr)
+        return 1024
+
+
+VECTOR_SIZE = _resolve_vector_size()
 
 
 def _parse_json_list(env_name: str, default):
