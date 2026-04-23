@@ -120,6 +120,14 @@ class TestAvailableVariants:
         variants = p.available_variants("refiner", "generic")
         assert "normal" in variants
 
+    def test_returns_rag_optimized_for_claude(self):
+        variants = p.available_variants("refiner", "claude")
+        assert "rag_optimized" in variants
+
+    def test_returns_rag_optimized_for_generic(self):
+        variants = p.available_variants("refiner", "generic")
+        assert "rag_optimized" in variants
+
     def test_returns_sorted(self):
         variants = p.available_variants("refiner", "claude")
         assert variants == sorted(variants)
@@ -127,6 +135,75 @@ class TestAvailableVariants:
     def test_unknown_name_returns_empty(self):
         variants = p.available_variants("this-prompt-does-not-exist", "claude")
         assert variants == []
+
+
+# ------- rag_optimized variant (U25) -------
+
+class TestRagOptimizedVariant:
+    def test_claude_variant_loads(self):
+        body = p.load_prompt("refiner", "rag_optimized", "claude")
+        # Claude wrapper retained.
+        assert "<task>" in body
+        assert "<priorities>" in body
+        assert "<body_format>" in body
+        # Dense retrieval-card schema.
+        assert "entities" in body
+        assert "claims" in body
+        # Intentional absence of six-section scaffolding.
+        assert "Scene & Pain Point" not in body
+        assert "Length Summary" not in body
+        assert "Core Knowledge & First Principles" not in body
+
+    def test_generic_variant_loads(self):
+        body = p.load_prompt("refiner", "rag_optimized", "generic")
+        assert "## Task" in body
+        assert "## Priorities" in body
+        assert "<task>" not in body
+        assert "entities" in body
+        assert "claims" in body
+        assert "Scene & Pain Point" not in body
+
+    def test_gpt_falls_back_to_generic(self):
+        body_gpt = p.load_prompt("refiner", "rag_optimized", "gpt")
+        body_generic = p.load_prompt("refiner", "rag_optimized", "generic")
+        assert body_gpt == body_generic
+
+    def test_body_format_documented(self):
+        """The body_markdown contract must be machine-parseable: the
+        downstream daemon retention gate reads `entities` + `claims`,
+        and the embedder chunks on the bullet list. The prompt must
+        therefore document this format literally."""
+        for family in ("claude", "generic"):
+            body = p.load_prompt("refiner", "rag_optimized", family)
+            # The prompt must spell out the body shape.
+            assert "Entities:" in body, (
+                f"{family} variant must include 'Entities:' line in body_format"
+            )
+
+    def test_anti_pollution_rule_present(self):
+        """Dense retrieval is precision-sensitive; hallucinated claims
+        ruin embeddings. Both variants must carry the anti-pollution
+        rule explicitly."""
+        for family in ("claude", "generic"):
+            body = p.load_prompt("refiner", "rag_optimized", family)
+            assert "invent" in body.lower() or "fabrication" in body.lower()
+
+    def test_drop_on_pure_speculation(self):
+        """RAG-only mode must not emit speculation-only cards — they
+        poison the retrieval index. Both variants must instruct the
+        model to emit a dropped-card sentinel instead."""
+        for family in ("claude", "generic"):
+            body = p.load_prompt("refiner", "rag_optimized", family)
+            assert '"dropped"' in body
+            assert '"only_speculation"' in body
+
+    def test_single_call_cost_documented(self):
+        """The cost profile (~$0.001/conv, single call, no slicer/router)
+        is the entire point of this variant. Keep the mention in the
+        prompt file so future contributors see it."""
+        for family in ("claude", "generic"):
+            body = p.load_prompt("refiner", "rag_optimized", family)
+            assert "single" in body.lower() or "one" in body.lower()
 
 
 # ------- family fallback chain -------
@@ -196,6 +273,50 @@ class TestFamilyConsistency:
             "user_confirmed",
             "llm_unverified",
             "llm_speculation",
+        ):
+            assert tag in claude
+            assert tag in generic
+
+
+class TestRagOptimizedFamilyConsistency:
+    """Same load-bearing invariants the Normal variant has, applied to
+    RAG-optimized — the wrapper differs, the output schema must not."""
+
+    def test_same_taxonomy_tokens(self):
+        claude = p.load_prompt("refiner", "rag_optimized", "claude")
+        generic = p.load_prompt("refiner", "rag_optimized", "generic")
+        for placeholder in ("{valid_x}", "{valid_y}", "{valid_z}"):
+            assert placeholder in claude
+            assert placeholder in generic
+
+    def test_same_schema_fields(self):
+        claude = p.load_prompt("refiner", "rag_optimized", "claude")
+        generic = p.load_prompt("refiner", "rag_optimized", "generic")
+        for field in (
+            "title", "entities", "claims",
+            "primary_x", "visible_x_tags", "form_y", "z_axis",
+            "knowledge_identity", "body_markdown",
+            "claim_sources", "pack_meta",
+        ):
+            assert field in claude, f"claude rag_optimized missing {field}"
+            assert field in generic, f"generic rag_optimized missing {field}"
+
+    def test_same_knowledge_identity_values(self):
+        claude = p.load_prompt("refiner", "rag_optimized", "claude")
+        generic = p.load_prompt("refiner", "rag_optimized", "generic")
+        for ki in (
+            "universal", "personal_persistent",
+            "personal_ephemeral", "contextual",
+        ):
+            assert ki in claude
+            assert ki in generic
+
+    def test_same_provenance_tags(self):
+        claude = p.load_prompt("refiner", "rag_optimized", "claude")
+        generic = p.load_prompt("refiner", "rag_optimized", "generic")
+        for tag in (
+            "user_stated", "user_confirmed",
+            "llm_unverified", "llm_speculation",
         ):
             assert tag in claude
             assert tag in generic
