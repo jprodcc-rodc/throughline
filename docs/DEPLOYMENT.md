@@ -228,7 +228,7 @@ Minimum valve set to get a turn through end-to-end:
 |---|---|
 | `OPENROUTER_API_KEY` | Haiku RecallJudge call. |
 | `RAG_SERVER_URL` | Backing RAG server from Step 3. |
-| `DAEMON_REFINE_URL` | (Optional) daemon refine-status endpoint for the outlet badge. |
+| `REFINE_STATUS_URL` | (Optional) daemon refine-status endpoint for the outlet badge. Paired with `REFINE_STATUS_ENABLED` and `REFINE_STATUS_TIMEOUT`. |
 
 Full valve reference: `filter/README.md § 4`.
 
@@ -244,16 +244,18 @@ export VAULT_PATH=/absolute/path/to/vault
 python scripts/ingest_qdrant.py
 ```
 
-`ingest_qdrant.py` reads from `VAULT_PATH`, applies the
-`INGEST_INCLUDE` glob pattern (default `[1-9]0_*`, i.e. Johnny-Decimal),
-computes a stable point ID from the forward-slash-normalised path, and
-upserts to `obsidian_notes`. Re-running is idempotent — changed cards
-are re-upserted with the same ID.
+`ingest_qdrant.py` reads from `VAULT_PATH`, applies the `INGEST_INCLUDE`
+pattern list (default `["re:^[1-9]0_"]` — a single regex matching any
+Johnny-Decimal top-level folder; override with a JSON list of exact
+folder names and/or `re:` prefixes), computes a stable point ID from the
+forward-slash-normalised path, and upserts to `obsidian_notes`. Re-running
+is idempotent — changed cards are re-upserted with the same ID.
 
-Extra whitelisted directories outside the JD tree:
+Extra whitelisted directories outside the JD tree (note: the env var takes
+a **JSON list**, not a bare string — a bare path will fail to parse):
 
 ```bash
-export INGEST_EXTRA_WHITELIST='00_Buffer/00.00_Overview'
+export INGEST_EXTRA_WHITELIST='["00_Buffer/00.00_Overview"]'
 python scripts/ingest_qdrant.py
 ```
 

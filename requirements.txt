@@ -1,0 +1,26 @@
+# throughline — top-level aggregate requirements
+#
+# Spans all runtime components: Filter (paste-into-OpenWebUI, runs under
+# OpenWebUI's own Python), daemon, rag_server, ingest script, packs.
+# Install once with `pip install -r requirements.txt` inside the repo
+# virtualenv.
+#
+# Intentionally loose pins — this is an alpha release. If a transitive
+# incompatibility surfaces, pin more tightly in your own fork.
+
+# --- rag_server ---
+fastapi>=0.110
+uvicorn[standard]>=0.27
+torch>=2.0
+transformers>=4.40
+pydantic>=2.0
+
+# --- daemon + packs ---
+pyyaml>=6.0
+watchdog>=3.0
+
+# --- Filter (already bundled by OpenWebUI but useful for lint / local tests) ---
+# pydantic covered above
+
+# --- tests (Phase 6 regression) ---
+pytest>=8.0
