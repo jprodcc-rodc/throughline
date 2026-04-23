@@ -58,6 +58,7 @@ from daemon.taxonomy import (
     is_valid_leaf_route,
 )
 from daemon.taxonomy_observer import record_taxonomy_observation
+from daemon.budget import budget_exceeded as _budget_exceeded, load_budget as _load_daily_budget
 from packs.pack_runtime import PackRegistry
 
 # Soft-import source-model opt-out guard. Daemon runs fine without it.
@@ -1491,6 +1492,16 @@ def process_raw_file(abs_path: Path) -> None:
         if abs_path.stat().st_size == 0:
             return
     except Exception:
+        return
+
+    # U3 — daily budget cap. When today's spend is at/above the cap,
+    # skip WITHOUT touching state. The raw file stays unprocessed so
+    # the next day (new cost_stats date bucket = $0 spent) or the
+    # next daemon restart picks it up. Logged once per skip for
+    # observability.
+    if _budget_exceeded(stats_path=COST_STATS_FILE):
+        cap = _load_daily_budget()
+        log(f"BUDGET_PAUSE | today over ${cap} cap | skip={abs_path.name}")
         return
 
     raw_hash = hashlib.md5(abs_path.read_bytes()).hexdigest()
