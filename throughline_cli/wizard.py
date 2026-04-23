@@ -664,18 +664,36 @@ def step_13_preview(cfg: WizardConfig) -> Optional[str]:
 
 
 def step_14_taxonomy(cfg: WizardConfig) -> Optional[str]:
-    """U13 — LLM-derived from user's content, with template fallback."""
+    """U13 + U27.1 — LLM-derived vs skeletal-then-grown vs fallback template."""
     ui.step_header(14, TOTAL, "Taxonomy")
+    # Pick a sensible default by scanned import size:
+    #   - cold start (none / < 100 cards)         -> minimal (grows via U27)
+    #   - warm import (>= 100 cards available)    -> derive_from_imports (U13)
+    #   - vault-only user                         -> derive_from_vault (U13)
+    have_imports = cfg.import_source != "none" and cfg.import_emitted >= 100
+    if have_imports:
+        default = "derive_from_imports"
+    elif cfg.import_source == "none":
+        default = "minimal"
+    else:
+        default = "minimal"  # small import -> minimal + grow, not U13
     cfg.taxonomy_source = ui.pick_option(
         "How should throughline pick card folders?",
         [
-            ("derive_from_vault",   "Derive from my existing Obsidian vault", "LLM scans vault dirs + samples, proposes taxonomy.py"),
-            ("derive_from_imports", "Derive from my first 30 imported convs", "LLM clusters refined cards, proposes taxonomy.py"),
-            ("jd",                  "Fallback: Johnny Decimal template",       "10-90 number-prefixed top-level folders"),
-            ("para",                "Fallback: PARA template",                 "Projects / Areas / Resources / Archive"),
-            ("zettel",              "Fallback: Zettelkasten template",         "Flat folder, linked atomic notes"),
+            ("minimal",             "Minimal starter (5 broad domains, grows automatically)",
+             "Ship with Tech / Creative / Health / Life / Misc. The refiner observes what you actually write about; `throughline_cli taxonomy review` surfaces growth candidates for your approval. Best for <100 cards or cold start."),
+            ("derive_from_vault",   "Derive from my existing Obsidian vault",
+             "U13: one-shot LLM pass over your vault dirs + sample cards. Best if you have 100+ refined cards already."),
+            ("derive_from_imports", "Derive from my imported conversations",
+             "U13 variant: cluster titles from imported raw MD. Needs 30+ imported conversations."),
+            ("jd",                  "Fallback: Johnny Decimal template",
+             "10-90 number-prefixed top-level folders (10_Tech, 20_Health, ...)."),
+            ("para",                "Fallback: PARA template",
+             "Projects / Areas / Resources / Archive."),
+            ("zettel",              "Fallback: Zettelkasten template",
+             "Flat folder, linked atomic notes; almost no taxonomy."),
         ],
-        default_key="derive_from_imports" if cfg.import_source != "none" else "derive_from_vault",
+        default_key=default,
     )
     return None
 

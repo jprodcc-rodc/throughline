@@ -88,8 +88,13 @@ class WizardConfig:
     dial_register: str = "technical"  # technical | plain | eli5
     dial_keep_verbatim: bool = False
 
-    # Step 14 — Taxonomy (U13)
-    taxonomy_source: str = "derive_from_imports"  # derive_from_vault | derive_from_imports | jd | para | zettel
+    # Step 14 — Taxonomy (U13 + U27.1)
+    # minimal: ship config/taxonomy.minimal.py as starting point; U27
+    #   observes drift and growth candidates for user approval.
+    # derive_from_{vault,imports}: one-shot LLM derivation (U13) via
+    #   scripts/derive_taxonomy.py. Best for 100+ cards.
+    # jd / para / zettel: fallback templates.
+    taxonomy_source: str = "minimal"
 
     # Step 15 — Daily budget cap (U3)
     daily_budget_usd: float = 20.0
