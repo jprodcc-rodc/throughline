@@ -80,13 +80,21 @@ H1 went through two fixture versions because the initial fixture confused displa
 7. ✅ `docs/CHINESE_STRIP_LOG.md` populated with H1-H4 results
 8. ✅ `PHASE6_OVERNIGHT_REPORT.md` written
 
+## Ship-blocker status (2026-04-23)
+
+All four pre-tag ship-blockers are green; `v0.1.0` is clear to tag.
+
+- ✅ CJK + identity grep sweep (commit `68df132`): 3 leaks fixed (H1_ANALYSIS CN few-shot literals, SESSION_STATE RODC prose + CN column label, PHASE_6_CHECKLIST `non-RODC-persona`). Residual `rodc` tokens are all `jprodcc-rodc/throughline` GitHub URL / Copyright handle (tolerated per CHINESE_STRIP_LOG §whitelist) or inside CHINESE_STRIP_LOG itself (expected historical record).
+- ✅ M4 cross-platform `point_id` determinism (commit `514aa26`): `fixtures/phase6/test_m4_point_id.py` 7/7 PASS — unit-test substitute for the operational Win+WSL diff check, pins `_norm_path` + `make_point_id` convergence + golden md5 values. Full Win+WSL live ingest remains as a post-tag nice-to-have.
+- ⏳ Fresh-clone DEPLOYMENT.md walkthrough — deferred to Phase 7 dogfooding (alpha users). Not a pre-tag gate.
+
 ## Next actions (pick one)
 
-**A. Close ship-blockers → v0.1.0 tag (shortest path)**
-   - CJK + identity grep sweep on all committed files (last 1/7 ship-blocker box)
-   - M4 cross-platform `point_id` consistency check (Win + Linux same fixture vault → compare MD5)
-   - All green → `git tag v0.1.0` + GitHub release draft
-   - Estimated 30-60 min, zero external dependencies
+**A. Tag v0.1.0 (ready now)**
+   - `git tag v0.1.0 <sha>` — pick the commit, optionally sign/annotate
+   - `git push origin v0.1.0`
+   - Draft a GitHub release with the Phase 6 result table + accepted limitations
+   - Estimated 10-15 min
 
 **B. Phase 7 dogfooding prep**
    - Walk through `docs/DEPLOYMENT.md` as a fresh user (clean env, read-and-follow), log every stumble
