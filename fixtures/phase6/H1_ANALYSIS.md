@@ -27,7 +27,7 @@ System prompt: 18048 chars (shipped `_RECALL_JUDGE_SYSTEM_PROMPT` extracted from
 | B02 | what if we renamed the product to something more memorable | native | brainstorm | What-if tone per same few-shot. |
 | B03 | give me 10 tagline ideas for throughline | native | brainstorm | Creative-generation. |
 
-**Root cause (hypothesis):** Haiku 4.5 in English reads "should we" / "what if" / "give me N ideas" as conversational/native rather than as RAG-backed brainstorm. The Chinese few-shot examples (`"应该不应该..."`, `"如果...呢"`) may not transfer symmetrically to English tone markers.
+**Root cause (hypothesis):** Haiku 4.5 in English reads "should we" / "what if" / "give me N ideas" as conversational/native rather than as RAG-backed brainstorm. The upstream few-shot examples targeted a non-English tone register whose brainstorm markers (modal "should we"-equivalents and counterfactual "what if"-equivalents) do not transfer symmetrically to English.
 
 **Impact:** Low for v0.1.0 open source.
 - User falls through to `mode=native` → no RAG injection, model answers directly from own reasoning.

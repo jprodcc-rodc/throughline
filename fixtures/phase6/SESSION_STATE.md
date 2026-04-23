@@ -2,13 +2,13 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-23 (overnight batch)
+**Last updated:** 2026-04-23 (overnight batch + private-repo sync)
 
 ---
 
 ## Where we are
 
-Phase 6 = **English-only regression** for the open-source `throughline` repo (rewrite of the private Chinese-speaking RODC flywheel). Every Chinese artifact either stripped or rewritten; now validating the English rewrites don't regress behavior.
+Phase 6 = **English-only regression** for the open-source `throughline` repo (rewrite of a private upstream flywheel whose original natural language was not English). Every non-English artifact either stripped or rewritten; now validating the English rewrites don't regress behavior.
 
 | Harness | Scope | Status | File(s) |
 |---|---|---|---|
@@ -18,10 +18,22 @@ Phase 6 = **English-only regression** for the open-source `throughline` repo (re
 | **H3 Haiku** | Injection/PII/roleplay resistance (31 cases × real Haiku 4.5) | ✅ **31/31 PASS (100%)** after retry of 2 network timeouts · $0.17 | `run_h3_haiku.py` · `retry_h3_errors.py` · `h3_haiku_results.json` · `H3_ANALYSIS.md` |
 | **H4** | 4 refiner prompts on EN raws (8 sampled cases × real Sonnet 4.6) | ✅ **15/16 PASS (93.8%)** · 1 WARN on personal/universal boundary, zero structural failures | `refiner_en.jsonl` · `h4_results.md` |
 
-## Commits on this branch
+## Commits on this branch (public throughline, all pushed)
 
-- `bac196a` — Phase 6 H1 fixture + runner + results + analysis (pushed)
-- pending: H2 + H3 code + thanks fix + SESSION_STATE (staged)
+- `bac196a` — Phase 6 H1 fixture + runner + results + analysis
+- `7a0f936` — Phase 6 H2 + H3 code + cheap-gate `thanks` fix + SESSION_STATE
+- `8ab61dd` — Phase 6 H3 Haiku + H4 Sonnet-subagent + dual-layer injection guard doc
+- `b0d8503` — CHINESE_STRIP_LOG backfill + README Phase 6 section + shape fuzz + overnight report
+
+## Private-repo sync (done 2026-04-23)
+
+Three files in `S:\syncthing\obsidian_python` updated to reflect Phase 6 completion:
+
+- `docs/THROUGHLINE_PHASE6_RISKS.md` — §0 execution row flipped ✅, §1 regression results filled, §4 ship-blocker 4/7 checked, §5 overnight summary added
+- `CLAUDE.md` — timeline header row for 2026-04-23 Phase 6 overnight added
+- `docs/.internal/BUSINESS_ANALYSIS_ONEPAGER.md` — new §4.13 Phase 6 section, test-point count 317→420+, open-source-readiness table refreshed (prompt-language row + test-coverage row)
+
+No `[mech]` commits on the private side this session — sync was docs-only.
 
 ## Key paths
 
@@ -57,27 +69,51 @@ H1 went through two fixture versions because the initial fixture confused displa
 2. **Bare-pronoun cheap-gate absent** — "it" / "that one" / "what about it" as first-turn inputs hit Haiku instead of being cheap-gated. Cost ~$0.003/turn. (H2 FT01-FT10)
 3. **Thanks fix applied** — added "thanks / thank you / thx / ty / cheers" to `_NOISE_RE`. (filter/openwebui_filter.py:740-741)
 
-## Pending work (overnight batch)
+## Pending work (overnight batch — all done)
 
 1. ✅ H3 Haiku-side batch (31/31 PASS · $0.17)
 2. ✅ H4 Sonnet subagent (15/16 PASS, 1 WARN)
 3. ✅ Pytest wrappers (`test_phase6.py`, 21 passed + 10 xfailed)
-4. EN fuzz probe pass (translate `bug_probes/fuzz_filter_inlet.py` from private repo)
-5. README Phase 6 public results section
-6. Private mirror `[mech]`-prefix commits back to obsidian_python
-7. Update `docs/CHINESE_STRIP_LOG.md` with H2/H3/H4 results
-8. Final `PHASE6_OVERNIGHT_REPORT.md`
+4. ✅ EN fuzz probe pass (`fuzz_inlet.py` ported shape-only, 17/17 no-crash)
+5. ✅ README Phase 6 public results section
+6. ✅ Private-repo docs sync (THROUGHLINE_PHASE6_RISKS.md + CLAUDE.md + BUSINESS_ANALYSIS_ONEPAGER.md)
+7. ✅ `docs/CHINESE_STRIP_LOG.md` populated with H1-H4 results
+8. ✅ `PHASE6_OVERNIGHT_REPORT.md` written
+
+## Next actions (pick one)
+
+**A. Close ship-blockers → v0.1.0 tag (shortest path)**
+   - CJK + identity grep sweep on all committed files (last 1/7 ship-blocker box)
+   - M4 cross-platform `point_id` consistency check (Win + Linux same fixture vault → compare MD5)
+   - All green → `git tag v0.1.0` + GitHub release draft
+   - Estimated 30-60 min, zero external dependencies
+
+**B. Phase 7 dogfooding prep**
+   - Walk through `docs/DEPLOYMENT.md` as a fresh user (clean env, read-and-follow), log every stumble
+   - Write `docs/ALPHA_USER_NOTES.md` with the friction points
+   - Then invite 1-2 alpha users
+
+**C. `[mech]`-class back-port from private repo**
+   - `git -C S:\syncthing\obsidian_python log --grep='\[mech\]'` to find mech-level commits not yet in throughline
+   - Hand-port each (no rebase/cherry-pick across repos; strip identity)
+   - Run CHINESE_STRIP + identity scan after each port
+   - Independent of A/B; any time
+
+Recommendation: **A → B → C**. A gives a clean baseline tag for B to test against.
 
 ## Next session quick-start
 
 ```bash
-# 1. Read this file first
-# 2. Check background jobs
+# 1. Read this file first (continuity anchor)
+# 2. Confirm no drift
 cd C:\Users\Jprod\code\throughline
-ls fixtures/phase6/h3_haiku_output.log fixtures/phase6/h4_results.md
-git log --oneline -10
+git log --oneline -10    # should show b0d8503 at tip, Phase 6 commits behind
+git status               # should be clean
 
-# 3. Pending tasks — read `docs/PHASE_6_CHECKLIST.md` for remaining gates
+# 3. Start on next action A (ship-blocker sweep) unless user redirects
+#    - CJK grep:      rg '[\u4e00-\u9fff]' --glob '!fixtures/**' --glob '!docs/CHINESE_STRIP_LOG.md'
+#    - identity grep: use the private-side risk checklist for the full identity token list
+#    - M4 point_id:   ingest same fixture vault on Win + WSL, diff qdrant point_id sets
 ```
 
 ## Phase roadmap ahead

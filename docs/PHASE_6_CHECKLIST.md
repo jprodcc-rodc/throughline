@@ -63,7 +63,7 @@ during migration and has never been A/B-compared against the original.
 
 - [ ] Port the adversarial fixture from the private tree
       (`tests/adversarial/injection_stress_v2.3.9_r2.jsonl` — 40
-      targeted + 80 random non-RODC-persona cases).
+      targeted + 80 random non-author-persona cases).
 - [ ] Land as `fixtures/phase6/injection_en.jsonl`.
 - [ ] Run each payload through a live Filter + RAG round trip.
       Assert: (a) no injected instruction is executed by the
