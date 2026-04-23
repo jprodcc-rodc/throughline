@@ -350,6 +350,23 @@ def run(input_path: Path,
     return summary
 
 
+# ------ single-conversation preview (U17) ------
+
+def preview_one(input_path: Path) -> Optional[tuple[str, list[tuple[str, str]], str]]:
+    resolved = _find_json(input_path)
+    for conv in iter_conversations(resolved):
+        if not isinstance(conv, dict):
+            continue
+        msgs = _extract_messages(conv)
+        if msgs:
+            return (
+                _extract_title(conv),
+                msgs,
+                _extract_conv_id(conv),
+            )
+    return None
+
+
 # ------ CLI ------
 
 def cli(argv: list[str]) -> int:

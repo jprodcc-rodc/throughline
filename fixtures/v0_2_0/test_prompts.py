@@ -136,6 +136,72 @@ class TestAvailableVariants:
         variants = p.available_variants("this-prompt-does-not-exist", "claude")
         assert variants == []
 
+    def test_full_tier_matrix_complete(self):
+        """All four tier variants should be available after C3 ships."""
+        for fam in ("claude", "generic"):
+            vs = set(p.available_variants("refiner", fam))
+            assert {"skim", "normal", "deep", "rag_optimized"}.issubset(vs), (
+                f"{fam} missing variants: {{skim, normal, deep, rag_optimized}} - {vs}"
+            )
+
+
+class TestSkimVariant:
+    def test_claude_loads(self):
+        body = p.load_prompt("refiner", "skim", "claude")
+        assert "<task>" in body
+        assert "flashcard" in body.lower()
+        assert "600 characters" in body  # length cap
+        # No 6-section skeleton in skim.
+        assert "# Scene & Pain Point" not in body
+
+    def test_generic_loads(self):
+        body = p.load_prompt("refiner", "skim", "generic")
+        assert "## Task" in body
+        assert "flashcard" in body.lower()
+
+    def test_drop_on_brainstorm_present(self):
+        for fam in ("claude", "generic"):
+            body = p.load_prompt("refiner", "skim", fam)
+            assert '"dropped"' in body
+            assert "brainstorm_no_decision" in body
+
+
+class TestDeepVariant:
+    def test_claude_loads(self):
+        body = p.load_prompt("refiner", "deep", "claude")
+        assert "<task>" in body
+        # Deep has sidebar sections.
+        assert "# Self-Critique" in body
+        assert "# Cross-References" in body
+        assert "# Open Questions" in body
+        # And the full 6-section body remains.
+        assert "# Scene & Pain Point" in body
+
+    def test_generic_loads(self):
+        body = p.load_prompt("refiner", "deep", "generic")
+        assert "## Task" in body
+        assert "Self-Critique" in body
+
+    def test_top_level_sidebar_fields(self):
+        """Deep tier emits self_critique / cross_refs / open_questions
+        as top-level JSON fields so the daemon can index without
+        Markdown parsing."""
+        for fam in ("claude", "generic"):
+            body = p.load_prompt("refiner", "deep", fam)
+            for field in ("self_critique", "cross_refs", "open_questions"):
+                assert field in body, f"{fam} deep missing field {field}"
+
+
+class TestFullTierFallbackBehaviour:
+    """User picks an arbitrary family (gpt/gemini/grok) with any tier —
+    the loader must always return SOMETHING usable via generic fallback."""
+
+    @pytest.mark.parametrize("family", ["gpt", "gemini", "claude", "generic"])
+    @pytest.mark.parametrize("variant", ["skim", "normal", "deep", "rag_optimized"])
+    def test_every_family_x_variant_resolves(self, family, variant):
+        body = p.load_prompt("refiner", variant, family)
+        assert len(body) > 100  # non-empty, non-stub
+
 
 # ------- rag_optimized variant (U25) -------
 

@@ -360,6 +360,24 @@ def run(input_path: Path,
     return summary
 
 
+# ------ single-day preview (U17) ------
+
+def preview_one(input_path: Path) -> Optional[tuple[str, list[tuple[str, str]], str]]:
+    """Return the first day-bucket's (title, messages, conv_id) — the
+    equivalent of a preview 'conversation' for Gemini's event-log
+    source. None if no day has renderable content."""
+    resolved = _find_activity_json(input_path)
+    events = [e for e in iter_events(resolved) if isinstance(e, dict)]
+    if not events:
+        return None
+    buckets = _group_by_day(events)
+    for day in sorted(buckets.keys()):
+        title, messages, conv_id = _day_to_conversation(day, buckets[day])
+        if messages:
+            return (title, messages, conv_id)
+    return None
+
+
 # ------ CLI ------
 
 def cli(argv: list[str]) -> int:

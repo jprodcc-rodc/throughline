@@ -388,6 +388,26 @@ def run(input_path: Path,
     return summary
 
 
+# ------ single-conversation preview (used by U17 wizard preview gate) ------
+
+def preview_one(input_path: Path) -> Optional[tuple[str, list[tuple[str, str]], str]]:
+    """Parse the first non-empty conversation; return
+    (title, messages, conv_id) or None if the file has nothing usable.
+    Does NOT write to disk."""
+    resolved = _find_jsonl(input_path)
+    for conv in iter_conversations(resolved):
+        if not isinstance(conv, dict):
+            continue
+        msgs = _extract_messages(conv)
+        if msgs:
+            return (
+                _extract_title(conv),
+                msgs,
+                _extract_conv_id(conv),
+            )
+    return None
+
+
 # ------ CLI dispatch (invoked by throughline_cli.adapters:main) ------
 
 def cli(argv: list[str]) -> int:

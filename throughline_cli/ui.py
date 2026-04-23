@@ -63,6 +63,44 @@ def ensure_utf8_stdio() -> None:
                 pass
 
 
+# ---------- wizard banner + progress ----------
+
+_BANNER = r"""
+ _   _                           _     _ _
+| |_| |__  _ __ ___  _   _  __ _| |__ | (_)_ __   ___
+| __| '_ \| '__/ _ \| | | |/ _` | '_ \| | | '_ \ / _ \
+| |_| | | | | | (_) | |_| | (_| | | | | | | | | |  __/
+ \__|_| |_|_|  \___/ \__,_|\__, |_| |_|_|_|_| |_|\___|
+                           |___/
+"""
+
+
+def banner() -> None:
+    """Print the welcome banner once at wizard startup. Uses cyan
+    for the ASCII art + dim grey for the tagline."""
+    console.print()
+    console.print(f"[bold cyan]{_BANNER}[/]")
+    console.print(
+        "  [dim]install wizard · v0.2.0-dev · "
+        "`python install.py --step N` to jump[/]"
+    )
+    console.print()
+
+
+def progress_ticker(current: int, total: int) -> None:
+    """Dim one-line progress indicator between steps.
+
+    Renders as `● ● ● ○ ○ ○ ○ ○ ○ ○ ○ ○ ○ ○ ○ ○  (3/16)` with done/pending
+    dots. Printed BEFORE the next step header so the user has a
+    one-glance sense of 'how much further'."""
+    done = "●" * current
+    pending = "○" * (total - current)
+    console.print(
+        f"  [dim]{done}[/][dim bright_black]{pending}[/]  "
+        f"[dim]({current}/{total})[/]"
+    )
+
+
 def intro(text: str) -> None:
     """One-paragraph description after a step header."""
     console.print(f"  [dim]{text}[/]")

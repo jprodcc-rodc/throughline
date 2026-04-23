@@ -526,12 +526,140 @@ def step_12_card_structure(cfg: WizardConfig) -> Optional[str]:
     return None
 
 
+_DEFAULT_TAXONOMY_X = "AI/LLM, Tech/Network, Health/Medicine, Creative/Video, Game/Mechanics, Biz/Ops, Life/Base"
+_DEFAULT_TAXONOMY_Y = "y/SOP, y/Mechanism, y/Decision, y/Architecture, y/Optimization, y/Troubleshooting, y/Reference"
+_DEFAULT_TAXONOMY_Z = "z/Node, z/Boundary, z/Pipeline, z/Matrix"
+
+
+def _variant_for_cfg(cfg: WizardConfig) -> str:
+    """Map (mission, tier) to the refiner prompt variant filename."""
+    if cfg.mission == "rag_only":
+        return "rag_optimized"
+    return cfg.refine_tier  # skim | normal | deep
+
+
+def _preview_adapter(cfg: WizardConfig):
+    if cfg.import_source == "claude":
+        from .adapters import claude_export as adp
+        return adp
+    if cfg.import_source == "chatgpt":
+        from .adapters import chatgpt_export as adp
+        return adp
+    if cfg.import_source == "gemini":
+        from .adapters import gemini_takeout as adp
+        return adp
+    return None
+
+
+def _format_messages_as_user_msg(messages: list[tuple[str, str]]) -> str:
+    """Render (role, text) pairs as a plain-text conversation block
+    the refiner can consume."""
+    lines: list[str] = []
+    for role, text in messages:
+        lines.append(f"{role.upper()}:")
+        lines.append(text)
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
 def step_13_preview(cfg: WizardConfig) -> Optional[str]:
-    """U17 + U23 — preview + 5-dial constrained edit."""
-    ui.step_header(13, TOTAL, "First-card preview + 5-dial edit")
-    ui.info_line("(Preview runs a real refine on ONE conversation at the "
-                 "chosen tier. Not yet implemented in skeleton — stub "
-                 "accepts defaults for the 5 dials.)")
+    """U17 — first-card preview gate; U23 5-dial deferred."""
+    ui.step_header(13, TOTAL, "First-card preview")
+    if cfg.import_source == "none" or not cfg.import_path:
+        ui.info_line("No import source selected — nothing to preview. Skipped.")
+        return "SKIPPED"
+
+    from pathlib import Path as _P
+    from . import llm
+    from . import prompts as prompt_lib
+
+    # 1. Pull ONE conversation from the chosen source.
+    adp = _preview_adapter(cfg)
+    if adp is None:
+        ui.info_line("[yellow]Unknown import_source; skipping preview.[/]")
+        return "SKIPPED"
+    ui.info_line("Parsing one sample conversation from the export...")
+    try:
+        picked = adp.preview_one(_P(cfg.import_path))
+    except Exception as e:
+        ui.info_line(f"[red]Preview parse failed:[/] {type(e).__name__}: {e}")
+        return "SKIPPED"
+    if not picked:
+        ui.info_line("[yellow]No renderable conversation found. Skipped.[/]")
+        return "SKIPPED"
+    title, messages, conv_id = picked
+    ui.kv_row("sample title", title or "(untitled)")
+    ui.kv_row("sample id", conv_id)
+    ui.kv_row("sample turns", str(len(messages)))
+
+    # 2. Need an API key to refine. Without one, show the raw
+    #    conversation instead and note how to enable the real path.
+    key = llm.get_api_key()
+    if not key:
+        ui.warn_box(
+            "No API key",
+            "Set OPENROUTER_API_KEY (or OPENAI_API_KEY) in your shell and\n"
+            "re-run `python install.py --step 13` to see a live-refined card.\n"
+            "For now, the wizard will show the raw conversation the daemon\n"
+            "would receive.",
+        )
+        snippet = "\n\n".join(f"**{r}**: {t[:400]}" for r, t in messages[:6])
+        ui.panel_example("Raw conversation (no refine yet)", snippet)
+        return None
+
+    # 3. Load refiner prompt for this (variant, family) and format it.
+    variant = _variant_for_cfg(cfg)
+    try:
+        system_prompt = prompt_lib.load_prompt("refiner", variant,
+                                                cfg.prompt_family)
+    except FileNotFoundError as e:
+        ui.info_line(f"[yellow]{e}[/]")
+        ui.info_line("Falling back to 'normal' variant.")
+        system_prompt = prompt_lib.load_prompt("refiner", "normal",
+                                                cfg.prompt_family)
+    try:
+        system_prompt = system_prompt.format(
+            valid_x=_DEFAULT_TAXONOMY_X,
+            valid_y=_DEFAULT_TAXONOMY_Y,
+            valid_z=_DEFAULT_TAXONOMY_Z,
+        )
+    except (KeyError, IndexError):
+        pass  # prompt has format placeholders outside ours; pass through
+
+    conv_body = _format_messages_as_user_msg(messages)
+    # Cap user message to a sane size — wizard preview is a sniff test,
+    # not a production refine. 4000 chars ~ 1k tokens, plenty.
+    if len(conv_body) > 4000:
+        conv_body = conv_body[:4000] + "\n\n[...truncated for preview...]"
+
+    # 4. Call LLM.
+    ui.info_line(f"Calling {cfg.llm_provider_id}... (one-off preview, ~$0.01)")
+    try:
+        content = llm.call_chat(
+            model_id=cfg.llm_provider_id,
+            system_prompt=system_prompt,
+            user_message=conv_body,
+            response_format={"type": "json_object"},
+        )
+    except llm.LLMError as e:
+        ui.info_line(f"[red]LLM call failed:[/] {e}")
+        ui.info_line("Wizard continuing; real refine during daemon ingest may still work.")
+        return None
+
+    # 5. Render the card. Content is expected to be JSON; try to pretty
+    #    the body_markdown if present, else show raw.
+    import json as _json
+    try:
+        card = _json.loads(content)
+        body = card.get("body_markdown") or _json.dumps(card, ensure_ascii=False,
+                                                         indent=2)
+    except _json.JSONDecodeError:
+        body = content
+    ui.panel_example("Preview card (refined)", body)
+    if not ui.ask_yes_no("Card shape look right?", default=True):
+        ui.info_line("Noted — 5-dial adjustment (U23) is deferred to v0.2.x; "
+                     "for now, re-running `python install.py --step 11` and/or "
+                     "`--step 12` lets you change tier and structure.")
     return None
 
 
@@ -654,13 +782,22 @@ ALL_STEPS: list[tuple[int, Callable[[WizardConfig], Optional[str]]]] = [
 def run_wizard(cfg: Optional[WizardConfig] = None,
                only_step: Optional[int] = None) -> WizardConfig:
     cfg = cfg or load()
+    if only_step is None:
+        # Full run: show the banner once at the top.
+        ui.banner()
     for n, fn in ALL_STEPS:
         if only_step is not None and n != only_step:
             continue
+        # Progress ticker between steps (not before step 1 when doing a
+        # full run; redundant with the banner).
+        if only_step is None and n > 1:
+            ui.progress_ticker(n - 1, TOTAL)
         result = fn(cfg)
         if result != "SKIPPED":
             if n not in cfg.completed_steps:
                 cfg.completed_steps.append(n)
+    if only_step is None:
+        ui.progress_ticker(TOTAL, TOTAL)
     path = save(cfg)
     ui.print_blank()
     ui.info_line(f"[green]Config written:[/] {path}")

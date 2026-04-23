@@ -137,6 +137,26 @@ class Filter:
             default=3.0,
             description="Timeout (seconds) for the refine-status call. On timeout the badge is silently skipped - conversation is never blocked."
         )
+        COLD_START_ENABLED: bool = Field(
+            default=True,
+            description="On a fresh install with no cards yet, emit a one-line warning so the user knows why RAG is silent. Probes Qdrant's count endpoint; cached 5 min."
+        )
+        QDRANT_URL: str = Field(
+            default="http://localhost:6333",
+            description="Qdrant base URL, used ONLY for the cold-start card-count probe. Retrieval still goes through RAG_SERVER_URL."
+        )
+        QDRANT_COLLECTION: str = Field(
+            default="obsidian_notes",
+            description="Collection name for the cold-start count probe. Must match the daemon + rag_server collection."
+        )
+        COLD_START_THRESHOLD_WARM: int = Field(
+            default=50,
+            description="Below this card count, emit a cold-start warning and skip RAG. 0-49 = 🌱."
+        )
+        COLD_START_THRESHOLD_FULL: int = Field(
+            default=200,
+            description="Below this card count (but above warm threshold), emit a 'ramping up' notice. 50-199 = 🌿."
+        )
         MODE_JUDGE_ENABLED: bool = Field(
             default=True,
             description="Enable the RecallJudge (Haiku) LLM decision step. Disabling falls back to cosine-threshold-only routing."
@@ -312,6 +332,57 @@ class Filter:
         req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=30) as resp:
             return json.loads(resp.read().decode("utf-8"))
+
+    # ---- U1 cold-start card-count probe ----
+    # Module-level cache: {collection: (count, ts_monotonic)}. Kept
+    # small (~100 B) because most installs have one collection.
+    _CARD_COUNT_CACHE: dict[str, tuple[int, float]] = {}
+    _CARD_COUNT_TTL: float = 300.0  # 5 minutes
+
+    def _fetch_card_count(self) -> Optional[int]:
+        """Return the total card count in the configured Qdrant
+        collection, or None on any failure. Cached for 5 minutes so
+        repeated inlet calls within a short session don't hammer
+        Qdrant. Never raises; cold-start must not break the Filter."""
+        import time as _t
+        collection = self.valves.QDRANT_COLLECTION
+        now = _t.monotonic()
+        cached = self._CARD_COUNT_CACHE.get(collection)
+        if cached and (now - cached[1]) < self._CARD_COUNT_TTL:
+            return cached[0]
+        url = f"{self.valves.QDRANT_URL.rstrip('/')}/collections/{collection}/points/count"
+        try:
+            req = urllib.request.Request(
+                url,
+                data=b'{"exact":false}',
+                method="POST",
+            )
+            req.add_header("Content-Type", "application/json")
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            count = data.get("result", {}).get("count")
+            if isinstance(count, int):
+                self._CARD_COUNT_CACHE[collection] = (count, now)
+                return count
+        except Exception:
+            return None
+        return None
+
+    def _cold_start_badge(self, count: int) -> Optional[str]:
+        """Map a card count to a cold-start status line, or None when
+        the flywheel is warm enough that the normal status text applies."""
+        if count < self.valves.COLD_START_THRESHOLD_WARM:
+            return (
+                f"🌱 cold start · {count} cards in vault · "
+                f"RAG will fire after ~{self.valves.COLD_START_THRESHOLD_WARM} cards "
+                f"(typically 1-2 weeks of chat); skipping retrieval this turn"
+            )
+        if count < self.valves.COLD_START_THRESHOLD_FULL:
+            return (
+                f"🌿 ramping · {count} cards · partial recall "
+                f"(full quality at {self.valves.COLD_START_THRESHOLD_FULL}+ cards)"
+            )
+        return None
 
     async def _fetch_personal_status(self) -> list:
         """Run the AUTO_STATUS_SEEDS queries in parallel, keep personal_persistent top-1
@@ -1285,6 +1356,27 @@ Ambiguity on aggregate → prefer false (over-aggregating inflates context).
         user_idx, raw_text = self._get_last_user_message(messages)
         if not raw_text:
             return body
+
+        # ========== Step 1.1: U1 cold-start check ==========
+        # Non-blocking probe; failures silently skip. Emits a status line
+        # ONLY when the vault is below the warm threshold — users with a
+        # mature collection never see this message and pay no extra
+        # latency after the first (cached) probe of the session.
+        if self.valves.COLD_START_ENABLED and __event_emitter__:
+            count = self._fetch_card_count()
+            if count is not None:
+                cs_badge = self._cold_start_badge(count)
+                if cs_badge:
+                    await __event_emitter__({
+                        "type": "status",
+                        "data": {"description": cs_badge, "done": False},
+                    })
+                    # Below warm threshold we skip retrieval entirely —
+                    # a query with zero matching cards is indistinguishable
+                    # from a matching query at cold start, and skipping
+                    # saves the Haiku judge call + embedding round-trip.
+                    if count < self.valves.COLD_START_THRESHOLD_WARM:
+                        return body
 
         # ========== Step 1.2: PTE mode detection (scan all user messages; orthogonal to RAG) ==========
         pte_mode = self._detect_pte_intent(messages)
