@@ -254,6 +254,132 @@ class TestParsing:
         assert out == [("assistant", "ok")]
 
 
+class TestAttachments:
+    """Load-bearing: text attachments carry `extracted_content` that
+    IS what the user uploaded. Image files only carry metadata. Both
+    must survive to the rendered MD."""
+
+    def test_text_attachment_content_preserved(self):
+        msg = {
+            "sender": "human",
+            "text": "Look at this:",
+            "attachments": [{
+                "file_name": "CLAUDE.md",
+                "file_type": "txt",
+                "file_size": 2048,
+                "extracted_content": "# Project\nFull file contents here.",
+            }],
+        }
+        body = claude_export._render_attachments(msg)
+        assert "CLAUDE.md" in body
+        assert "Full file contents here." in body
+        assert "txt" in body
+
+    def test_image_file_filename_preserved(self):
+        msg = {
+            "sender": "human",
+            "text": "See this image",
+            "files": [{"file_uuid": "abc", "file_name": "screenshot.jpg"}],
+        }
+        body = claude_export._render_attachments(msg)
+        assert "screenshot.jpg" in body
+        assert "binary not in export" in body
+
+    def test_attachment_without_content_still_noted(self):
+        msg = {
+            "attachments": [{"file_name": "mystery.bin", "file_type": "bin"}],
+        }
+        body = claude_export._render_attachments(msg)
+        assert "mystery.bin" in body
+        assert "no extracted content" in body
+
+    def test_multiple_files_and_attachments(self):
+        msg = {
+            "attachments": [
+                {"file_name": "a.md", "file_type": "md",
+                 "extracted_content": "AAA"},
+                {"file_name": "b.md", "file_type": "md",
+                 "extracted_content": "BBB"},
+            ],
+            "files": [
+                {"file_name": "img1.png"},
+                {"file_name": "img2.png"},
+            ],
+        }
+        body = claude_export._render_attachments(msg)
+        for frag in ("AAA", "BBB", "img1.png", "img2.png"):
+            assert frag in body
+
+    def test_extract_messages_merges_text_and_attachment(self):
+        conv = {"chat_messages": [
+            {
+                "sender": "human",
+                "text": "Here's the config:",
+                "content": [{"type": "text", "text": "Here's the config:"}],
+                "attachments": [{
+                    "file_name": "config.py", "file_type": "py",
+                    "extracted_content": "PORT = 8000",
+                }],
+            }
+        ]}
+        out = claude_export._extract_messages(conv)
+        assert len(out) == 1
+        role, body = out[0]
+        assert role == "user"
+        assert "Here's the config:" in body
+        assert "config.py" in body
+        assert "PORT = 8000" in body
+
+    def test_attachment_only_message_still_emitted(self):
+        """A message with empty text but an attachment must NOT be
+        dropped — the attachment IS the content."""
+        conv = {"chat_messages": [
+            {
+                "sender": "human",
+                "text": "",
+                "content": [],
+                "attachments": [{
+                    "file_name": "notes.txt", "file_type": "txt",
+                    "extracted_content": "My notes here",
+                }],
+            }
+        ]}
+        out = claude_export._extract_messages(conv)
+        assert len(out) == 1
+        assert "My notes here" in out[0][1]
+
+    def test_empty_text_empty_attachments_still_dropped(self):
+        """The 6-retry-empty case still gets skipped."""
+        conv = {"chat_messages": [
+            {"sender": "human", "text": "", "attachments": [], "files": []},
+        ]}
+        assert claude_export._extract_messages(conv) == []
+
+    def test_attachment_with_triple_backticks_uses_longer_fence(self):
+        """An attached .md file with code fences inside must not be
+        closed early by our outer wrapper. The outer fence escalates
+        to one more backtick than the longest inner run."""
+        inner = "```python\nprint('hi')\n```"
+        msg = {
+            "attachments": [{
+                "file_name": "tutorial.md", "file_type": "md",
+                "extracted_content": inner,
+            }],
+        }
+        body = claude_export._render_attachments(msg)
+        # Outer fence must be 4+ backticks so the inner ``` doesn't close it.
+        assert "````\n" in body or "`````\n" in body
+        # And the inner content must appear verbatim.
+        assert "print('hi')" in body
+
+    def test_longest_fence_helper(self):
+        assert claude_export._longest_fence("") == 0
+        assert claude_export._longest_fence("no fences here") == 0
+        assert claude_export._longest_fence("has ``` triple") == 3
+        assert claude_export._longest_fence("has ```` four ``` and ``` more") == 4
+        assert claude_export._longest_fence("``` then ```` then ```") == 4
+
+
 # ---------- integration: run() over a fixture ----------
 
 class TestRun:

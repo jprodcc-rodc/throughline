@@ -203,6 +203,61 @@ def _extract_title(conv: dict) -> str:
     return ""
 
 
+def _longest_fence(text: str) -> int:
+    """Longest run of consecutive backticks anywhere in text, used to
+    pick an outer fence length that can't be closed by inner content."""
+    max_run = 0
+    run = 0
+    for ch in text:
+        if ch == "`":
+            run += 1
+            if run > max_run:
+                max_run = run
+        else:
+            run = 0
+    return max_run
+
+
+def _render_attachments(msg: dict) -> str:
+    """Append file + attachment metadata to the message body.
+
+    - `attachments` carries text-extracted uploads (txt / md / py / pdf
+      via OCR). Their `extracted_content` IS load-bearing — it's what
+      the user actually pasted / uploaded to Claude, and dropping it
+      loses significant context. Include it inline as a fenced block
+      tagged with the filename.
+    - `files` carries image / binary uploads. Claude's export does not
+      include the file bytes — only `file_name` + `file_uuid`. We
+      can't recover the image, but a one-line note preserves the
+      'image was here' signal so the daemon's refiner knows visual
+      context existed.
+    """
+    parts: list[str] = []
+    for att in (msg.get("attachments") or []):
+        if not isinstance(att, dict):
+            continue
+        name = (att.get("file_name") or "").strip() or "unnamed-attachment"
+        ftype = att.get("file_type") or ""
+        content = att.get("extracted_content")
+        if isinstance(content, str) and content.strip():
+            header = f"[Attached {ftype} file: {name}]" if ftype else f"[Attached file: {name}]"
+            # Use 4-backtick fence so 3-backtick fences inside the
+            # attachment (common for .md / tutorial uploads) don't
+            # accidentally close our outer wrapper in Obsidian.
+            # If an attachment happens to contain 4+ backticks we
+            # auto-escalate to 5.
+            fence = "`" * (max(3, _longest_fence(content)) + 1)
+            parts.append(f"{header}\n\n{fence}\n{content}\n{fence}")
+        else:
+            parts.append(f"[Attached file: {name}]  (no extracted content)")
+    for f in (msg.get("files") or []):
+        if not isinstance(f, dict):
+            continue
+        name = (f.get("file_name") or "").strip() or "unnamed-file"
+        parts.append(f"[Attached image/file: {name}]  (binary not in export)")
+    return "\n\n".join(parts)
+
+
 def _extract_messages(conv: dict) -> list[tuple[str, str]]:
     msgs = conv.get("chat_messages") or conv.get("messages") or []
     if not isinstance(msgs, list):
@@ -215,9 +270,14 @@ def _extract_messages(conv: dict) -> list[tuple[str, str]]:
         if role is None:
             continue
         text = _extract_text(m)
-        if not text.strip():
+        attachments = _render_attachments(m)
+        # Compose: text + attachment render. Either can be empty —
+        # drop the message only if BOTH are empty (6-retry case
+        # still skipped because no text and no attachments).
+        body_parts = [p for p in (text.strip(), attachments.strip()) if p]
+        if not body_parts:
             continue
-        out.append((role, text))
+        out.append((role, "\n\n".join(body_parts)))
     return out
 
 
