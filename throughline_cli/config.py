@@ -94,6 +94,16 @@ class WizardConfig:
     # Step 15 — Daily budget cap (U3)
     daily_budget_usd: float = 20.0
 
+    # Step 10 — transient scan results; filled by the adapter dry-run
+    # so step 16 summary can cite real numbers and step 16 confirm can
+    # trigger the real import. Persisted so `reconfigure` shows the
+    # last-seen numbers until re-scanned.
+    import_scanned: int = 0
+    import_emitted: int = 0
+    import_est_tokens: int = 0
+    import_est_normal_cost_usd: float = 0.0
+    import_est_skim_cost_usd: float = 0.0
+
     # Metadata
     wizard_version: str = "0.2.0-dev"
     completed_steps: list[int] = field(default_factory=list)

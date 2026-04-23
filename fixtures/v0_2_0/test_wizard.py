@@ -184,17 +184,20 @@ class TestImportSourceColdStartLoop:
         assert cfg.import_source == "none"
         assert cfg.import_path is None
 
-    def test_fresh_with_n_loops_back(self, monkeypatch):
+    def test_fresh_with_n_loops_back(self, monkeypatch, tmp_path):
         cfg = WizardConfig()
         cfg.mission = "full"
-        # '5' -> fresh, 'n' -> loop, then '1' -> chatgpt, path.
+        real = tmp_path / "export.zip"
+        real.write_bytes(b"fake-zip-bytes")
+        # '5' -> fresh, 'n' -> loop back to source picker,
+        # '1' -> chatgpt, <real path> -> validated by step 9's new loop.
         monkeypatch.setattr(
             "builtins.input",
-            _stub_input(["5", "n", "1", "~/Downloads/x.zip"]),
+            _stub_input(["5", "n", "1", str(real)]),
         )
         step_09_import_source(cfg)
         assert cfg.import_source == "chatgpt"
-        assert cfg.import_path == "~/Downloads/x.zip"
+        assert cfg.import_path == str(real)
 
 
 class TestRagOnlyTierIsSkim:
@@ -222,3 +225,167 @@ class TestStepRegistry:
     def test_all_callables(self):
         for _, fn in ALL_STEPS:
             assert callable(fn)
+
+
+# ---------- step 10 adapter integration ----------
+
+class TestStep10AdapterIntegration:
+    """Step 10 is where the wizard stops being a stub: real adapter
+    dry-run is invoked on the user-provided export path. Tests use
+    real tiny fixtures for each of the three adapters and verify the
+    scan counters land on the config."""
+
+    def _write_claude_jsonl(self, tmp_path):
+        import json
+        p = tmp_path / "claude.jsonl"
+        p.write_text(json.dumps({
+            "uuid": "a-1", "name": "Hi", "created_at": "2024-01-15T10:00:00Z",
+            "chat_messages": [
+                {"sender": "human", "text": "hello"},
+                {"sender": "assistant", "text": "hi back"},
+            ],
+        }) + "\n", encoding="utf-8")
+        return p
+
+    def _write_chatgpt_json(self, tmp_path):
+        import json
+        p = tmp_path / "conversations.json"
+        p.write_text(json.dumps([{
+            "id": "c-1", "title": "Hi",
+            "create_time": 1705315200.0,
+            "mapping": {
+                "root": {"id": "root", "parent": None,
+                          "children": ["u1"], "message": None},
+                "u1": {"id": "u1", "parent": "root", "children": ["a1"],
+                        "message": {"author": {"role": "user"},
+                                    "content": {"content_type": "text",
+                                                "parts": ["hello"]}}},
+                "a1": {"id": "a1", "parent": "u1", "children": [],
+                        "message": {"author": {"role": "assistant"},
+                                    "content": {"content_type": "text",
+                                                "parts": ["hi back"]}}},
+            },
+        }]), encoding="utf-8")
+        return p
+
+    def _write_gemini_json(self, tmp_path):
+        import json
+        p = tmp_path / "MyActivity.json"
+        p.write_text(json.dumps([{
+            "header": "Gemini Apps",
+            "title": "Prompted hello",
+            "time": "2024-01-15T10:00:00Z",
+            "products": ["Gemini Apps"],
+            "safeHtmlItem": [{"html": "<p>hi back</p>"}],
+        }]), encoding="utf-8")
+        return p
+
+    def _patch_inputs(self, monkeypatch, responses):
+        it = iter(responses)
+
+        def fake_input(_prompt=""):
+            return next(it)
+        monkeypatch.setattr("builtins.input", fake_input)
+
+    def test_step10_populates_config_for_claude(self, monkeypatch, tmp_path):
+        from throughline_cli.wizard import step_10_import_scan
+        cfg = WizardConfig()
+        cfg.import_source = "claude"
+        cfg.import_path = str(self._write_claude_jsonl(tmp_path))
+        step_10_import_scan(cfg)
+        assert cfg.import_scanned == 1
+        assert cfg.import_emitted == 1
+        assert cfg.import_est_tokens > 0
+        assert cfg.import_est_normal_cost_usd >= 0
+        assert cfg.import_est_skim_cost_usd <= cfg.import_est_normal_cost_usd
+
+    def test_step10_populates_config_for_chatgpt(self, monkeypatch, tmp_path):
+        from throughline_cli.wizard import step_10_import_scan
+        cfg = WizardConfig()
+        cfg.import_source = "chatgpt"
+        cfg.import_path = str(self._write_chatgpt_json(tmp_path))
+        step_10_import_scan(cfg)
+        assert cfg.import_scanned == 1
+        assert cfg.import_emitted == 1
+
+    def test_step10_populates_config_for_gemini(self, monkeypatch, tmp_path):
+        from throughline_cli.wizard import step_10_import_scan
+        cfg = WizardConfig()
+        cfg.import_source = "gemini"
+        cfg.import_path = str(self._write_gemini_json(tmp_path))
+        step_10_import_scan(cfg)
+        # Gemini day-buckets: 1 event -> 1 day MD.
+        assert cfg.import_scanned == 1
+        assert cfg.import_emitted == 1
+
+    def test_step10_skipped_for_none_source(self):
+        from throughline_cli.wizard import step_10_import_scan
+        cfg = WizardConfig()
+        cfg.import_source = "none"
+        result = step_10_import_scan(cfg)
+        assert result == "SKIPPED"
+        assert cfg.import_scanned == 0
+
+    def test_step10_handles_bad_path_gracefully(self, tmp_path):
+        """If the adapter raises (bad zip, missing file), the wizard
+        should catch the exception and let the user continue — not
+        crash the whole installer."""
+        from throughline_cli.wizard import step_10_import_scan
+        cfg = WizardConfig()
+        cfg.import_source = "claude"
+        cfg.import_path = str(tmp_path / "nonexistent.jsonl")
+        # Must not raise.
+        step_10_import_scan(cfg)
+        assert cfg.import_scanned == 0
+        assert cfg.import_emitted == 0
+
+
+class TestStep9PathValidation:
+    """Step 9 should loop back on bad paths rather than passing a
+    broken path to step 10."""
+
+    def test_valid_path_accepted(self, monkeypatch, tmp_path):
+        from throughline_cli.wizard import step_09_import_source
+        cfg = WizardConfig()
+        cfg.mission = "full"
+        real_path = tmp_path / "export.zip"
+        real_path.write_bytes(b"fake")
+        # '2' = Claude, then the path.
+        monkeypatch.setattr("builtins.input",
+                            _stub_input(["2", str(real_path)]))
+        step_09_import_source(cfg)
+        assert cfg.import_source == "claude"
+        assert cfg.import_path == str(real_path.expanduser())
+
+    def test_bad_path_retry_then_give_up_goes_to_fresh(self, monkeypatch,
+                                                       tmp_path):
+        """User enters bad path, says no-retry — wizard should switch
+        import_source to 'none' and cold-start ask y/N. Default Y
+        accepts cold start."""
+        from throughline_cli.wizard import step_09_import_source
+        cfg = WizardConfig()
+        cfg.mission = "full"
+        # '2' Claude, bad path, 'n' to retry, then cold-start warning
+        # confirm (default Y from empty input).
+        monkeypatch.setattr(
+            "builtins.input",
+            _stub_input(["2", "/nonexistent/foo.zip", "n"]),
+        )
+        step_09_import_source(cfg)
+        assert cfg.import_source == "none"
+        assert cfg.import_path is None
+
+    def test_multiple_sources_defers_to_single_then_none(self, monkeypatch):
+        """v0.2.0 doesn't support 'multiple' in-wizard; it should
+        gracefully fall back to 'none' with a note about the manual
+        follow-up command."""
+        from throughline_cli.wizard import step_09_import_source
+        cfg = WizardConfig()
+        cfg.mission = "full"
+        # '4' = Multiple, then cold-start confirm (default Y).
+        monkeypatch.setattr(
+            "builtins.input",
+            _stub_input(["4"]),
+        )
+        step_09_import_source(cfg)
+        assert cfg.import_source == "none"

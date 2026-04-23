@@ -256,20 +256,88 @@ def step_09_import_source(cfg: WizardConfig) -> Optional[str]:
         if not ui.ask_yes_no("Still proceed with a fresh start?", default=True):
             ui.info_line("Re-picking import source...")
             return step_09_import_source(cfg)
-    if cfg.import_source != "none":
-        cfg.import_path = ui.ask_text("Path to the export file",
-                                       "~/Downloads/export.zip")
+    if cfg.import_source in ("chatgpt", "claude", "gemini"):
+        # Loop until the user gives a path that exists — fail fast here
+        # rather than at step 10 where the adapter would stack-trace.
+        while True:
+            raw = ui.ask_text("Path to the export file",
+                              "~/Downloads/export.zip")
+            from pathlib import Path
+            p = Path(raw).expanduser()
+            if p.exists():
+                cfg.import_path = str(p)
+                break
+            ui.info_line(f"[yellow]Not found:[/] {p}")
+            if not ui.ask_yes_no("Try again?", default=True):
+                ui.info_line("Switching to 'No, start fresh'.")
+                cfg.import_source = "none"
+                cfg.import_path = None
+                break
+    elif cfg.import_source == "multiple":
+        ui.info_line("Multiple-source import runs the wizard once per source later. "
+                     "For v0.2.0 first pass, pick one primary source now; run "
+                     "`python -m throughline_cli import <other> <path>` afterwards.")
+        cfg.import_source = "none"
     return None
 
 
+def _run_adapter_dry_run(cfg: WizardConfig):
+    """Dispatch to the adapter's run() in dry-run mode; returns a
+    summary dict (scanned/emitted/tokens/costs) or None on failure."""
+    from pathlib import Path as _P
+    path = _P(cfg.import_path) if cfg.import_path else None
+    if path is None:
+        return None
+    if cfg.import_source == "claude":
+        from .adapters import claude_export as adp
+    elif cfg.import_source == "chatgpt":
+        from .adapters import chatgpt_export as adp
+    elif cfg.import_source == "gemini":
+        from .adapters import gemini_takeout as adp
+    else:
+        return None
+    try:
+        summary = adp.run(path, dry_run=True)
+    except Exception as e:
+        ui.info_line(f"[red]Scan failed:[/] {type(e).__name__}: {e}")
+        return None
+    return summary
+
+
 def step_10_import_scan(cfg: WizardConfig) -> Optional[str]:
+    """U2 — real dry-run scan. Stores counts + estimated cost on cfg
+    so step 16 summary can cite them and the real import can kick off
+    after the final confirm."""
     if cfg.import_source == "none":
         ui.step_header(10, TOTAL, "Import scan — SKIPPED (fresh start)")
         return "SKIPPED"
     ui.step_header(10, TOTAL, f"Import scan ({cfg.import_source})")
-    ui.info_line("(U2 adapter not yet implemented — stub prints intended "
-                 "action only.)")
-    ui.info_line(f"Would scan: {cfg.import_path}")
+    ui.info_line(f"Running dry-run on {cfg.import_path}...")
+    summary = _run_adapter_dry_run(cfg)
+    if summary is None:
+        ui.info_line("[yellow]Scan skipped — step 16 confirm will offer retry.[/]")
+        cfg.import_scanned = 0
+        cfg.import_emitted = 0
+        cfg.import_est_tokens = 0
+        cfg.import_est_normal_cost_usd = 0.0
+        cfg.import_est_skim_cost_usd = 0.0
+        return None
+    # Save transient scan results to cfg for step 16 + logging.
+    cfg.import_scanned = summary.scanned
+    cfg.import_emitted = summary.emitted
+    cfg.import_est_tokens = summary.total_tokens_estimate
+    cfg.import_est_normal_cost_usd = summary.estimated_usd_normal()
+    cfg.import_est_skim_cost_usd = summary.estimated_usd_skim()
+    ui.kv_row("scanned",       str(summary.scanned))
+    ui.kv_row("would emit",    str(summary.emitted))
+    ui.kv_row("tokens",        f"{summary.total_tokens_estimate:,}")
+    ui.kv_row("Normal cost",   f"${summary.estimated_usd_normal():.2f}")
+    ui.kv_row("Skim cost",     f"${summary.estimated_usd_skim():.2f}")
+    if summary.sample_paths:
+        ui.info_line("sample output paths:")
+        for p in summary.sample_paths[:3]:
+            ui.info_line(f"  {p}")
+    ui.info_line("[dim]Nothing written yet. Real import runs after step 16 confirm.[/]")
     return None
 
 
@@ -483,6 +551,34 @@ def step_15_budget(cfg: WizardConfig) -> Optional[str]:
     return None
 
 
+def _run_adapter_for_real(cfg: WizardConfig) -> None:
+    """Invoke the chosen adapter in real (non-dry-run) mode after the
+    user confirmed at step 16. Writes raw MD to $THROUGHLINE_RAW_ROOT
+    and a manifest under state/imports/<tag>.json."""
+    from pathlib import Path as _P
+    path = _P(cfg.import_path) if cfg.import_path else None
+    if path is None:
+        return
+    if cfg.import_source == "claude":
+        from .adapters import claude_export as adp
+    elif cfg.import_source == "chatgpt":
+        from .adapters import chatgpt_export as adp
+    elif cfg.import_source == "gemini":
+        from .adapters import gemini_takeout as adp
+    else:
+        return
+    ui.info_line(f"Importing {cfg.import_source} export — this may take a moment...")
+    try:
+        summary = adp.run(path, dry_run=False)
+    except Exception as e:
+        ui.info_line(f"[red]Import failed:[/] {type(e).__name__}: {e}")
+        return
+    ui.kv_row("wrote", str(summary.emitted))
+    ui.kv_row("out dir", summary.out_dir)
+    if summary.manifest_path:
+        ui.kv_row("manifest", summary.manifest_path)
+
+
 def step_16_summary(cfg: WizardConfig) -> Optional[str]:
     ui.step_header(16, TOTAL, "Summary")
     ui.kv_row("mission", cfg.mission)
@@ -496,14 +592,26 @@ def step_16_summary(cfg: WizardConfig) -> Optional[str]:
     ui.kv_row("prompt_family", cfg.prompt_family)
     src = cfg.import_source + (f" ({cfg.import_path})" if cfg.import_path else "")
     ui.kv_row("import_source", src)
+    if cfg.import_source != "none" and cfg.import_scanned:
+        ui.kv_row("import_scanned", str(cfg.import_scanned))
+        ui.kv_row("import_emit_est", str(cfg.import_emitted))
+        ui.kv_row("est. cost", f"${cfg.import_est_normal_cost_usd:.2f} (Normal) "
+                              f"/ ${cfg.import_est_skim_cost_usd:.2f} (Skim)")
     ui.kv_row("refine_tier", cfg.refine_tier)
     ui.kv_row("card_structure", cfg.card_structure)
     ui.kv_row("taxonomy_source", cfg.taxonomy_source)
     ui.kv_row("daily_budget_usd", f"${cfg.daily_budget_usd}")
-    if not ui.ask_yes_no("Write this to ~/.throughline/config.toml?",
-                         default=True):
-        ui.info_line("[red]Aborted — no config written.[/]")
+    if not ui.ask_yes_no("Write this to ~/.throughline/config.toml"
+                          + (" and run the import now" if cfg.import_source != "none" else "")
+                          + "?", default=True):
+        ui.info_line("[red]Aborted — no config written, no import run.[/]")
         sys.exit(0)
+    # Kick off the real import immediately so the user sees the result
+    # before the wizard exits. Skip for 'none' / missing path.
+    if cfg.import_source in ("claude", "chatgpt", "gemini") and cfg.import_path:
+        ui.print_blank()
+        ui.section_title("Running import...")
+        _run_adapter_for_real(cfg)
     return None
 
 
