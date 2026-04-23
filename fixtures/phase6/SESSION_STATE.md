@@ -11,6 +11,57 @@
 - Phase 6 ship-blockers all green (see next section)
 - Post-v0.1.0 work rolled directly into v0.2.0 planning (below).
 
+## v0.2.0 scope (rev 3, decided 2026-04-23 late evening)
+
+After a third round of user additions, the wizard grows to 16 steps
+but Mission branching (step 2) can shrink effective step count to
+9-10 for specialised users. Six new U items landed; key architectural
+observation: **card consumption mode (for reading vs for retrieval)
+is an independent dimension the v0.1 architecture accidentally
+welded to structure + tier**. Mission branch decouples them.
+
+See the non-rev2 section below for the full list. Additions in rev3:
+
+- **U20** Reranker swappable (paired with U12 in wizard step 7):
+  bge-reranker-v2-m3 / v2-gemma local, Cohere / Voyage / Jina API,
+  or skip.
+- **U21** Vector DB swappable (wizard step 3): Qdrant (default Full),
+  Chroma (default Local-only privacy), LanceDB, DuckDB-VSS,
+  SQLite-vec, pgvector. `BaseVectorStore` abstraction spanning
+  rag_server + daemon + ingest — largest engineering item.
+- **U22** Prompt family per LLM (wizard step 8, auto-derived):
+  Claude XML / GPT Markdown+JSON / Gemini structured / generic.
+  ~48 prompt files (tier × mode × family), code-light but docs-heavy.
+- **U23** Preview 5-dial constrained edit (wizard step 13): Tone,
+  Length, Sections toggle, Language register, Keep-verbatim.
+  No free-form prompt editing to preserve daemon schema.
+- **U24** Mission branching (wizard step 2): Full flywheel /
+  RAG-only / Notes-only. Decides which later steps apply.
+- **U25** RAG-optimized card format (triggered by U24 RAG-only):
+  title + entities + 3-8 atomic claims, no prose envelope.
+  ~$0.001/conv. `prompts/en/refiner.rag_only.*.md`.
+
+### The wizard's 16 steps (rev 3)
+
+```
+[1]  Python + venv + deps
+[2]  Mission (U24) — Full / RAG-only / Notes-only    ← early branch
+[3]  Vector DB (U21)  [skipped if Notes-only]
+[4]  API key
+[5]  LLM provider (U11)
+[6]  Privacy level (U18)
+[7]  Retrieval backend (U12 + U20)   [skipped if Notes-only]
+[8]  Prompt family (U22) — auto-derived, confirm only
+[9]  Import source (U2) + cold-start warning if fresh
+[10] Import scan
+[11] Refine tier (U15) + smart suggestion (U19)
+[12] Card structure (U16)   [skipped if RAG-only, U25 format fixed]
+[13] First-card preview (U17) + 5-dial constrained edit (U23)
+[14] Taxonomy (U13)
+[15] Daily budget cap (U3)
+[16] Summary + confirm
+```
+
 ## v0.2.0 scope (rev 2, decided 2026-04-23 evening)
 
 **One sentence:** `python -m throughline install` is a 13-step wizard

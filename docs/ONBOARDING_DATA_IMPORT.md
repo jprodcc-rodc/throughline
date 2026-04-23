@@ -16,44 +16,150 @@
 ## `python -m throughline install` — the single entry point
 
 The v0.2.0 onboarding is one wizard that collects every user decision
-in ordered steps. Each step has a recommended default — a fully
-hands-off user presses Enter 13 times and lands on a working config.
-Re-running the command (or `python -m throughline reconfigure`) lets
-the user revisit any step; the state lives in `~/.throughline/config.toml`.
+in ordered steps. Each step has a recommended default. A fully
+hands-off user on the default path presses Enter 16 times and lands
+on a working config. Two early branches (step 2 Mission and
+step 5 Privacy) can drop the effective step count to 9-10 for
+specialised missions. Re-running (`python -m throughline reconfigure`)
+lets the user revisit any step; state persists to
+`~/.throughline/config.toml`.
 
 ```
-[1/13]  Python + venv + dependencies check
-[2/13]  Qdrant (Docker) availability
-[3/13]  LLM provider API key (entered here, never written to a file
-        under git control)
-[4/13]  LLM provider matrix (Anthropic / OpenAI / Google / xAI /
-        DeepSeek / Qwen). Default: anthropic/claude-sonnet-4.6.
-[5/13]  Privacy level (Local-only / Hybrid / Cloud-max). Default:
+[1/16]  Python + venv + dependencies check
+[2/16]  Mission — Full flywheel / RAG-only / Notes-only    ← early branch
+[3/16]  Vector DB — Qdrant / Chroma / LanceDB / DuckDB-VSS
+        [skipped if Notes-only]
+[4/16]  LLM provider API key (entered here, never persisted to a
+        git-tracked path)
+[5/16]  LLM provider matrix — Anthropic / OpenAI / Google / xAI /
+        DeepSeek / Qwen. Default: anthropic/claude-sonnet-4.6.
+[6/16]  Privacy level — Local-only / Hybrid / Cloud-max. Default:
         Hybrid.
-[6/13]  Embedder backend (bge-m3 / nomic-embed / MiniLM / OpenAI /
-        Voyage). Default: bge-m3 local.
-[7/13]  Import source (ChatGPT / Claude / Gemini / multiple / none).
-        If none: cold-start warning + confirm.
-[8/13]  Import scan (count conversations, estimate token volume).
-[9/13]  Refine tier (Skim ~$0.005/conv, Normal ~$0.04/conv, Deep
-        ~$0.20/conv). Wizard suggests a tier based on corpus size +
-        daily budget.
-[10/13] Card structure (Compact / Standard 6-section / Detailed +
-        sidebar). Wizard runs a $0.04 test refine on one real
-        conversation and shows the result before committing.
-[11/13] Taxonomy source (derive from my existing vault / derive from
-        my imports after first 30 cards / Johnny Decimal / PARA /
-        Zettelkasten).
-[12/13] Daily budget cap (THROUGHLINE_MAX_DAILY_USD). Default $20.
-[13/13] Summary + y/N confirm. Writes config, kicks off first refine
-        if imports were selected.
+[7/16]  Retrieval backend — embedder + reranker paired
+        (bge-m3 + bge-reranker-v2-m3 / nomic / MiniLM / OpenAI API /
+        Voyage / Cohere / skip-reranker). [skipped if Notes-only]
+[8/16]  Prompt family — auto-derived from step 5 (Claude → XML,
+        GPT → Markdown+JSON, Gemini → structured output, else
+        generic). Shown for confirm only.
+[9/16]  Import source — ChatGPT / Claude / Gemini / multiple / none.
+        If none: cold-start warning + explicit confirm.
+[10/16] Import scan — count conversations, estimate token volume.
+[11/16] Refine tier — Skim ~$0.005/conv, Normal ~$0.04/conv,
+        Deep ~$0.20/conv. Wizard auto-suggests based on corpus size
+        and daily budget.
+[12/16] Card structure — Full/Notes-only: Compact / Standard /
+        Detailed. RAG-only: fixed RAG-optimized format, step
+        auto-skipped.
+[13/16] First-card preview — refine one real conversation at chosen
+        tier+structure, show result, optionally tune via 5 dials
+        (Tone / Length / Sections / Register / Keep-verbatim).
+        Repeat until user approves.
+[14/16] Taxonomy source — derive from existing vault / derive from
+        first 30 imported conversations / fallback template
+        (JD / PARA / Zettelkasten).
+[15/16] Daily budget cap — THROUGHLINE_MAX_DAILY_USD. Default $20.
+[16/16] Summary + y/N. Writes config, kicks off bulk refine if
+        imports were selected.
 ```
+
+**Mission branch effects.** Step 2 branches the rest of the wizard:
+
+- **Full flywheel** (default, recommended): all 16 steps apply.
+- **RAG-only**: skip step 12 (card format fixed to RAG-optimized);
+  step 11 defaults to Skim. Effective ~12 steps.
+- **Notes-only**: skip steps 3 (vector DB), 7 (retrieval backend).
+  No RAG infrastructure installed. Effective ~9 steps.
 
 The rest of this doc goes deeper on each non-trivial step.
 
 ---
 
-## Step 4: LLM provider matrix
+## Step 2: Mission — what is throughline for YOU?
+
+This step is the single most important branch in the wizard. It
+decouples two concerns that the v0.1 architecture accidentally
+welded together:
+
+- **"Cards as notes you read in Obsidian"** (human consumption)
+- **"Cards as embeddings for RAG recall"** (machine consumption)
+
+Those aren't the same product. Forcing every user through the same
+6-section refined Markdown makes RAG-only users pay for prose they
+never read, and makes the prose less optimal for retrieval (dense
+fact claims retrieve better than beautifully paragraphed essays).
+
+Three mission options:
+
+| Mission | Cards are… | Card format | Per-conv cost | Wizard length |
+|---|---|---|---|---|
+| **Full flywheel** (default) | Both read and retrieved | Standard 6-section | ~$0.04 | 16 steps |
+| **RAG-only** | Machine-only — never rendered for humans | Title + entities + 3-8 dense claims | ~$0.001 | ~12 steps |
+| **Notes-only** | Read only — no retrieval | Standard 6-section | ~$0.04 | ~9 steps |
+
+**RAG-only card example:**
+
+```yaml
+---
+title: "Setting up PyTorch on M2 Mac with MPS backend"
+entities: [PyTorch, M2 Mac, MPS, Apple Silicon, GPU]
+---
+- PyTorch 2.0+ supports MPS backend natively
+- Use `torch.device("mps")` instead of `cuda`
+- Fallback: `PYTORCH_ENABLE_MPS_FALLBACK=1` for unsupported ops
+- Install: `conda install pytorch torchvision -c pytorch-nightly`
+- Verify: `torch.backends.mps.is_available()`
+```
+
+No narrative prose, no six-section envelope. Pure retrieval food.
+The title is specific (not "about PyTorch") because the reranker
+weights it high. Entities help BM25-hybrid retrieval. Claims are
+atomic so the embedder has dense semantic units.
+
+This is a separate refiner-prompt variant
+(`prompts/en/refiner.rag_only.<family>.md`) and a separate
+card-structure enum value — not a degraded Standard. Choosing
+RAG-only means committing to never browsing cards as prose.
+
+**Notes-only** skips step 3 (vector DB), step 7 (retrieval
+backend), and every RAG-path in the running services. The daemon
+refines, Obsidian shows the results, and there is no Qdrant /
+Chroma / embedder / reranker deployed at all. For users who want a
+smart summariser but not a memory system.
+
+Default is **Full flywheel** — assumes the user wants everything.
+
+---
+
+## Step 3: Vector DB backends (Notes-only skips)
+
+Default is Qdrant via Docker (production-ready, scales to millions
+of cards). Lightweight alternatives for users who want to avoid
+Docker / avoid a dedicated service:
+
+| Backend | Needs service? | Embeddable? | Typical scale |
+|---|---|---|---|
+| **Qdrant** (default for Full) | Docker | No | Millions |
+| **Chroma** (default for Local-only privacy tier) | Either | Yes | 10K+ |
+| **LanceDB** | No (Rust-embedded) | Yes | 100K |
+| **DuckDB-VSS** | No (DuckDB extension) | Yes | 100K |
+| **SQLite-vec** | No (SQLite extension) | Yes | 10K |
+| **pgvector** | Postgres | No | Millions |
+
+The choice here affects `ingest_qdrant.py` naming (will become
+`ingest_vectors.py` with a `BaseVectorStore` implementation
+dispatching by `$VECTOR_DB`), `rag_server.py`'s retrieval layer,
+and the daemon's upsert path. Non-trivial code change — this is the
+largest engineering item in v0.2.0.
+
+**Compatibility constraint:** not every vector DB supports every
+payload schema. The wizard ships a compatibility matrix and disables
+options that can't service the full payload (title / body_full /
+tags / knowledge_identity / path). In practice this drops
+SQLite-vec to "metadata-lean mode" (title + body_preview only).
+
+---
+
+## Step 5: LLM provider matrix
 
 Default goes through OpenRouter, so any of these work without extra
 code. The matrix helps users pick by context/cost rather than loyalty:
@@ -72,7 +178,7 @@ step is documentation, not engineering.
 
 ---
 
-## Step 5: Privacy level (orthogonal to refine tier)
+## Step 6: Privacy level (orthogonal to refine tier)
 
 Three levels, chosen separately from the refine tier. A
 health-conscious user can pick "Local-only" with the "Deep" tier —
@@ -86,31 +192,89 @@ the two decisions are independent.
 
 ---
 
-## Step 6: Embedder backends (swappable, Qdrant vector size binds)
+## Step 7: Retrieval backend — embedder + reranker (paired)
 
-The default is bge-m3 (local, 1024d). Alternatives:
+The default is bge-m3 embedder + bge-reranker-v2-m3 reranker. Both
+must be chosen together because they have compatibility
+implications (e.g. API-only reranker forces the embedder to be
+dimension-compatible with its input encoder; some rerankers only
+work on English, etc.).
+
+**Embedder options:**
 
 | Backend | Dim | Cost | Quality | Use when |
 |---|---|---|---|---|
 | bge-m3 (local) | 1024 | $0 | 9/10 | Default; you have ~8 GB RAM |
-| OpenAI text-embedding-3-large | 3072 | API | 9/10 | No local GPU / no heavy RAM |
+| OpenAI text-embedding-3-large (API) | 3072 | API | 9/10 | No local GPU / no heavy RAM |
 | nomic-embed-text-v1.5 (local) | 768 | $0 | 8/10 | Limited RAM but decent quality |
 | all-MiniLM-L6-v2 (local) | 384 | $0 | 6/10 | CPU-only / absolute minimum |
-| Voyage voyage-3 | 1024 | API | 9/10 | Long-document retrieval |
+| Voyage voyage-3 (API) | 1024 | API | 9/10 | Long-document retrieval |
 
-**Binding constraint:** the Qdrant collection's vector size must
+**Reranker options:**
+
+| Backend | Cost | Quality | Notes |
+|---|---|---|---|
+| bge-reranker-v2-m3 (local) | $0 | 9/10 | Default; 2.3 GB |
+| bge-reranker-v2-gemma (local) | $0 | 9/10 | Newer, larger |
+| Cohere rerank-v3 (API) | $$ | 9/10 | No local RAM |
+| Voyage rerank-2 (API) | $$ | 9/10 | Long-text friendly |
+| Jina reranker-v2 (API) | $ | 8/10 | Cheapest API option |
+| **Skip reranker** | $0 | 7/10 | Embedding-only; fastest, least RAM |
+
+The wizard pairs them: choosing an API reranker offers only
+API-compatible embedders for that provider; choosing Skip reranker
+is allowed for any embedder.
+
+**Binding constraint:** the vector DB collection's vector size must
 match the embedder's dimension. Switching embedders post-install
-requires rebuilding the collection. The wizard pins this as a
-one-time decision at step 6, and `python -m throughline reconfigure`
-for this step requires an explicit `--rebuild-qdrant` flag.
+requires rebuilding the collection. The wizard pins this at step 7,
+and `python -m throughline reconfigure` for this step requires an
+explicit `--rebuild-vector-db` flag.
 
-**Code impact:** `rag_server/rag_server.py` needs a `BaseEmbedder`
-abstraction; `scripts/ingest_qdrant.py` derives `VECTOR_SIZE` from
-the active embedder rather than hardcoding 1024.
+**Code impact:** `rag_server/rag_server.py` needs `BaseEmbedder` +
+`BaseReranker` abstractions; `scripts/ingest_qdrant.py` becomes
+`scripts/ingest_vectors.py` with a backend dispatcher; `VECTOR_SIZE`
+is derived from the active embedder, not hardcoded 1024.
 
 ---
 
-## Step 9: Refine tier (3 tiers, 40× cost spread)
+## Step 8: Prompt family (auto-picked, confirm only)
+
+Different LLM families produce different quality depending on how
+the prompt is shaped:
+
+- **Anthropic Claude** prefers XML tagging (`<recent_history>`,
+  `<current_query>`, `<fail_safe>`). The shipped v0.1 prompts are
+  already this shape.
+- **OpenAI GPT** prefers Markdown + explicit JSON schema for
+  structured output. Tool-use is a first-class path.
+- **Google Gemini** supports structured output directly, with
+  function-declarations-like schemas.
+- **Other / generic** — plain Markdown with explicit output
+  headers, the lowest-common-denominator form.
+
+The wizard auto-derives the prompt family from step 5's provider
+choice (Anthropic → claude, OpenAI → gpt, Gemini → gemini, else
+generic). Step 8 shows the derived choice for confirm; users can
+override but usually shouldn't.
+
+Every shipped prompt exists in the corresponding family variant:
+
+```
+prompts/en/refiner.normal.claude.md
+prompts/en/refiner.normal.gpt.md
+prompts/en/refiner.normal.gemini.md
+prompts/en/refiner.normal.generic.md
+```
+
+Cross product with tier (Skim / Normal / Deep) and mode (Full /
+RAG-only) means up to ~48 prompt files. This is doc-heavy but
+code-light — the pipeline just loads
+`refiner.{tier}.{mode}.{family}.md` at call time.
+
+---
+
+## Step 11: Refine tier (3 tiers, 40× cost spread)
 
 User picks upfront; can override per-import with `--tier`.
 
@@ -134,7 +298,10 @@ Cost examples for a typical 1247-conversation ChatGPT import:
 
 ---
 
-## Step 10: Card structure (pick after seeing a real preview)
+## Step 12: Card structure (only for Full and Notes-only missions)
+
+**If Mission = RAG-only this step is skipped** — the card format is
+fixed to the RAG-optimized variant documented in Step 2.
 
 The wizard doesn't ask "which structure do you want" in the abstract.
 It refines one real conversation ($0.04 at Normal tier) and shows
@@ -152,7 +319,7 @@ User's choice persisted to `~/.throughline/config.toml`.
 
 ---
 
-## Step 11: Taxonomy derivation (not template selection)
+## Step 14: Taxonomy derivation (not template selection)
 
 The wizard prefers to **derive the user's taxonomy from their
 content** rather than ship a generic template.
@@ -178,16 +345,45 @@ Tool: `scripts/derive_taxonomy.py`, one-shot, writes to
 
 ---
 
-## Step 7b: First-card preview gate (before bulk refine)
+## Step 13: First-card preview + 5-dial constrained edit
 
-After import + configuration, before kicking off bulk refine, the
-wizard refines **one** randomly selected conversation at the chosen
-tier and shows the rendered card. The user sees actual quality,
-actual structure, actual token/cost footprint, and approves
-explicitly (y/N) before $0.04 becomes $42.
+After import scan + tier + structure choice, before kicking off bulk
+refine, the wizard refines **one** randomly selected conversation at
+the chosen (tier × structure × mode × prompt family) and shows the
+rendered card. The user sees actual quality, actual structure,
+actual token/cost footprint.
 
-A user who changes tier or card structure at this gate goes back to
-step 9/10 with the rerun cost absorbed by the preview envelope.
+Five tuning dials are exposed (bounded mutation — no free-form
+prompt editing, which would break the refiner schema):
+
+1. **Tone** — formal / neutral / casual
+2. **Length** — short / medium / long
+3. **Sections** (Full / Notes-only only) — toggle any of the six
+   sections off
+4. **Language register** — technical / plain / ELI5
+5. **Keep-verbatim quotes** — on / off (retain literal original-
+   conversation phrasing inside cards)
+
+Each dial change re-runs refine on the same conversation and shows
+the updated card. The preview loop costs about $0.04 per cycle at
+Normal tier (~$0.001 per cycle at Skim / RAG-only); users typically
+converge in 2-5 cycles ($0.10-$0.20 total).
+
+Once the user approves, the tuned-dial settings are baked into
+`~/.throughline/config.toml` as refiner parameters. The bulk refine
+then applies them across the entire import.
+
+**What is NOT exposed** at this gate:
+
+- Free-form editing of prompt text — the daemon's downstream
+  consumers (router, dedup, Qdrant payload) depend on a stable
+  schema; arbitrary prompts break it.
+- Adding new sections — sections are fixed per structure template.
+- Changing the YAML frontmatter schema.
+
+Users who want those things fork the repo, edit the prompt files,
+and run the wizard with `--use-custom-prompts` to bypass the
+managed defaults.
 
 ---
 
