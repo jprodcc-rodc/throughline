@@ -2,20 +2,101 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 (v0.2.0 feature-complete — all 10 outstanding U items shipped: U4/U3/U23/U12/U20/U21 landed in this session + U27.1–.4 earlier)
+**Last updated:** 2026-04-24 (v0.2.0 shipped + open-source hardening complete — release tagged, CI green, scaffolding in place, rag_server wired)
 
 ## Where we are right now (TL;DR for next session)
 
-**Latest commit on `main`:** `1fb0e9c` (U20 shipped); U21 pending commit · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `cf516e1` (ruff + CodeQL + dead code cleanup). All pushed to origin. · **GitHub:** `jprodcc-rodc/throughline`
+
+**v0.2.0 is live:** `git tag v0.2.0` + GitHub Release page. Release URL:
+<https://github.com/jprodcc-rodc/throughline/releases/tag/v0.2.0>
+
+**Post-release hardening done in this extended session (2026-04-24 late):**
+- **daemon import bug fix** (`6ce8534`) — `JD_ROOT_MAP`,
+  `JD_LEAF_WHITELIST`, `normalize_route_path`, `is_valid_leaf_route`
+  were referenced by `daemon/refine_daemon.py` but never exported from
+  `daemon/taxonomy.py`. A fresh `git clone` + `python -m
+  daemon.refine_daemon` ImportError'd at module load; author's local
+  setup worked only because a local `config/taxonomy.py` override
+  happened to re-export under the old names. Aliases added;
+  `fixtures/v0_2_0/test_daemon_import_surface.py` pins the contract.
+- **rag_server wired to U12/U20/U21** (`3568b22`) — before this commit
+  the abstractions existed but `rag_server/rag_server.py` hard-coded
+  bge-m3 + bge-reranker-v2-m3 + direct Qdrant HTTP. `EMBEDDER=openai`,
+  `RERANKER=cohere`, `VECTOR_STORE=chroma` env vars now actually flip
+  the backend end-to-end. Models lazy-load on first real call so
+  `import rag_server.rag_server` stays fast. `qdrant_request()` kept
+  for `/v1/rag/health` only.
+- **Open-source scaffolding** (`ac90445`) — `.github/workflows/test.yml`
+  (pytest on 3.11 + 3.12, <60s green), PR template, feature-request
+  issue template + config.yml routing questions to Discussions,
+  `SECURITY.md` (private advisory channel + in-scope surface),
+  `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1 short form),
+  `CHANGELOG.md` (v0.1.0 + v0.2.0 in-repo history), README badges (CI
+  status / release / license / python), repo metadata via `gh` (10
+  topics + description), GitHub Discussions enabled.
+- **Dependabot** (`677421f`) — weekly scan of pip + github-actions,
+  major-only (ignores semver-minor/patch noise).
+- **ingest_qdrant.py CI fix** (`4d17bbd`) — deferred `openai` import
+  into `_get_embed_client()` so the module loads without the optional
+  dep (CI was failing at `from openai import OpenAI` → sys.exit(1)).
+- **ruff + CodeQL + dead code** (`cf516e1`) — `.github/workflows/codeql.yml`
+  weekly + on-push, `security-and-quality` query suite. `test.yml`
+  gains a `lint` job running `ruff check --select F,E9 .`. Auto-fix
+  pass cleaned 22 unused imports across daemon / ui / adapters /
+  tests; 4 F841 unused locals hand-fixed. Ruff scope is intentionally
+  narrow (F = pyflakes, E9 = syntax); widening to pycodestyle is a
+  v0.3 decision.
+
+**Test count:** 551 passed, 10 xfailed (up from 38 + 10 at v0.1.0).
+
+**GitHub CLI (`gh`) is now installed at `C:\Program Files\GitHub CLI\gh.exe`
+and on the user PATH. Authenticated as `jprodcc-rodc` via https OAuth.
+New shells can just `gh <command>`. Previous auth attempt with
+`--git-protocol ssh --web` stuck on a greyed-out authorize button —
+switch to `--git-protocol https --web` and the device code flow works
+cleanly.**
+
+**Next session can pick from (suggestions the user was working through
+but didn't yet execute — not commitments):**
+1. **ROADMAP.md** — public v0.3+ direction (U27.5-.7, real lancedb /
+   duckdb_vss / sqlite_vec / pgvector impls, docker compose, Voyage /
+   Jina dedicated rerankers, potentially a PyPI release).
+2. **README quickstart polish** — 5-step path from `git clone` to a
+   working wizard + first card, placed near the top.
+3. **Seed 2-3 "good first issue" tickets** on GitHub so the repo isn't
+   an empty contributor funnel; create `good first issue` and
+   `help wanted` labels via `gh`.
+4. **Branch protection ruleset** — user was configuring via GitHub UI
+   when session paused. Recommended config is already documented in
+   chat: `main-branch-protection` ruleset, require status checks
+   `pytest (3.11)` + `pytest (3.12)`, block force-push, restrict
+   deletions, bypass list includes repo admin.
+
+**Other outstanding (non-OSS, product-side):**
+- Demo GIF / screencast of the wizard for the README.
+- Docker compose for one-command try-it-out (blocked: needs OpenWebUI
+  + Qdrant + daemon + vault-volume decisions).
+- Posting to HN / awesome-lists / r/ObsidianMD / r/LocalLLaMA once
+  onboarding polish lands.
+- `v0.2.x` maintenance-release track if users report bugs against
+  v0.2.0 (CHANGELOG.md + CI already in place to support this cleanly).
 
 What works today end-to-end:
 - `python install.py` → full 16-step wizard with banner + progress ticker
 - 3 import adapters (claude / chatgpt / gemini) dogfooded against a real
-  Gemini takeout; adapter trio is wired INTO step 10 + step 16 of the wizard
+  Gemini takeout; adapter trio wired INTO step 10 + step 16 of the wizard
 - `python -m throughline_cli import <source> <path>` standalone CLI
+- `python -m throughline_cli taxonomy [review | reject]` (U27.4 loop)
 - Preview gate (step 13) calls real LLM via `throughline_cli/llm.py` with
   OPENROUTER_API_KEY / OPENAI_API_KEY fallback
 - 8 refiner prompt variants (skim/normal/deep/rag_optimized × claude/generic)
+- rag_server swappable: `EMBEDDER=openai RERANKER=cohere VECTOR_STORE=chroma` flips
+  all three without code edits (U12/U20/U21 wired to FastAPI endpoints).
+- daemon enforces `daily_budget_usd` cap (U3); 5-dial refiner tuning from
+  `config.toml` flows into every refine (U23); every refine logs a
+  `(primary_x, proposed_x_ideal)` pair to `state/taxonomy_observations.jsonl`
+  for U27 growth signals.
 - Filter cold-start 🌱 / 🌿 status line with 5-min Qdrant count cache
 - Uninstall scripts for mac/linux + windows
 
@@ -24,11 +105,10 @@ What ships on first-user hit:
   history in < 30s, zero API cost
 - Same for ChatGPT / Gemini (Gemini 7559 events → ~100 day MDs, ~$25 Normal)
 - `python install.py` config wizard with sensible all-Enter defaults
+- Fresh `git clone` → daemon imports without needing a local taxonomy.py
+  override (pre-v0.2.0 regression fixed in `6ce8534`).
 
-What the next session should start with:
-1. Read `fixtures/phase6/SESSION_STATE.md` (this file) FIRST.
-2. Check `git log --oneline origin/main..HEAD` — should be empty.
-3. Pick from still-outstanding. U13 one-shot derivation **is shipped
+**Context (old v0.2.0 planning notes below):** U13 one-shot derivation **is shipped
    (commit `7504638`)**; the 2026-04-24 evening design pass identified
    that U13 alone fits only the ~25% of users with 100+ cards at
    install. v0.2.0 must also ship a **self-growing taxonomy** loop
