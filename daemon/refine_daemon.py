@@ -57,6 +57,7 @@ from daemon.taxonomy import (
     normalize_route_path,
     is_valid_leaf_route,
 )
+from daemon.taxonomy_observer import record_taxonomy_observation
 from packs.pack_runtime import PackRegistry
 
 # Soft-import source-model opt-out guard. Daemon runs fine without it.
@@ -1039,6 +1040,12 @@ class RefinedResult:
     body_markdown: str
     claim_sources: List[str]
     pack_meta: Dict[str, Any] = field(default_factory=dict)
+    # U27.2 · Refiner's UNCONSTRAINED preferred X tag. Equal to primary_x
+    # for a perfect fit; diverges when the refiner would have preferred a
+    # tag outside VALID_X_SET. U27.3 observer logs the pair so U27.4 can
+    # propose taxonomy growth. Defaults to primary_x so older prompts /
+    # mocks that never emit the field still record a benign no-drift row.
+    proposed_x_ideal: str = ""
 
 
 def _build_refiner_prompt() -> str:
@@ -1067,9 +1074,11 @@ def _refine_slice(slice_text: str, refiner_prompt: Optional[str] = None,
     if not isinstance(data, dict):
         return None
     try:
+        primary_x = str(data["primary_x"]).strip()
+        proposed_x_ideal = str(data.get("proposed_x_ideal") or primary_x).strip() or primary_x
         return RefinedResult(
             title=str(data["title"]).strip()[:200],
-            primary_x=str(data["primary_x"]).strip(),
+            primary_x=primary_x,
             visible_x_tags=[str(x) for x in data.get("visible_x_tags", []) if x],
             form_y=str(data["form_y"]).strip(),
             z_axis=str(data["z_axis"]).strip(),
@@ -1077,6 +1086,7 @@ def _refine_slice(slice_text: str, refiner_prompt: Optional[str] = None,
             body_markdown=str(data.get("body_markdown", "")).strip(),
             claim_sources=[str(x) for x in data.get("claim_sources", []) if x],
             pack_meta=dict(data.get("pack_meta") or {}),
+            proposed_x_ideal=proposed_x_ideal,
         )
     except KeyError as e:
         log(f"WARN | refine missing key: {e}")
@@ -1597,6 +1607,18 @@ def process_raw_file(abs_path: Path) -> None:
             update_refine_index(conv.conv_id, refined.title, route_to, "ok",
                                 slice_count=1, note=pack_name or "-")
             log(f"WRITTEN | conv={conv.conv_id[:8]} | title={refined.title[:40]} | route={route_to}")
+            # U27.3 · observe the (primary_x, proposed_x_ideal) pair so the
+            # CLI can later propose taxonomy growth. Uses the same slice_id
+            # recipe as write_dual_note so card_id matches the frontmatter.
+            card_id = hashlib.md5(
+                f"{conv.conv_id}:{refined.title}".encode("utf-8")
+            ).hexdigest()[:16]
+            record_taxonomy_observation(
+                card_id=card_id,
+                title=refined.title,
+                primary_x=refined.primary_x,
+                proposed_x_ideal=refined.proposed_x_ideal,
+            )
 
     if any_written == 0:
         files_state[key] = {"raw_hash": raw_hash, "status": "no_cards_written"}
