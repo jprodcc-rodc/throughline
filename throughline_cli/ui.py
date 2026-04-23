@@ -46,6 +46,23 @@ def step_header(step: int, total: int, title: str) -> None:
     )
 
 
+def section_title(title: str) -> None:
+    """Non-wizard section header (used by adapters, purge, etc)."""
+    console.print()
+    console.rule(f"[bold cyan]{title}[/]", style="cyan", align="left")
+
+
+def ensure_utf8_stdio() -> None:
+    """Reconfigure stdout/stderr to UTF-8 on Windows. Idempotent."""
+    for stream in (sys.stdout, sys.stderr):
+        reconf = getattr(stream, "reconfigure", None)
+        if callable(reconf):
+            try:
+                reconf(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
 def intro(text: str) -> None:
     """One-paragraph description after a step header."""
     console.print(f"  [dim]{text}[/]")

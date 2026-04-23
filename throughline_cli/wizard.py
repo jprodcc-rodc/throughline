@@ -557,14 +557,9 @@ def effective_step_list(mission: str) -> list[int]:
 
 def main(argv: Optional[list[str]] = None) -> int:
     # Windows terminals default to GBK / cp1252; reconfigure stdio to UTF-8
-    # so box characters + emoji render instead of crashing.
-    for stream in (sys.stdout, sys.stderr):
-        reconf = getattr(stream, "reconfigure", None)
-        if callable(reconf):
-            try:
-                reconf(encoding="utf-8", errors="replace")
-            except (OSError, ValueError):
-                pass
+    # so box characters + emoji render instead of crashing. Idempotent —
+    # __main__ also calls this before dispatching.
+    ui.ensure_utf8_stdio()
     argv = argv if argv is not None else sys.argv[1:]
     only = None
     i = 0
