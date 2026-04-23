@@ -155,6 +155,60 @@ class TestParsing:
     def test_extract_text_missing_returns_empty(self):
         assert claude_export._extract_text({}) == ""
 
+    def test_thinking_block_is_skipped(self):
+        """Real Claude 2026-04 exports leak thinking into the top-level
+        `text` field AND also expose it as a content block. Must not
+        be included in user-visible output."""
+        msg = {
+            "text": " The user wants to do X (thinking leaked here)",
+            "content": [
+                {"type": "text", "text": " "},  # stray empty text block
+                {"type": "thinking", "thinking": "private reasoning"},
+                {"type": "text", "text": "Actual answer to user."},
+            ],
+            "sender": "assistant",
+        }
+        out = claude_export._extract_text(msg)
+        assert out == "Actual answer to user."
+        assert "thinking" not in out.lower() or out.lower().count("thinking") == 0
+        assert "user wants to do X" not in out
+
+    def test_tool_use_block_is_skipped(self):
+        msg = {
+            "content": [
+                {"type": "tool_use", "input": {"query": "x"}},
+                {"type": "text", "text": "Here is the result."},
+            ],
+        }
+        assert claude_export._extract_text(msg) == "Here is the result."
+
+    def test_artifact_block_is_skipped(self):
+        msg = {
+            "content": [
+                {"type": "text", "text": "Here's a chart:"},
+                {"type": "artifact", "content": "<svg>...</svg>"},
+                {"type": "text", "text": "Let me explain it."},
+            ],
+        }
+        out = claude_export._extract_text(msg)
+        assert "svg" not in out
+        assert "Here's a chart:" in out
+        assert "Let me explain it." in out
+
+    def test_content_blocks_win_over_top_level_text(self):
+        """When both are present, content blocks are the source of truth."""
+        msg = {
+            "text": "STALE: do not use me",
+            "content": [
+                {"type": "text", "text": "FRESH: use this instead"},
+            ],
+        }
+        assert claude_export._extract_text(msg) == "FRESH: use this instead"
+
+    def test_top_level_text_used_only_when_no_content(self):
+        msg = {"text": "only this"}
+        assert claude_export._extract_text(msg) == "only this"
+
     def test_normalise_role_variants(self):
         assert claude_export._normalise_role("human") == "user"
         assert claude_export._normalise_role("USER") == "user"
@@ -312,6 +366,59 @@ class TestRun:
 
 
 # ---------- source-shape detection ----------
+
+class TestIterConversations:
+    """Claude's export schema changed across batches. The parser must
+    handle all three real-world shapes."""
+
+    def test_jsonl_shape(self, tmp_path):
+        p = tmp_path / "conversations.jsonl"
+        rows = _sample_jsonl()
+        p.write_text(
+            "\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n",
+            encoding="utf-8",
+        )
+        got = list(claude_export.iter_conversations(p))
+        assert len(got) == 3
+        assert got[0]["uuid"].startswith("11111111")
+
+    def test_single_json_array_shape(self, tmp_path):
+        """As of 2026-04 Claude emits `conversations.json` containing
+        a single JSON array of all conversations."""
+        p = tmp_path / "conversations.json"
+        rows = _sample_jsonl()
+        p.write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
+        got = list(claude_export.iter_conversations(p))
+        assert len(got) == 3
+        assert got[1].get("title") == "PARA vs Zettelkasten"
+
+    def test_single_json_object_shape(self, tmp_path):
+        """Rare: export containing exactly one conversation as a top-
+        level object rather than a one-element array."""
+        p = tmp_path / "conversations.json"
+        p.write_text(json.dumps(_sample_jsonl()[0], ensure_ascii=False),
+                     encoding="utf-8")
+        got = list(claude_export.iter_conversations(p))
+        assert len(got) == 1
+
+    def test_empty_file_yields_nothing(self, tmp_path):
+        p = tmp_path / "conversations.jsonl"
+        p.write_text("", encoding="utf-8")
+        got = list(claude_export.iter_conversations(p))
+        assert got == []
+
+    def test_malformed_lines_in_jsonl_are_skipped(self, tmp_path):
+        p = tmp_path / "conversations.jsonl"
+        # Good / bad / good pattern.
+        lines = [
+            json.dumps(_sample_jsonl()[0]),
+            "not json at all",
+            json.dumps(_sample_jsonl()[1]),
+        ]
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        got = list(claude_export.iter_conversations(p))
+        assert len(got) == 2
+
 
 class TestFindJsonl:
     def test_direct_jsonl(self, tmp_path):

@@ -112,27 +112,54 @@ def _extract_jsonl_from_zip(zip_path: Path) -> Path:
 
 # ------ record parsing ------
 
+# Content-block types that represent Claude's internal reasoning or
+# tool chatter, NOT user-visible response text. We must skip these —
+# some export batches leak the thinking summary into the message's
+# top-level `text` field, so top-level text is NOT trustworthy when
+# `content` blocks are present.
+_INTERNAL_BLOCK_TYPES = frozenset(("thinking", "tool_use", "tool_result",
+                                    "artifact", "reasoning"))
+
+
 def _extract_text(msg: dict) -> str:
-    """Try several Claude-export content shapes."""
-    if isinstance(msg.get("text"), str):
-        return msg["text"]
+    """Extract the user-visible text of one message, skipping
+    thinking / artifact / tool blocks.
+
+    Precedence (matters — Claude's 2026-04 export has message-level
+    `text` that is actually the THINKING summary, so content blocks
+    must win):
+        1. `content` list of blocks, filtering out internal types.
+        2. `content` as a plain string (older batches).
+        3. message-level `text` (oldest batches).
+        4. message-level `message` string (rare).
+
+    Returns "" if nothing usable is found.
+    """
     c = msg.get("content")
-    if isinstance(c, str):
-        return c
     if isinstance(c, list):
-        parts = []
+        parts: list[str] = []
         for block in c:
-            if isinstance(block, dict):
-                if block.get("type") in ("text", None) and isinstance(block.get("text"), str):
-                    parts.append(block["text"])
-                elif isinstance(block.get("content"), str):
-                    parts.append(block["content"])
+            if not isinstance(block, dict):
+                continue
+            btype = block.get("type", "text")
+            if btype in _INTERNAL_BLOCK_TYPES:
+                continue
+            if isinstance(block.get("text"), str):
+                t = block["text"].strip()
+                if t:
+                    parts.append(t)
+            elif isinstance(block.get("content"), str):
+                t = block["content"].strip()
+                if t:
+                    parts.append(t)
         if parts:
             return "\n\n".join(parts)
+    if isinstance(c, str):
+        return c
+    if isinstance(msg.get("text"), str):
+        return msg["text"]
     if isinstance(msg.get("message"), str):
         return msg["message"]
-    # Last-resort stringify — keeps information but flags as malformed
-    # for the summary counter.
     return ""
 
 
@@ -197,16 +224,45 @@ def _extract_messages(conv: dict) -> list[tuple[str, str]]:
 # ------ main driver ------
 
 def iter_conversations(jsonl_path: Path) -> Iterator[dict]:
-    """Yield one parsed conv dict per line, skipping blank + malformed."""
-    with jsonl_path.open("r", encoding="utf-8") as f:
-        for raw in f:
-            raw = raw.strip()
-            if not raw:
-                continue
-            try:
-                yield json.loads(raw)
-            except json.JSONDecodeError:
-                continue
+    """Yield one parsed conv dict, tolerant of three real-world shapes.
+
+    Claude's export has changed across batches. As of 2026-04 the file
+    is named `conversations.json` and contains a single JSON array of
+    conversation objects. Earlier batches used `conversations.jsonl`
+    (one conversation per line). We handle both, plus the rare
+    single-conversation JSON object case:
+
+    1. Whole-file JSON, array     -> yield each element
+    2. Whole-file JSON, object    -> yield once
+    3. Neither (whole-file parse fails) -> line-by-line JSONL fallback
+
+    Parsing happens on the full text in memory; Claude exports are at
+    most a few hundred MB even for heavy users.
+    """
+    text = jsonl_path.read_text(encoding="utf-8")
+    text_stripped = text.strip()
+    if text_stripped:
+        try:
+            parsed = json.loads(text_stripped)
+        except json.JSONDecodeError:
+            parsed = None
+        if isinstance(parsed, list):
+            for item in parsed:
+                yield item
+            return
+        if isinstance(parsed, dict):
+            yield parsed
+            return
+
+    # Fallback: JSONL (one conversation per line).
+    for raw in text.splitlines():
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            yield json.loads(raw)
+        except json.JSONDecodeError:
+            continue
 
 
 def run(input_path: Path,
