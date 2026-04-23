@@ -386,3 +386,77 @@ class TestRagOptimizedFamilyConsistency:
         ):
             assert tag in claude
             assert tag in generic
+
+
+# ------- U27.2: proposed_x_ideal field (self-growing taxonomy) -------
+
+class TestProposedXIdealField:
+    """U27.2 — every refiner tier × family emits `proposed_x_ideal`, the
+    refiner's UNCONSTRAINED preferred tag. The daemon's observer
+    (U27.3) reads this alongside `primary_x` to detect drift; the
+    CLI (U27.4) proposes growth when a new tag clusters above
+    threshold. If any prompt drops this field, the observer receives
+    no signal and the taxonomy never grows.
+
+    Contract for every variant:
+    1. The field name `proposed_x_ideal` appears in the output schema.
+    2. The prompt documents that it is UNCONSTRAINED (no vocabulary limit).
+    3. The prompt clarifies that `primary_x` remains the routing invariant.
+    4. U27 is referenced so future readers know why this field exists.
+    """
+
+    ALL_VARIANTS = [
+        (tier, family)
+        for tier in ("skim", "normal", "deep", "rag_optimized")
+        for family in ("claude", "generic")
+    ]
+
+    @pytest.mark.parametrize("tier,family", ALL_VARIANTS)
+    def test_field_present(self, tier, family):
+        body = p.load_prompt("refiner", tier, family)
+        assert "proposed_x_ideal" in body, (
+            f"{tier}/{family} is missing proposed_x_ideal — U27 observer "
+            f"will have no growth signal to read."
+        )
+
+    @pytest.mark.parametrize("tier,family", ALL_VARIANTS)
+    def test_documented_as_unconstrained(self, tier, family):
+        body = p.load_prompt("refiner", tier, family)
+        assert "UNCONSTRAINED" in body, (
+            f"{tier}/{family} must document proposed_x_ideal as "
+            f"UNCONSTRAINED so the refiner does not clip to {{valid_x}}."
+        )
+
+    @pytest.mark.parametrize("tier,family", ALL_VARIANTS)
+    def test_routing_invariant_spelled_out(self, tier, family):
+        body = p.load_prompt("refiner", tier, family)
+        assert "ROUTING INVARIANT" in body, (
+            f"{tier}/{family} must spell out that primary_x is the "
+            f"ROUTING INVARIANT so the refiner keeps primary_x in "
+            f"{{valid_x}} even when proposed_x_ideal drifts."
+        )
+
+    @pytest.mark.parametrize("tier,family", ALL_VARIANTS)
+    def test_references_u27(self, tier, family):
+        body = p.load_prompt("refiner", tier, family)
+        assert "U27" in body, (
+            f"{tier}/{family} should reference U27 near proposed_x_ideal "
+            f"so contributors can trace why the field exists."
+        )
+
+    @pytest.mark.parametrize("tier,family", ALL_VARIANTS)
+    def test_field_positioned_near_primary_x(self, tier, family):
+        """Schema clarity: the two fields are a pair and should be
+        documented adjacently so the reader sees the constrained vs
+        unconstrained contrast immediately."""
+        body = p.load_prompt("refiner", tier, family)
+        primary_idx = body.find("primary_x")
+        proposed_idx = body.find("proposed_x_ideal")
+        assert primary_idx != -1 and proposed_idx != -1
+        # proposed_x_ideal should come AFTER primary_x and within a
+        # reasonable distance (~500 chars) so the two read as a pair.
+        assert proposed_idx > primary_idx
+        assert proposed_idx - primary_idx < 500, (
+            f"{tier}/{family}: proposed_x_ideal is {proposed_idx - primary_idx} "
+            f"chars away from primary_x — they should be adjacent schema fields."
+        )

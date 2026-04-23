@@ -28,7 +28,8 @@ before or after the JSON.
 Required fields:
 
 - `title`         string: short, specific, no filler ("about / practice / answer" banned).
-- `primary_x`     string, exactly one of: {valid_x}
+- `primary_x`     string, exactly one of: {valid_x}   — ROUTING INVARIANT, must be in the valid set.
+- `proposed_x_ideal` string, your UNCONSTRAINED preferred tag for this content (no vocabulary limit). Set equal to `primary_x` when the fit is natural; set to a freeform tag (e.g. `"AI/Agent"`, `"Hobby/Climbing"`) when {valid_x} forces a loose match. Feeds the self-growing taxonomy observer (U27).
 - `visible_x_tags` array of strings from the same vocabulary as `primary_x` (at least one).
 - `form_y`        string, exactly one of: {valid_y}
 - `z_axis`        string, exactly one of: {valid_z}

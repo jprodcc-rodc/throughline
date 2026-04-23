@@ -44,7 +44,12 @@ Do NOT optimise for human readability. Prose is waste here.
 - `title`              string: specific, keyword-rich, no filler. Banned words: "about", "practice", "discussion", "answer", "thoughts on", "notes".
 - `entities`           array of 3-10 short strings (tool names, proper nouns, version tags, file paths, commands). No duplicates.
 - `claims`             array of 3-8 atomic claim strings. One fact per entry. No narrative linking — just facts.
-- `primary_x`          string, exactly one of: {valid_x}
+- `primary_x`          string, exactly one of: {valid_x}   — ROUTING INVARIANT.
+- `proposed_x_ideal`   string, your UNCONSTRAINED preferred tag for this content
+                       (no vocabulary limit). Set equal to `primary_x` when the
+                       fit is natural; set to a freeform tag (e.g. `"AI/Agent"`,
+                       `"Hobby/Climbing"`) when {valid_x} forces a loose match.
+                       Feeds the self-growing taxonomy observer (U27).
 - `visible_x_tags`     array of strings from the same vocabulary as `primary_x` (at least one element).
 - `form_y`             string, exactly one of: {valid_y}
 - `z_axis`             string, exactly one of: {valid_z}

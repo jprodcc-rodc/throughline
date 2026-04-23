@@ -22,7 +22,8 @@ primary tag. This is the cheapest tier; do NOT over-produce.
 <output_schema>
 Emit a single JSON object:
 - title: short, specific, keyword-rich (no "about", "practice", "notes").
-- primary_x: one of {valid_x}
+- primary_x: one of {valid_x}   // ROUTING INVARIANT — must be in the valid set.
+- proposed_x_ideal: string, your UNCONSTRAINED preferred tag for this content (no vocabulary limit). Set equal to primary_x when the fit is natural; set to a freeform tag (e.g. "AI/Agent", "Hobby/Climbing") when {valid_x} forces a loose match. Feeds the self-growing taxonomy observer (U27).
 - visible_x_tags: array with at least one entry from the same vocabulary.
 - form_y: one of {valid_y}
 - z_axis: one of {valid_z}

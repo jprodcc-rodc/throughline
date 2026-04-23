@@ -53,7 +53,8 @@ Emit a single JSON object with these fields:
   version tags, file paths, commands). No duplicates.
 - claims: array of 3-8 atomic claim strings. One fact per entry.
   No narrative linking ("first, ... then, ...") — just the facts.
-- primary_x: exactly one of {valid_x}
+- primary_x: exactly one of {valid_x}   // ROUTING INVARIANT.
+- proposed_x_ideal: string, your UNCONSTRAINED preferred tag for this content (no vocabulary limit). Set equal to primary_x when the fit is natural; set to a freeform tag (e.g. "AI/Agent", "Hobby/Climbing") when {valid_x} forces a loose match. Feeds the self-growing taxonomy observer (U27).
 - visible_x_tags: array drawn from the same vocabulary as primary_x
   (at least one element; usually the same as primary_x).
 - form_y: exactly one of {valid_y}

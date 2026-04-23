@@ -2,11 +2,11 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 (v0.2.0 usability green — P0 + P1 mostly shipped)
+**Last updated:** 2026-04-24 (v0.2.0 usability green — P0 + P1 mostly shipped; U27.1 + U27.2 taxonomy-growth foundation landed)
 
 ## Where we are right now (TL;DR for next session)
 
-**Latest commit on `main`:** `8bc47e9` · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `eac89f5` (U27.1 shipped); U27.2 pending commit · **GitHub:** `jprodcc-rodc/throughline`
 
 What works today end-to-end:
 - `python install.py` → full 16-step wizard with banner + progress ticker
@@ -35,9 +35,15 @@ What the next session should start with:
    (U27) — see `docs/TAXONOMY_GROWTH_DESIGN.md` for the spec.
    **U27.1 shipped in `7518043`** — minimal skeletal taxonomy +
    wizard default follows card-count heuristic (minimal for cold /
-   small; derive for 100+). Next: U27.2 refiner prompts grow
-   `proposed_x_ideal` field, then U27.3 (daemon observer) + U27.4
-   (CLI review) to close the loop.
+   small; derive for 100+). **U27.2 shipped (this session)** — all
+   8 refiner prompts (skim/normal/deep/rag_optimized × claude/generic)
+   now emit `proposed_x_ideal` alongside `primary_x`, with
+   ROUTING-INVARIANT contrast spelled out. 40 parametrized tests in
+   `fixtures/v0_2_0/test_prompts.py :: TestProposedXIdealField` guard
+   the contract. Next: U27.3 (daemon writes
+   `state/taxonomy_observations.jsonl` on every refine) + U27.4
+   (CLI `taxonomy` + `taxonomy review` + `taxonomy reject`) to close
+   the loop.
    Outside taxonomy work: U23 / U3 / U4 / U12 / U20 / U21 still
    outstanding.
 

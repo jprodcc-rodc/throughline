@@ -22,7 +22,8 @@ as JSON, following the schema and body skeleton below.
 <output_schema>
 Emit a single JSON object with these fields:
 - title: short, specific, no filler words ("about / practice / answer" are banned).
-- primary_x: one of {valid_x}
+- primary_x: one of {valid_x}   // ROUTING INVARIANT — must be in the valid set.
+- proposed_x_ideal: string, your UNCONSTRAINED preferred tag for this content (no vocabulary limit). Set equal to primary_x when the fit is natural; set to a freeform tag (e.g. "AI/Agent", "Hobby/Climbing") when {valid_x} forces a loose match. This feeds the self-growing taxonomy observer (U27).
 - visible_x_tags: list of X tags (at least one, using the same vocabulary as primary_x).
 - form_y: one of {valid_y}
 - z_axis: one of {valid_z}
