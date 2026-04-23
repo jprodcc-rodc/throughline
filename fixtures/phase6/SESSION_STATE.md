@@ -2,11 +2,11 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 (v0.2.0 usability green — P0 + P1 mostly shipped; U27.1 + U27.2 + U27.3 taxonomy-growth foundation landed)
+**Last updated:** 2026-04-24 (v0.2.0 usability green; U27 MVP loop closed — U27.1 + U27.2 + U27.3 + U27.4 all shipped)
 
 ## Where we are right now (TL;DR for next session)
 
-**Latest commit on `main`:** `a0a16ee` (U27.2 shipped); U27.3 pending commit · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `a724449` (U27.3 shipped); U27.4 pending commit · **GitHub:** `jprodcc-rodc/throughline`
 
 What works today end-to-end:
 - `python install.py` → full 16-step wizard with banner + progress ticker
@@ -35,20 +35,25 @@ What the next session should start with:
    (U27) — see `docs/TAXONOMY_GROWTH_DESIGN.md` for the spec.
    **U27.1 shipped in `7518043`** — minimal skeletal taxonomy +
    wizard default follows card-count heuristic. **U27.2 shipped in
-   `a0a16ee`** — 8 refiner prompts now emit `proposed_x_ideal`
-   alongside `primary_x`. **U27.3 shipped (this session)** — new
-   module `daemon/taxonomy_observer.py` provides
-   `record_taxonomy_observation()` and the daemon appends to
-   `state/taxonomy_observations.jsonl` on every successful refine
-   write. `RefinedResult` dataclass carries the paired field; the
-   parser defaults blank `proposed_x_ideal` to `primary_x` so older
-   prompts still log well-formed no-drift rows. 14 new tests in
-   `fixtures/v0_2_0/test_taxonomy_observer.py` cover JSONL format,
-   append-only semantics, unicode round-trip, OSError swallowing,
-   and env-var path resolution. Next: **U27.4** (CLI commands
-   `taxonomy`, `taxonomy review`, `taxonomy reject` — the
-   interactive loop that reads this log and proposes growth) to
-   close the MVP U27 loop.
+   `a0a16ee`** — 8 refiner prompts now emit `proposed_x_ideal`.
+   **U27.3 shipped in `a724449`** — `daemon/taxonomy_observer.py`
+   appends to `state/taxonomy_observations.jsonl` on every refine.
+   **U27.4 shipped (this session)** — `throughline_cli/taxonomy.py`
+   provides three commands: `taxonomy` (status), `taxonomy review`
+   (interactive add/reject/name-as-different/skip walk-through),
+   `taxonomy reject TAG` (unattended). Detector normalises tags
+   (AI/Agent ≡ ai/agents ≡ AI_Agent), applies both count + day-span
+   thresholds (P3), dedups by card_id (P5), honours
+   `config/taxonomy_rejected.json`, and parent-infers. Add action
+   surgically inserts into `VALID_X_SET` literal of
+   `config/taxonomy.py` (bootstrapped from the minimal seed on
+   first write so the shipped file stays untouched). 53 tests in
+   `fixtures/v0_2_0/test_taxonomy_cli.py` cover every piece + an
+   end-to-end round-trip (observe → detect → add → re-detect is
+   empty). **U27 MVP loop now closed.** Remaining taxonomy work
+   is v0.3+ only (U27.5 Filter hint, U27.6 batch re-refine,
+   U27.7 deprecation). Outside taxonomy: U23 / U3 / U4 / U12 /
+   U20 / U21 still outstanding.
    Outside taxonomy work: U23 / U3 / U4 / U12 / U20 / U21 still
    outstanding.
 

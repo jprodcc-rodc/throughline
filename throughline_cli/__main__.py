@@ -19,14 +19,17 @@ USAGE = """\
 Usage:
     python -m throughline_cli install [--step N]
     python -m throughline_cli import <source> <path> [options]
+    python -m throughline_cli taxonomy [review | reject TAG]
 
 Subcommands:
     install    Run the 16-step install wizard (also the default if
                no subcommand given).
     import     Turn a chat export into raw Markdown the daemon consumes.
+    taxonomy   Review self-growing taxonomy signals (U27 loop).
 
 For subcommand help:
     python -m throughline_cli import --help
+    python -m throughline_cli taxonomy --help
 """
 
 
@@ -43,6 +46,9 @@ def main(argv: list[str]) -> int:
     if head == "import":
         from . import adapters
         return adapters.main(rest)
+    if head == "taxonomy":
+        from . import taxonomy
+        return taxonomy.main(rest)
     if head in ("-h", "--help", "help"):
         print(USAGE)
         return 0
