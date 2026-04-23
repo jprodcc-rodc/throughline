@@ -84,18 +84,57 @@ def step_01_env(cfg: WizardConfig) -> Optional[str]:
 def step_02_mission(cfg: WizardConfig) -> Optional[str]:
     """U24 — the single most important branch in the wizard."""
     print("\n[2/16] Mission — what is throughline for you?")
+    print("  This is the single biggest choice in the wizard. It decides")
+    print("  whether cards are for reading, for retrieval, or both.")
+    print("  Same conversation, three different end states:\n")
+
+    print("  ---------------------------------------------------------------")
+    print("  [1] Full flywheel — cards in Obsidian AND indexed for RAG")
+    print("  ---------------------------------------------------------------")
+    print("  What happens after a chat:")
+    print("    Obsidian vault:  40_Learning/pytorch_mps_m2.md")
+    print("                     (readable 6-section card)")
+    print("    Vector DB:       card + embeddings, retrievable")
+    print("    Next chat:       'how did I set up MPS?'")
+    print("                      -> RAG injects the card -> LLM cites it")
+    print("")
+    print("  Pick if: you want Obsidian as knowledge garden AND you want")
+    print("  the LLM to remember past conclusions.")
+    print("")
+
+    print("  ---------------------------------------------------------------")
+    print("  [2] RAG-only — cards are machine food, you never read them")
+    print("  ---------------------------------------------------------------")
+    print("  What happens after a chat:")
+    print("    Vault:           NOT USED AS A READING SURFACE.")
+    print("                     (files exist on disk, but dense, not prose)")
+    print("    Vector DB:       title + entities + 3-8 atomic claims")
+    print("    Next chat:       'how did I set up MPS?'")
+    print("                      -> RAG injects claims -> LLM cites them")
+    print("")
+    print("  Pick if: you use throughline as pure LLM memory; Obsidian is")
+    print("  not part of your workflow. Cheapest refine by 40x (~$0.001/conv).")
+    print("")
+
+    print("  ---------------------------------------------------------------")
+    print("  [3] Notes-only — Obsidian cards, no RAG infrastructure at all")
+    print("  ---------------------------------------------------------------")
+    print("  What happens after a chat:")
+    print("    Obsidian vault:  40_Learning/pytorch_mps_m2.md")
+    print("                     (readable 6-section card)")
+    print("    Vector DB:       NOT INSTALLED.")
+    print("    Next chat:       normal LLM reply, no enrichment.")
+    print("")
+    print("  Pick if: you want a smart summariser that drops refined notes")
+    print("  into Obsidian but don't want the daemon/embedder/Qdrant stack.")
+    print("")
+
     cfg.mission = _choice(
         "Pick your mission:",
         [
-            ("full",
-             "Full flywheel (default, recommended)",
-             "chat -> cards in Obsidian + RAG -> better chat"),
-            ("rag_only",
-             "RAG-only",
-             "chat -> RAG retrieval only. Cards are machine food, not notes you read. Cheapest refine (~$0.001/conv)."),
-            ("notes_only",
-             "Notes-only",
-             "chat -> refined notes in Obsidian. No RAG, no vector DB installed."),
+            ("full",       "Full flywheel",  ""),
+            ("rag_only",   "RAG-only",       ""),
+            ("notes_only", "Notes-only",     ""),
         ],
         default_key="full",
     )
@@ -275,14 +314,76 @@ def step_11_refine_tier(cfg: WizardConfig) -> Optional[str]:
     """U15 — three tiers, 40x cost spread."""
     if cfg.mission == "rag_only":
         print("\n[11/16] Refine tier — FIXED to 'skim' (RAG-only mission).")
+        print("  RAG-only mode uses a single Haiku call to emit title +")
+        print("  entities + 3-8 claims per conversation. ~$0.001/conv.")
         return "SKIPPED"
+
     print("\n[11/16] Refine tier")
+    print("  Tier controls how many LLM passes each conversation gets and")
+    print("  which model does them. Same input, three output densities.")
+    print("  Below: the SAME source conversation refined at each tier,")
+    print("  showing what you pay for and what you get.\n")
+
+    print("  ---------------------------------------------------------------")
+    print("  [1] Skim — ~$0.005/conv, one Haiku call")
+    print("  ---------------------------------------------------------------")
+    print("  Output:")
+    print("    # PyTorch MPS on M2 Mac")
+    print("    Use torch.device('mps'). Install via conda nightly channel.")
+    print("    Set PYTORCH_ENABLE_MPS_FALLBACK=1 for unsupported ops.")
+    print("    #pytorch")
+    print("")
+    print("  Pick if: you want a searchable index of old chat history.")
+    print("  Card is a flashcard, not a knowledge note.")
+    print("  Cost for 1,247 imported conversations: ~$6.")
+    print("")
+
+    print("  ---------------------------------------------------------------")
+    print("  [2] Normal — ~$0.04/conv, Sonnet slice + refine + route (default)")
+    print("  ---------------------------------------------------------------")
+    print("  Output: the full 6-section skeleton")
+    print("    # PyTorch MPS on M2 Mac")
+    print("    # Scenario & pain point  — why this matters")
+    print("    # Core knowledge         — Metal Performance Shaders backend,")
+    print("                               cousin to CUDA, dispatches via torch")
+    print("    # Execution              — 3-step install + verify")
+    print("    # Avoid                  — sparse ops / some reductions -> CPU")
+    print("    # Insight                — treat 'mps' like 'cuda' with gaps")
+    print("    # Summary                — near-CUDA dev ergonomics")
+    print("")
+    print("  Pick if: daily use, readable cards, balanced quality/cost.")
+    print("  Cost for 1,247 imports: ~$48.")
+    print("")
+
+    print("  ---------------------------------------------------------------")
+    print("  [3] Deep — ~$0.20/conv, multi-pass (Opus slice + critique + refs)")
+    print("  ---------------------------------------------------------------")
+    print("  Output: Normal's 6 sections PLUS:")
+    print("    # Self-critique (from pass 2)")
+    print("    - 'Avoid' section weak on memory-fragmentation at large batch;")
+    print("       pass 2 pulled 2 stack-overflow threads to strengthen it.")
+    print("    - 'Core knowledge' should link FSDP/DDP for multi-GPU interop.")
+    print("")
+    print("    # Cross-refs (from pass 3)")
+    print("    - Card: M1 MPS benchmarking notes (72% overlap)")
+    print("    - Card: CUDA -> MPS migration checklist (54% overlap)")
+    print("    - Open question propagated from: pytorch-2.0 release card")
+    print("")
+    print("  Pick if: decision-making, research projects, 'this matters for")
+    print("  months', or you want an audit trail showing what the refiner")
+    print("  considered and dismissed.")
+    print("  Cost for 1,247 imports: ~$240.")
+    print("")
+
+    print("  Current daily budget cap: $%s. Smart suggestion based on your" % cfg.daily_budget_usd)
+    print("  budget will show at step 15 confirm.\n")
+
     cfg.refine_tier = _choice(
         "How deep should the refiner think on each conversation?",
         [
-            ("skim",   "Skim   (~$0.005/conv, one Haiku call)",        "Index old chat history, quick searchability"),
-            ("normal", "Normal (~$0.04/conv, Sonnet 6-section)",       "Daily use, balanced. Default."),
-            ("deep",   "Deep   (~$0.20/conv, Opus multi-pass + critique)", "Research-grade, decisions, long-term memory"),
+            ("skim",   "Skim   (~$0.005/conv, one Haiku call)",             ""),
+            ("normal", "Normal (~$0.04/conv, Sonnet 6-section)",            ""),
+            ("deep",   "Deep   (~$0.20/conv, Opus multi-pass + critique)",  ""),
         ],
         default_key="normal",
     )
