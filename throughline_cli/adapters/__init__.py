@@ -32,14 +32,15 @@ Usage:
     python -m throughline_cli import <source> <path> [options]
 
 Sources:
-    claude    Claude.ai data export (ZIP or conversations.jsonl)
+    claude    Claude.ai data export (ZIP or conversations.jsonl|json)
+    chatgpt   ChatGPT data export   (ZIP or conversations.json)
 
 Options:
     --out PATH       Output root (default: $THROUGHLINE_RAW_ROOT or
                      ~/throughline_runtime/sources/openwebui_raw)
     --dry-run        Scan + estimate cost, do NOT write any files
     --tag NAME       Override the auto-generated import_source tag
-                     (default: claude-YYYY-MM-DD)
+                     (default: <source>-YYYY-MM-DD)
     --limit N        Process at most N conversations (for quick tests)
 """
 
@@ -53,6 +54,9 @@ def main(argv: list[str]) -> int:
     if source == "claude":
         from . import claude_export
         return claude_export.cli(rest)
+    if source == "chatgpt":
+        from . import chatgpt_export
+        return chatgpt_export.cli(rest)
     print(f"Unknown source: {source!r}", file=sys.stderr)
     print(USAGE, file=sys.stderr)
     return 2
