@@ -281,6 +281,20 @@ def step_09_import_source(cfg: WizardConfig) -> Optional[str]:
     return None
 
 
+def _adapter_limit() -> Optional[int]:
+    """Honour THROUGHLINE_IMPORT_LIMIT env var so power users can cap
+    the wizard's import at N items for smoke tests without pulling
+    the adapter's --limit flag into the wizard UI."""
+    import os as _os
+    raw = _os.environ.get("THROUGHLINE_IMPORT_LIMIT", "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
 def _run_adapter_dry_run(cfg: WizardConfig):
     """Dispatch to the adapter's run() in dry-run mode; returns a
     summary dict (scanned/emitted/tokens/costs) or None on failure."""
@@ -297,7 +311,7 @@ def _run_adapter_dry_run(cfg: WizardConfig):
     else:
         return None
     try:
-        summary = adp.run(path, dry_run=True)
+        summary = adp.run(path, dry_run=True, limit=_adapter_limit())
     except Exception as e:
         ui.info_line(f"[red]Scan failed:[/] {type(e).__name__}: {e}")
         return None
@@ -569,7 +583,7 @@ def _run_adapter_for_real(cfg: WizardConfig) -> None:
         return
     ui.info_line(f"Importing {cfg.import_source} export — this may take a moment...")
     try:
-        summary = adp.run(path, dry_run=False)
+        summary = adp.run(path, dry_run=False, limit=_adapter_limit())
     except Exception as e:
         ui.info_line(f"[red]Import failed:[/] {type(e).__name__}: {e}")
         return
