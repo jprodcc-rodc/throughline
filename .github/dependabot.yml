@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Python runtime deps
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - pip
+    # Loose pins in requirements.txt are intentional — only flag
+    # major bumps which could shift behaviour; minor/patch can be
+    # handled by pip resolve at install time.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
