@@ -2,14 +2,59 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-23 (v0.1.0 shipped)
+**Last updated:** 2026-04-23 (v0.1.0 shipped + v0.2.0 usability scoped)
 
 ## v0.1.0 shipped 🎉
 
 - Tag: `v0.1.0` → commit `cbbb92f`
 - GitHub Release: https://github.com/jprodcc-rodc/throughline/releases/tag/v0.1.0
 - Phase 6 ship-blockers all green (see next section)
-- Phase 7 dogfooding is the next phase — deferred to post-tag.
+- Post-v0.1.0 work rolled directly into v0.2.0 planning (below).
+
+## v0.2.0 scope (decided 2026-04-23 afternoon)
+
+**One sentence:** lowest barrier + lowest cognitive load for a new
+user to actually USE the tool end to end. No marketing or visual
+polish until the usability path is green.
+
+**P0 blockers (must ship in v0.2.0):**
+- **U1 — cold-start status line.** Filter emits 🌱 / 🌿 / full-recall
+  badges by Qdrant card count (0 / 1-49 / 50-199 / 200+). New users
+  know why RAG is silent on day one.
+- **U2 — three import adapters.** `python -m throughline import
+  {chatgpt,claude,gemini} <zip>`. ChatGPT/Claude: source data has
+  conv boundaries, direct translate. Gemini: calendar-day bucket +
+  cross-day bge-m3 cosine>0.5 stitch (no 30-min-gap heuristic).
+- **U3 — daily USD budget cap.** `THROUGHLINE_MAX_DAILY_USD` pauses
+  the daemon queue when hit; prevents a bulk import burning \$200.
+- **U4 — import privacy consent.** `--dry-run` shows conv count, est
+  tokens, est cost, target paths; requires explicit `y` to proceed.
+  Every emitted raw MD tagged `import_source: <adapter>-<date>` for
+  future bulk purge via manifest.
+
+**P1 (same v0.2.0 milestone, friction reducers):**
+- U5 — make "Obsidian is optional" explicit in README + DEPLOYMENT
+- U6 — bge-m3 preflight: suggest `huggingface-cli download` before
+  first `rag_server` start so slow-network users see progress
+- U7 — 2-3 taxonomy templates (JD / PARA / Zettelkasten) + "how to
+  pick one" docs
+- U8 — `scripts/uninstall.sh` one-command nuke (stop services, drop
+  Qdrant collection, delete state, optionally keep vault cards)
+
+**Deferred from v0.2.0 to v0.2.x marketing phase:**
+- U9 — hero gif automation toolchain (Charm VHS + Remotion + OBS)
+- U10 — dual-gif strategy (30s README loop + 60s import walkthrough)
+- Design spec preserved in `docs/ONBOARDING_DATA_IMPORT.md` for later
+  pickup; just not a v0.2.0 blocker.
+
+**Deferred to v0.3.0:**
+- B2 Merge & Synthesis (L3 cross-source aggregation; the correct home
+  for "full aggregation" questions that adapters deliberately avoid).
+
+**Private-repo ROADMAP** (`S:\syncthing\obsidian_python\docs\ROADMAP.md`,
+commits `3f33621` / `428a73b`) has the same scope with the author's
+personal notes attached. Public repo carries only the mechanism-level
+plan.
 
 ---
 

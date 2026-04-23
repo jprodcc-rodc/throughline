@@ -242,7 +242,16 @@ for a fresh install. Priority order by observed friction:
 
 ---
 
-## Hero gif strategy (v0.2.0 parallel track)
+## Hero gif strategy (deferred — do after usability is green)
+
+**Status:** deferred from v0.2.0. The author chose to spend v0.2.0 on
+"can a new user actually USE the tool end to end with minimum
+friction" (U1-U8 above) before any marketing/polish work. Gif
+authoring lands in a later v0.2.x phase once the adapters ship and at
+least one external alpha confirms the install path.
+
+The design below stays in the doc so future-you doesn't have to
+redesign from scratch when the time comes.
 
 Two gifs, different audiences:
 
