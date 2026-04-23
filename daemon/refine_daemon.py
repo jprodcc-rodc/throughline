@@ -187,9 +187,17 @@ EPHEMERAL_GREY_USER_HI = env_int("EPHEMERAL_GREY_USER_HI", 80)
 
 # Qdrant
 QDRANT_URL = os.getenv("QDRANT_URL", "http://127.0.0.1:6333")
-QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "knowledge_notes")
+# Historically this was QDRANT_COLLECTION with default "knowledge_notes", which
+# silently diverged from rag_server / ingest_qdrant (RAG_COLLECTION,
+# "obsidian_notes"). Unified under RAG_COLLECTION; QDRANT_COLLECTION remains
+# a deprecated fallback so existing .env files keep working.
+QDRANT_COLLECTION = (
+    os.getenv("RAG_COLLECTION")
+    or os.getenv("QDRANT_COLLECTION")
+    or "obsidian_notes"
+)
 QDRANT_UPSERT_ENABLED = env_bool("QDRANT_UPSERT_ENABLED", True)
-EMBEDDING_URL = os.getenv("EMBEDDING_URL", "http://127.0.0.1:8000/embed")
+EMBEDDING_URL = os.getenv("EMBEDDING_URL", "http://127.0.0.1:8000/v1/embeddings")
 
 # macOS notifications
 MACOS_NOTIFY_ENABLED = env_bool("MACOS_NOTIFY_ENABLED", sys.platform == "darwin")

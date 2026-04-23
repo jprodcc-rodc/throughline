@@ -55,7 +55,7 @@ Override via env vars:
 Example — scan the default JD folders plus a curated overview subfolder:
 
 ```bash
-export INGEST_EXTRA_WHITELIST='["00_Inbox/overview"]'
+export INGEST_EXTRA_WHITELIST='["00_Buffer/00.00_Overview"]'
 ```
 
 ### Windows / Mac / Linux gotcha — forward-slash normalisation

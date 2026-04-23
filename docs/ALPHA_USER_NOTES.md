@@ -25,6 +25,29 @@ step.
 | 2 | `DEPLOYMENT.md § Step 5` named the daemon refine-status valve `DAEMON_REFINE_URL`, but the actual Filter exposes it as `REFINE_STATUS_URL` (plus `REFINE_STATUS_ENABLED` and `REFINE_STATUS_TIMEOUT`). A user looking for `DAEMON_REFINE_URL` in the OpenWebUI Valves pane would not find it. | Renamed in the doc. The valve reference table now matches the code. |
 | 3 | `DEPLOYMENT.md § Step 6` gave `export INGEST_EXTRA_WHITELIST='00_Buffer/00.00_Overview'` as the example, but `scripts/ingest_qdrant.py` parses this env var as a JSON list via `_parse_json_list`. The bare-string form would raise `json.JSONDecodeError` on startup. | Example now shows the JSON-list form: `'["00_Buffer/00.00_Overview"]'`. Also clarified that `INGEST_INCLUDE` accepts exact folder names and/or `re:`-prefixed regexes, not glob patterns. |
 
+### Second pass (2026-04-23, same day, after `6213448`)
+
+Deeper audit across all 14 sub-READMEs + architecture docs. Seven fixes
+applied in one follow-up commit; one finding triaged as non-issue.
+
+| # | Issue | Fix |
+|---|---|---|
+| 4 | **Collection-name mismatch would silently empty RAG.** `.env.example` set `QDRANT_COLLECTION=knowledge_notes` and `daemon/refine_daemon.py` defaulted to `knowledge_notes`, but `rag_server/rag_server.py` and `scripts/ingest_qdrant.py` both read `RAG_COLLECTION` defaulting to `obsidian_notes`. A user following the defaults would write into `knowledge_notes` and read from `obsidian_notes` — silent empty retrieval. | Unified on `RAG_COLLECTION=obsidian_notes` in `.env.example`. `daemon/refine_daemon.py` now reads `RAG_COLLECTION` first and falls back to `QDRANT_COLLECTION` (deprecated) so existing `.env` files keep working. Default changed from `knowledge_notes` to `obsidian_notes`. |
+| 5 | **`EMBEDDING_URL` default pointed at a nonexistent endpoint.** `daemon/refine_daemon.py` and `.env.example` default to `http://127.0.0.1:8000/embed`, but the rag_server only exposes `/v1/embeddings`. First daemon embed call on default settings returns 404. | Default changed to `http://127.0.0.1:8000/v1/embeddings` in both places. `daemon/README.md` updated to match. |
+| 6 | **`refine_status` curl example used wrong query parameter.** `docs/DEPLOYMENT.md` Step 7 and `docs/FILTER_BADGE_REFERENCE.md` § 9 both gave `?conversation_id=<uuid>`, but the endpoint expects `?conv_id=<uuid>`. | Both docs now say `?conv_id=`. |
+| 7 | **Valve name drift.** `docs/FILTER_BADGE_REFERENCE.md` referenced `DAEMON_REFINE_URL` in three places (§ 9 prose, states table, § FAQ), but the actual Filter valve is `REFINE_STATUS_URL`. Same drift the previous audit fixed in `DEPLOYMENT.md`; this doc was missed. | All three references renamed. |
+| 8 | **Pack-detection order was wrong in ARCHITECTURE.md.** §4 listed `marker → topic_pin → source_model → route_hint`, but `PackRegistry.detect()` runs `prefix → source_model → topic_pin → route_prefix`. Positions 2 and 3 swapped. | Corrected to match code, with a one-sentence rationale on why the ordering is explicit-marker > model-preset > keyword > routing-target. |
+| 9 | **Inconsistent example path.** `scripts/README.md` gave `INGEST_EXTRA_WHITELIST='["00_Inbox/overview"]'` as the example; `docs/DEPLOYMENT.md` Step 6 gave `'["00_Buffer/00.00_Overview"]'`. Neither is wrong but the mismatch forces the reader to guess which is canonical. | Unified on `00_Buffer/00.00_Overview` (the form `ARCHITECTURE.md § 6` discusses). |
+| 10 | **Daemon README model defaults were under-specified.** `Sonnet 4.6` and `Haiku 4.5 / Gemini 3 Flash` are friendly names, but the env vars take OpenRouter IDs. A user setting `REFINE_MODEL=Sonnet 4.6` gets a 400. | Spelled out full OpenRouter IDs (`anthropic/claude-sonnet-4.6`, etc.). |
+
+Triaged as non-issue:
+- `prompts/README.md` "community translations" line was flagged for not
+  warning that PRs must also touch the hardcoded Python strings. The
+  README already covers this in its opening paragraph (line 3) and
+  explicitly calls runtime-switching a "v2 feature" (line 18). Adding
+  more friction to the invitation would discourage the contributions
+  the system actually wants.
+
 ### Known deferrable rough edges (not blockers)
 
 - **Two env vars for one concept.** `VAULT_PATH` (used by `ingest_qdrant.py`)

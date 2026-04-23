@@ -285,7 +285,7 @@ Manual verification:
 
 ```bash
 curl -s http://localhost:8000/health
-curl -s "http://localhost:8000/refine_status?conversation_id=<uuid>"
+curl -s "http://localhost:8000/refine_status?conv_id=<uuid>"
 ```
 
 The second endpoint is what the Filter outlet polls. A response of

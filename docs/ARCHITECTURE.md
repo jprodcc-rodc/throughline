@@ -217,17 +217,21 @@ packs/<name>/
 When the daemon receives a new raw conversation, the Pack registry tries
 four detection strategies in order. First hit wins:
 
-1. **Explicit marker** — `@pack_name` appears in any user message with word
-   boundaries. Example: `@pte` triggers the PTE pack.
-2. **Topic pin** — a configured keyword appears anywhere in the raw (e.g.
-   exam-specific abbreviations for a study pack).
-3. **Source model** — the conversation's `source_model` field matches a
+1. **Explicit marker (prefix)** — `@pack_name` appears in any user message
+   with word boundaries. Example: `@pte` triggers the PTE pack.
+2. **Source model** — the conversation's `source_model` field matches a
    configured pattern. Useful for OpenWebUI Model presets that the user
    wants routed to a specific pack.
-4. **Route hint** — the default router would land the card in a directory
-   owned by the pack.
+3. **Topic pin** — a configured keyword appears anywhere in the raw (e.g.
+   exam-specific abbreviations for a study pack).
+4. **Route hint (route prefix)** — the default router would land the card
+   in a directory owned by the pack.
 
-If none match, the daemon uses its built-in default pipeline.
+If none match, the daemon uses its built-in default pipeline. The order
+matches `PackRegistry.detect()` in `packs/pack_runtime.py`: explicit
+user intent (marker) wins over model-preset steering (source_model),
+which wins over incidental keyword overlap (topic_pin), which wins over
+pure routing-target inference (route_prefix).
 
 ### Hot reload
 

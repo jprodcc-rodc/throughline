@@ -56,10 +56,10 @@ All of these have defaults; override with `.env` or shell exports.
 | `THROUGHLINE_PACKS_DIR` | `<repo>/packs` | Pack definitions. |
 | `THROUGHLINE_FORBIDDEN_PREFIXES_JSON` | *(empty)* | JSON list of vault path prefixes that must never go into the default Qdrant collection. See `config/forbidden_prefixes.example.json`. |
 | `OPENROUTER_API_KEY` | *(required)* | LLM calls fail without this. |
-| `QDRANT_URL`, `QDRANT_COLLECTION` | `http://127.0.0.1:6333`, `knowledge_notes` | Qdrant endpoint. |
-| `EMBEDDING_URL` | `http://127.0.0.1:8000/embed` | Local embedding FastAPI (bge-m3 or similar). |
-| `REFINE_SLICE_MODEL`, `REFINE_MODEL`, `REFINE_ROUTE_MODEL` | Sonnet 4.6 | Per-step model overrides. |
-| `ECHO_JUDGE_MODEL`, `EXT_JUDGE_MODEL` | Haiku 4.5 / Gemini 3 Flash | Cheap judge models. |
+| `QDRANT_URL`, `RAG_COLLECTION` | `http://127.0.0.1:6333`, `obsidian_notes` | Qdrant endpoint + collection name. `QDRANT_COLLECTION` is accepted as a deprecated fallback; prefer `RAG_COLLECTION` so daemon, rag_server, and `scripts/ingest_qdrant.py` stay consistent. |
+| `EMBEDDING_URL` | `http://127.0.0.1:8000/v1/embeddings` | Local embedding FastAPI (bge-m3 via rag_server). |
+| `REFINE_SLICE_MODEL`, `REFINE_MODEL`, `REFINE_ROUTE_MODEL` | `anthropic/claude-sonnet-4.6` | Per-step OpenRouter model IDs. |
+| `ECHO_JUDGE_MODEL`, `EXT_JUDGE_MODEL` | `anthropic/claude-haiku-4.5`, `google/gemini-3-flash-preview` | Cheap-judge OpenRouter model IDs. |
 
 See `config/.env.example` for the full list.
 

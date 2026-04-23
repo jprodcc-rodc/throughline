@@ -212,9 +212,9 @@ field of Status line 3.
 
 ## 9. Outlet badge — daemon refinement status
 
-Appended to the assistant's reply when `DAEMON_REFINE_URL` is
+Appended to the assistant's reply when `REFINE_STATUS_URL` is
 configured. The Filter polls
-`GET /refine_status?conversation_id=<id>` and renders:
+`GET /refine_status?conv_id=<id>` and renders:
 
 ```
 🛰️ daemon · 🟡 PENDING · i: 1.2k · o: 480 · $0.003
@@ -230,7 +230,7 @@ States reported by the `/refine_status` endpoint:
 | `BLOCKED` | 🔴 | Echo Guard HIGH tier rejected; duplicate of an existing card. |
 | `ERROR` | ⚠️ | Daemon hit an error; entry appended to the Issue Log. |
 | `COLD` | 🧊 | Endpoint unreachable — the daemon service is probably not running. |
-| (no badge) | — | `REFINE_STATUS_ENABLED=false` or `DAEMON_REFINE_URL` unset. |
+| (no badge) | — | `REFINE_STATUS_ENABLED=false` or `REFINE_STATUS_URL` unset. |
 
 The badge is a snapshot taken at outlet time. If the daemon finishes
 refining after the outlet returns, the badge does not update until the
@@ -292,5 +292,5 @@ conversation opened mid-topic with no grounding.
 
 **Q: "Can I disable the outlet badge entirely?"**
 A: Yes — set `REFINE_STATUS_ENABLED=false` and leave
-`DAEMON_REFINE_URL` empty. The badge disappears; the cost footer also
+`REFINE_STATUS_URL` empty. The badge disappears; the cost footer also
 disappears.
