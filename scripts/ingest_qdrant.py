@@ -41,11 +41,10 @@ import time
 import urllib.error
 import urllib.request
 
-try:
-    from openai import OpenAI
-except ImportError:
-    print("ERROR: openai package is required. pip install openai", file=sys.stderr)
-    sys.exit(1)
+# `openai` is imported lazily inside `_get_embed_client()` so the rest
+# of this module stays importable (tests + tooling) without the optional
+# dep. If the user actually tries to run `ingest_qdrant.py` without
+# openai installed, they get the same error at the first embed call.
 
 
 # ==========================================
@@ -118,7 +117,21 @@ INCLUDE_PATTERNS = _parse_json_list("INGEST_INCLUDE", ["re:^[1-9]0_"])
 EXTRA_WHITELIST = _parse_json_list("INGEST_EXTRA_WHITELIST", [])
 
 
-embed_client = OpenAI(api_key="not-needed", base_url=EMBED_URL, timeout=120)
+_embed_client = None
+
+
+def _get_embed_client():
+    global _embed_client
+    if _embed_client is None:
+        try:
+            from openai import OpenAI
+        except ImportError:
+            print("ERROR: openai package is required. pip install openai",
+                  file=sys.stderr)
+            sys.exit(1)
+        _embed_client = OpenAI(api_key="not-needed",
+                                base_url=EMBED_URL, timeout=120)
+    return _embed_client
 
 
 def qdrant_request(method, path, data=None):
@@ -260,7 +273,7 @@ def make_point_id(path):
 
 
 def get_embeddings_batch(texts):
-    resp = embed_client.embeddings.create(model="bge-m3", input=texts)
+    resp = _get_embed_client().embeddings.create(model="bge-m3", input=texts)
     return [d.embedding for d in resp.data]
 
 
