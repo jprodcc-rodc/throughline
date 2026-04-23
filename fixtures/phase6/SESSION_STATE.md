@@ -2,7 +2,14 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-23 (overnight batch + private-repo sync)
+**Last updated:** 2026-04-23 (v0.1.0 shipped)
+
+## v0.1.0 shipped 🎉
+
+- Tag: `v0.1.0` → commit `cbbb92f`
+- GitHub Release: https://github.com/jprodcc-rodc/throughline/releases/tag/v0.1.0
+- Phase 6 ship-blockers all green (see next section)
+- Phase 7 dogfooding is the next phase — deferred to post-tag.
 
 ---
 
