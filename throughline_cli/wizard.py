@@ -710,11 +710,118 @@ def step_13_preview(cfg: WizardConfig) -> Optional[str]:
     except _json.JSONDecodeError:
         body = content
     ui.panel_example("Preview card (refined)", body)
-    if not ui.ask_yes_no("Card shape look right?", default=True):
-        ui.info_line("Noted — 5-dial adjustment (U23) is deferred to v0.2.x; "
-                     "for now, re-running `python install.py --step 11` and/or "
-                     "`--step 12` lets you change tier and structure.")
+    if ui.ask_yes_no("Card shape look right?", default=True):
+        return None
+    # U23 — 5-dial constrained edit. Re-render preview optionally;
+    # regardless, persisted to cfg so daemon refines inherit.
+    _dial_panel(cfg)
+    if ui.ask_yes_no("Re-render preview with these dials? "
+                      "(~$0.01 another refine)", default=False):
+        _rerun_preview_with_dials(cfg, system_prompt, conv_body)
     return None
+
+
+# ---------- U23 · 5-dial preview-edit panel ----------
+
+def _dial_panel(cfg: WizardConfig) -> None:
+    """Ask the user 5 constrained questions and persist the answers.
+
+    Kept separate from step_13_preview so the logic is testable via
+    monkeypatched input() without needing an LLM. Each dial has a
+    safe default matching the current cfg value, so the user can
+    `Enter-Enter-Enter` through dials they don't care about."""
+    ui.subrule("5-dial constrained edit (U23)")
+    ui.intro("Five dials tune how the refiner writes. Each has a "
+             "safe default — press Enter on any to keep the current "
+             "setting. Choices persist to config.toml so the daemon "
+             "refines inherit them.")
+    cfg.dial_tone = ui.pick_option(
+        "Tone",
+        [
+            ("formal",  "Formal — professional prose, no contractions",  ""),
+            ("neutral", "Neutral — match source register (default)",     ""),
+            ("casual",  "Casual — contractions OK, still no slang",      ""),
+        ],
+        default_key=cfg.dial_tone,
+    )
+    cfg.dial_length = ui.pick_option(
+        "Length",
+        [
+            ("short",  "Short — < 500 chars; bullets over paragraphs",  ""),
+            ("medium", "Medium — 500-1500 chars (default)",              ""),
+            ("long",   "Long — 1500-5000 chars; expand each section",   ""),
+        ],
+        default_key=cfg.dial_length,
+    )
+    cfg.dial_register = ui.pick_option(
+        "Language register",
+        [
+            ("technical", "Technical — assume domain knowledge (default)", ""),
+            ("plain",     "Plain — avoid unexplained jargon",              ""),
+            ("eli5",      "ELI5 — analogies + everyday words",             ""),
+        ],
+        default_key=cfg.dial_register,
+    )
+    cfg.dial_keep_verbatim = ui.ask_yes_no(
+        "Keep-verbatim: preserve direct quotes / commands / code literally?",
+        default=cfg.dial_keep_verbatim,
+    )
+    # Sections toggle — only enter the per-section keep/drop loop if
+    # the user explicitly wants to prune. Most users keep all 6.
+    from daemon.dials import ALL_SECTIONS, SECTION_LABELS
+    if ui.ask_yes_no(
+        "Drop any body sections? (most users keep all 6)", default=False,
+    ):
+        kept: list[str] = []
+        for key in ALL_SECTIONS:
+            if ui.ask_yes_no(
+                f"  Keep section '{SECTION_LABELS[key]}'?",
+                default=(key in cfg.dial_sections),
+            ):
+                kept.append(key)
+        if kept:
+            cfg.dial_sections = kept
+        else:
+            ui.info_line("[yellow]All sections dropped — that would break "
+                         "the schema. Keeping current selection.[/]")
+
+
+def _rerun_preview_with_dials(cfg: WizardConfig, system_prompt: str,
+                                conv_body: str) -> None:
+    """Re-call the LLM with the dial modifier appended so the user
+    can see the shape shift before committing to bulk refine."""
+    from . import llm
+    from daemon.dials import Dials, render_dial_modifier
+    dials = Dials(
+        tone=cfg.dial_tone, length=cfg.dial_length,
+        sections=list(cfg.dial_sections), register=cfg.dial_register,
+        keep_verbatim=cfg.dial_keep_verbatim,
+    )
+    tail = render_dial_modifier(dials)
+    if not tail:
+        ui.info_line("Dials are at defaults — nothing would change. "
+                     "Skipping re-render.")
+        return
+    prompt_with_dials = system_prompt + tail
+    ui.info_line(f"Calling {cfg.llm_provider_id} with dial overrides...")
+    try:
+        content = llm.call_chat(
+            model_id=cfg.llm_provider_id,
+            system_prompt=prompt_with_dials,
+            user_message=conv_body,
+            response_format={"type": "json_object"},
+        )
+    except llm.LLMError as e:
+        ui.info_line(f"[red]Re-render failed:[/] {e}")
+        return
+    import json as _json
+    try:
+        card = _json.loads(content)
+        body = card.get("body_markdown") or _json.dumps(
+            card, ensure_ascii=False, indent=2)
+    except _json.JSONDecodeError:
+        body = content
+    ui.panel_example("Preview card (dial-adjusted)", body)
 
 
 def step_14_taxonomy(cfg: WizardConfig) -> Optional[str]:

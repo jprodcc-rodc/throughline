@@ -59,6 +59,7 @@ from daemon.taxonomy import (
 )
 from daemon.taxonomy_observer import record_taxonomy_observation
 from daemon.budget import budget_exceeded as _budget_exceeded, load_budget as _load_daily_budget
+from daemon.dials import load_dials_from_config as _load_dials, render_dial_modifier as _render_dials
 from packs.pack_runtime import PackRegistry
 
 # Soft-import source-model opt-out guard. Daemon runs fine without it.
@@ -1057,12 +1058,23 @@ def _build_refiner_prompt() -> str:
     )
 
 
+def _apply_user_dials(system_prompt: str) -> str:
+    """U23 — append user-tuned dial instructions when set.
+
+    Called after prompt selection so dials apply uniformly to the
+    base template AND any pack override. Empty appendage when all
+    dials are at defaults so untouched configs pay zero token overhead.
+    """
+    tail = _render_dials(_load_dials())
+    return system_prompt + tail if tail else system_prompt
+
+
 MAX_SLICE_CHARS_FOR_REFINER = env_int("REFINE_MAX_SLICE_CHARS", 60000)
 
 
 def _refine_slice(slice_text: str, refiner_prompt: Optional[str] = None,
                    pack_hint: str = "") -> Optional[RefinedResult]:
-    system_prompt = refiner_prompt or _build_refiner_prompt()
+    system_prompt = _apply_user_dials(refiner_prompt or _build_refiner_prompt())
     user_prompt = f"[SLICE]\n{slice_text[:MAX_SLICE_CHARS_FOR_REFINER]}\n\nEmit the card JSON now."
     data = call_llm_json(
         model=REFINE_MODEL,
