@@ -233,7 +233,7 @@ class TestStep13Preview:
         assert step_13_preview(cfg) == "SKIPPED"
 
     def test_rag_only_uses_rag_optimized_variant(self, monkeypatch, tmp_path):
-        from throughline_cli.wizard import step_13_preview, _variant_for_cfg
+        from throughline_cli.wizard import _variant_for_cfg
         cfg = self._build_cfg_with_claude_sample(tmp_path)
         cfg.mission = "rag_only"
         assert _variant_for_cfg(cfg) == "rag_optimized"

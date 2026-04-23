@@ -409,7 +409,7 @@ def append_to_valid_x(tag: str, module_path: Optional[Path] = None) -> bool:
             f"Could not find VALID_X_SET literal in {p}. "
             f"Aborting to avoid corrupting the file."
         )
-    header, body, closer = m.group(1), m.group(2), m.group(3)
+    body = m.group(2)
     # Skip if tag (exact match) already present.
     # Match quoted string literals inside the set body.
     existing_exact = re.findall(r'"([^"]+)"', body)

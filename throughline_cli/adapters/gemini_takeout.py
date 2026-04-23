@@ -51,11 +51,9 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Iterator, Optional
 
-from . import common
 from .common import (
     ImportSummary, estimate_tokens, make_import_tag,
-    render_markdown, resolve_out_dir, safe_conv_id,
-    target_path, write_manifest,
+    render_markdown, resolve_out_dir, target_path, write_manifest,
 )
 
 

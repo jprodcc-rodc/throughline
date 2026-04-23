@@ -85,7 +85,7 @@ def main():
         # 2. card body is reachable inside the render (not stripped / not crashed)
         probe = card["content"][:80].splitlines()[0] if card["content"] else ""
         if probe and probe not in rendered:
-            issues.append(f"card body probe not found in render")
+            issues.append("card body probe not found in render")
 
         # 3. for LN cases, expect truncation sentinel + bounded length
         if cid.startswith("LN"):

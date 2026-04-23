@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import sys
 import zipfile
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 import pytest

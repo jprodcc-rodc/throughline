@@ -10,7 +10,6 @@ field under test ends up at its default value.
 """
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -29,8 +28,6 @@ from throughline_cli.wizard import (
     step_02_mission,
     step_03_vector_db,
     step_05_llm_provider,
-    step_06_privacy,
-    step_07_retrieval,
     step_09_import_source,
     step_11_refine_tier,
     step_12_card_structure,
@@ -111,7 +108,7 @@ def _stub_input(responses: list[str]):
         try:
             return next(it)
         except StopIteration:
-            raise AssertionError(f"input() called more times than stubbed")
+            raise AssertionError("input() called more times than stubbed")
     return _fake_input
 
 

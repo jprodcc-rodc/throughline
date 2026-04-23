@@ -29,7 +29,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from throughline_cli.adapters import claude_export
 from throughline_cli.adapters.common import (
-    ImportSummary, make_import_tag, render_markdown, target_path,
+    make_import_tag, render_markdown, target_path,
     safe_conv_id,
 )
 
@@ -459,7 +459,7 @@ class TestRun:
         src = _write_jsonl(tmp_path, _sample_jsonl())
         out_dir = tmp_path / "raw-manifest"
         state = tmp_path / "state"
-        summary = claude_export.run(
+        claude_export.run(
             input_path=src,
             out_dir=out_dir,
             import_tag="claude-manifest-test",
@@ -592,7 +592,6 @@ class TestCli:
     def test_cli_runs_end_to_end(self, tmp_path, capsys, monkeypatch):
         src = _write_jsonl(tmp_path, _sample_jsonl())
         out_dir = tmp_path / "raw"
-        state = tmp_path / "state"
         monkeypatch.chdir(tmp_path)  # just for cleanliness
         rc = claude_export.cli([
             str(src),

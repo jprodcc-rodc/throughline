@@ -14,7 +14,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
 
 HERE = Path(__file__).resolve()
 REPO_ROOT = HERE.parents[2]
