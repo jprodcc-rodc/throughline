@@ -129,6 +129,21 @@ def now_str() -> str:
 # =========================================================
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+
+# U28 · provider-aware LLM endpoint resolution.
+# Resolved once at module load; change requires a daemon restart
+# (same as every other env-driven default in this file).
+try:
+    from throughline_cli.active_provider import resolve_endpoint_and_key as _resolve_llm
+    _LLM_URL, _LLM_KEY, _LLM_EXTRA_HEADERS, _LLM_PROVIDER_ID = _resolve_llm()
+except Exception as _e:  # pragma: no cover -- defensive
+    _LLM_URL = "https://openrouter.ai/api/v1/chat/completions"
+    _LLM_KEY = OPENROUTER_API_KEY or None
+    _LLM_EXTRA_HEADERS = {
+        "HTTP-Referer": "https://github.com/jprodcc-rodc/throughline",
+        "X-Title":      "throughline",
+    }
+    _LLM_PROVIDER_ID = "openrouter"
 OPENROUTER_URL = os.getenv("OPENROUTER_URL", "https://openrouter.ai/api/v1/chat/completions")
 LLM_TITLE = os.getenv("THROUGHLINE_LLM_TITLE", "throughline-refine-daemon")
 
@@ -632,9 +647,22 @@ def call_llm_json(
     step_name: str = "",
     retries: int = 2,
 ) -> Any:
-    """POST to OpenRouter, return parsed JSON. Records cost on success."""
-    if not OPENROUTER_API_KEY:
-        raise RuntimeError("OPENROUTER_API_KEY is not set")
+    """POST to the active LLM provider, return parsed JSON. Records cost on success.
+
+    Provider (URL + api key + extra headers) is resolved once at module
+    load via `throughline_cli.active_provider.resolve_endpoint_and_key`.
+    Precedence: `THROUGHLINE_LLM_PROVIDER` env > `llm_provider` in
+    config.toml > first provider whose env var has a key > `openrouter`.
+
+    Honours legacy `OPENROUTER_URL` / `THROUGHLINE_LLM_URL` env-var
+    overrides so existing deployments don't need a migration.
+    """
+    if not _LLM_KEY:
+        raise RuntimeError(
+            f"No API key for provider={_LLM_PROVIDER_ID!r}. "
+            f"Set the provider's env var (e.g. {_LLM_PROVIDER_ID.upper()}_API_KEY) "
+            f"or export OPENROUTER_API_KEY for the legacy path."
+        )
     import urllib.request
 
     payload = {
@@ -648,16 +676,22 @@ def call_llm_json(
         "response_format": {"type": "json_object"},
     }
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {_LLM_KEY}",
         "Content-Type": "application/json",
         "X-Title": LLM_TITLE,
     }
+    # Merge provider-specific headers (OpenRouter HTTP-Referer etc.)
+    # without clobbering X-Title above (daemon wants its own title so
+    # cost dashboards can tell wizard preview apart from real refines).
+    for k, v in _LLM_EXTRA_HEADERS.items():
+        if k.lower() != "x-title":
+            headers.setdefault(k, v)
     body = json.dumps(payload).encode("utf-8")
 
     last_err: Optional[Exception] = None
     for attempt in range(retries + 1):
         try:
-            req = urllib.request.Request(OPENROUTER_URL, data=body, method="POST", headers=headers)
+            req = urllib.request.Request(_LLM_URL, data=body, method="POST", headers=headers)
             with urllib.request.urlopen(req, timeout=180) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
             obj = json.loads(raw)
@@ -1741,7 +1775,8 @@ def main() -> None:
     log(f"PACKS_DIR  = {PACKS_DIR}")
     log(f"STATE_DIR  = {STATE_DIR}")
     log(f"QDRANT     = {QDRANT_URL} / {QDRANT_COLLECTION}")
-    log(f"OPENROUTER key set: {bool(OPENROUTER_API_KEY)}")
+    log(f"LLM PROV   = {_LLM_PROVIDER_ID} -> {_LLM_URL}")
+    log(f"LLM KEY    = {'set' if _LLM_KEY else 'MISSING — set provider env var!'}")
     log("=" * 60)
 
     worker = Thread(target=debounce_worker, daemon=True, name="debounce_worker")
