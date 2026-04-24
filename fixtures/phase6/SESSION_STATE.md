@@ -2,15 +2,159 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 late-night — **repo flipped PUBLIC**, provider-agnostic rebalance shipped
+**Last updated:** 2026-04-25 — README polish wave shipped; FEATURE FREEZE in effect
+
+## ⛔ DIRECTIVE: FEATURE FREEZE UNTIL DISTRIBUTION CATCHES UP
+
+User explicit directive (2026-04-25):
+
+> "README改完 + Hero GIF做完 + 第一期视频发了之前——不要再改产品。
+> 你现在有1个star。你的任务是让这1个变成10个，不是加更多功能。
+> Distribution > Features，在这个阶段。"
+
+**Do NOT ship new product features until ALL three land:**
+
+1. ☐ README polish — DONE 2026-04-25 (tagline, status, front-block,
+   trimmed comparison, trimmed badges, Quickstart moved to #2, card
+   example swapped to keto-rebound scenario)
+2. ☐ Hero GIF — user will record. 10-15s: ChatGPT forgets you →
+   throughline-enabled OpenWebUI remembers → card auto-generates in
+   Obsidian. Tools: Arcade / Screen Studio / ScreenToGif.
+3. ☐ First YouTube video (4-6 min) — user will record.
+   Hook: "I had 500 conversations with ChatGPT and Claude over the
+   past year. Most of them are gone. Here's what I built to never
+   lose another one." Structure documented below in "Human-action queue".
+
+## Feature backlog (DO NOT EXECUTE WITHOUT EXPLICIT UNFREEZE)
+
+Recorded in priority order for the unfreeze signal:
+
+1. **Anthropic native Messages API adapter** (v0.3) — currently
+   `/v1/openai` shim; real adapter unlocks cache control, tool use,
+   200k context reliably.
+2. **daemon LLM integration tests** — provider wiring is mock-only
+   at the HTTP boundary; need one real "config.toml → active_provider
+   → daemon.call_llm_json" round-trip via mocked HTTP server.
+3. **Uninstall CLI** — `python -m throughline_cli uninstall` alongside
+   the existing `scripts/uninstall.sh/.ps1`.
+4. **prompts/README.md expansion** — contributor onboarding for
+   new-language and new-tier/family prompts.
+5. **Type annotations audit** — public functions in `daemon/` lacking
+   return types; enable mypy in CI downstream.
+
+Any new feature work outside this list ALSO waits for unfreeze.
+
+## Human-action queue (items I literally cannot do)
+
+- **Hero GIF** — 10-15s three-scene demo. See the full storyboard
+  below under "Hero GIF spec".
+- **First YouTube video** — 4-6 min. Script outline below under
+  "YouTube spec".
+- **Mermaid → PNG via excalidraw** — front-page diagram aesthetics.
+  User chose to defer the visual upgrade; README no longer has a
+  front-block mermaid anyway (replaced with before/after text), so
+  this is lower priority. Still tracked.
+- **Medical-scenario card example** — user asked for their
+  real (redacted) medical scenario. I declined to fabricate; kept
+  the keto-rebound scenario from the bundled samples/claude_sample.jsonl
+  as a placeholder. User can swap in their own redacted card at
+  README.md § "What a refined card looks like" anytime.
+- **Star the repo** from the user's own account.
+- **Pin 1-3 good-first-issue tickets** on the Issues tab.
+- **Watch → Custom** on the repo page (instructions given earlier).
+- **asciinema demo recording** via `samples/record_wizard_demo.sh`.
+- **Post to HN / Reddit / X / awesome-lists** — user's voice.
+
+## Hero GIF spec (user will record)
+
+Target: 10-15 seconds. Three scenes:
+
+- **Scene 1 (5s):** User asks a context-dependent question in plain
+  ChatGPT → response says "I don't have information about your
+  medical history / your project / your preferences…". User visibly
+  frustrated.
+- **Scene 2 (5s):** Same user, same question, in OpenWebUI with
+  throughline Filter enabled. Status line shows `⚡ auto recall:
+  3 cards · conf=0.91`. AI response uses the user's real context.
+- **Scene 3 (3s):** Cut to Obsidian vault. A new card appears in
+  the graph as the conversation finishes refining.
+
+Tools: Arcade.software (simplest, upload-to-generate) / Screen
+Studio (Mac, auto-zoom, network look) / ScreenToGif (Windows, free).
+
+## YouTube spec (user will record)
+
+Target: 4-6 minutes. First-episode structure:
+
+- **0:00-0:30 · Hook** — personal pain point, real, not acted.
+  "I'm AuDHD, I have complex medical history, and I'm tired of
+  explaining myself to every new chat."
+- **0:30-1:15 · Problem** — why existing memory tools fall short.
+  ChatGPT memory is black-box; only records labels not thinking.
+- **1:15-2:30 · Demo** — the core. OpenWebUI question → RAG
+  recall → AI answer with real background → Obsidian card view.
+- **2:30-3:30 · Key tech point** — tell it as story, not architecture:
+  "It doesn't just know my drug list. It remembers WHY I chose
+  this combination. It's not memory of facts — it's memory of
+  my thinking."
+- **3:30-4:30 · Who you are + open source** — "I built this in
+  12 days with Claude Code. I'm not a startup, I'm one person
+  with AuDHD who couldn't find this tool. It's open source."
+- **4:30-5:00 · CTA + next-episode teaser** — "If you felt this
+  same frustration, try it. If you're building for neurodivergent
+  users, contribute. Next: how I handle the refine pipeline with
+  317 tests in 12 days."
+
+Recording principles: real face (build trust), real screen recording
+(no AI-generated visuals, no stock footage, no HeyGen), lav mic for
+audio, user's own IELTS-7.5 English (don't over-polish), slow pace
+with pauses.
+
+---
 
 ## Where we are right now (TL;DR for next session)
 
-**Repo visibility: PUBLIC** (was PRIVATE until this session). The
-public front door is now live:
+**Repo visibility: PUBLIC** (was PRIVATE until yesterday).
 <https://github.com/jprodcc-rodc/throughline>
+<https://jprodcc-rodc.github.io/throughline/> ← docs site also live
 
-**Latest commit on `main`:** `636d44e` (README + DEPLOYMENT rebalance: de-emphasize OpenRouter). CI green across lint + pytest 3.11 + pytest 3.12. **668 passed, 10 xfailed.** · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** README polish wave pending commit; prior `95dc425` + `261cf63` (docker compose + GH Pages bootstrap), 712 passed / 10 xfailed. CI green across lint + pytest 3.11 + pytest 3.12 + docs. · **GitHub:** `jprodcc-rodc/throughline`
+
+**Tagline chosen (2026-04-25):** `"Stop re-explaining yourself to every new chat."`
+— replaces the earlier "The thread that turns every LLM conversation…"
+per user feedback; emotional directness beats product-essay prose.
+
+**README polish wave shipped items (autonomous):**
+- New tagline + new status block (drops "for the author" wording
+  that signaled "nobody else can use this")
+- Badges trimmed from 5 → 3 (test + license + python)
+- Quickstart moved from section #4 to section #2 (direct after
+  "What it does") — matches user-flow logic
+- "What it does" front block: mermaid replaced with before/after
+  text pair + three bullet differentiators. Mermaid retained for
+  the later "Architecture" section where a system diagram belongs.
+- Comparison table: 8 dimensions → 5 (Markdown you can read /
+  Works fully local / Self-growing taxonomy / Survives tool
+  changes / Target user). Dropped noisy columns (plug-in vector
+  store / plug-in embedder / cost-aware ingest) that bloated the
+  table on mobile.
+- Card example swapped: PyTorch MPS → keto-rebound (from bundled
+  sample-002). Still real data; demonstrates "card captures
+  your THINKING not just facts" better than a tech Q&A.
+- `🧪 Phase 6 regression` section moved out of README to a new
+  `docs/TESTING.md`; README now has a single pointer line in the
+  repo-layout section.
+- `🔗 Links` section: added Docs site URL prominently.
+- Acknowledgments: LLM-provider inline list removed (duplicated
+  the providers table); now just names the runtime deps.
+
+**Deliberately NOT done (user explicitly deferred):**
+- Mermaid → excalidraw / PNG export
+- Hero GIF recording
+- YouTube video recording
+- Swapping the keto example for the user's real (redacted)
+  medical scenario — won't fabricate medical data; user can swap
+  in their own anytime at README.md § "What a refined card looks like"
 
 **Late-stage milestones (since the last anchor):**
 

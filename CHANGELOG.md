@@ -18,6 +18,28 @@ pre-1.0 minor bumps can include breaking config shape changes.
 ### Milestone
 - **Repo flipped PUBLIC** — <https://github.com/jprodcc-rodc/throughline>.
   First time the project is visible to anyone on the internet.
+- **Docs site live** — <https://jprodcc-rodc.github.io/throughline/>.
+  mkdocs-material, auto-deploys on push via
+  `.github/workflows/docs.yml`.
+
+### Changed — README polish (2026-04-25)
+- New tagline: *"Stop re-explaining yourself to every new chat."*
+- Status block rewritten to drop "for the author" signal that
+  implied nobody else could use it.
+- Front-page mermaid replaced with a before/after text pair;
+  mermaid retained for the later Architecture section.
+- Quickstart moved up to section #2 (after "What it does").
+- Comparison table trimmed from 8 dimensions to 5 (mobile-friendly).
+- Card example swapped from PyTorch MPS → keto-rebound for a more
+  emotional, personal-context-capturing demo (still real data from
+  the bundled sample export).
+- Badges trimmed from 5 to 3 (test + license + python).
+- Phase 6 regression section moved from README to `docs/TESTING.md`;
+  README now carries a one-line pointer instead.
+
+### Added
+- `docs/TESTING.md` — regression suite overview, Phase 6 gate
+  historical record, contributor test conventions.
 
 ### Added
 - **U28 · multi-provider LLM support** — new
