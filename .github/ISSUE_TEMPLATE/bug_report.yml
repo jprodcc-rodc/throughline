@@ -1,0 +1,117 @@
+name: Bug report
+description: Something broke or behaves unexpectedly
+title: "[BUG] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. The more of these fields you fill in,
+        the faster we can confirm + fix.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: 1-2 sentences. What did you expect vs what occurred.
+      placeholder: |
+        Expected the daemon to refine the imported card.
+        Instead got `RETENTION_FAIL | conv=abc12345 | body_chars < 200` in
+        the log and no card appeared in the vault.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps. Include exact commands when possible.
+      placeholder: |
+        1. `git clone …`
+        2. `python install.py` → all defaults
+        3. `python -m throughline_cli import sample`
+        4. `python daemon/refine_daemon.py`
+        5. Observe …
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Doctor output
+      description: |
+        Paste the result of `python -m throughline_cli doctor`. Trim any
+        absolute paths that contain personal info.
+      render: shell
+      placeholder: |
+        ✓ python_version           Python 3.12 (>= 3.11 required)
+        ✓ required_imports         all 6 runtime packages importable
+        …
+
+  - type: input
+    id: os
+    attributes:
+      label: OS + Python
+      placeholder: "macOS 14.5 + Python 3.12.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Component
+      description: Which part of the system?
+      options:
+        - daemon (refine pipeline)
+        - rag_server (FastAPI / embed / rerank / search)
+        - throughline_cli wizard
+        - throughline_cli adapters (claude / chatgpt / gemini / sample)
+        - throughline_cli taxonomy
+        - throughline_cli doctor
+        - Filter (OpenWebUI function)
+        - packs runtime
+        - other / not sure
+    validations:
+      required: true
+
+  - type: input
+    id: openwebui_version
+    attributes:
+      label: OpenWebUI version (if RAG / Filter side)
+      placeholder: "0.3.21"
+
+  - type: input
+    id: qdrant_version
+    attributes:
+      label: Qdrant version (if indexing side)
+      placeholder: "1.10.0"
+
+  - type: input
+    id: backend_choices
+    attributes:
+      label: Backend choices
+      description: Which embedder / reranker / vector store?
+      placeholder: "EMBEDDER=bge-m3 RERANKER=skip VECTOR_STORE=qdrant"
+
+  - type: textarea
+    id: filter_badge
+    attributes:
+      label: Filter badge line (if applicable)
+      description: Redact any personal content. Paste the `⚙️ route_path=…` line.
+      render: text
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Last ~20 relevant lines from
+        `~/throughline_runtime/logs/refine_daemon.log` or rag_server
+        stderr. Redact paths + emails.
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, hypotheses, sanitized config snippets.

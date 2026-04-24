@@ -1,0 +1,71 @@
+name: Feature request
+description: Suggest a new capability or improvement
+title: "[FEATURE] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. The more concrete the better — sketch
+        commands or example output if it helps.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that throughline currently makes hard?
+      placeholder: |
+        I want to retrieve cards from a specific subdomain (e.g.
+        Tech/AI) without manually filtering after the fact.
+    validations:
+      required: true
+
+  - type: textarea
+    id: behaviour
+    attributes:
+      label: Proposed behaviour
+      description: |
+        A concrete sketch — what should the CLI / wizard / daemon do
+        differently? Example commands, mock panel output, or example
+        cards welcome.
+      placeholder: |
+        Add a `--domain` flag to `throughline_cli rag`:
+            python -m throughline_cli rag --domain Tech/AI "..."
+    validations:
+      required: true
+
+  - type: input
+    id: why_now
+    attributes:
+      label: Why now
+      description: |
+        One sentence — the trigger that made you open this issue. The
+        strongest signal for prioritisation.
+      placeholder: |
+        Hit this while importing 3k ChatGPT conversations across 5 domains.
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this deliberately does NOT cover. Helps scope.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Optional. Other approaches and why you'd reject them.
+
+  - type: dropdown
+    id: target
+    attributes:
+      label: Suggested release
+      description: When does this need to land?
+      options:
+        - v0.2.x (bug-fix track)
+        - v0.3 (next minor)
+        - v1.0 or later
+        - no opinion
+      default: 3
