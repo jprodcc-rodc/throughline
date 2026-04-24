@@ -68,3 +68,14 @@ dist/
 # === Platform-specific ===
 # Claude Code local settings (per-user, never shared)
 .claude/settings.local.json
+
+# === mkdocs site build artefacts ===
+# Docs synced from repo-root by .github/scripts/sync_docs.sh for
+# the mkdocs build. Source of truth stays at the repo root.
+site/
+docs/index.md
+docs/changelog.md
+docs/roadmap.md
+docs/contributing.md
+docs/security.md
+docs/code-of-conduct.md

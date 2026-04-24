@@ -3,6 +3,7 @@
 > The thread that turns every LLM conversation into searchable, self-growing personal knowledge.
 
 [![test](https://github.com/jprodcc-rodc/throughline/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/jprodcc-rodc/throughline/actions/workflows/test.yml)
+[![docs](https://github.com/jprodcc-rodc/throughline/actions/workflows/docs.yml/badge.svg?branch=main)](https://jprodcc-rodc.github.io/throughline/)
 [![release](https://img.shields.io/github/v/release/jprodcc-rodc/throughline?include_prereleases&sort=semver)](https://github.com/jprodcc-rodc/throughline/releases/latest)
 [![license](https://img.shields.io/github/license/jprodcc-rodc/throughline)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)

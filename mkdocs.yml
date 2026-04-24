@@ -1,0 +1,125 @@
+# mkdocs-material config for the throughline docs site.
+#
+# How the build works (see .github/workflows/docs.yml):
+#   1. GitHub Actions checks out the repo on push to main.
+#   2. The workflow copies root-level docs (README, CHANGELOG,
+#      ROADMAP, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT) into
+#      `docs/` so mkdocs can reference them without needing paths
+#      outside docs_dir. The originals stay at the repo root for
+#      GitHub's own rendering.
+#   3. mkdocs build produces `site/`, which is deployed to GitHub
+#      Pages via peaceiris/actions-gh-pages.
+#
+# To develop locally:
+#   pip install mkdocs-material mkdocs-material-extensions
+#   # Run the sync that CI runs, then serve.
+#   bash .github/scripts/sync_docs.sh && mkdocs serve
+#
+# Theme choice: mkdocs-material is the de-facto standard for
+# GitHub-hosted Python project docs. Handles dark mode, search,
+# mobile layout, and pygments-style code blocks out of the box.
+
+site_name: throughline
+site_description: Turn every LLM conversation into searchable, self-growing personal knowledge.
+site_url: https://jprodcc-rodc.github.io/throughline/
+repo_url: https://github.com/jprodcc-rodc/throughline
+repo_name: jprodcc-rodc/throughline
+edit_uri: edit/main/docs/
+copyright: MIT licensed. Built in the open.
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - content.action.view
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+docs_dir: docs
+site_dir: site
+
+# Explicit nav keeps historical artefacts (CHINESE_STRIP_LOG,
+# PHASE_6_CHECKLIST) out of the visible navigation. They're still
+# served at their paths — power users can link directly — but the
+# sidebar stays clean.
+nav:
+  - Home: index.md
+  - Install:
+      - Quickstart + deployment: DEPLOYMENT.md
+      - Alpha user notes: ALPHA_USER_NOTES.md
+  - Under the hood:
+      - Architecture: ARCHITECTURE.md
+      - Design decisions: DESIGN_DECISIONS.md
+      - Filter badge reference: FILTER_BADGE_REFERENCE.md
+      - Taxonomy growth (U27): TAXONOMY_GROWTH_DESIGN.md
+  - Project:
+      - Roadmap: roadmap.md
+      - Changelog: changelog.md
+      - Contributing: contributing.md
+      - Security policy: security.md
+      - Code of conduct: code-of-conduct.md
+  - Historical:
+      - Chinese strip log: CHINESE_STRIP_LOG.md
+      - Phase 6 checklist: PHASE_6_CHECKLIST.md
+      - Onboarding design spec: ONBOARDING_DATA_IMPORT.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jprodcc-rodc/throughline
+      name: throughline on GitHub
+
+# Strict mode off: the sync step copies MD files with GitHub-style
+# relative links (e.g. ./LICENSE, ./CONTRIBUTING.md) that may not
+# resolve inside mkdocs's own URL tree. Warn, don't fail.
+strict: false
