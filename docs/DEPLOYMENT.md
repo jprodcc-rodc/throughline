@@ -4,12 +4,20 @@
 > shell, Python virtual environments, and Docker. For the reasoning
 > behind each component see `ARCHITECTURE.md`; for badge semantics once
 > the system is running see `FILTER_BADGE_REFERENCE.md`.
+>
+> **Two paths are documented below.** The **Quick install (via wizard)**
+> section is the v0.2.0+ preferred entry — `python install.py` collects
+> every decision and writes `~/.throughline/config.toml` for you. The
+> **Manual install** sections after it show the same steps by hand for
+> scripted / headless / air-gapped setups where you'd rather not run the
+> TUI.
 
 ---
 
 ## Contents
 
 - [Prerequisites](#prerequisites)
+- [Quick install (via wizard)](#quick-install-via-wizard)
 - [Step 1 — Clone and configure](#step-1--clone-and-configure)
 - [Step 2 — Qdrant](#step-2--qdrant)
 - [Step 3 — RAG server](#step-3--rag-server)
@@ -17,6 +25,8 @@
 - [Step 5 — OpenWebUI Filter](#step-5--openwebui-filter)
 - [Step 6 — Ingest an existing vault](#step-6--ingest-an-existing-vault)
 - [Step 7 — Smoke test](#step-7--smoke-test)
+- [Pluggable backends (EMBEDDER / RERANKER / VECTOR_STORE)](#pluggable-backends)
+- [Diagnostics (`throughline_cli doctor`)](#diagnostics-throughline_cli-doctor)
 - [Troubleshooting](#troubleshooting)
 - [Platform notes](#platform-notes)
 
@@ -68,6 +78,48 @@ huggingface-cli download BAAI/bge-reranker-v2-m3
 
 Skippable if you trust your bandwidth and don't mind a long first-run
 wait.
+
+---
+
+## Quick install (via wizard)
+
+For most users, the fastest path from zero to a working install is
+the `install.py` wizard. Two or three minutes of Enter-Enter-Enter
+covers what takes 15–20 minutes of manual config:
+
+```bash
+git clone https://github.com/jprodcc-rodc/throughline
+cd throughline
+
+python3 -m venv .venv
+source .venv/bin/activate                      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+python install.py                              # 16-step wizard
+```
+
+The wizard:
+
+1. Asks 16 short questions with sensible Enter-defaults. Pressing
+   Enter on every prompt lands a working Full-mission config.
+2. Scans your chat export (Claude / ChatGPT / Gemini) if you point
+   it at one — no export? pick `5. none` at step 9 and use the
+   **bundled sample export** at any later point:
+   `python -m throughline_cli import sample` (10 synthetic
+   conversations, ~$0.03 Normal-tier refine).
+3. Runs a live preview call against your LLM provider at step 13
+   (~$0.01, explicit consent required).
+4. Writes `~/.throughline/config.toml` and prints a **Next 3 steps**
+   panel tailored to your mission telling you the exact commands
+   to launch the rag_server, the daemon, and (for Full mission) to
+   install the Filter.
+5. After anything changes, run `python -m throughline_cli doctor`
+   to confirm each piece is reachable.
+
+**If you prefer the manual route** — scripted ops, Docker-compose
+contributor, air-gapped deploy, or you just want to see what each
+env var does — continue with **Step 1** below. The wizard and the
+manual path produce the same on-disk state.
 
 ---
 
@@ -321,7 +373,84 @@ reachable.
 
 ---
 
+## Pluggable backends
+
+v0.2.0 introduced swappable backends for three components. Each picks
+a default that matches the v0.1 behaviour; each flips by setting a
+single environment variable (or the matching field in the wizard).
+
+| Component | Env var | Default | Alternates (today) | Coming in v0.3 |
+|---|---|---|---|---|
+| Embedder | `EMBEDDER` | `bge-m3` (local torch) | `openai` | `nomic`, `minilm` native |
+| Reranker | `RERANKER` | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage`, `jina` native, `bge-reranker-v2-gemma` |
+| Vector store | `VECTOR_STORE` | `qdrant` | `chroma` (optional dep) | `lancedb`, `duckdb_vss`, `sqlite_vec`, `pgvector` |
+
+The local-default backends carry a ~4.6 GB one-time download each
+(see the pre-flight section above). The cloud alternates (`openai`,
+`cohere`) need their own env vars: `OPENAI_API_KEY` + optional
+`OPENAI_BASE_URL`, `COHERE_API_KEY` + optional `COHERE_BASE_URL`.
+
+Flipping any of these invalidates the Qdrant collection's stored
+vectors — a different embedder produces a different vector space.
+Re-run `scripts/ingest_qdrant.py` after changing `EMBEDDER`; the
+script reads the active embedder's `vector_size` and creates a fresh
+collection with the matching schema.
+
+Install only the optional packages you need:
+
+```bash
+pip install .[local]    # torch + transformers — needed for EMBEDDER=bge-m3
+pip install .[openai]   # openai client — needed for EMBEDDER=openai and ingest
+pip install .[chroma]   # chromadb — needed for VECTOR_STORE=chroma
+pip install .[all]      # everything (full local-only path)
+```
+
+---
+
+## Diagnostics (`throughline_cli doctor`)
+
+v0.2.0 ships a one-shot health check that answers the "is my install
+actually working?" question without you having to grep three log files:
+
+```bash
+python -m throughline_cli doctor
+```
+
+Output (truncated, happy-path):
+
+```
+  ✓ python_version           Python 3.12 (>= 3.11 required)
+  ✓ required_imports         all 6 runtime packages importable
+  ✓ optional_imports         present: torch, transformers, openai
+  ✓ config_file              /home/you/.throughline/config.toml (1824 bytes)
+  ✓ state_dir                /home/you/throughline_runtime/state
+  ✓ qdrant                   http://localhost:6333 responding 200
+  ✓ rag_server               http://localhost:8000 health 200
+  ✓ daemon_state             state file updated 3 min ago
+  ✓ embedder_model_cache     BAAI/bge-m3 cached at ~/.cache/huggingface/...
+  ✓ taxonomy_observations    47 observation(s) in taxonomy_observations.jsonl
+
+  All 10 checks passed.
+```
+
+Flags:
+
+- `--quiet` — only print warnings + failures. Useful in cron / CI.
+- `--json` — machine-readable output. Exit code 0 iff all green (or
+  only warnings); 1 if any check failed.
+
+Each failed check prints a **remediation line** showing the exact
+command to fix it. Run doctor after every install / upgrade / env
+change; it's the fastest way to tell "it broke" from "it's fine but
+I'm staring at the wrong log".
+
+---
+
 ## Troubleshooting
+
+Before anything else: **run `python -m throughline_cli doctor`**
+(above). It enumerates the common failure surfaces with remediation
+hints and usually short-circuits the rest of this section.
 
 For Filter-specific failure modes, see
 `filter/README.md § 6 — Troubleshooting`. Highlights:
@@ -367,8 +496,14 @@ For the other components:
   pipeline you need. CUDA is picked up automatically; CPU-only works
   but reranker batch size (default 100) may need tuning for small
   hosts.
-- **Windows** — supported for *development* and *ingest* only.
-  `scripts/ingest_qdrant.py` runs cleanly on Windows (the forward-slash
-  normalisation makes this safe). The daemon and RAG server are
-  expected to run on macOS or Linux in production; Windows runtime
-  support is not tested and not on the roadmap.
+- **Windows** — tier 1 for dev + wizard, tier 2 for runtime.
+  `python install.py`, the import adapters, `throughline_cli doctor`,
+  `scripts/ingest_qdrant.py`, and the test suite (`pytest fixtures/`)
+  are all supported on Windows 10/11 — developed against PowerShell +
+  bash (git-bash). The daemon and rag_server run on Windows too (the
+  path-normalisation fixes for the m4 point_id invariant make this
+  safe), but long-lived service-style deployment is better-trodden on
+  macOS + Linux; no `nssm` / Scheduled-Task template ships today. For
+  a Windows service wrapper, roll one locally and consider opening a
+  PR — it would land as a `config/windows/` template alongside the
+  macOS + Linux ones.

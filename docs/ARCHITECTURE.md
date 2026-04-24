@@ -21,6 +21,7 @@
 - [10. Taxonomy: knowledge_identity + XYZ axes](#10-taxonomy-knowledge_identity--xyz-axes)
 - [11. Forward-slash path normalisation (load-bearing)](#11-forward-slash-path-normalisation-load-bearing)
 - [12. Orthogonal mode triggering](#12-orthogonal-mode-triggering)
+- [13. v0.2.0 additions: pluggable backends, dials, growth loop](#13-v020-additions-pluggable-backends-dials-growth-loop)
 
 ---
 
@@ -567,7 +568,112 @@ used only for visual grouping.
 
 ---
 
-*Last update: Phase 5 of the open-source migration. Source material
-translated + sanitised from the private ARCHITECTURE and design notes;
-see `CHINESE_STRIP_LOG.md § Phase 5` for what was translated verbatim
-and what was omitted.*
+## 13. v0.2.0 additions: pluggable backends, dials, growth loop
+
+Sections 1–12 describe the core v0.1.0 architecture and are still
+load-bearing. v0.2.0 added three orthogonal extensions that don't
+replace any of the above but slot in at specific seams.
+
+### 13.1 Pluggable backends (U12 / U20 / U21)
+
+Three abstractions live under `rag_server/`:
+
+- **`embedders.py`** — `BaseEmbedder` ABC. `create_embedder()` reads
+  `EMBEDDER` env var. v0.1 default `bge-m3` (local torch, lazy-loaded)
+  is now one registry entry alongside `openai`. Alias map routes
+  `nomic` / `minilm` → `bge-m3` and `jina` / `voyage` / `cohere` →
+  `openai` until v0.3 ships dedicated impls.
+- **`rerankers.py`** — `BaseReranker` ABC. Same factory shape.
+  Default `bge-reranker-v2-m3` plus `cohere` and `skip`. Cohere's
+  response re-aligned back to input-order so downstream
+  `zip(docs, scores)` works. Missing `COHERE_API_KEY` degrades to
+  the skip path rather than erroring.
+- **`vector_stores.py`** — `BaseVectorStore` ABC: five operations
+  (`ensure_collection`, `upsert`, `search`, `delete`, `count`).
+  Default `qdrant` preserves the v0.1 raw-urllib wire calls; `chroma`
+  is the alternate reference (optional dep, returns a stub if
+  `chromadb` isn't importable so the wizard never crashes at import).
+  Aliases route `lancedb` / `duckdb_vss` / `sqlite_vec` / `pgvector`
+  → `qdrant` for now.
+
+`rag_server/rag_server.py` is wired through the three factories.
+Setting `EMBEDDER=openai RERANKER=cohere VECTOR_STORE=chroma` flips
+all three backends end-to-end without a code edit. Models lazy-load
+on first real call so `import rag_server.rag_server` stays fast for
+tests and fail-closed checks. Changing `EMBEDDER` invalidates the
+Qdrant collection's vector space; re-run `scripts/ingest_qdrant.py`
+afterwards — the script reads the active embedder's `vector_size`
+and creates a fresh collection with matching schema.
+
+### 13.2 User dials (U23)
+
+The wizard's step 13 lets the user adjust five output dials
+(tone / length / sections / register / keep-verbatim) with a safe
+default per dial. Choices persist to `~/.throughline/config.toml`.
+
+`daemon/dials.py` owns the vocabulary + `render_dial_modifier()`
+which produces a `<user_dials>` XML tail for the refiner system
+prompt. `refine_daemon._apply_user_dials()` appends it after the
+base prompt (or pack override). Empty string when every dial is at
+default, so an untouched config pays zero prompt-token overhead.
+
+Invalid values in `config.toml` silently fall back to defaults — a
+typo in `dial_tone` must never brick the refiner. Dropping every
+body section would break the 6-section retention gate; the loader
+refuses an empty section list and retains the defaults.
+
+### 13.3 Self-growing taxonomy (U27)
+
+v0.1 shipped a one-shot LLM-derived taxonomy (`scripts/derive_taxonomy.py`
+for users with 100+ existing cards) and static template fallbacks
+(JD/PARA/Zettel). v0.2.0 adds a growth loop for the 75% of users who
+arrive with <100 cards:
+
+- **U27.1 seed** — `config/taxonomy.minimal.py` ships 5 broad domains
+  (Tech / Creative / Health / Life / Misc). Wizard step 14 picks it
+  when the scanned import has <100 cards.
+- **U27.2 signal** — all 8 refiner prompts emit both `primary_x`
+  (must be in VALID_X_SET, the routing invariant) and
+  `proposed_x_ideal` (unconstrained preferred tag). When they match,
+  the fit is perfect; when they differ, the gap is growth signal.
+- **U27.3 observer** — `daemon/taxonomy_observer.py` appends every
+  refine's `{ts, card_id, title, primary_x, proposed_x_ideal}` tuple
+  to `state/taxonomy_observations.jsonl`. Pure append-only, no
+  periodic scan, no in-memory counters.
+- **U27.4 review CLI** — `python -m throughline_cli taxonomy review`
+  reads the log, clusters drift rows (normalised for casing and
+  singular/plural), applies count + day-span thresholds, and prompts
+  the user through each candidate with add/reject/name-as-different/
+  skip actions. Add performs surgical regex insert into
+  `config/taxonomy.py`'s VALID_X_SET literal, bootstrapping from the
+  minimal seed on first write so the shipped file stays read-only.
+
+See `docs/TAXONOMY_GROWTH_DESIGN.md` for the full spec + deferred
+U27.5/.6/.7 scope.
+
+### 13.4 Budget enforcement (U3)
+
+`daemon/budget.py` reads `THROUGHLINE_MAX_DAILY_USD` (env var wins)
+or `daily_budget_usd` in `config.toml`. `process_raw_file()` checks
+the cap before loading state; when over, it skips WITHOUT updating
+state so the next day's tick (or next daemon restart) picks up the
+raw file unchanged. Zero cap is a valid kill-switch. Day rollover
+is implicit via date keys in `state/cost_stats.json`.
+
+### 13.5 Diagnostic surface (doctor)
+
+`python -m throughline_cli doctor` runs 10 checks in dependency
+order (Python → imports → config → state → services → caches). Each
+check returns a `CheckResult(name, status, detail, fix)` with a
+remediation line when not ok. `--quiet` mode for cron, `--json` for
+tooling, exit code 1 iff any failure (warnings don't block).
+
+The wizard's end-of-flow next-steps panel cross-links to doctor so
+users discover it immediately rather than hunting through docs.
+
+---
+
+*Last update: v0.2.0 post-release polish, 2026-04-24. Sections 1–12
+are the original Phase 5 content translated + sanitised from the
+private ARCHITECTURE and design notes (see `CHINESE_STRIP_LOG.md
+§ Phase 5`). Section 13 captures what v0.2.0 added.*

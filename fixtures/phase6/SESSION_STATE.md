@@ -2,14 +2,105 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 (v0.2.0 shipped + open-source hardening complete — release tagged, CI green, scaffolding in place, rag_server wired)
+**Last updated:** 2026-04-24 (v0.2.0 shipped + open-source hardening + UX wave all complete — release tagged, CI green, 3 good-first-issues seeded, doctor command + sample import + wizard next-steps panel + ergonomic cleanup of error messages all live)
 
 ## Where we are right now (TL;DR for next session)
 
-**Latest commit on `main`:** `cf516e1` (ruff + CodeQL + dead code cleanup). All pushed to origin. · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `d261b75` (ruff lint fix after UX wave). All pushed to origin. CI green across lint + pytest 3.11 + pytest 3.12. · **GitHub:** `jprodcc-rodc/throughline`
 
 **v0.2.0 is live:** `git tag v0.2.0` + GitHub Release page. Release URL:
 <https://github.com/jprodcc-rodc/throughline/releases/tag/v0.2.0>
+
+**UX wave done in the resumed session after user slept (2026-04-24 mid-day):**
+All 10 items from the user-journey friction analysis shipped, tests green,
+CI green. Order of commits (bottom-up = newest first):
+
+- **`d261b75`** — ruff F541 lint fix (dead `f` prefixes in the new
+  wizard/doctor files, auto-fixed).
+- **J · `f0786d8`** — issue templates → GitHub YAML form schema.
+  Required fields, dropdowns, rendered-shell blocks. Bug template
+  now asks for `doctor` output + active backend triple. Feature
+  template has required "why now" + target-release dropdown.
+- **I · `71f3aff`** — `CONTRIBUTING.md` expanded (dev-setup, claim-
+  issue flow, commit conventions, house style) + `pyproject.toml`
+  package skeleton (console scripts `throughline-{install, import,
+  taxonomy, doctor}`, 5 optional-dep extras, ruff + pytest tool
+  config consolidated).
+- **H · `f2d600a`** — error-message remediation audit. Every user-
+  facing `ERROR:` / `sys.exit()` now tells the user what to do next:
+  `ingest_qdrant.py` VAULT_PATH + openai missing, pack_source_model_guard
+  CLI, `llm.py` no-API-key path.
+- **D+E+F+G · `bf71d3f`** — README polish + wizard preview cost
+  preflight. (D) Comparison table vs mem0 / Letta / SuperMemory /
+  OpenWebUI memory. (E) Real before/after card example using sample-001.
+  (F) Wizard step 13 asks `ask_yes_no("Run the preview?")` before
+  spending the user's ~$0.01. (G) Mermaid architecture diagram
+  replacing ASCII flow — adds U27 observer/review loop arrows.
+- **C · `0c7e1c8`** — bundled sample export. `samples/claude_sample.jsonl`
+  (10 synthetic conversations across AI / Health / Creative / Biz /
+  Game domains for U27 signal). New `python -m throughline_cli import
+  sample` source routes through the Claude adapter with the bundled
+  path and auto-tags `sample-YYYY-MM-DD`. Single biggest evaluation-
+  funnel improvement — new users no longer need their own export.
+- **A+B · `dabcaa9`** — wizard end-of-flow next-steps panel
+  (tailored per mission: Full shows RAG server + daemon + Filter;
+  RAG-only shows /v1/rag pointer; Notes-only skips both). Plus the
+  brand-new `python -m throughline_cli doctor` command: 10 checks
+  in dependency order (Python version → imports → config → state →
+  services → caches), `CheckResult` dataclass with remediation
+  hints, `--quiet` + `--json` modes, exit 1 iff any fail.
+
+**Test count:** 586 passed, 10 xfailed (was 551 before UX wave; +35
+new tests across doctor / sample import / preflight gate).
+
+**UX friction points — before vs after:**
+
+| Stage | Before | After (this session) |
+|---|---|---|
+| Evaluate | "how does this differ from mem0/Letta?" unanswered | README comparison table |
+| Decide | ASCII diagram missing U27 feedback loop | Mermaid diagram with U27 arrows |
+| Install | no export = can't try | `import sample` gets 10 refined cards, $0.03 |
+| Install | step 13 silently charges ~$0.01 | explicit "Run preview?" ask |
+| Install | wizard exits into silence | "Next 3 steps" panel with copy-paste cmds |
+| First-Run | broken deploy = read 3 log files | `throughline_cli doctor` one-shot self-check |
+| First-Run | `ERROR: VAULT_PATH` no hint | every error lists the fix command |
+| Trust | `CONTRIBUTING.md` said "placeholder" | real onboarding: dev setup + claim flow + conventions |
+| Trust | no `pip install -e .` path | `pyproject.toml` with console-script entry points |
+| Trust | MD issue templates with HTML comments | YAML forms with dropdowns + required fields |
+
+**GitHub CLI (`gh`) state:** installed at `C:\Program Files\GitHub CLI\gh.exe`,
+on user PATH, authenticated as `jprodcc-rodc` via https OAuth. Use
+`gh <command>` directly in new shells. Gotcha: `--git-protocol ssh --web`
+stuck on a greyed-out authorize button in the previous session; use
+`--git-protocol https --web` if re-authenticating.
+
+**Branch protection:** user confirmed enabled (GitHub UI ruleset).
+Required checks: `pytest (3.11)` + `pytest (3.12)` + `lint (ruff)`.
+
+**What's genuinely left that I can execute autonomously (v0.2.x polish):**
+1. **wizard `--reconfigure` mode** (issue #8) — existing config detected →
+   menu of "run all / pick steps / show summary". Shell of design is in
+   the issue; real impl is ~3 hours.
+2. **`asciinema` screencast script** (text, no video) — bundle a shell
+   script that drives the wizard through a sample import so users see
+   the flow without me recording. Not as sexy as a GIF but autonomous.
+3. **Type hints audit** — some public functions in `daemon/` lack
+   return types. Tighter signatures for LSP/IDE UX without adding
+   mypy to CI.
+4. **`docs/ARCHITECTURE.md` sync** — likely stale on U12/U20/U21/U23/U27
+   additions. Needs a read-through + rewrite of a couple sections.
+5. **`docs/DEPLOYMENT.md` sync** — the manual 5-step install is still
+   documented; should now lead with the wizard path and note the
+   manual path as advanced/scripted.
+
+**What requires YOU:**
+- Demo GIF/screencast (recording) — or use asciinema if you want
+  the auto-drive path.
+- Posting to HN / awesome-obsidian / r/LocalLLaMA / r/ObsidianMD /
+  r/selfhosted — your voice, your account.
+- PyPI upload — needs account + API token + trusted-publishing setup.
+- v0.3 branch kickoff when you're ready to start concrete driver
+  work (lancedb / duckdb_vss / pgvector / sqlite_vec).
 
 **Post-release hardening done in this extended session (2026-04-24 late):**
 - **daemon import bug fix** (`6ce8534`) — `JD_ROOT_MAP`,

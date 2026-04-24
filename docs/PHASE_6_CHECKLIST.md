@@ -1,5 +1,13 @@
 # Phase 6 Regression Checklist
 
+> **Status — 2026-04-24: Phase 6 complete; repo went public with
+> v0.1.0 tag `cbbb92f` on 2026-04-23 and shipped v0.2.0 on
+> 2026-04-24.** This checklist is retained for historical context
+> and as a template for future "flip a private repo to public"
+> efforts. For ongoing regression coverage see `fixtures/` tests
+> (run via `pytest fixtures/` — 586 passing at v0.2.0) and
+> `.github/workflows/test.yml`.
+
 > Scope: English-only smoke and regression testing before flipping the
 > repository public. Derived from `docs/CHINESE_STRIP_LOG.md` — every
 > `HIGH` / `MEDIUM` entry maps to at least one check here.

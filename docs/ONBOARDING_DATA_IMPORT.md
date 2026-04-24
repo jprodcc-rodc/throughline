@@ -1,5 +1,32 @@
 # Onboarding & Data Import
 
+> **Status — 2026-04-24 · v0.2.0 shipped.** This file was the
+> *design spec* written before any code landed. Everything it
+> describes is now implemented and on `main`. Treat this doc as
+> historical: it documents the decisions, not the current shape of
+> the code.
+>
+> **If you want the current flow**, read in this order:
+>
+> 1. [`README.md` → Quickstart](../README.md#-quickstart) — the
+>    working commands.
+> 2. [`docs/DEPLOYMENT.md` → Quick install (via wizard)](DEPLOYMENT.md#quick-install-via-wizard) —
+>    the same thing with more context.
+> 3. [`fixtures/phase6/SESSION_STATE.md`](../fixtures/phase6/SESSION_STATE.md) —
+>    the live cross-session tracker. What actually shipped in which
+>    commit.
+>
+> The sections below still accurately describe the design intent,
+> but specific API examples (e.g. `python -m throughline install` —
+> actual command is `python install.py` or `python -m throughline_cli
+> install`) may read differently from the final shipped surface.
+> Commands like `import sample`, `taxonomy review`, `doctor` landed
+> after this doc was written.
+
+---
+
+## (Original design spec below)
+
 > Planning doc for v0.2.0. Captures how a new user (empty vault OR
 > existing-chat-history user) gets from `git clone` to a working
 > flywheel. Nothing below is implemented yet — this is the design

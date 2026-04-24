@@ -93,6 +93,49 @@ do, add the findings below as new subsections.
 
 ---
 
+## v0.2.0 update (2026-04-24)
+
+Resolved rough edges that were on the "deferrable" list in the
+v0.1.0 audit:
+
+- **"Windows runtime not supported"** → **Windows runtime works.**
+  Wizard, adapters, daemon, rag_server, `doctor`, and the full test
+  suite all run on Windows 10/11. Path normalisation was the
+  blocker; `_norm_path` + the `test_m4_point_id` invariant
+  guarantees cross-platform point-id determinism. Platform notes in
+  `DEPLOYMENT.md` updated accordingly.
+- **"bge-m3 / bge-reranker model download blocks first start"** →
+  **mitigated by U6 pre-flight section.** `DEPLOYMENT.md` now leads
+  with a `huggingface-cli download` step so the 4.6 GB download
+  happens once up front, and `throughline_cli doctor` includes an
+  `embedder_model_cache` check so users know which state they're in.
+- **"No CI yet"** → **CI shipped.** GitHub Actions runs pytest on
+  Python 3.11 + 3.12, ruff lint (F + E9), and CodeQL weekly, all
+  required by branch protection before merge to `main`. Green
+  badge on README.
+
+Still valid / still deferrable:
+
+- **Two env vars for one concept** (`VAULT_PATH` vs
+  `THROUGHLINE_VAULT_ROOT`). Still a smell. v0.3 candidate.
+- **OpenWebUI Filter installation** still a manual copy-paste into
+  the Admin → Functions UI. Could be scripted via REST, but
+  OpenWebUI's Functions API is not stable enough yet to commit to.
+  The seeded issue [#7 Docker compose for one-command try-it-out]
+  will change this for the evaluation path.
+
+New rough edges surfaced by the v0.2.0 UX audit (2026-04-24):
+
+| # | Issue | Status |
+|---|---|---|
+| 11 | Silent LLM charge at wizard step 13 (~$0.01 without consent) | Fixed in `bf71d3f` — explicit `ask_yes_no` cost preflight. |
+| 12 | Wizard exit with no "what to do next" guidance | Fixed in `dabcaa9` — end-of-flow panel prints mission-tailored next steps. |
+| 13 | User without an existing Claude/ChatGPT/Gemini export cannot evaluate the loop | Fixed in `0c7e1c8` — `python -m throughline_cli import sample` bundles 10 synthetic conversations. |
+| 14 | `VAULT_PATH` missing → `sys.exit(2)` without remediation hint | Fixed in `f2d600a` — error messages now enumerate the fix (bash + PowerShell forms) and reference the wizard. |
+| 15 | No one-shot way to tell "is my install working?" | Fixed in `dabcaa9` — `python -m throughline_cli doctor` runs 10 checks with ✓/!/✗ + remediation. |
+
+---
+
 ## External alpha reports
 
 *(empty — first alpha user will fill in here)*
