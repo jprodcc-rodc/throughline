@@ -168,6 +168,71 @@ class TestDaemonRoutesThroughConfiguredProvider:
         assert "http-referer" not in headers
         assert headers["authorization"] == "Bearer sk-ds-live"
 
+    def test_anthropic_via_native_messages_api(self, tmp_path, monkeypatch):
+        """Daemon with provider=anthropic must route through the
+        native /v1/messages adapter, not the OpenAI-compat shim.
+        x-api-key auth; cost_stats records usage correctly despite
+        Anthropic's different field names."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        _clear_provider_keys(monkeypatch)
+        (tmp_path / "config.toml").write_text(
+            'llm_provider = "anthropic"\n', encoding="utf-8")
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+
+        # State dir for cost_stats output.
+        state_dir = tmp_path / "state"
+        monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(state_dir))
+
+        rd = _reload_refine_daemon()
+        assert rd._LLM_PROVIDER_ID == "anthropic"
+
+        captured: Dict[str, Any] = {}
+
+        def fake_open(req, timeout=None):
+            captured["url"] = req.full_url
+            captured["headers"] = dict(req.header_items())
+            captured["body"] = json.loads(req.data.decode("utf-8"))
+            body = json.dumps({
+                "content": [{"type": "text",
+                             "text": '{"refined": "ok"}'}],
+                "usage": {"input_tokens": 321,
+                          "output_tokens": 45},
+            }).encode("utf-8")
+
+            class _Resp:
+                def read(self): return body
+                def __enter__(self): return self
+                def __exit__(self, *a): pass
+
+            return _Resp()
+
+        monkeypatch.setattr("urllib.request.urlopen", fake_open)
+
+        out = rd.call_llm_json(
+            model="claude-sonnet-4-5-20250929",
+            system_prompt="S", user_prompt="U",
+            temperature=0.0, max_tokens=1000,
+            step_name="Refiner",
+        )
+        assert out == {"refined": "ok"}
+        # Endpoint: /messages, not /chat/completions.
+        assert captured["url"].endswith("/messages")
+        # Auth: x-api-key, not Bearer.
+        hdrs = {k.lower(): v for k, v in captured["headers"].items()}
+        assert hdrs.get("x-api-key") == "sk-ant-test"
+        assert "authorization" not in hdrs
+        # Version pinned.
+        assert hdrs.get("anthropic-version")
+        # Request body has system at top level.
+        assert "system" in captured["body"]
+        # Cost stats survived the rename: Anthropic returns
+        # input_tokens/output_tokens but _record_cost sees
+        # prompt_tokens/completion_tokens.
+        stats = json.loads(rd.COST_STATS_FILE.read_text(encoding="utf-8"))
+        day = list(stats["by_date"].values())[0]
+        assert day["Refiner"]["input_tokens"] == 321
+        assert day["Refiner"]["output_tokens"] == 45
+
     def test_siliconflow_from_env_override(self, tmp_path, monkeypatch):
         """THROUGHLINE_LLM_PROVIDER env wins over config.toml."""
         monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))

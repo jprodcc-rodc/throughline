@@ -117,6 +117,32 @@ def call_chat(model_id: str,
             "your shell, then re-run. (OpenRouter free tier signup: "
             "https://openrouter.ai)"
         )
+
+    # Anthropic uses a native /v1/messages schema (x-api-key auth,
+    # system as top-level field, content-array response). Dispatch
+    # through the native adapter before the OpenAI-compat body path.
+    if provider_id == "anthropic":
+        from . import anthropic_adapter as _aa
+        try:
+            preset = _p.get_preset("anthropic")
+            base_url = preset.base_url
+        except ValueError:
+            base_url = _aa.DEFAULT_BASE_URL
+        try:
+            text, _usage = _aa.call_messages(
+                model=model_id,
+                system_prompt=system_prompt,
+                user_message=user_message,
+                api_key=key,
+                base_url=base_url,
+                temperature=temperature,
+                max_tokens=4000,
+                response_format=response_format,
+                timeout=timeout,
+            )
+            return text
+        except _aa.AnthropicAdapterError as e:
+            raise LLMError(str(e)) from None
     body: dict = {
         "model": model_id,
         "messages": [

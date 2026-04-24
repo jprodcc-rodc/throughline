@@ -665,6 +665,53 @@ def call_llm_json(
         )
     import urllib.request
 
+    # Anthropic: dispatch through the native /v1/messages adapter.
+    # Returns the same parsed-JSON shape as the OpenAI-compat path
+    # (the adapter rewrites usage field names so _record_cost keeps
+    # working without a branch).
+    if _LLM_PROVIDER_ID == "anthropic":
+        from throughline_cli.anthropic_adapter import (
+            call_messages as _anthropic_call,
+            AnthropicAdapterError as _AnthErr,
+        )
+        # Derive base_url from the resolved endpoint (_LLM_URL points
+        # at `.../chat/completions` for OpenAI-compat providers; for
+        # Anthropic the resolver built `.../chat/completions` too but
+        # we want `.../messages` — strip and rebuild).
+        base_url = _LLM_URL
+        for suffix in ("/chat/completions", "/messages"):
+            if base_url.endswith(suffix):
+                base_url = base_url[: -len(suffix)]
+                break
+        last_err_a: Optional[Exception] = None
+        for attempt in range(retries + 1):
+            try:
+                text, usage = _anthropic_call(
+                    model=model,
+                    system_prompt=system_prompt,
+                    user_message=user_prompt,
+                    api_key=_LLM_KEY,
+                    base_url=base_url,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    timeout=180.0,
+                )
+                if step_name:
+                    _record_cost(
+                        step_name, model,
+                        int(usage.get("prompt_tokens", 0) or 0),
+                        int(usage.get("completion_tokens", 0) or 0),
+                    )
+                return parse_json_loose(text)
+            except _AnthErr as e:
+                last_err_a = e
+                if attempt < retries:
+                    time.sleep(2 * (attempt + 1))
+                    continue
+                raise
+        if last_err_a:
+            raise last_err_a
+
     payload = {
         "model": model,
         "temperature": temperature,

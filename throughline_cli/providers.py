@@ -99,8 +99,8 @@ _OPENAI = ProviderPreset(
 
 _ANTHROPIC = ProviderPreset(
     id="anthropic",
-    name="Anthropic (direct, via OpenAI-compat shim)",
-    base_url="https://api.anthropic.com/v1/openai",  # OpenAI compat shim
+    name="Anthropic (native Messages API)",
+    base_url="https://api.anthropic.com/v1",
     env_var="ANTHROPIC_API_KEY",
     signup_url="https://console.anthropic.com",
     models=(
@@ -108,7 +108,9 @@ _ANTHROPIC = ProviderPreset(
         ("claude-opus-4-5-20250929",   "Claude Opus 4.5"),
         ("claude-haiku-4-5-20250929",  "Claude Haiku 4.5"),
     ),
-    notes="Uses Anthropic's OpenAI-compatible shim at /v1/openai. Full native Messages API is v0.3.",
+    notes=("Native /v1/messages. Prompt caching on the system block "
+           "enabled by default (cache_control=ephemeral, ~5-min hit "
+           "window). Use via the throughline_cli.anthropic_adapter."),
 )
 
 _DEEPSEEK = ProviderPreset(
