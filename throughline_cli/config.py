@@ -120,10 +120,60 @@ class WizardConfig:
     # Metadata
     wizard_version: str = "0.2.0-dev"
     completed_steps: list[int] = field(default_factory=list)
+    # Schema migration marker. Bumped when the WizardConfig shape
+    # changes in a way that old configs need a silent migration for
+    # (e.g. U28 added `llm_provider`). `load()` uses this to detect
+    # pre-migration files and backfill defaults.
+    config_schema_version: int = 2
+
+
+# Current schema version. Bump when you add a field whose default
+# depends on another field's value (simple additions don't require
+# a bump — tomllib returns the dataclass default for unknown keys).
+_CURRENT_SCHEMA_VERSION = 2
+
+
+def _migrate(cfg: WizardConfig, raw: dict) -> bool:
+    """Bring an older config forward to the current schema.
+
+    `cfg` is the dataclass populated with raw values (plus defaults
+    for missing fields). `raw` is the dict straight from TOML — lets
+    us tell "field not in file" from "field set to the default".
+
+    Returns True iff the caller should rewrite the config file. Safe
+    no-op for already-current configs.
+    """
+    changed = False
+    stored_version = raw.get("config_schema_version")
+
+    # --- Migration: U28 multi-provider (no stored version -> v2) ---
+    # Pre-U28 configs have no `llm_provider` field. If the raw dict is
+    # missing it, backfill from the active env var (autodetect) or fall
+    # back to "openrouter" — which is what the daemon would have been
+    # doing implicitly anyway.
+    if "llm_provider" not in raw:
+        try:
+            from . import providers as _p
+            autodetected = _p.detect_configured_provider()
+        except Exception:
+            autodetected = None
+        cfg.llm_provider = autodetected or "openrouter"
+        changed = True
+
+    if stored_version != _CURRENT_SCHEMA_VERSION:
+        cfg.config_schema_version = _CURRENT_SCHEMA_VERSION
+        changed = True
+    return changed
 
 
 def load() -> WizardConfig:
-    """Load config from disk, or return defaults if no file exists."""
+    """Load config from disk, or return defaults if no file exists.
+
+    Runs schema migrations silently — if the on-disk config predates
+    a field that later releases added, we backfill sensible defaults
+    and write the config back to disk. No prompt; migrations are
+    non-destructive by contract.
+    """
     p = config_path()
     if not p.exists():
         return WizardConfig()
@@ -133,6 +183,18 @@ def load() -> WizardConfig:
     for k, v in data.items():
         if hasattr(cfg, k):
             setattr(cfg, k, v)
+    # Apply any migrations. `_migrate` returns True when the file
+    # needs rewriting; we do that in a try-except so a read-only
+    # config (e.g. mounted as Docker secret) doesn't crash the load.
+    try:
+        if _migrate(cfg, data):
+            try:
+                save(cfg)
+            except OSError:
+                pass  # Read-only filesystem -- migration is in-memory only.
+    except Exception:
+        # Never let a migration bug prevent startup.
+        pass
     return cfg
 
 
