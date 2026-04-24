@@ -21,6 +21,7 @@ Usage:
     python -m throughline_cli import <source> <path> [options]
     python -m throughline_cli taxonomy [review | reject TAG]
     python -m throughline_cli doctor [--quiet | --json]
+    python -m throughline_cli uninstall [--yes | --drop-collection | --dry-run]
     python -m throughline_cli --version
 
 Subcommands:
@@ -29,6 +30,7 @@ Subcommands:
     import     Turn a chat export into raw Markdown the daemon consumes.
     taxonomy   Review self-growing taxonomy signals (U27 loop).
     doctor     Health check: config + services + caches. Exit 0 if green.
+    uninstall  Tear down config / state / logs / raw. Vault untouched.
 
 Flags:
     --version  Print package version and exit.
@@ -59,6 +61,9 @@ def main(argv: list[str]) -> int:
     if head == "doctor":
         from . import doctor
         return doctor.main(rest)
+    if head == "uninstall":
+        from . import uninstall
+        return uninstall.main(rest)
     if head in ("-h", "--help", "help"):
         print(USAGE)
         return 0

@@ -98,10 +98,11 @@ Roadmap       = "https://github.com/jprodcc-rodc/throughline/blob/main/ROADMAP.m
 [project.scripts]
 # Console entry points so `pip install -e .` users get a flat command
 # surface instead of `python -m throughline_cli ...`.
-throughline-install  = "throughline_cli.wizard:main"
-throughline-import   = "throughline_cli.adapters:main"
-throughline-taxonomy = "throughline_cli.taxonomy:main"
-throughline-doctor   = "throughline_cli.doctor:main"
+throughline-install   = "throughline_cli.wizard:main"
+throughline-import    = "throughline_cli.adapters:main"
+throughline-taxonomy  = "throughline_cli.taxonomy:main"
+throughline-doctor    = "throughline_cli.doctor:main"
+throughline-uninstall = "throughline_cli.uninstall:main"
 
 # =========================================================
 # setuptools — what to package
