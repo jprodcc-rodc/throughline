@@ -131,9 +131,11 @@ def step_03_vector_db(cfg: WizardConfig) -> Optional[str]:
 
 def step_04_api_key(cfg: WizardConfig) -> Optional[str]:
     ui.step_header(4, TOTAL, "API key")
-    ui.info_line("For v0.2.0-dev we don't collect the key here; set it via "
-                 "env var OPENROUTER_API_KEY (or OPENAI_API_KEY) in your "
-                 "shell. Re-run `python install.py --step 4` once set.")
+    ui.info_line("Keys are not persisted inside this config — set them "
+                 "in your shell as env vars. Each provider uses its own "
+                 "variable name; the wizard's multi-provider step (U28) "
+                 "enumerates them per choice. Re-run "
+                 "`python install.py --step 4` after setting the key.")
     return None
 
 
@@ -1093,9 +1095,39 @@ def effective_step_list(mission: str) -> list[int]:
     return steps
 
 
+WIZARD_USAGE = """\
+throughline install wizard (16 steps, mission-branched, all-Enter defaults)
+
+Usage:
+    python install.py                     Full run (all 16 steps)
+    python install.py --step N            Re-run only step N
+    python install.py --step=N            Same, equals form
+    python install.py --help | -h         Print this help and exit
+
+Examples:
+    python install.py                     First-time setup
+    python install.py --step 5            Change LLM provider only
+    python install.py --step 13           Re-run first-card preview
+    python install.py --step 15           Change daily budget cap
+
+Steps (see wizard banner for the full list):
+    1 Python + deps      2 Mission        3 Vector DB
+    4 API key            5 LLM provider   6 Privacy
+    7 Retrieval          8 Prompt family  9 Import source
+   10 Import scan       11 Refine tier  12 Card structure
+   13 Preview + dials   14 Taxonomy    15 Daily budget
+   16 Summary
+
+Env vars that the wizard respects:
+    THROUGHLINE_CONFIG_DIR     override ~/.throughline/ location
+    THROUGHLINE_IMPORT_LIMIT   cap conversations imported (quick test)
+    OPENROUTER_API_KEY         LLM key the preview call reads
+"""
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     # Windows terminals default to GBK / cp1252; reconfigure stdio to UTF-8
-    # so box characters + emoji render instead of crashing. Idempotent —
+    # so box characters + emoji render instead of crashing. Idempotent --
     # __main__ also calls this before dispatching.
     ui.ensure_utf8_stdio()
     argv = argv if argv is not None else sys.argv[1:]
@@ -1103,6 +1135,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     i = 0
     while i < len(argv):
         a = argv[i]
+        if a in ("-h", "--help", "help"):
+            print(WIZARD_USAGE)
+            return 0
         if a.startswith("--step"):
             tail = a.split("=", 1)[1] if "=" in a else None
             if tail is None and i + 1 < len(argv):
@@ -1114,6 +1149,13 @@ def main(argv: Optional[list[str]] = None) -> int:
                 except ValueError:
                     ui.console.print(f"[red]Bad --step value:[/] {tail}")
                     return 2
+        else:
+            # Unknown arg -- don't silently swallow.
+            if a.startswith("-"):
+                ui.console.print(f"[red]Unknown argument:[/] {a}")
+                print()
+                print(WIZARD_USAGE)
+                return 2
         i += 1
     run_wizard(only_step=only)
     return 0

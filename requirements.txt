@@ -1,11 +1,23 @@
-# throughline — top-level aggregate requirements
+# throughline -- top-level aggregate requirements
 #
 # Spans all runtime components: Filter (paste-into-OpenWebUI, runs under
 # OpenWebUI's own Python), daemon, rag_server, ingest script, packs.
 # Install once with `pip install -r requirements.txt` inside the repo
 # virtualenv.
 #
-# Intentionally loose pins — this is an alpha release. If a transitive
+# NOTE FOR WINDOWS USERS ON NON-ENGLISH LOCALES (zh-CN / ja-JP / etc.):
+# pip on Python < 3.15 reads this file using the system's ANSI codec
+# (cp936 / cp932 / ...), which cannot decode UTF-8 punctuation like
+# em-dashes. If you hit "UnicodeDecodeError: 'gbk' codec" during
+# install, run:
+#     set PYTHONUTF8=1   (Command Prompt)
+#     $env:PYTHONUTF8=1  (PowerShell)
+#     export PYTHONUTF8=1 (git-bash)
+# and retry. This file uses only ASCII to avoid the problem on its
+# first line; comments in the active-dependency sections below also
+# stay ASCII for the same reason.
+#
+# Intentionally loose pins -- this is an alpha release. If a transitive
 # incompatibility surfaces, pin more tightly in your own fork.
 
 # --- rag_server ---

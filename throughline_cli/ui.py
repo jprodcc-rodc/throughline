@@ -77,10 +77,16 @@ _BANNER = r"""
 def banner() -> None:
     """Print the welcome banner once at wizard startup. Uses cyan
     for the ASCII art + dim grey for the tagline."""
+    # Version pulled dynamically so the banner never drifts from
+    # pyproject.toml / package metadata.
+    try:
+        from . import __version__ as _v
+    except Exception:
+        _v = "dev"
     console.print()
     console.print(f"[bold cyan]{_BANNER}[/]")
     console.print(
-        "  [dim]install wizard · v0.2.0-dev · "
+        f"  [dim]install wizard · v{_v} · "
         "`python install.py --step N` to jump[/]"
     )
     console.print()

@@ -341,6 +341,81 @@ class TestStep10AdapterIntegration:
         assert cfg.import_emitted == 0
 
 
+# ---------- Fresh-clone audit regressions ----------
+
+
+class TestWizardMainArgParsing:
+    """Pin the wizard's top-level argv handling. Before this test
+    class, `python install.py --help` would silently start the
+    wizard instead of printing help — a real fresh-clone surprise."""
+
+    def test_help_long(self, capsys):
+        from throughline_cli.wizard import main
+        rc = main(["--help"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Usage:" in out
+        assert "install.py" in out
+        # The wizard banner must NOT have printed (would mean the
+        # wizard actually started).
+        assert "|_| |_|" not in out  # ASCII art fragment
+
+    def test_help_short(self, capsys):
+        from throughline_cli.wizard import main
+        rc = main(["-h"])
+        assert rc == 0
+        assert "Usage:" in capsys.readouterr().out
+
+    def test_help_word(self, capsys):
+        from throughline_cli.wizard import main
+        rc = main(["help"])
+        assert rc == 0
+
+    def test_unknown_flag_rejected(self, capsys):
+        from throughline_cli.wizard import main
+        rc = main(["--zztop"])
+        assert rc == 2
+        out = capsys.readouterr().out
+        assert "Unknown argument" in out or "Usage:" in out
+
+    def test_step_flag_preserved(self, monkeypatch):
+        """Ensure the new help path didn't break --step N parsing."""
+        from throughline_cli import wizard
+        seen = {}
+        monkeypatch.setattr(wizard, "run_wizard",
+                             lambda only_step=None, cfg=None: seen.setdefault("step", only_step))
+        rc = wizard.main(["--step", "5"])
+        assert rc == 0
+        assert seen["step"] == 5
+
+    def test_step_flag_equals_form(self, monkeypatch):
+        from throughline_cli import wizard
+        seen = {}
+        monkeypatch.setattr(wizard, "run_wizard",
+                             lambda only_step=None, cfg=None: seen.setdefault("step", only_step))
+        rc = wizard.main(["--step=7"])
+        assert rc == 0
+        assert seen["step"] == 7
+
+
+class TestRequirementsFileAscii:
+    """requirements.txt must be pure ASCII. A single UTF-8 em-dash
+    character in a comment breaks `pip install -r requirements.txt`
+    on Chinese-locale Windows (GBK) with a silent exit-0 — one of
+    the worst fresh-clone regressions we've shipped."""
+
+    def test_requirements_is_ascii(self):
+        import sys as _sys
+        from pathlib import Path as _P
+        repo_root = _P(_sys.modules[__name__].__file__).resolve().parents[2]
+        data = (repo_root / "requirements.txt").read_bytes()
+        non_ascii = [(i, b) for i, b in enumerate(data) if b > 127]
+        assert not non_ascii, (
+            f"requirements.txt contains non-ASCII bytes at positions: "
+            f"{non_ascii[:5]}. This breaks pip on Chinese-locale Windows."
+        )
+
+
 # ---------- U4 · privacy-consent dry-run panel ----------
 
 class TestU4PrivacyConsentPanel:
