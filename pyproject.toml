@@ -103,6 +103,7 @@ throughline-import    = "throughline_cli.adapters:main"
 throughline-taxonomy  = "throughline_cli.taxonomy:main"
 throughline-doctor    = "throughline_cli.doctor:main"
 throughline-uninstall = "throughline_cli.uninstall:main"
+throughline-cost      = "throughline_cli.cost:main"
 
 # =========================================================
 # setuptools — what to package

@@ -22,6 +22,7 @@ Usage:
     python -m throughline_cli taxonomy [review | reject TAG]
     python -m throughline_cli doctor [--quiet | --json]
     python -m throughline_cli uninstall [--yes | --drop-collection | --dry-run]
+    python -m throughline_cli cost [today | week | month | all | YYYY-MM-DD]
     python -m throughline_cli --version
 
 Subcommands:
@@ -31,6 +32,7 @@ Subcommands:
     taxonomy   Review self-growing taxonomy signals (U27 loop).
     doctor     Health check: config + services + caches. Exit 0 if green.
     uninstall  Tear down config / state / logs / raw. Vault untouched.
+    cost       LLM spend dashboard (reads state/cost_stats.json).
 
 Flags:
     --version  Print package version and exit.
@@ -64,6 +66,9 @@ def main(argv: list[str]) -> int:
     if head == "uninstall":
         from . import uninstall
         return uninstall.main(rest)
+    if head == "cost":
+        from . import cost
+        return cost.main(rest)
     if head in ("-h", "--help", "help"):
         print(USAGE)
         return 0
