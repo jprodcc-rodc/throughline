@@ -1576,6 +1576,92 @@ def _get_pack_registry() -> PackRegistry:
     return _PACK_REGISTRY
 
 
+def refine_kept_slices(
+    *,
+    conv: RawConversation,
+    kept: List[SliceSpec],
+    pack: Optional[Any] = None,
+    pack_name: str = "",
+    policies: Optional[Dict[str, Any]] = None,
+    intent_mode: Optional[Dict[str, bool]] = None,
+) -> int:
+    """Extracted inner loop of `process_raw_file` for testability.
+
+    Takes pre-sliced kept specs and runs the per-slice pipeline:
+        refine_with_retention_guard
+        -> _apply_ki_policies
+        -> dedup check against Qdrant (if policies allow)
+        -> route (pack_base OR domain + subpath)
+        -> write_dual_note
+        -> record_taxonomy_observation
+
+    Returns the number of cards successfully written to disk.
+
+    Kept separate from process_raw_file so tests can drive this
+    without setting up watchdog + state-file persistence. The outer
+    function handles budget / hash / state / parse / source-model
+    guard / ephemeral gate / extension judge / slice dispatch;
+    everything else — the expensive bit — lives here.
+    """
+    policies = policies if policies is not None else {}
+    intent_mode = intent_mode if intent_mode is not None else {}
+    refiner_prompt = _get_refiner_prompt(pack)
+    any_written = 0
+
+    for spec in kept:
+        try:
+            refined, _, _ = refine_with_retention_guard(
+                conv, spec, refiner_prompt=refiner_prompt, pack_hint=pack_name)
+        except Exception as e:
+            log(f"ERROR | refine failed: {e}")
+            log_maintenance_issue(conv.conv_id, "refine", str(e),
+                                  "check slice + rerun", title_hint=spec.title_hint)
+            continue
+        if refined is None:
+            continue
+        _apply_ki_policies(refined, policies, intent_mode)
+
+        if policies.get("dedup_enabled", True):
+            dup = _check_duplicate_in_qdrant(refined)
+            if dup:
+                log(f"DEDUP_SKIP | conv={conv.conv_id[:8]} | "
+                    f"dup='{dup.get('title','')}' | "
+                    f"score={dup.get('score'):.3f}")
+                continue
+
+        pack_base = _get_pack_route_base(pack, refined)
+        if pack_base:
+            route_to = normalize_route_path(pack_base)
+        else:
+            domain = route_domain(refined)
+            route_to = route_subpath(refined, domain)
+
+        pack_collection = policies.get("qdrant_collection") or ""
+        formal_path, _buffer_path = write_dual_note(
+            conv, refined, route_to=route_to,
+            intent_mode=intent_mode, pack_collection=pack_collection)
+        if formal_path:
+            any_written += 1
+            update_refine_index(conv.conv_id, refined.title, route_to, "ok",
+                                slice_count=1, note=pack_name or "-")
+            log(f"WRITTEN | conv={conv.conv_id[:8]} | "
+                f"title={refined.title[:40]} | route={route_to}")
+            # U27.3 · observe the (primary_x, proposed_x_ideal) pair
+            # so the CLI can later propose taxonomy growth. Uses the
+            # same slice_id recipe as write_dual_note so card_id
+            # matches the frontmatter.
+            card_id = hashlib.md5(
+                f"{conv.conv_id}:{refined.title}".encode("utf-8")
+            ).hexdigest()[:16]
+            record_taxonomy_observation(
+                card_id=card_id,
+                title=refined.title,
+                primary_x=refined.primary_x,
+                proposed_x_ideal=refined.proposed_x_ideal,
+            )
+    return any_written
+
+
 def process_raw_file(abs_path: Path) -> None:
     if not abs_path.exists() or not abs_path.is_file():
         return
@@ -1673,56 +1759,15 @@ def process_raw_file(abs_path: Path) -> None:
         update_refine_index(conv.conv_id, "(all slices skipped)", "-", "skipped", slice_count=len(specs))
         return
 
-    refiner_prompt = _get_refiner_prompt(pack)
     policies = _get_pack_policies(pack)
-    any_written = 0
-    for spec in kept:
-        try:
-            refined, _, _ = refine_with_retention_guard(
-                conv, spec, refiner_prompt=refiner_prompt, pack_hint=pack_name)
-        except Exception as e:
-            log(f"ERROR | refine failed: {e}")
-            log_maintenance_issue(conv.conv_id, "refine", str(e),
-                                  "check slice + rerun", title_hint=spec.title_hint)
-            continue
-        if refined is None:
-            continue
-        _apply_ki_policies(refined, policies, intent_mode)
-
-        if policies.get("dedup_enabled", True):
-            dup = _check_duplicate_in_qdrant(refined)
-            if dup:
-                log(f"DEDUP_SKIP | conv={conv.conv_id[:8]} | dup='{dup.get('title','')}' | score={dup.get('score'):.3f}")
-                continue
-
-        pack_base = _get_pack_route_base(pack, refined)
-        if pack_base:
-            route_to = normalize_route_path(pack_base)
-        else:
-            domain = route_domain(refined)
-            route_to = route_subpath(refined, domain)
-
-        pack_collection = policies.get("qdrant_collection") or ""
-        formal_path, _buffer_path = write_dual_note(
-            conv, refined, route_to=route_to,
-            intent_mode=intent_mode, pack_collection=pack_collection)
-        if formal_path:
-            any_written += 1
-            update_refine_index(conv.conv_id, refined.title, route_to, "ok",
-                                slice_count=1, note=pack_name or "-")
-            log(f"WRITTEN | conv={conv.conv_id[:8]} | title={refined.title[:40]} | route={route_to}")
-            # U27.3 · observe the (primary_x, proposed_x_ideal) pair so the
-            # CLI can later propose taxonomy growth. Uses the same slice_id
-            # recipe as write_dual_note so card_id matches the frontmatter.
-            card_id = hashlib.md5(
-                f"{conv.conv_id}:{refined.title}".encode("utf-8")
-            ).hexdigest()[:16]
-            record_taxonomy_observation(
-                card_id=card_id,
-                title=refined.title,
-                primary_x=refined.primary_x,
-                proposed_x_ideal=refined.proposed_x_ideal,
-            )
+    any_written = refine_kept_slices(
+        conv=conv,
+        kept=kept,
+        pack=pack,
+        pack_name=pack_name,
+        policies=policies,
+        intent_mode=intent_mode,
+    )
 
     if any_written == 0:
         files_state[key] = {"raw_hash": raw_hash, "status": "no_cards_written"}
