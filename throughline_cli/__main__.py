@@ -23,6 +23,7 @@ Usage:
     python -m throughline_cli doctor [--quiet | --json]
     python -m throughline_cli uninstall [--yes | --drop-collection | --dry-run]
     python -m throughline_cli cost [today | week | month | all | YYYY-MM-DD]
+    python -m throughline_cli stats [--json]
     python -m throughline_cli --version
 
 Subcommands:
@@ -33,6 +34,7 @@ Subcommands:
     doctor     Health check: config + services + caches. Exit 0 if green.
     uninstall  Tear down config / state / logs / raw. Vault untouched.
     cost       LLM spend dashboard (reads state/cost_stats.json).
+    stats      Vault + taxonomy + lifetime-cost summary (screenshot-friendly).
 
 Flags:
     --version  Print package version and exit.
@@ -69,6 +71,9 @@ def main(argv: list[str]) -> int:
     if head == "cost":
         from . import cost
         return cost.main(rest)
+    if head == "stats":
+        from . import stats
+        return stats.main(rest)
     if head in ("-h", "--help", "help"):
         print(USAGE)
         return 0

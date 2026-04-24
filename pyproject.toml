@@ -104,6 +104,7 @@ throughline-taxonomy  = "throughline_cli.taxonomy:main"
 throughline-doctor    = "throughline_cli.doctor:main"
 throughline-uninstall = "throughline_cli.uninstall:main"
 throughline-cost      = "throughline_cli.cost:main"
+throughline-stats     = "throughline_cli.stats:main"
 
 # =========================================================
 # setuptools — what to package
