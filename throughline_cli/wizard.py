@@ -1048,28 +1048,41 @@ ALL_STEPS: list[tuple[int, Callable[[WizardConfig], Optional[str]]]] = [
 
 
 def run_wizard(cfg: Optional[WizardConfig] = None,
-               only_step: Optional[int] = None) -> WizardConfig:
+               only_step: Optional[int] = None,
+               step_filter: Optional[list[int]] = None) -> WizardConfig:
+    """Run the wizard.
+
+    - `only_step=N`    — run exactly step N, skip everything else.
+    - `step_filter=…`  — run the listed steps in order, skip others.
+      Used by --reconfigure mode to let the user pick a subset
+      (e.g. "change step 5 + step 15" without walking 1-4 + 6-14).
+    - Both `None`      — full 16-step run (first-time install or
+      --force). Banner + ticker + next-steps panel all shown.
+    """
     cfg = cfg or load()
-    if only_step is None:
+    full_run = only_step is None and step_filter is None
+    if full_run:
         # Full run: show the banner once at the top.
         ui.banner()
     for n, fn in ALL_STEPS:
         if only_step is not None and n != only_step:
             continue
+        if step_filter is not None and n not in step_filter:
+            continue
         # Progress ticker between steps (not before step 1 when doing a
         # full run; redundant with the banner).
-        if only_step is None and n > 1:
+        if full_run and n > 1:
             ui.progress_ticker(n - 1, TOTAL)
         result = fn(cfg)
         if result != "SKIPPED":
             if n not in cfg.completed_steps:
                 cfg.completed_steps.append(n)
-    if only_step is None:
+    if full_run:
         ui.progress_ticker(TOTAL, TOTAL)
     path = save(cfg)
     ui.print_blank()
     ui.info_line(f"[green]Config written:[/] {path}")
-    if only_step is None:
+    if full_run:
         _print_next_steps_panel(cfg)
     return cfg
 
@@ -1175,16 +1188,23 @@ WIZARD_USAGE = """\
 throughline install wizard (16 steps, mission-branched, all-Enter defaults)
 
 Usage:
-    python install.py                     Full run (all 16 steps)
-    python install.py --step N            Re-run only step N
-    python install.py --step=N            Same, equals form
-    python install.py --help | -h         Print this help and exit
+    python install.py                     Full run, but shows a
+                                          reconfigure picker if a
+                                          prior config exists.
+    python install.py --step N            Re-run only step N.
+    python install.py --step=N            Same, equals form.
+    python install.py --reconfigure       Alias for the picker (skip
+                                          the detection prompt).
+    python install.py --force             Skip the reconfigure picker,
+                                          always run all 16 steps.
+    python install.py --help | -h         Print this help and exit.
 
 Examples:
     python install.py                     First-time setup
-    python install.py --step 5            Change LLM provider only
+    python install.py --step 4            Change LLM provider only
     python install.py --step 13           Re-run first-card preview
     python install.py --step 15           Change daily budget cap
+    python install.py --reconfigure       Pick which steps to re-run
 
 Steps (see wizard banner for the full list):
     1 Python + deps      2 Mission        3 Vector DB
@@ -1197,8 +1217,129 @@ Steps (see wizard banner for the full list):
 Env vars that the wizard respects:
     THROUGHLINE_CONFIG_DIR     override ~/.throughline/ location
     THROUGHLINE_IMPORT_LIMIT   cap conversations imported (quick test)
-    OPENROUTER_API_KEY         LLM key the preview call reads
+    <PROVIDER>_API_KEY         LLM key the preview call reads (provider
+                               name depends on step 4 choice)
 """
+
+
+# Step registry for --reconfigure / picker display. The tuple is
+# (step_n, title, default_when_selected). Kept separate from
+# ALL_STEPS so the labels stay short enough for a picker line.
+_STEP_LABELS: list[tuple[int, str]] = [
+    (1,  "Python + deps"),
+    (2,  "Mission (Full / RAG-only / Notes-only)"),
+    (3,  "Vector DB"),
+    (4,  "LLM provider backend"),
+    (5,  "LLM model"),
+    (6,  "Privacy level"),
+    (7,  "Retrieval backend (embedder + reranker)"),
+    (8,  "Prompt family"),
+    (9,  "Import source"),
+    (10, "Import scan + consent"),
+    (11, "Refine tier (Skim / Normal / Deep)"),
+    (12, "Card structure"),
+    (13, "First-card preview + 5 dials"),
+    (14, "Taxonomy strategy"),
+    (15, "Daily USD budget cap"),
+    (16, "Summary + save"),
+]
+
+
+def _parse_step_selection(raw: str) -> list[int]:
+    """Parse '5', '5,7,11', '9-13', '5,9-13' into a sorted unique list
+    of step numbers. Raises ValueError on garbage input."""
+    out: set[int] = set()
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    for part in parts:
+        if "-" in part:
+            lo_s, hi_s = part.split("-", 1)
+            lo, hi = int(lo_s), int(hi_s)
+            if lo > hi:
+                raise ValueError(f"range {part!r} descends")
+            for n in range(lo, hi + 1):
+                if 1 <= n <= TOTAL:
+                    out.add(n)
+        else:
+            n = int(part)
+            if 1 <= n <= TOTAL:
+                out.add(n)
+    if not out:
+        raise ValueError("no valid step numbers found")
+    return sorted(out)
+
+
+def _reconfigure_picker(cfg: WizardConfig) -> list[int]:
+    """Present the reconfigure menu for an existing config and return
+    the list of step numbers to actually run. Empty list = exit.
+
+    The menu is deliberately minimal — three choices, no nested
+    submenus, one input() call per choice. Kept testable by
+    monkeypatching builtins.input.
+    """
+    ui.print_blank()
+    ui.section_title("Existing config detected — reconfigure mode")
+    ui.info_line("A config.toml was found at the usual location. You "
+                 "don't have to re-run every step; pick what to change.")
+    ui.print_blank()
+
+    # Show the current values for the most commonly-changed fields so
+    # the user can see what's already set.
+    ui.kv_row("mission",       cfg.mission)
+    ui.kv_row("llm_provider",  f"{cfg.llm_provider} · {cfg.llm_provider_id}")
+    ui.kv_row("refine_tier",   cfg.refine_tier)
+    ui.kv_row("daily_budget",  f"${cfg.daily_budget_usd}")
+    ui.kv_row("taxonomy",      cfg.taxonomy_source)
+    ui.print_blank()
+
+    choice = ui.pick_option(
+        "What do you want to do?",
+        [
+            ("pick", "Pick specific steps to re-run",
+             "Enter a comma-separated list like `5,9-13,15`. Skipped "
+             "steps keep their saved values."),
+            ("all", "Run all 16 steps",
+             "Same as running install.py on a fresh machine. Your "
+             "existing values become the defaults (press Enter to keep)."),
+            ("summary", "Show summary and exit",
+             "Print the current config and do nothing else. Useful to "
+             "audit what's saved."),
+            ("cancel", "Cancel and exit without changes", ""),
+        ],
+        default_key="pick",
+    )
+
+    if choice == "cancel":
+        ui.info_line("Cancelled.")
+        return []
+
+    if choice == "summary":
+        # Run just step 16 (summary) which prints all fields; that
+        # function exits the wizard when the user declines to save,
+        # so we do the same here by returning the singleton.
+        return [16]
+
+    if choice == "all":
+        return list(range(1, TOTAL + 1))
+
+    # choice == "pick"
+    while True:
+        raw = ui.ask_text(
+            "Which steps? (e.g. 5 · 5,9 · 9-13 · 5,9-13,15)",
+            default="",
+        ).strip()
+        if not raw:
+            ui.info_line("No steps selected — exiting.")
+            return []
+        try:
+            steps = _parse_step_selection(raw)
+        except ValueError as e:
+            ui.info_line(f"[yellow]Invalid: {e}. Try again.[/]")
+            continue
+        # Always append step 16 (summary + save) so the picked steps
+        # actually persist to config.toml.
+        if 16 not in steps:
+            steps.append(16)
+        return steps
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -1208,13 +1349,19 @@ def main(argv: Optional[list[str]] = None) -> int:
     ui.ensure_utf8_stdio()
     argv = argv if argv is not None else sys.argv[1:]
     only = None
+    force_full = False
+    force_picker = False
     i = 0
     while i < len(argv):
         a = argv[i]
         if a in ("-h", "--help", "help"):
             print(WIZARD_USAGE)
             return 0
-        if a.startswith("--step"):
+        if a == "--force":
+            force_full = True
+        elif a == "--reconfigure":
+            force_picker = True
+        elif a.startswith("--step"):
             tail = a.split("=", 1)[1] if "=" in a else None
             if tail is None and i + 1 < len(argv):
                 tail = argv[i + 1]
@@ -1233,7 +1380,34 @@ def main(argv: Optional[list[str]] = None) -> int:
                 print(WIZARD_USAGE)
                 return 2
         i += 1
-    run_wizard(only_step=only)
+
+    # --step N short-circuits the picker (explicit user intent).
+    if only is not None:
+        run_wizard(only_step=only)
+        return 0
+
+    # Reconfigure picker: show it when a config.toml exists and the
+    # user didn't pass --force. Also shown when --reconfigure was
+    # passed explicitly (even on a fresh install, though with fewer
+    # useful choices).
+    from .config import config_path, load as _load
+    existing = config_path().exists()
+    if (existing or force_picker) and not force_full:
+        cfg = _load()
+        selected = _reconfigure_picker(cfg)
+        if not selected:
+            return 0
+        # If the user picked "all" we run the whole wizard unhindered;
+        # otherwise we run steps in order and let the skipped ones
+        # keep their cfg values.
+        if selected == list(range(1, TOTAL + 1)):
+            run_wizard(cfg=cfg)
+        else:
+            run_wizard(cfg=cfg, step_filter=selected)
+        return 0
+
+    # Fresh install or --force: run the whole wizard.
+    run_wizard()
     return 0
 
 
