@@ -219,3 +219,93 @@ daily_budget_usd = 20.0
         from throughline_cli import doctor
         names = [c.__name__ for c in doctor.DEFAULT_CHECKS]
         assert "check_config_schema" in names
+
+
+# =========================================================
+# `throughline_cli config ...` subcommand
+# =========================================================
+
+class TestConfigValidateCLI:
+    def test_clean_config_exits_zero(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path / ".throughline"))
+        _write_cfg(tmp_path, 'mission = "full"\nprivacy = "hybrid"\n')
+        from throughline_cli import config as cfg
+        rc = cfg.main(["validate"])
+        assert rc == 0
+        assert "all recognized" in capsys.readouterr().out
+
+    def test_dirty_config_exits_one(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path / ".throughline"))
+        _write_cfg(tmp_path, 'dailey_budget_usd = 5\n')
+        from throughline_cli import config as cfg
+        rc = cfg.main(["validate"])
+        assert rc == 1
+        out = capsys.readouterr().out
+        assert "dailey_budget_usd" in out
+        assert "daily_budget_usd" in out  # suggestion
+
+    def test_missing_config_exits_two(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path / "nope"))
+        from throughline_cli import config as cfg
+        rc = cfg.main(["validate"])
+        assert rc == 2
+
+    def test_validate_json_mode(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path / ".throughline"))
+        _write_cfg(tmp_path, 'privacy = "cloudmax"\n')
+        from throughline_cli import config as cfg
+        rc = cfg.main(["validate", "--json"])
+        assert rc == 1
+        import json as _json
+        payload = _json.loads(capsys.readouterr().out)
+        assert payload["ok"] is False
+        assert len(payload["issues"]) == 1
+        assert payload["issues"][0]["suggestion"] == "cloud_max"
+
+    def test_validate_custom_path_argument(self, tmp_path, capsys):
+        p = tmp_path / "custom.toml"
+        p.write_text('dailey_budget_usd = 5\n', encoding="utf-8")
+        from throughline_cli import config as cfg
+        rc = cfg.main(["validate", str(p)])
+        assert rc == 1
+        assert "custom.toml" in capsys.readouterr().out
+
+    def test_path_subcommand(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path / ".throughline"))
+        from throughline_cli import config as cfg
+        rc = cfg.main(["path"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "config.toml" in out
+        assert "(missing)" in out or "(exists)" in out
+
+    def test_show_subcommand_json(self, tmp_path, monkeypatch, capsys):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path / ".throughline"))
+        from throughline_cli import config as cfg
+        rc = cfg.main(["show", "--json"])
+        assert rc == 0
+        import json as _json
+        payload = _json.loads(capsys.readouterr().out)
+        assert "mission" in payload
+        assert "vector_db" in payload
+
+    def test_unknown_subcommand_errors(self, capsys):
+        from throughline_cli import config as cfg
+        rc = cfg.main(["whatever"])
+        assert rc == 2
+        err = capsys.readouterr().err
+        assert "Unknown" in err
+
+    def test_help_prints_usage(self, capsys):
+        from throughline_cli import config as cfg
+        rc = cfg.main(["--help"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "validate" in out
+        assert "show" in out
+
+    def test_dispatcher_routes_config(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path / ".throughline"))
+        from throughline_cli.__main__ import main
+        rc = main(["config", "path"])
+        assert rc == 0

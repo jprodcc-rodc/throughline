@@ -25,6 +25,7 @@ Usage:
     python -m throughline_cli cost [today | week | month | all | YYYY-MM-DD]
     python -m throughline_cli stats [--json]
     python -m throughline_cli refine --dry-run <path/to/raw.md>
+    python -m throughline_cli config [validate | show | path]
     python -m throughline_cli --version
 
 Subcommands:
@@ -38,6 +39,7 @@ Subcommands:
     stats      Vault + taxonomy + lifetime-cost summary (screenshot-friendly).
     refine     Preview the refiner prompt for a raw conversation without
                calling any LLM. Zero-cost debug/tuning aid.
+    config     Inspect / validate the on-disk config file.
 
 Flags:
     --version  Print package version and exit.
@@ -81,6 +83,9 @@ def main(argv: list[str]) -> int:
     if head == "refine":
         from . import refine
         return refine.main(rest)
+    if head == "config":
+        from . import config
+        return config.main(rest)
     if head in ("-h", "--help", "help"):
         print(USAGE)
         return 0

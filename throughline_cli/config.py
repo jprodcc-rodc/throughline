@@ -380,3 +380,130 @@ def _toml_value(v) -> str:
         items = ", ".join(_toml_value(x) for x in v)
         return "[" + items + "]"
     raise TypeError(f"unhandled TOML value type: {type(v).__name__}")
+
+
+# =========================================================
+# CLI subcommand: `throughline_cli config [validate | show | path]`
+# =========================================================
+
+_CLI_USAGE = """\
+Usage:
+    python -m throughline_cli config validate [--json] [PATH]
+    python -m throughline_cli config show [--json]
+    python -m throughline_cli config path
+
+Subcommands:
+    validate   Check the on-disk config for typos / enum drift /
+                type mismatches. Exit 0 if clean, 1 if any issues.
+    show       Print the resolved config (defaults merged with file).
+    path       Print the config file path and whether it exists.
+
+PATH argument (for validate): override default lookup to validate a
+specific file. Useful in CI / config linting.
+
+Exit codes:
+    0  — validate: clean; show/path: always 0
+    1  — validate: at least one validation issue
+    2  — bad arguments / unreadable file
+"""
+
+
+def _cli_validate(argv: list[str]) -> int:
+    json_out = False
+    custom_path: Optional[Path] = None
+    for arg in argv:
+        if arg == "--json":
+            json_out = True
+        elif arg.startswith("-"):
+            print(f"Unknown flag: {arg}", file=sys.stderr)
+            return 2
+        else:
+            custom_path = Path(arg).expanduser().resolve()
+
+    p = custom_path or config_path()
+    if not p.exists():
+        if json_out:
+            import json as _json
+            print(_json.dumps({"ok": False, "error": f"no config at {p}"}))
+        else:
+            print(f"No config file at {p}", file=sys.stderr)
+            print("Run the install wizard first, or pass a PATH argument.",
+                  file=sys.stderr)
+        return 2
+    try:
+        with p.open("rb") as f:
+            raw = tomllib.load(f)
+    except Exception as e:
+        if json_out:
+            import json as _json
+            print(_json.dumps({"ok": False, "error": f"parse: {e}"}))
+        else:
+            print(f"Could not parse {p}: {e}", file=sys.stderr)
+        return 2
+
+    issues = validate(raw)
+    if json_out:
+        import json as _json
+        print(_json.dumps({
+            "ok": not issues,
+            "path": str(p),
+            "issues": [
+                {"key": i.key, "kind": i.kind,
+                 "detail": i.detail, "suggestion": i.suggestion}
+                for i in issues
+            ],
+        }, indent=2))
+        return 0 if not issues else 1
+
+    if not issues:
+        print(f"✓ {p}")
+        print(f"  {len(raw)} keys, all recognized.")
+        return 0
+    print(f"! {p}")
+    print(f"  {len(issues)} validation issue(s):")
+    for it in issues:
+        line = f"    • [{it.kind}] {it.key}"
+        if it.detail:
+            line += f" — {it.detail}"
+        print(line)
+        if it.suggestion:
+            print(f"        → did you mean {it.suggestion!r}?")
+    return 1
+
+
+def _cli_show(argv: list[str]) -> int:
+    json_out = "--json" in argv
+    cfg = load()
+    d = asdict(cfg)
+    if json_out:
+        import json as _json
+        print(_json.dumps(d, indent=2, ensure_ascii=False))
+        return 0
+    for k, v in d.items():
+        print(f"{k} = {v!r}")
+    return 0
+
+
+def _cli_path(argv: list[str]) -> int:
+    p = config_path()
+    marker = "(exists)" if p.exists() else "(missing)"
+    print(f"{p} {marker}")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    """Entry point from __main__.py for `config` subcommand."""
+    if not argv or argv[0] in ("-h", "--help", "help"):
+        print(_CLI_USAGE)
+        return 0 if argv and argv[0] in ("-h", "--help", "help") else 2
+    head = argv[0]
+    rest = argv[1:]
+    if head == "validate":
+        return _cli_validate(rest)
+    if head == "show":
+        return _cli_show(rest)
+    if head == "path":
+        return _cli_path(rest)
+    print(f"Unknown config subcommand: {head!r}", file=sys.stderr)
+    print(_CLI_USAGE, file=sys.stderr)
+    return 2
