@@ -15,15 +15,52 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Milestone
+- **Repo flipped PUBLIC** — <https://github.com/jprodcc-rodc/throughline>.
+  First time the project is visible to anyone on the internet.
+
 ### Added
+- **U28 · multi-provider LLM support** — new
+  `throughline_cli/providers.py` registry with 16 OpenAI-compatible
+  presets: Global (OpenAI, Anthropic via OpenAI-compat shim,
+  DeepSeek, Together, Fireworks, Groq, xAI, OpenRouter),
+  China-market (SiliconFlow 硅基流动, Moonshot/Kimi, DashScope
+  Alibaba Qwen, Zhipu GLM, Doubao 字节豆包), Local (Ollama,
+  LM Studio), plus a generic OpenAI-compatible escape hatch.
+  Each preset is a `(base_url, env_var, signup_url, model_list,
+  extra_headers, region)` tuple. Data-driven; new providers = one
+  dict entry.
+  - `llm.py` gains `provider_id=` kwarg; endpoint + key + extra
+    headers resolved from the preset. Unknown provider_id falls
+    through to legacy chain (no crash). Error messages cite the
+    provider's specific env var + signup URL.
+  - Wizard steps 4 + 5 split: step 4 picks provider backend (auto-
+    defaults to whichever env var is set, ● marker next to
+    configured providers); step 5 picks a model SCOPED to that
+    provider's list.
+  - New `throughline_cli/active_provider.py` resolves the active
+    provider for NON-wizard callers (daemon, scripts) with
+    precedence `THROUGHLINE_LLM_PROVIDER` env > `llm_provider` in
+    config.toml > autodetect > "openrouter". Never raises.
+  - Daemon `call_llm_json()` reads resolved endpoint + key at
+    module load; provider-specific extra headers merged without
+    clobbering daemon's X-Title. Legacy `OPENROUTER_URL` still
+    honoured. Startup log now shows `LLM PROV = <id> -> <url>`.
+  - `doctor` gains `check_llm_provider_key`: verifies the resolved
+    provider's env var is set; warns (not fails) when missing so
+    fresh installs stay green.
+  - 57 new tests: `test_providers.py` (32), `test_llm_providers.py`
+    (13), `test_active_provider.py` (12).
+
 - Open-source-project hardening: GitHub Actions CI (pytest 3.11 +
   3.12, ruff lint), CodeQL weekly scan, Dependabot for pip +
-  github-actions, branch protection ruleset, repo metadata + topics,
-  3 seeded `good first issue` tickets, YAML-form issue templates,
-  PR template, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md`,
-  `pyproject.toml` package skeleton with optional-dep extras
-  (`local` / `openai` / `chroma` / `all` / `dev`) + console-script
-  entry points (`throughline-{install, import, taxonomy, doctor}`).
+  github-actions, branch protection ruleset, repo metadata + 16
+  topics, 3 seeded `good first issue` tickets, YAML-form issue
+  templates, PR template, `SECURITY.md`, `CODE_OF_CONDUCT.md`,
+  `ROADMAP.md`, `pyproject.toml` package skeleton with
+  optional-dep extras (`local` / `openai` / `chroma` / `all` /
+  `dev`) + console-script entry points
+  (`throughline-{install, import, taxonomy, doctor}`).
 - UX wave (post-v0.2.0):
   - **`python -m throughline_cli doctor`** — 10-check health probe
     (Python / imports / config / state / services / caches) with
@@ -58,7 +95,39 @@ pre-1.0 minor bumps can include breaking config shape changes.
   - `docs/ALPHA_USER_NOTES.md` — v0.2.0 update section: which
     deferrable rough edges got fixed + 5 new UX edges surfaced.
 
+### Changed
+- **Provider-agnostic front door.** README + `docs/DEPLOYMENT.md`
+  rewritten so OpenRouter is listed alongside 15 other providers
+  rather than the default. README's provider table regrouped by
+  use case (Direct / Hosted open-weights / China / Multi-vendor
+  proxy / Local / Escape hatch). Prose now says "no preferred
+  vendor — wizard auto-detects whichever env var you already
+  have set." Existing `OPENROUTER_API_KEY` users keep working
+  with zero friction; no behaviour change.
+- **Repo description + topics refreshed** — reflects the 16-
+  provider story. Topics now: 16 entries including `anthropic`,
+  `openai`, `deepseek`, `siliconflow`, `ollama`, `local-first`.
+
 ### Fixed
+- **Daemon LLM calls ignored the wizard's provider choice.**
+  Before `9536ba0`, `daemon/refine_daemon.call_llm_json()` hard-
+  coded OpenRouter. A user who picked SiliconFlow in the wizard
+  would see the preview hit SiliconFlow, then watch the real
+  refine daemon keep hitting OpenRouter. Now module-load reads
+  through `throughline_cli.active_provider.resolve_endpoint_and_key()`.
+- **Fresh-clone pip install silently failed on Chinese-locale
+  Windows.** `requirements.txt` had UTF-8 em-dashes in comment
+  banners; pip on GBK/cp936 locales couldn't decode them and
+  returned exit 0 anyway. Fixed: pure ASCII + inline note about
+  `PYTHONUTF8=1` for anyone hitting similar drift elsewhere.
+  Regression test in `TestRequirementsFileAscii`.
+- **`python install.py --help` started the wizard.** The wizard
+  main() ignored unknown args, so `--help` silently began a
+  16-step prompt flow. Added explicit help handling + unknown-
+  flag rejection (exit 2 with usage panel).
+- **Stale `v0.2.0-dev` labels** in wizard banner + step 4 text.
+  Banner now reads dynamically from
+  `throughline_cli.__version__`.
 - **Daemon import on a fresh clone.** `daemon/refine_daemon.py`
   imported four names from `daemon/taxonomy.py` (`JD_ROOT_MAP`,
   `JD_LEAF_WHITELIST`, `normalize_route_path`, `is_valid_leaf_route`)

@@ -133,6 +133,32 @@ New rough edges surfaced by the v0.2.0 UX audit (2026-04-24):
 | 13 | User without an existing Claude/ChatGPT/Gemini export cannot evaluate the loop | Fixed in `0c7e1c8` — `python -m throughline_cli import sample` bundles 10 synthetic conversations. |
 | 14 | `VAULT_PATH` missing → `sys.exit(2)` without remediation hint | Fixed in `f2d600a` — error messages now enumerate the fix (bash + PowerShell forms) and reference the wizard. |
 | 15 | No one-shot way to tell "is my install working?" | Fixed in `dabcaa9` — `python -m throughline_cli doctor` runs 10 checks with ✓/!/✗ + remediation. |
+| 16 | Wizard + daemon locked to OpenRouter; users on other providers had to fork | Fixed in `ab7e189` + `9536ba0` — 16 OpenAI-compatible presets including Anthropic / OpenAI / DeepSeek / SiliconFlow / Moonshot / DashScope / Zhipu / Doubao / Ollama + generic escape hatch. Wizard auto-detects. Daemon reads via `active_provider.resolve_endpoint_and_key`. |
+| 17 | `pip install -r requirements.txt` silently fails on Chinese-Windows (GBK codec) with exit 0 | Fixed in `cf5326c` — pure-ASCII requirements.txt + regression test. |
+| 18 | `python install.py --help` started the wizard instead of printing help | Fixed in `cf5326c` — explicit help handling + WIZARD_USAGE panel. |
+| 19 | README front-page implied OpenRouter was the default | Fixed in `636d44e` — provider table regrouped by use case; 16 providers listed equally. |
+
+---
+
+## Public-repo milestone (2026-04-24)
+
+Repo flipped from **PRIVATE** to **PUBLIC** after the v0.2.x
+provider-rebalance pass. First alpha users arriving via direct
+link should now see:
+
+- README with provider-agnostic install flow
+- Green CI badge (lint + pytest 3.11 + 3.12)
+- v0.2.0 release with full changelog
+- 3 `good first issue` tickets on the Issues tab
+- 16 searchable topics including `siliconflow`, `ollama`, `deepseek`,
+  `anthropic`, `local-first`
+
+Things that still need maintainer attention post-flip:
+- Switch repo Watch level to **Custom** (Issues + PRs + Discussions);
+  owner default is "Participating & @mentions" only.
+- Pin 1-3 `good first issue` tickets to the Issues tab.
+- Consider a `mkdocs` / GH Pages site for the docs/ tree (README
+  + CHANGELOG + ROADMAP + DEPLOYMENT + ARCHITECTURE + DESIGN_DECISIONS).
 
 ---
 

@@ -22,6 +22,7 @@
 - [11. Forward-slash path normalisation (load-bearing)](#11-forward-slash-path-normalisation-load-bearing)
 - [12. Orthogonal mode triggering](#12-orthogonal-mode-triggering)
 - [13. v0.2.0 additions: pluggable backends, dials, growth loop](#13-v020-additions-pluggable-backends-dials-growth-loop)
+- [14. v0.2.x additions: multi-provider LLM + active-provider resolver](#14-v02x-additions-multi-provider-llm--active-provider-resolver)
 
 ---
 
@@ -673,7 +674,74 @@ users discover it immediately rather than hunting through docs.
 
 ---
 
-*Last update: v0.2.0 post-release polish, 2026-04-24. Sections 1–12
-are the original Phase 5 content translated + sanitised from the
-private ARCHITECTURE and design notes (see `CHINESE_STRIP_LOG.md
-§ Phase 5`). Section 13 captures what v0.2.0 added.*
+## 14. v0.2.x additions: multi-provider LLM + active-provider resolver
+
+v0.2.0 tied LLM calls to a single OpenRouter-shape endpoint via
+`OPENROUTER_API_KEY` (wizard preview) or the same key in the daemon's
+own hand-rolled HTTP path. v0.2.x adds a **provider registry** so the
+same abstraction-first shape that rag_server has for embedder /
+reranker / vector-store now applies to the chat completion surface.
+
+### 14.1 Provider registry (U28)
+
+`throughline_cli/providers.py` ships 16 OpenAI-compatible presets:
+
+| Region | Providers |
+|---|---|
+| Direct (anywhere) | OpenAI · Anthropic (via OpenAI-compat shim) · DeepSeek · xAI |
+| Hosted open-weights | Together.ai · Fireworks.ai · Groq |
+| China (大陆 access) | SiliconFlow · Moonshot (Kimi) · DashScope (Alibaba Qwen) · Zhipu (GLM) · Doubao (Volcengine Ark) |
+| Multi-vendor proxy | OpenRouter (one key → 300+ models) |
+| Local / self-hosted | Ollama · LM Studio |
+| Escape hatch | Generic (user-supplied `THROUGHLINE_LLM_URL` + `THROUGHLINE_LLM_API_KEY`) |
+
+Each preset is a `ProviderPreset(id, name, base_url, env_var,
+signup_url, models, notes, extra_headers, region)` tuple. Data-
+driven: adding a provider = one dict entry + no new module.
+
+### 14.2 Two resolver entry points
+
+- **Wizard** (step 4 + step 5) passes `cfg.llm_provider` to
+  `llm.call_chat(provider_id=…)`. Wizard knows which provider the
+  user picked; it doesn't need autodetect.
+- **Daemon + scripts** use `throughline_cli.active_provider.resolve_endpoint_and_key()`
+  with precedence:
+  1. `THROUGHLINE_LLM_PROVIDER` env
+  2. `llm_provider` field in `~/.throughline/config.toml`
+  3. first provider whose env var has a key set (autodetect)
+  4. `"openrouter"` — final default, backward compatible with v0.2.0
+
+Daemon reads through this resolver once at module load into
+`_LLM_URL` / `_LLM_KEY` / `_LLM_EXTRA_HEADERS` / `_LLM_PROVIDER_ID`.
+Extra headers are merged into requests without clobbering the
+daemon's own `X-Title` (so OpenRouter routing metrics can still
+tell wizard-preview spend apart from real-refine spend).
+
+### 14.3 Backward compatibility guarantees
+
+- Users with only `OPENROUTER_API_KEY` set: autodetect picks it up,
+  daemon routes to OpenRouter unchanged. Zero migration.
+- Users with `OPENROUTER_URL` set to a custom proxy: still honoured
+  by the resolver.
+- Users with legacy `OPENAI_API_KEY` set: autodetect picks OpenAI
+  (direct) as second priority.
+- Unknown `provider_id` (typo, removed from registry): falls back
+  to OpenRouter with legacy key chain rather than crashing.
+
+### 14.4 Doctor integration
+
+`throughline_cli doctor` gained a `check_llm_provider_key` step:
+calls `resolve_provider_id()`, looks up the preset, verifies the
+provider's env var is set. Warns (not fails) when missing so a
+fresh install's first `doctor` run stays green on the things that
+genuinely matter (Python / deps / config) — the user gets a
+specific pointer to the right env var + signup URL.
+
+---
+
+*Last update: v0.2.x provider-rebalance + repo-public flip,
+2026-04-24. Sections 1–12 are the original Phase 5 content
+translated + sanitised from the private ARCHITECTURE and design
+notes (see `CHINESE_STRIP_LOG.md § Phase 5`). Section 13 captures
+what v0.2.0 added. Section 14 captures what v0.2.x added after the
+public flip.*

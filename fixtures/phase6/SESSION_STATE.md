@@ -2,11 +2,79 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 late-night (v0.2.0 + UX wave + v0.2.x polish + fresh-clone audit fixes + U28 multi-provider — all shipped, CI green)
+**Last updated:** 2026-04-24 late-night — **repo flipped PUBLIC**, provider-agnostic rebalance shipped
 
 ## Where we are right now (TL;DR for next session)
 
-**Latest commit on `main`:** `9536ba0` (daemon provider wiring); doctor provider check pending commit. CI green across lint + pytest 3.11 + pytest 3.12. **668 passed, 10 xfailed.** · **GitHub:** `jprodcc-rodc/throughline`
+**Repo visibility: PUBLIC** (was PRIVATE until this session). The
+public front door is now live:
+<https://github.com/jprodcc-rodc/throughline>
+
+**Latest commit on `main`:** `636d44e` (README + DEPLOYMENT rebalance: de-emphasize OpenRouter). CI green across lint + pytest 3.11 + pytest 3.12. **668 passed, 10 xfailed.** · **GitHub:** `jprodcc-rodc/throughline`
+
+**Late-stage milestones (since the last anchor):**
+
+- **`9536ba0`** — daemon `call_llm_json()` finally reads provider
+  from the registry. Was hardcoded OpenRouter even after U28
+  shipped the registry. New `throughline_cli/active_provider.py`
+  module resolves provider-id for non-wizard callers (daemon +
+  scripts) with precedence env > config.toml > autodetect >
+  "openrouter".
+- **`c588f33`** — `throughline_cli doctor` gained `check_llm_provider_key`:
+  verifies the resolved provider's env var is set. Warns (not
+  fails) when absent so a fresh install's first doctor run stays
+  green on the things that genuinely matter.
+- **Repo flipped PUBLIC** via `gh repo edit --visibility public
+  --accept-visibility-change-consequences`. First time the project
+  is accessible to anyone on the internet.
+- **`636d44e`** — README + DEPLOYMENT.md rebalanced so OpenRouter
+  is listed alongside 15 other providers, not THE default. Regrouped
+  the provider table by use case (Direct / Hosted open-weights /
+  China / Multi-vendor proxy / Local / Escape hatch). Prose leads
+  with "no preferred vendor — wizard auto-detects whichever env var
+  you already have set." Existing `OPENROUTER_API_KEY` users keep
+  working with zero friction; no behaviour change.
+- **Repo description refreshed** to: "Turn every LLM conversation
+  into searchable, self-growing personal knowledge. 16 LLM providers
+  (Anthropic · OpenAI · DeepSeek · SiliconFlow · Moonshot · Ollama ·
+  …) · OpenWebUI → refine → Obsidian vault → RAG."
+- **Topics grew to 16**: added anthropic / openai / deepseek /
+  siliconflow / ollama / local-first alongside the original
+  openwebui / obsidian / rag / llm / PKM / qdrant / bge-m3 / etc.
+
+**User-facing instructions I handed over (not in git):**
+- How to flip `Watch → Custom` for Issues + PRs + Discussions
+  (owner default is only "Participating & @mentions" — they
+  miss new issue fire-and-forget without this).
+
+**What next session can pick up from (still-executable autonomously):**
+1. **config.toml migration** — pre-U28 installs don't have
+   `llm_provider` field; wizard should detect + write-in silently
+   on open.
+2. **mkdocs site** — publish README + CHANGELOG + ROADMAP + docs/
+   to `https://jprodcc-rodc.github.io/throughline` via GH Pages.
+   Fresh visitor surface.
+3. **Docker compose** (issue #7) — one-command evaluate.
+4. **wizard `--reconfigure` mode** (issue #8).
+5. **daemon LLM integration tests** — currently the provider
+   wiring is mock-only. Need at least one "real daemon reads
+   config.toml, calls through to a mocked HTTP layer" round-trip.
+6. **Anthropic native Messages API adapter** — v0.3. Currently
+   uses the `/v1/openai` shim; a proper adapter unlocks cache
+   control, tool use, and 200k context reliably.
+
+**Things that need YOU (not me):**
+- **Watch → Custom** on the repo page.
+- **Star/pin** a `good first issue` to the top of Issues tab.
+- **HN / awesome-lists / r/LocalLLaMA / r/ObsidianMD posting** —
+  your voice, not mine.
+- **asciinema screencast** recording via `samples/record_wizard_demo.sh`.
+- **PyPI publish** when you want `pip install throughline`.
+
+---
+
+## Historical (the rest of this file is the journey up to the public flip)
+
 
 **Session ran `/effort max` + resumed multi-provider + fresh-clone audit in one stretch. Key deliveries beyond the earlier UX wave:**
 
