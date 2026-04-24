@@ -329,6 +329,25 @@ def validate(raw: dict) -> list[ValidationIssue]:
                     suggestion=suggestion,
                 ))
 
+        # --- llm_provider: validated dynamically against the 16-entry
+        # provider registry (loaded lazily to avoid a circular import
+        # at module-load time). Intentionally not in _KNOWN_VALUES
+        # because the registry can grow at runtime via
+        # `register_preset()`.
+        if key == "llm_provider" and isinstance(val, str):
+            try:
+                from . import providers as _p
+                valid_ids = tuple(sorted(p.id for p in _p.list_presets()))
+            except Exception:
+                valid_ids = ()
+            if valid_ids and val not in valid_ids:
+                suggestion = _closest(val, valid_ids) or ""
+                issues.append(ValidationIssue(
+                    key=key, kind="enum_mismatch",
+                    detail=f"provider {val!r} not in registry ({len(valid_ids)} known)",
+                    suggestion=suggestion,
+                ))
+
         # --- gross type mismatches (TOML parsers usually give us the
         # right type, but a human-edited file can break that).
         dflt = getattr(WizardConfig(), key, None)

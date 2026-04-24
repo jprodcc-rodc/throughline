@@ -15,6 +15,50 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — post-v0.2.0 ship-and-iterate wave (2026-04-26)
+- **LanceDB** is now a first-class `VECTOR_STORE` backend alongside
+  Qdrant + Chroma — embedded, file-based, zero-server (closes #6).
+  `pip install throughline[lancedb]`. `_LanceDBUnavailable` stub
+  returned when the optional dep is missing so the wizard can list
+  it without an import-time crash. 7 tests
+  (`TestLanceDBStoreWithoutLancedb` + `TestLanceDBStoreWithFakeLancedb`).
+  `duckdb_vss` / `sqlite_vec` / `pgvector` remain alias-to-Qdrant
+  stubs for v0.3 (good-first-issues #9/#10/#11 opened).
+- **`throughline_cli refine --dry-run <path.md>`** — zero-cost
+  refiner-prompt preview. Parses a raw conversation, reports which
+  slicer tier WOULD fire + which model, and prints the refiner
+  system + user prompts as they'd be sent — without calling any
+  LLM. `--show-full-prompt` / `--pack NAME` / `--no-color`.
+  Refuses to run without `--dry-run` (there's no real-refine CLI
+  path in v0.2.x — daemon handles that). 11 tests.
+- **Config schema validation + doctor check.** `config.validate()`
+  surfaces typos (`dailey_budget_usd`), enum drift (`privacy =
+  "cloudmax"`), type mismatches, and unknown provider IDs. New
+  `check_config_schema` doctor check warns (not fails) per issue
+  with Levenshtein-based suggestions. Runtime `config.load()`
+  behaviour UNCHANGED — validation is surfaced on demand.
+  23 tests.
+- **Tier 2 additions from the A-J backburner wave:**
+  - `throughline_cli uninstall` — tear down config / state /
+    logs / raw, vault untouched, with `--dry-run` / `--yes` /
+    `--drop-collection`.
+  - `throughline_cli anthropic_adapter` — native /v1/messages
+    shape for Anthropic-direct users. Translates to/from OpenAI-
+    compatible shape the rest of the codebase expects.
+  - `throughline_cli cost` — LLM spend dashboard
+    (today/week/month/all).
+  - `throughline_cli stats` — vault + taxonomy + lifetime-cost
+    summary (screenshot-friendly).
+  - `docs/FAQ.md` — 15 recurring questions (differentiation vs
+    ChatGPT memory / Claude Projects / mem0 / OpenWebUI memory).
+  - `docs/THREAT_MODEL.md` — asset inventory + threat actors +
+    defences + explicit scope cuts + hardening recommendations.
+  - `prompts/README.md` — 209-line contributor guide for the 8
+    refiner prompt variants + how to add a new-language pack.
+  - `refine_kept_slices()` extraction from `process_raw_file` —
+    the per-slice refine loop is now a testable pure-ish
+    function. +5 tests without watchdog setup.
+
 ### Milestone
 - **Repo flipped PUBLIC** — <https://github.com/jprodcc-rodc/throughline>.
   First time the project is visible to anyone on the internet.

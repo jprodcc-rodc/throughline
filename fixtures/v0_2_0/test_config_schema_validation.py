@@ -98,6 +98,31 @@ class TestValidateEnumMismatch:
         assert cfg.validate({"vector_db": "lancedb"}) == []
 
 
+class TestValidateLLMProvider:
+    """llm_provider is validated dynamically against the U28
+    provider registry — not a static enum."""
+
+    def test_known_provider_is_clean(self):
+        from throughline_cli import config as cfg
+        for pid in ("openrouter", "anthropic", "openai", "ollama"):
+            assert cfg.validate({"llm_provider": pid}) == [], pid
+
+    def test_typo_in_provider_suggested(self):
+        from throughline_cli import config as cfg
+        issues = cfg.validate({"llm_provider": "anthropc"})
+        assert len(issues) == 1
+        assert issues[0].kind == "enum_mismatch"
+        assert issues[0].suggestion == "anthropic"
+
+    def test_foreign_provider_flagged_without_suggestion(self):
+        from throughline_cli import config as cfg
+        issues = cfg.validate({"llm_provider": "mistral-direct"})
+        # Not in the registry; too far from any known id for a
+        # suggestion, but still flagged.
+        assert len(issues) == 1
+        assert issues[0].kind == "enum_mismatch"
+
+
 class TestValidateTypeMismatch:
     def test_budget_as_string_flagged(self):
         from throughline_cli import config as cfg
