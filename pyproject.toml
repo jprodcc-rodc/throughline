@@ -69,9 +69,14 @@ local = [
 openai = [
     "openai>=1.0",
 ]
-# Alternate VECTOR_STORE backend.
+# Alternate VECTOR_STORE backend (server-based).
 chroma = [
     "chromadb>=0.5",
+]
+# Alternate VECTOR_STORE backend (embedded, zero-server, file-based).
+lancedb = [
+    "lancedb>=0.6",
+    "pyarrow>=14",
 ]
 # Convenience: install everything (full local-only path).
 all = [
@@ -79,6 +84,8 @@ all = [
     "transformers>=4.40",
     "openai>=1.0",
     "chromadb>=0.5",
+    "lancedb>=0.6",
+    "pyarrow>=14",
     "uvicorn[standard]>=0.27",
 ]
 # Test + lint dev tooling.

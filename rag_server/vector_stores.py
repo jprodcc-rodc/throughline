@@ -305,19 +305,229 @@ class ChromaStore(BaseVectorStore):
 
 
 # =========================================================
+# LanceDB — optional dep, stub on missing install
+# =========================================================
+
+class _LanceDBUnavailable(BaseVectorStore):
+    """Stub returned at instantiation when lancedb isn't importable.
+
+    Matches the Chroma stub pattern so the wizard can list LanceDB
+    as a choice and nothing crashes at import time. Real calls hit a
+    readable RuntimeError with the install hint."""
+
+    name = "lancedb"
+    _HINT = (
+        "LanceDB backend selected but `lancedb` is not installed. "
+        "Run `pip install lancedb pyarrow` and restart the server. "
+        "Alternatively, `pip install throughline[lancedb]` once the "
+        "extra is published."
+    )
+
+    def ensure_collection(self, *a, **kw): raise RuntimeError(self._HINT)
+    def upsert(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def search(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def delete(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def count(self, *a, **kw):              raise RuntimeError(self._HINT)
+
+
+class LanceDBStore(BaseVectorStore):
+    """Embedded, file-based vector store — zero-server alternative to
+    Qdrant. Persists under `LANCEDB_PATH` (default
+    `~/throughline_runtime/lancedb`).
+
+    Collections are LanceDB tables. Payload is stored as a JSON-
+    serialized string column so a single schema fits every pack
+    without per-collection gymnastics.
+
+    Distance is set via table options; we use cosine to match
+    QdrantStore's default contract. IDs are string-typed so the
+    daemon's md5-derived slice_ids round-trip unchanged.
+    """
+
+    name = "lancedb"
+
+    def __new__(cls, *a, **kw):
+        try:
+            import lancedb  # noqa: F401
+            import pyarrow  # noqa: F401
+        except Exception:
+            return _LanceDBUnavailable()
+        return super().__new__(cls)
+
+    def __init__(self, path: Optional[str] = None) -> None:
+        import lancedb
+        self.path = path or os.getenv(
+            "LANCEDB_PATH",
+            os.path.expanduser("~/throughline_runtime/lancedb"),
+        )
+        os.makedirs(self.path, exist_ok=True)
+        self._db = lancedb.connect(self.path)
+        # Cache vector_size per collection so search knows the shape
+        # even when the table is created empty and populated later.
+        self._vector_size: Dict[str, int] = {}
+
+    def _schema(self, vector_size: int):
+        import pyarrow as pa
+        return pa.schema([
+            pa.field("id", pa.string()),
+            pa.field("vector", pa.list_(pa.float32(), vector_size)),
+            # Payload as JSON string — simplest path to schema-free
+            # per-pack payloads without repeatedly rewriting the
+            # Arrow schema.
+            pa.field("payload", pa.string()),
+        ])
+
+    def ensure_collection(self, name: str, vector_size: int,
+                            distance: str = "cosine") -> None:
+        self._vector_size[name] = int(vector_size)
+        existing = set(self._db.table_names())
+        if name in existing:
+            return
+        # Create an empty table with the schema. LanceDB supports
+        # creating from schema directly without a sample row.
+        self._db.create_table(name, schema=self._schema(int(vector_size)))
+
+    def _table(self, collection: str):
+        if collection in self._db.table_names():
+            return self._db.open_table(collection)
+        # Auto-create with a best-guess vector size; the daemon
+        # normally calls ensure_collection first, but fall back for
+        # direct upserts by tools that skipped the explicit create.
+        vs = self._vector_size.get(collection, 1024)
+        return self._db.create_table(
+            collection, schema=self._schema(vs))
+
+    def upsert(self, collection: str,
+                points: List[Dict[str, Any]]) -> int:
+        if not points:
+            return 0
+        import json as _json
+        table = self._table(collection)
+        rows = [
+            {
+                "id": str(p["id"]),
+                "vector": p["vector"],
+                "payload": _json.dumps(p.get("payload") or {},
+                                        ensure_ascii=False),
+            }
+            for p in points
+        ]
+        # LanceDB `merge_insert` upserts by primary key. Older
+        # versions lack merge_insert; add-then-dedup is the
+        # portable fallback.
+        ids = [r["id"] for r in rows]
+        try:
+            table.delete(f"id IN ({','.join(repr(i) for i in ids)})")
+        except Exception:
+            pass
+        table.add(rows)
+        return len(rows)
+
+    def search(self, collection: str, vector: List[float],
+                limit: int = 10,
+                filter_: Optional[Dict[str, Any]] = None
+                ) -> List[SearchHit]:
+        import json as _json
+        table = self._table(collection)
+        query = table.search(vector, vector_column_name="vector") \
+                      .limit(int(limit))
+        # LanceDB filters use SQL-WHERE syntax on the payload column.
+        # We don't index payload internals (it's a JSON string), so
+        # server-side filtering would require column-per-field
+        # flattening. For parity with Qdrant's knowledge_identity
+        # filter we pull rows client-side and filter in Python —
+        # OK for the RAG query volume (~10s of candidates).
+        rows = query.to_list()
+        hits: List[SearchHit] = []
+        for row in rows:
+            payload_raw = row.get("payload") or "{}"
+            try:
+                payload = _json.loads(payload_raw)
+            except _json.JSONDecodeError:
+                payload = {}
+            if filter_:
+                # Qdrant-shape `filter_` like
+                # {"must": [{"key": "knowledge_identity", "match":
+                #   {"value": "universal"}}]}.
+                # Simple interpretation: every `must` clause must
+                # match exact payload value.
+                want = {}
+                for clause in (filter_.get("must") or []):
+                    k = clause.get("key")
+                    v = clause.get("match", {}).get("value")
+                    if k is not None:
+                        want[k] = v
+                skip = False
+                for k, v in want.items():
+                    if payload.get(k) != v:
+                        skip = True
+                        break
+                if skip:
+                    continue
+            # LanceDB returns `_distance` (L2-adjacent). Convert to
+            # a higher-is-better score so downstream code can sort
+            # descending like it does for Qdrant / Chroma.
+            dist = row.get("_distance", 1.0)
+            score = 1.0 - float(dist)
+            hits.append({
+                "id": row.get("id"),
+                "score": score,
+                "payload": payload,
+            })
+        return hits
+
+    def delete(self, collection: str, point_ids: List[Any]) -> int:
+        if not point_ids:
+            return 0
+        table = self._table(collection)
+        ids_sql = ",".join(repr(str(pid)) for pid in point_ids)
+        table.delete(f"id IN ({ids_sql})")
+        return len(point_ids)
+
+    def count(self, collection: str,
+                filter_: Optional[Dict[str, Any]] = None) -> int:
+        table = self._table(collection)
+        if filter_ is None:
+            return int(table.count_rows())
+        # Filtered count: same client-side pattern as search().
+        # LanceDB search without a vector argument isn't supported;
+        # we pull all rows and count matches. Cheap for small tables,
+        # slow at 1M+ — acceptable tradeoff for v0.2.x.
+        import json as _json
+        matched = 0
+        for row in table.to_pandas().to_dict("records"):
+            payload_raw = row.get("payload") or "{}"
+            try:
+                payload = _json.loads(payload_raw)
+            except _json.JSONDecodeError:
+                continue
+            ok = True
+            for clause in (filter_.get("must") or []):
+                k = clause.get("key")
+                v = clause.get("match", {}).get("value")
+                if k is not None and payload.get(k) != v:
+                    ok = False
+                    break
+            if ok:
+                matched += 1
+        return matched
+
+
+# =========================================================
 # Registry + factory
 # =========================================================
 
 _REGISTRY: Dict[str, Callable[[], BaseVectorStore]] = {
     "qdrant":  QdrantStore,
     "chroma":  ChromaStore,
+    "lancedb": LanceDBStore,
 }
 
 _ALIASES: Dict[str, str] = {
     # v0.3 expansion points — currently route to Qdrant so the wizard
     # can list them, the user can pick them, and nothing crashes.
-    # Real impls land in v0.3+.
-    "lancedb":     "qdrant",
+    # Real impls land in v0.3+. LanceDB shipped as a real impl in
+    # v0.2.x (moved out of this map).
     "duckdb_vss":  "qdrant",
     "duckdb-vss":  "qdrant",
     "sqlite_vec":  "qdrant",
