@@ -1,0 +1,142 @@
+# Project metadata for `pip install -e .` and (eventually) PyPI.
+#
+# v0.2.x: not published to PyPI yet — installs are git clone + venv +
+# `pip install -r requirements.txt`. This file enables `pip install -e .`
+# for contributors who want console-script entry points (`throughline-*`)
+# without a separate alias setup.
+#
+# v0.3.x: planned PyPI release. The author needs to claim the
+# `throughline` namespace + set up trusted publishing first; see
+# https://github.com/jprodcc-rodc/throughline/issues for the tracking
+# ticket.
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "throughline"
+version = "0.2.0"
+description = "Turn every LLM conversation into searchable, self-growing personal knowledge. OpenWebUI → refine → Obsidian vault → RAG."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+    { name = "jprodcc-rodc" },
+]
+keywords = [
+    "openwebui", "obsidian", "rag", "llm",
+    "personal-knowledge-management", "qdrant", "bge-m3",
+    "knowledge-graph", "self-hosted",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Text Processing :: Markup :: Markdown",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Minimum runtime: the wizard + daemon + adapters. Heavy backends
+# (torch / transformers / openai / chromadb) install via extras so a
+# user picking the cloud-only path doesn't pay the bge-m3 download tax.
+dependencies = [
+    "fastapi>=0.110",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "watchdog>=3.0",
+    "rich>=13.0",
+    "markdownify>=0.11",
+]
+
+[project.optional-dependencies]
+# Local bge-m3 embedder + cross-encoder reranker. ~4.6 GB model
+# download on first use.
+local = [
+    "torch>=2.0",
+    "transformers>=4.40",
+]
+# Cloud embeddings + ingest_qdrant.py (uses the OpenAI-compatible
+# /v1/embeddings shape).
+openai = [
+    "openai>=1.0",
+]
+# Alternate VECTOR_STORE backend.
+chroma = [
+    "chromadb>=0.5",
+]
+# Convenience: install everything (full local-only path).
+all = [
+    "torch>=2.0",
+    "transformers>=4.40",
+    "openai>=1.0",
+    "chromadb>=0.5",
+    "uvicorn[standard]>=0.27",
+]
+# Test + lint dev tooling.
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[project.urls]
+Homepage      = "https://github.com/jprodcc-rodc/throughline"
+Repository    = "https://github.com/jprodcc-rodc/throughline"
+Documentation = "https://github.com/jprodcc-rodc/throughline#readme"
+Issues        = "https://github.com/jprodcc-rodc/throughline/issues"
+Changelog     = "https://github.com/jprodcc-rodc/throughline/blob/main/CHANGELOG.md"
+Roadmap       = "https://github.com/jprodcc-rodc/throughline/blob/main/ROADMAP.md"
+
+[project.scripts]
+# Console entry points so `pip install -e .` users get a flat command
+# surface instead of `python -m throughline_cli ...`.
+throughline-install  = "throughline_cli.wizard:main"
+throughline-import   = "throughline_cli.adapters:main"
+throughline-taxonomy = "throughline_cli.taxonomy:main"
+throughline-doctor   = "throughline_cli.doctor:main"
+
+# =========================================================
+# setuptools — what to package
+# =========================================================
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+# Top-level Python packages that ship with the install.
+include = ["throughline_cli*", "daemon*", "rag_server*", "packs*"]
+# Things that are NOT packages: tests, fixtures, scripts, samples,
+# the standalone Filter file, the docs.
+exclude = ["fixtures*", "tests*", "docs*"]
+
+[tool.setuptools.package-data]
+# Prompt files + bundled samples ship inside the wheel.
+"throughline_cli" = ["py.typed"]
+"*" = ["*.md", "*.yml", "*.yaml"]
+
+# =========================================================
+# Tool config
+# =========================================================
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+# Permissive on purpose — see CONTRIBUTING.md §house style.
+# v0.3 may widen to E + W + I once style debt is addressed.
+select = ["F", "E9"]
+
+[tool.pytest.ini_options]
+# Tests live under fixtures/ for historical reasons (Phase 6 audit
+# was the seed). Pytest's default test discovery would walk the
+# whole repo; keep it scoped.
+testpaths = ["fixtures"]
+python_files = ["test_*.py"]
+addopts = "-q --tb=short"
