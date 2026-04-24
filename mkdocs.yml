@@ -68,12 +68,15 @@ nav:
   - Home: index.md
   - Install:
       - Quickstart + deployment: DEPLOYMENT.md
+      - FAQ: FAQ.md
       - Alpha user notes: ALPHA_USER_NOTES.md
   - Under the hood:
       - Architecture: ARCHITECTURE.md
       - Design decisions: DESIGN_DECISIONS.md
+      - Threat model: THREAT_MODEL.md
       - Filter badge reference: FILTER_BADGE_REFERENCE.md
       - Taxonomy growth (U27): TAXONOMY_GROWTH_DESIGN.md
+      - Testing: TESTING.md
   - Project:
       - Roadmap: roadmap.md
       - Changelog: changelog.md

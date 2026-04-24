@@ -1,5 +1,10 @@
 # Security policy
 
+For the full threat-model breakdown (what the system defends
+against, what it doesn't, and hardening recommendations), see
+[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md). This file is the
+shorter "how to report" reference.
+
 ## Reporting a vulnerability
 
 **Don't open a public issue.** For anything that could affect users'
