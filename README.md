@@ -100,6 +100,7 @@ python -m throughline_cli taxonomy review     # approve self-growth signals
 python -m throughline_cli refine --dry-run <raw.md>   # preview refiner prompt, no LLM call
 python -m throughline_cli stats               # screenshot-friendly summary
 python -m throughline_cli cost                # LLM spend dashboard
+python -m throughline_cli config validate     # lint config.toml for typos / enum drift
 ```
 
 > **Obsidian is optional.** The daemon writes plain Markdown +

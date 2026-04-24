@@ -31,13 +31,15 @@ pre-1.0 minor bumps can include breaking config shape changes.
   LLM. `--show-full-prompt` / `--pack NAME` / `--no-color`.
   Refuses to run without `--dry-run` (there's no real-refine CLI
   path in v0.2.x — daemon handles that). 11 tests.
-- **Config schema validation + doctor check.** `config.validate()`
+- **Config schema validation + doctor check + CLI.** `config.validate()`
   surfaces typos (`dailey_budget_usd`), enum drift (`privacy =
   "cloudmax"`), type mismatches, and unknown provider IDs. New
   `check_config_schema` doctor check warns (not fails) per issue
   with Levenshtein-based suggestions. Runtime `config.load()`
   behaviour UNCHANGED — validation is surfaced on demand.
-  23 tests.
+  New `python -m throughline_cli config [validate | show | path]`
+  subcommand for standalone use + CI linting (with `--json`
+  output and a custom PATH argument). 33 tests.
 - **Tier 2 additions from the A-J backburner wave:**
   - `throughline_cli uninstall` — tear down config / state /
     logs / raw, vault untouched, with `--dry-run` / `--yes` /
