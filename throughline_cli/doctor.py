@@ -116,6 +116,66 @@ def check_config_file() -> CheckResult:
     )
 
 
+def check_config_schema() -> CheckResult:
+    """Validate the on-disk TOML against the WizardConfig schema —
+    catch typos, stale fields from older releases, and enum drift
+    (e.g. privacy = 'cloudmax' instead of 'cloud_max').
+
+    No schema file; authoritative definition is `config.WizardConfig`
+    + `config._KNOWN_VALUES`. Passes when no issues; warns otherwise
+    (never fails — a bad config shouldn't block the doctor from
+    completing other checks)."""
+    p = _config_dir() / "config.toml"
+    if not p.exists():
+        return CheckResult(
+            "config_schema", "warn",
+            "no config file yet — nothing to validate",
+            fix="Run the wizard first.",
+        )
+    try:
+        if sys.version_info >= (3, 11):
+            import tomllib
+        else:  # pragma: no cover
+            import tomli as tomllib  # type: ignore
+        with p.open("rb") as f:
+            raw = tomllib.load(f)
+    except Exception as e:
+        return CheckResult(
+            "config_schema", "fail",
+            f"could not parse {p.name}: {e}",
+            fix=f"Open {p} and fix the TOML syntax error.",
+        )
+    try:
+        from . import config as _config
+        issues = _config.validate(raw)
+    except Exception as e:
+        return CheckResult(
+            "config_schema", "warn",
+            f"validator unavailable: {e}",
+        )
+    if not issues:
+        return CheckResult(
+            "config_schema", "ok",
+            f"{len(raw)} keys, all recognized",
+        )
+    # Compact rendering: first issue inline, rest in the fix hint.
+    head = issues[0]
+    detail = f"{len(issues)} issue(s); first: {head.kind} on {head.key!r} — {head.detail}"
+    fix_parts: list[str] = []
+    for it in issues:
+        line = f"{it.kind}: {it.key}"
+        if it.suggestion:
+            line += f" → did you mean {it.suggestion!r}?"
+        elif it.detail:
+            line += f" ({it.detail})"
+        fix_parts.append(line)
+    return CheckResult(
+        "config_schema", "warn",
+        detail,
+        fix="; ".join(fix_parts),
+    )
+
+
 def check_state_dir() -> CheckResult:
     state_dir = Path(
         os.getenv(
@@ -312,6 +372,7 @@ DEFAULT_CHECKS: List[Callable[[], CheckResult]] = [
     check_required_imports,
     check_optional_imports,
     check_config_file,
+    check_config_schema,
     check_state_dir,
     check_llm_provider_key,
     check_qdrant_reachable,

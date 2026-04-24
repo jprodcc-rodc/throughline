@@ -211,6 +211,143 @@ def save(cfg: WizardConfig) -> Path:
     return p
 
 
+# =========================================================
+# Schema validation (unknown keys, enum drift, type mismatches)
+# =========================================================
+#
+# The wizard + daemon + migrations tolerate unknown keys silently —
+# the philosophy is "never crash on a stale config file". That's
+# the right runtime behaviour, but it's bad feedback: a user who
+# typos `dailey_budget_usd = 5` gets the default ($20) silently.
+# validate() surfaces those problems so the doctor + any UI can
+# show them.
+
+# Fields whose values MUST be one of a small known set. Anything
+# outside is almost certainly a typo. (Not exhaustive — fields like
+# `llm_provider_id` are free-form model strings and intentionally
+# excluded.)
+_KNOWN_VALUES: dict[str, tuple[str, ...]] = {
+    "mission":         ("full", "rag_only", "notes_only"),
+    "vector_db":       ("qdrant", "chroma", "lancedb",
+                        "duckdb_vss", "duckdb-vss",
+                        "sqlite_vec", "sqlite-vec",
+                        "pgvector", "none"),
+    "api_key_source":  ("env", "keyring", "file"),
+    "privacy":         ("local_only", "hybrid", "cloud_max"),
+    "prompt_family":   ("claude", "gpt", "gemini", "generic"),
+    "import_source":   ("none", "chatgpt", "claude", "gemini", "multiple"),
+    "refine_tier":     ("skim", "normal", "deep"),
+    "card_structure":  ("compact", "standard", "detailed", "rag_optimized"),
+    "dial_tone":       ("formal", "neutral", "casual"),
+    "dial_length":     ("short", "medium", "long"),
+    "dial_register":   ("technical", "plain", "eli5"),
+    # taxonomy_source + embedder + reranker + llm_provider use their
+    # own registries — validated against those at wizard time, not here.
+}
+
+
+def _closest(candidate: str, options) -> str | None:
+    """Tiny Levenshtein-based suggester — no external dep. Returns
+    the closest option if it's within edit distance 2, else None."""
+    if not candidate:
+        return None
+
+    def _dist(a: str, b: str) -> int:
+        if a == b:
+            return 0
+        if len(a) < len(b):
+            a, b = b, a
+        prev = list(range(len(b) + 1))
+        for i, ca in enumerate(a, 1):
+            curr = [i] + [0] * len(b)
+            for j, cb in enumerate(b, 1):
+                cost = 0 if ca == cb else 1
+                curr[j] = min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost)
+            prev = curr
+        return prev[-1]
+
+    best = None
+    best_d = 3  # threshold: must be strictly better
+    for opt in options:
+        d = _dist(candidate.lower(), opt.lower())
+        if d < best_d:
+            best_d = d
+            best = opt
+    return best
+
+
+@dataclass
+class ValidationIssue:
+    key: str
+    kind: str   # "unknown_key" | "enum_mismatch" | "type_mismatch"
+    detail: str
+    suggestion: str = ""
+
+
+def validate(raw: dict) -> list[ValidationIssue]:
+    """Inspect a raw config dict (as loaded from TOML) for
+    unknown keys, enum drift, and basic type mismatches.
+
+    Returns an empty list for a clean config; one issue per problem
+    otherwise. `load()` still succeeds even with validation
+    failures — this function exists to surface problems on demand,
+    not to block startup."""
+    issues: list[ValidationIssue] = []
+    known_fields = {f.name for f in WizardConfig.__dataclass_fields__.values()}
+    known_fields_lower = {n.lower() for n in known_fields}
+
+    for key, val in raw.items():
+        # --- unknown keys (typos / stale field names)
+        if key not in known_fields:
+            suggestion = ""
+            # Case-insensitive exact match → almost certainly a
+            # capitalization typo, suggest the canonical form.
+            if key.lower() in known_fields_lower:
+                for name in known_fields:
+                    if name.lower() == key.lower():
+                        suggestion = name
+                        break
+            else:
+                near = _closest(key, known_fields)
+                if near is not None:
+                    suggestion = near
+            issues.append(ValidationIssue(
+                key=key, kind="unknown_key",
+                detail="not a recognized config field",
+                suggestion=suggestion,
+            ))
+            continue
+
+        # --- enum mismatches (known-values fields)
+        if key in _KNOWN_VALUES and isinstance(val, str):
+            opts = _KNOWN_VALUES[key]
+            if val not in opts:
+                suggestion = _closest(val, opts) or ""
+                issues.append(ValidationIssue(
+                    key=key, kind="enum_mismatch",
+                    detail=f"value {val!r} is not one of {opts}",
+                    suggestion=suggestion,
+                ))
+
+        # --- gross type mismatches (TOML parsers usually give us the
+        # right type, but a human-edited file can break that).
+        dflt = getattr(WizardConfig(), key, None)
+        if dflt is not None and not isinstance(val, type(dflt)):
+            # Allow int where float is expected (TOML distinguishes).
+            if isinstance(dflt, float) and isinstance(val, int):
+                continue
+            # Allow any list type to match list default.
+            if isinstance(dflt, list) and isinstance(val, list):
+                continue
+            issues.append(ValidationIssue(
+                key=key, kind="type_mismatch",
+                detail=(f"expected {type(dflt).__name__}, "
+                        f"got {type(val).__name__}"),
+            ))
+
+    return issues
+
+
 def _toml_value(v) -> str:
     if isinstance(v, bool):
         return "true" if v else "false"
