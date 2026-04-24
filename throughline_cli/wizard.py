@@ -1078,8 +1078,8 @@ def _print_next_steps_panel(cfg: WizardConfig) -> None:
                            "[green]python -m throughline_cli taxonomy review[/]")
     ui.print_blank()
     ui.info_line(
-        f"[dim]Full guide: docs/DEPLOYMENT.md  ·  "
-        f"Bug? https://github.com/jprodcc-rodc/throughline/issues[/]"
+        "[dim]Full guide: docs/DEPLOYMENT.md  ·  "
+        "Bug? https://github.com/jprodcc-rodc/throughline/issues[/]"
     )
 
 

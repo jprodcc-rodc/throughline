@@ -23,9 +23,9 @@ import socket
 import sys
 import urllib.error
 import urllib.request
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, List, Optional
 
 
 @dataclass
