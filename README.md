@@ -13,14 +13,17 @@
 
 ## ✨ What it does
 
-```
-You chat in OpenWebUI
-    → conversations auto-export to Markdown
-    → LLM slices / refines / de-identifies each turn
-    → structured knowledge cards land in your Obsidian vault
-    → local embedding + reranking builds a RAG over those cards
-    → next time you ask, past knowledge is auto-injected
-    → new conversation produces new cards → loop
+```mermaid
+flowchart LR
+    Chat[You chat in OpenWebUI] --> Raw[Raw conversation MD]
+    Raw -->|watchdog| Daemon[Refine daemon]
+    Daemon -->|slice→refine→6-section card| Vault[(Obsidian vault)]
+    Vault -->|ingest_qdrant| Index[(Vector store<br/>Qdrant / Chroma / …)]
+    Index --> RAG[RAG server<br/>embed + rerank + freshness]
+    RAG -->|inject context| Chat
+    Daemon -.observation.-> Tax[U27 taxonomy observer]
+    Tax -.review CLI.-> User((You))
+    User -.approve growth.-> Daemon
 ```
 
 Three distinctive pieces you won't find glued together elsewhere:
@@ -28,6 +31,81 @@ Three distinctive pieces you won't find glued together elsewhere:
 1. **Haiku RecallJudge** — a single small-LLM call replaces mode/aggregate/topic-shift/query-rewrite detection. Badge shows the judge's verdict inline.
 2. **Concept anchors** — self-growing whitelist of entities in your vault that short-query RAG gating uses to avoid embedding drift.
 3. **Personal Context cards** — 4-layer stack (Filter valve → reranker boost → `<topic>__profile.md` auto-build → optional FastAPI agent) that injects your real profile into answers without contaminating the public RAG index.
+
+### How is this different from `mem0` / `Letta` / `SuperMemory` / OpenWebUI built-in memory?
+
+Short answer: **throughline produces durable, human-readable Markdown
+that lives in your file system**. The others produce vectors that live
+in their service. Different point on the privacy / portability /
+durability axis.
+
+| | throughline | mem0 | Letta | SuperMemory | OpenWebUI memory |
+|---|---|---|---|---|---|
+| **Storage** | Plain Markdown in your vault | Service-managed vectors | Server-managed agent state | Hosted SaaS | Sqlite blob in OpenWebUI |
+| **Local-only path** | ✅ bge-m3 + Qdrant locally | partial | partial | ❌ | ✅ |
+| **Read it without the tool** | ✅ any Markdown editor | ❌ | ❌ | ❌ | ❌ |
+| **Self-growing taxonomy** | ✅ U27 review loop | ❌ | ❌ | ❌ | ❌ |
+| **Plug-in vector store** | Qdrant / Chroma / + 4 v0.3 | one | none | none | sqlite-only |
+| **Plug-in embedder** | bge-m3 / OpenAI / + aliases | OpenAI-only | OpenAI-only | hosted | one |
+| **Cost-aware ingest** | ✅ daily USD cap (U3) | usage-based | usage-based | sub-based | n/a |
+| **Audience** | Power users with a vault habit | App developers | Agent builders | Consumers | Casual chatters |
+
+throughline is heavier to install (it's a daemon + RAG server + Filter,
+not a SaaS subscription) but the cards persist across tool changes and
+you can grep them with `rg` like any other text.
+
+---
+
+## 🃏 What a refined card looks like
+
+You said this in chat:
+
+> *I'm setting up PyTorch on an M2 MacBook Pro. Should I use mps or cpu? My model is a small transformer (~50M params).*
+
+The daemon refines the conversation into a card like this:
+
+```markdown
+---
+title: "PyTorch on Apple M2 — pick mps for small transformers"
+date: 2026-04-01 09:21:00
+knowledge_identity: universal
+tags: [AI/LLM, y/Decision, z/Node]
+source_conversation_id: "sample-001-mps-pytorch"
+---
+
+# Scene & Pain Point
+A 50M-param transformer on M2 needs a device choice. CPU is the
+safe default; MPS is faster but has rough edges that bite mid-training.
+
+# Core Knowledge & First Principles
+M2's unified memory architecture gives MPS roughly 4-6x speedup over
+CPU for small transformers. Two adoption blockers: (1) some ops
+silently fall back to CPU; (2) install path is non-default.
+
+# Detailed Execution Plan
+- `torch.device("mps")` in your model + tensors.
+- `export PYTORCH_ENABLE_MPS_FALLBACK=1` so unsupported ops route to CPU
+  instead of crashing.
+- Install: `conda install pytorch torchvision torchaudio -c pytorch-nightly`.
+
+# Pitfalls & Boundaries
+- bitsandbytes 8-bit quantization is CUDA-only — pick CPU if you need it.
+- Some attention variants and sparse tensor ops are not yet ported.
+- Numerics differ slightly from CUDA; bad for benchmarking against a
+  CUDA reference.
+
+# Insights & Mental Models
+MPS is a "default-on, opt-out" choice for small models on M-series
+silicon: faster by default, with a known list of fallback hatches.
+
+# Length Summary
+Use `mps` for small transformers on M2; set the fallback env var;
+install via conda nightly.
+```
+
+This is the file you'll commit to your vault, grep with `ripgrep`,
+embed for RAG, and re-read in five years. The conversation it came
+from is one line in a daemon log.
 
 ---
 

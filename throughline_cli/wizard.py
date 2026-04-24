@@ -686,8 +686,19 @@ def step_13_preview(cfg: WizardConfig) -> Optional[str]:
     if len(conv_body) > 4000:
         conv_body = conv_body[:4000] + "\n\n[...truncated for preview...]"
 
-    # 4. Call LLM.
-    ui.info_line(f"Calling {cfg.llm_provider_id}... (one-off preview, ~$0.01)")
+    # 4. Cost preflight + LLM call. Make spending money explicit —
+    # before this gate, step 13 silently called the LLM and the user
+    # only noticed on their provider bill.
+    ui.info_line(
+        f"Preview will call [bold]{cfg.llm_provider_id}[/] once "
+        f"(~$0.01, depending on slice size and provider pricing)."
+    )
+    if not ui.ask_yes_no("Run the preview?", default=True):
+        ui.info_line(
+            "Skipped preview. The daemon will still refine cards "
+            "normally once it starts; this step was only a sniff test."
+        )
+        return None
     try:
         content = llm.call_chat(
             model_id=cfg.llm_provider_id,
