@@ -33,20 +33,67 @@ Three distinctive pieces you won't find glued together elsewhere:
 
 ## 🚀 Quickstart
 
-> **Note:** Obsidian is optional. The refine daemon writes plain
-> Markdown files; any editor that reads Markdown works. Obsidian is
-> recommended for the graph + linking UI, but nothing downstream
-> requires it.
+The fastest path is the install wizard: it asks 16 short questions
+(every one has a sensible Enter-default), writes
+`~/.throughline/config.toml`, and offers to bulk-import your existing
+ChatGPT / Claude / Gemini export on the way through.
 
-Full install guide is [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Five steps, roughly:
+```bash
+git clone https://github.com/jprodcc-rodc/throughline.git
+cd throughline
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python install.py                                    # ← the 16-step wizard
+```
 
-1. **Clone and configure** — `git clone`, `cp config/.env.example .env`, fill in `OPENROUTER_API_KEY`, `VAULT_PATH`, and a few paths.
-2. **Start Qdrant** — one `docker run` line; the collection is created on first ingest.
-3. **Launch the RAG server** — `python rag_server/rag_server.py` (foreground) or install the `launchd` / `systemd` template under `config/`.
-4. **Launch the refine daemon** — `python daemon/refine_daemon.py` (foreground) or install the service template. On first start the daemon catches up on any raw conversations already on disk.
-5. **Install the Filter** — paste `filter/openwebui_filter.py` into OpenWebUI Admin → Functions, set `OPENROUTER_API_KEY` and `RAG_SERVER_URL` valves, enable for your models.
+What the wizard covers, in order: Python check → mission (Full /
+RAG-only / Notes-only) → vector DB → API key → LLM provider → privacy
+level → embedder + reranker → prompt family → import source + path →
+import scan + cost estimate + **explicit privacy consent** → refine
+tier (Skim / Normal / Deep) → card structure → live-LLM preview of
+your first card with optional 5-dial tuning → taxonomy strategy →
+daily USD cap → summary + run import.
 
-Smoke test: ask something in OpenWebUI that overlaps your existing notes. You should see a status line above the reply (`⚡ anchor pass` or `auto recall: mode=general · conf=0.82 · N cards`), an injected context in the answer, and a `🛰️ daemon · …` outlet badge when the daemon is running.
+After the wizard:
+
+```bash
+python rag_server/rag_server.py        # FastAPI on :8000 — embed + rerank + retrieval
+python daemon/refine_daemon.py         # watchdog → refine → vault writer
+```
+
+Drop `filter/openwebui_filter.py` into OpenWebUI's Admin → Functions
+panel; set its `RAG_SERVER_URL` valve to your local server. Now your
+chats refine into cards, the cards get indexed, and the next chat
+that overlaps gets the relevant cards injected.
+
+> **Obsidian is optional.** The daemon writes plain Markdown +
+> frontmatter; any editor reads it. Obsidian is recommended for the
+> graph + linking UI, but nothing downstream requires it.
+
+### Manual install (no wizard)
+
+If the wizard is too opinionated for your setup, the long-form guide
+in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) walks the same five
+steps by hand: configure `.env`, start Qdrant via Docker, launch the
+RAG server + daemon, install the Filter.
+
+### Pluggable backends (v0.2.0+)
+
+Pick a backend at install time via the wizard, or flip later by
+editing `config.toml` / setting env vars before launch:
+
+| Component | Default | Alternates (today) | Coming in v0.3 |
+|---|---|---|---|
+| Embedder (`EMBEDDER`) | `bge-m3` (local) | `openai` | `nomic` / `minilm` natively |
+| Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage` / `jina` natively |
+| Vector store (`VECTOR_STORE`) | `qdrant` | `chroma` (optional dep) | `lancedb` / `duckdb_vss` / `sqlite_vec` / `pgvector` |
+| LLM provider | OpenRouter | direct OpenAI / Anthropic / xAI / Gemini / DeepSeek / Qwen / etc. | — |
+
+Smoke test the install: ask something in OpenWebUI that overlaps your
+existing notes. You should see an `⚡ anchor pass` or `auto recall:
+mode=general · conf=0.82 · N cards` status line above the reply, an
+injected context in the answer, and a `🛰️ daemon · …` outlet badge
+when the daemon is running.
 
 ---
 
