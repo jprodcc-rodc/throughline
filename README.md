@@ -169,21 +169,25 @@ editing `config.toml` / setting env vars before launch:
 ### LLM providers (16 preset routes)
 
 Wizard step 4 picks the backend; step 5 picks a scoped model.
-Every preset is OpenAI-compatible (shared `/v1/chat/completions`
-shape), so switching providers is one env var, not a rewrite.
+Every preset speaks the OpenAI-compatible `/v1/chat/completions`
+shape, so switching providers is one env var, not a rewrite.
+The wizard auto-detects whichever provider's env var you've
+already exported and defaults to that — no preferred vendor.
 
 | Region | Providers |
 |---|---|
-| **Global** | OpenRouter · OpenAI (direct) · Anthropic (OpenAI-compat shim) · DeepSeek · Together.ai · Fireworks.ai · Groq · xAI |
+| **Direct (anywhere)** | OpenAI · Anthropic · DeepSeek · xAI |
+| **Hosted open-weights** | Together.ai · Fireworks.ai · Groq |
 | **China (大陆 access)** | SiliconFlow (硅基流动) · Moonshot (Kimi) · DashScope (Alibaba Qwen) · Zhipu (智谱 GLM) · Doubao (字节豆包) |
+| **Multi-vendor proxy** | OpenRouter (one key → 300+ models) |
 | **Local / self-hosted** | Ollama · LM Studio |
 | **Escape hatch** | Generic OpenAI-compatible endpoint (`THROUGHLINE_LLM_URL` + `THROUGHLINE_LLM_API_KEY`) |
 
-Each provider has its own env var (`OPENROUTER_API_KEY`,
-`SILICONFLOW_API_KEY`, `DEEPSEEK_API_KEY`, `MOONSHOT_API_KEY`, …).
-The wizard auto-detects whichever one you already have set and
-defaults to that provider; no migration needed for existing
-`OPENROUTER_API_KEY` users.
+Each provider has its own env var (`OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, `SILICONFLOW_API_KEY`, `DEEPSEEK_API_KEY`,
+`MOONSHOT_API_KEY`, `DASHSCOPE_API_KEY`, …). Existing users with
+`OPENROUTER_API_KEY` already set keep working with zero config
+change — the autodetect picks it up and routes accordingly.
 
 Smoke test the install: ask something in OpenWebUI that overlaps your
 existing notes. You should see an `⚡ anchor pass` or `auto recall:
@@ -308,6 +312,6 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 Built on:
 - [OpenWebUI](https://github.com/open-webui/open-webui) — the chat frontend
-- [Qdrant](https://github.com/qdrant/qdrant) — vector DB
-- [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) + [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) — embeddings + reranking
-- [OpenRouter](https://openrouter.ai) — model routing (Claude / Gemini / etc.)
+- [Qdrant](https://github.com/qdrant/qdrant) — default vector DB (Chroma / LanceDB / etc. swappable)
+- [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) + [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) — default local embeddings + reranking
+- Any OpenAI-compatible LLM provider — [Anthropic](https://console.anthropic.com), [OpenAI](https://platform.openai.com), [DeepSeek](https://platform.deepseek.com), [Moonshot](https://platform.moonshot.cn), [SiliconFlow](https://siliconflow.cn), [OpenRouter](https://openrouter.ai), [Groq](https://console.groq.com), [Together](https://together.ai), [Ollama](https://ollama.com), or bring your own — see the full 16-preset table above

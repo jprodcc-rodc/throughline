@@ -40,7 +40,7 @@
 | Python | 3.11 | 3.12 / 3.13 also fine. The RAG server uses `asyncio` TaskGroups. |
 | Docker | any recent | Only used for Qdrant. Podman works too. |
 | Qdrant | 1.8+ | Any REST-compatible build. |
-| OpenRouter account | free tier OK | Used for Haiku RecallJudge + Sonnet-class refiner. Add ~$5 credit to start. |
+| Any LLM provider | one account's worth | Pick from 16 OpenAI-compatible presets (Anthropic / OpenAI / DeepSeek / SiliconFlow / Moonshot / OpenRouter / Ollama / …) via wizard step 4. ~$5 credit on a cloud provider covers the first weeks of refining; Ollama is free. See [§Pluggable backends](#pluggable-backends). |
 | Markdown vault | any layout | Johnny-Decimal (`10_`, `20_`, …) is the default; any prefix pattern works via `INGEST_INCLUDE`. |
 
 > **Obsidian is optional.** The daemon writes plain Markdown files.
@@ -146,7 +146,7 @@ Minimum variables to set:
 
 | Variable | What |
 |---|---|
-| `OPENROUTER_API_KEY` | Your OpenRouter key (also used by the daemon). |
+| `<PROVIDER>_API_KEY` | Your LLM API key. The variable name depends on which provider you pick at wizard step 4: `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `SILICONFLOW_API_KEY`, `MOONSHOT_API_KEY`, `DASHSCOPE_API_KEY`, `ZHIPU_API_KEY`, `ARK_API_KEY` (Doubao), `TOGETHER_API_KEY`, `FIREWORKS_API_KEY`, `GROQ_API_KEY`, `XAI_API_KEY`. See [§Pluggable backends](#pluggable-backends). |
 | `VAULT_PATH` | Absolute path to your Markdown vault root. |
 | `THROUGHLINE_VAULT_ROOT` | Same value; used by the daemon. |
 | `THROUGHLINE_RAW_ROOT` | Directory where OpenWebUI raw conversations land. |
@@ -290,7 +290,10 @@ use the sync template:
    OpenWebUI binds to).
 5. Click **Save**. OpenWebUI parses the module and registers the Valves.
 6. Open the new function's **Valves** pane and set at minimum:
-   - `OPENROUTER_API_KEY`
+   - Your LLM provider API key (valve name matches the env var of the
+     provider you picked at wizard step 4 — `OPENROUTER_API_KEY`,
+     `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `SILICONFLOW_API_KEY`,
+     etc.).
    - `RAG_SERVER_URL` — default `http://localhost:8000` is fine for a
      same-host install.
 7. Enable the function globally, or attach it to the models you want it
@@ -303,7 +306,7 @@ Minimum valve set to get a turn through end-to-end:
 
 | Valve | Purpose |
 |---|---|
-| `OPENROUTER_API_KEY` | Haiku RecallJudge call. |
+| `<PROVIDER>_API_KEY` | LLM provider key — matches whichever provider the wizard picked. Haiku RecallJudge + refiner both go through this key. |
 | `RAG_SERVER_URL` | Backing RAG server from Step 3. |
 | `REFINE_STATUS_URL` | (Optional) daemon refine-status endpoint for the outlet badge. Paired with `REFINE_STATUS_ENABLED` and `REFINE_STATUS_TIMEOUT`. |
 
@@ -455,12 +458,13 @@ hints and usually short-circuits the rest of this section.
 For Filter-specific failure modes, see
 `filter/README.md § 6 — Troubleshooting`. Highlights:
 
-- **`no_api_key`** — set `OPENROUTER_API_KEY` valve (or `OPENAI_API_KEY`
-  environment variable on the OpenWebUI host).
+- **`no_api_key`** — set the LLM provider's API key valve (matches
+  whichever provider the wizard picked at step 4 — `OPENROUTER_API_KEY`,
+  `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `SILICONFLOW_API_KEY`, …).
 - **`⚠️ HAIKU_DOWN × 3+`** — three consecutive judge failures. Check
-  OpenRouter status and quota. The Filter falls back to cosine
-  thresholding automatically; you lose brainstorm detection and query
-  reformulation until the judge recovers.
+  your LLM provider's status page and quota. The Filter falls back to
+  cosine thresholding automatically; you lose brainstorm detection and
+  query reformulation until the judge recovers.
 - **Empty RAG results** — verify `RAG_SERVER_URL` from inside the
   OpenWebUI container, not from the host. Docker networking can put
   `localhost` on the wrong side.
