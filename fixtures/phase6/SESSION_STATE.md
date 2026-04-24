@@ -2,47 +2,63 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-25 — README polish wave shipped; FEATURE FREEZE in effect
+**Last updated:** 2026-04-26 — Feature freeze lifted by user; A-J
+backburner wave + 3-item post-v0.2.0 polish round (LanceDB, refine
+--dry-run, schema validation) all shipped and pushed to main
 
-## ⛔ DIRECTIVE: FEATURE FREEZE UNTIL DISTRIBUTION CATCHES UP
+## ✅ Feature freeze LIFTED (2026-04-26)
 
-User explicit directive (2026-04-25):
+User 2026-04-26: "视频/gif我在同步做，你也同时开干你能做的"
+(User records GIF/video in parallel; autonomous code work resumed.)
 
-> "README改完 + Hero GIF做完 + 第一期视频发了之前——不要再改产品。
-> 你现在有1个star。你的任务是让这1个变成10个，不是加更多功能。
-> Distribution > Features，在这个阶段。"
+Prior 2026-04-25 freeze directive: "README改完 + Hero GIF做完 + 第一期
+视频发了之前——不要再改产品。Distribution > Features，在这个阶段。"
+(Freeze was tied to README + GIF + video landing together.)
 
-**Do NOT ship new product features until ALL three land:**
+**Distribution human actions (user still owns):**
 
-1. ☐ README polish — DONE 2026-04-25 (tagline, status, front-block,
+1. ☑ README polish — DONE 2026-04-25 (tagline, status, front-block,
    trimmed comparison, trimmed badges, Quickstart moved to #2, card
    example swapped to keto-rebound scenario)
-2. ☐ Hero GIF — user will record. 10-15s: ChatGPT forgets you →
-   throughline-enabled OpenWebUI remembers → card auto-generates in
-   Obsidian. Tools: Arcade / Screen Studio / ScreenToGif.
+2. ☐ Hero GIF — user recording in parallel. 10-15s: ChatGPT forgets
+   you → throughline-enabled OpenWebUI remembers → card auto-generates
+   in Obsidian. Tools: Arcade / Screen Studio / ScreenToGif.
 3. ☐ First YouTube video (4-6 min) — user will record.
    Hook: "I had 500 conversations with ChatGPT and Claude over the
    past year. Most of them are gone. Here's what I built to never
    lose another one." Structure documented below in "Human-action queue".
 
-## Feature backlog (DO NOT EXECUTE WITHOUT EXPLICIT UNFREEZE)
+## Feature backlog (post-freeze, executed 2026-04-26)
 
-Recorded in priority order for the unfreeze signal:
+All 5 items from the pre-freeze queue shipped in the A-J wave +
+3-item polish round:
 
-1. **Anthropic native Messages API adapter** (v0.3) — currently
-   `/v1/openai` shim; real adapter unlocks cache control, tool use,
-   200k context reliably.
-2. **daemon LLM integration tests** — provider wiring is mock-only
-   at the HTTP boundary; need one real "config.toml → active_provider
-   → daemon.call_llm_json" round-trip via mocked HTTP server.
-3. **Uninstall CLI** — `python -m throughline_cli uninstall` alongside
-   the existing `scripts/uninstall.sh/.ps1`.
-4. **prompts/README.md expansion** — contributor onboarding for
-   new-language and new-tier/family prompts.
-5. **Type annotations audit** — public functions in `daemon/` lacking
-   return types; enable mypy in CI downstream.
+1. ☑ **Anthropic native Messages API adapter** — `E: Anthropic native
+   /v1/messages adapter with prompt caching` (`3b94051`).
+2. ☑ **daemon LLM integration tests** — `D: daemon LLM integration
+   tests` (`bcef4cd`).
+3. ☑ **Uninstall CLI** — `B: throughline_cli uninstall` (`62896be`).
+4. ☑ **prompts/README.md** — `C: prompts/README` 209-line contributor
+   doc (`25292da`).
+5. ☑ **Type annotations audit** — `A/E: complete return-type
+   annotations` (`544fe12`).
 
-Any new feature work outside this list ALSO waits for unfreeze.
+Plus Tier-2 additions landed in the same wave:
+6. ☑ `throughline_cli cost` LLM spend dashboard (`5fa93dd`)
+7. ☑ `throughline_cli stats` vault+taxonomy summary (`ff11834`)
+8. ☑ `docs/FAQ.md` + `docs/THREAT_MODEL.md` (`8e39b08`)
+9. ☑ `refine_kept_slices()` extraction (`0377492`)
+
+Plus 3-item post-v0.2.0 polish round (2026-04-26):
+10. ☑ **LanceDB real backend** (`2accbf0`, closes #6) — embedded,
+    file-based, zero-server; `_LanceDBUnavailable` stub pattern;
+    remaining aliases (duckdb_vss/sqlite_vec/pgvector) turned into
+    good-first-issues (#9/#10/#11).
+11. ☑ **`throughline_cli refine --dry-run`** (`202487b`) — zero-cost
+    preview of the refiner system + user prompts.
+12. ☑ **Config schema validation + doctor check** (`4b5f6ef` +
+    `678532c`) — typo detection with Levenshtein suggestions +
+    `llm_provider` validated against the 16-entry registry.
 
 ## Human-action queue (items I literally cannot do)
 
@@ -118,7 +134,12 @@ with pauses.
 <https://github.com/jprodcc-rodc/throughline>
 <https://jprodcc-rodc.github.io/throughline/> ← docs site also live
 
-**Latest commit on `main`:** README polish wave pending commit; prior `95dc425` + `261cf63` (docker compose + GH Pages bootstrap), 712 passed / 10 xfailed. CI green across lint + pytest 3.11 + pytest 3.12 + docs. · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `678532c` (config: validate
+llm_provider against the 16-entry registry). 838 passed / 10 xfailed
+(up from 712 at the last anchor — A-J wave +67, post-v0.2.0 polish
++34, schema validation +23, LanceDB +7, dry-run +11, refine_kept
++5). CI green across lint + pytest 3.11 + pytest 3.12 + docs. ·
+**GitHub:** `jprodcc-rodc/throughline`
 
 **Tagline chosen (2026-04-25):** `"Stop re-explaining yourself to every new chat."`
 — replaces the earlier "The thread that turns every LLM conversation…"
@@ -192,20 +213,28 @@ per user feedback; emotional directness beats product-essay prose.
   miss new issue fire-and-forget without this).
 
 **What next session can pick up from (still-executable autonomously):**
-1. **config.toml migration** — pre-U28 installs don't have
-   `llm_provider` field; wizard should detect + write-in silently
-   on open.
-2. **mkdocs site** — publish README + CHANGELOG + ROADMAP + docs/
-   to `https://jprodcc-rodc.github.io/throughline` via GH Pages.
-   Fresh visitor surface.
-3. **Docker compose** (issue #7) — one-command evaluate.
-4. **wizard `--reconfigure` mode** (issue #8).
-5. **daemon LLM integration tests** — currently the provider
-   wiring is mock-only. Need at least one "real daemon reads
-   config.toml, calls through to a mocked HTTP layer" round-trip.
-6. **Anthropic native Messages API adapter** — v0.3. Currently
-   uses the `/v1/openai` shim; a proper adapter unlocks cache
-   control, tool use, and 200k context reliably.
+
+All six of the prior picklist items have shipped (config migration
+`47910b0`, mkdocs site, Docker compose `261cf63`, wizard
+`--reconfigure` `b7f914d`, daemon LLM integration tests `bcef4cd`,
+Anthropic native adapter `3b94051`).
+
+Fresh picklist (post-2026-04-26 round):
+1. **`duckdb_vss` / `sqlite_vec` / `pgvector` native backends** —
+   good-first-issues #9/#10/#11 are open for contributors. If no
+   contributor picks them up, self-implement following the
+   LanceDB pattern (`_REGISTRY` entry + stub-when-missing + 5-method
+   round-trip tests).
+2. **`throughline_cli config validate`** — promote the schema
+   validator to a standalone subcommand so users can run it
+   without the full doctor overhead.
+3. **U27.5/.6/.7 taxonomy growth extensions** — Filter outlet
+   "N candidates pending" hint; `taxonomy retag` batch re-refine;
+   deprecation of zero-usage leaves + merge proposal.
+4. **Native Voyage / Jina rerankers** — currently alias to Cohere
+   / bge-m3.
+5. **PyPI publish** (needs user action: register project name,
+   upload wheel, set TestPyPI trial first).
 
 **Things that need YOU (not me):**
 - **Watch → Custom** on the repo page.
