@@ -1,0 +1,126 @@
+# One-command evaluation environment for throughline.
+# See docs/DEPLOYMENT.md §Docker for the full flow.
+#
+# Quick start:
+#   cp .env.example.compose .env
+#   # Edit .env — set at minimum your provider's API key env var
+#   # (OPENROUTER_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, …).
+#   docker compose up -d
+#   docker compose run --rm daemon python -m throughline_cli import sample
+#   docker compose logs -f daemon  # watch the first refines land
+#
+# Services:
+#   qdrant       — vector DB. Durable via named volume.
+#   rag_server   — FastAPI. Exposes :8000 on localhost.
+#   daemon       — watches vault/raw, refines, upserts to Qdrant.
+#
+# Volumes (all named; persist across `docker compose down`):
+#   qdrant_data  — Qdrant storage.
+#   vault        — refined Markdown cards land here. Mount to a
+#                  host path (e.g. $HOME/ObsidianVault) to edit in
+#                  Obsidian alongside.
+#   raw          — raw conversations from OpenWebUI's exporter.
+#   state        — daemon state + cost stats.
+#   logs         — rotating logs.
+#
+# Opt-in: local bge-m3 embedder (~2 GB torch + ~4.6 GB model).
+#   Build with:   docker compose build --build-arg INSTALL_LOCAL=1
+#   Then set EMBEDDER=bge-m3 in .env. Default is EMBEDDER=openai
+#   which talks to whichever provider you picked in the wizard.
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: throughline-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # HTTP / REST
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      # /healthz is a plain-text endpoint ("healthz check passed").
+      test: ["CMD-SHELL", "curl -fsS http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  rag_server:
+    build:
+      context: .
+      args:
+        INSTALL_LOCAL: ${INSTALL_LOCAL:-0}
+    image: throughline:latest
+    container_name: throughline-rag-server
+    restart: unless-stopped
+    command: ["python", "rag_server/rag_server.py"]
+    env_file:
+      - .env
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      # Sensible defaults for single-host compose. Override in .env
+      # if you want openai / cohere / skip / chroma / …
+      EMBEDDER: ${EMBEDDER:-openai}
+      RERANKER: ${RERANKER:-skip}
+      VECTOR_STORE: qdrant
+    ports:
+      - "8000:8000"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - vault:/data/vault
+      - state:/data/state
+      - logs:/data/logs
+    healthcheck:
+      test: ["CMD-SHELL",
+             "curl -fsS http://localhost:8000/v1/rag/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  daemon:
+    build:
+      context: .
+      args:
+        INSTALL_LOCAL: ${INSTALL_LOCAL:-0}
+    image: throughline:latest
+    container_name: throughline-daemon
+    restart: unless-stopped
+    command: ["python", "daemon/refine_daemon.py"]
+    env_file:
+      - .env
+    environment:
+      QDRANT_URL: http://qdrant:6333
+      RAG_EMBED_URL: http://rag_server:8000/v1
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      rag_server:
+        condition: service_started
+    volumes:
+      - vault:/data/vault
+      - raw:/data/raw
+      - state:/data/state
+      - logs:/data/logs
+
+volumes:
+  qdrant_data:
+    name: throughline_qdrant_data
+  vault:
+    # For a real install you'll want this bound to your Obsidian
+    # vault path. Bind by uncommenting + editing:
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /host/path/to/ObsidianVault
+    name: throughline_vault
+  raw:
+    name: throughline_raw_conversations
+  state:
+    name: throughline_state
+  logs:
+    name: throughline_logs

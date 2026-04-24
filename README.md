@@ -149,6 +149,23 @@ that overlaps gets the relevant cards injected.
 > frontmatter; any editor reads it. Obsidian is recommended for the
 > graph + linking UI, but nothing downstream requires it.
 
+### Docker compose (evaluate in 5 minutes, no Python install)
+
+```bash
+git clone https://github.com/jprodcc-rodc/throughline.git
+cd throughline
+cp .env.example.compose .env          # set ONE provider API key
+docker compose up -d
+docker compose run --rm daemon \
+    python -m throughline_cli import sample   # 10 sample conversations
+docker compose logs -f daemon
+```
+
+Default `EMBEDDER=openai` + `RERANKER=skip` keeps the image to
+~400 MB. Add `--build-arg INSTALL_LOCAL=1` for the full local
+(`bge-m3` + reranker) path. Full walkthrough in
+[`docs/DEPLOYMENT.md` § Docker compose](docs/DEPLOYMENT.md#docker-compose-try-it-in-5-minutes).
+
 ### Manual install (no wizard)
 
 If the wizard is too opinionated for your setup, the long-form guide

@@ -17,6 +17,7 @@
 ## Contents
 
 - [Prerequisites](#prerequisites)
+- [Docker compose (try it in 5 minutes)](#docker-compose-try-it-in-5-minutes)
 - [Quick install (via wizard)](#quick-install-via-wizard)
 - [Step 1 — Clone and configure](#step-1--clone-and-configure)
 - [Step 2 — Qdrant](#step-2--qdrant)
@@ -78,6 +79,53 @@ huggingface-cli download BAAI/bge-reranker-v2-m3
 
 Skippable if you trust your bandwidth and don't mind a long first-run
 wait.
+
+---
+
+## Docker compose (try it in 5 minutes)
+
+For evaluating throughline without committing to a full local
+install, the bundled `docker-compose.yml` spins up Qdrant +
+rag_server + daemon on one host. Minimum viable path:
+
+```bash
+git clone https://github.com/jprodcc-rodc/throughline.git
+cd throughline
+
+cp .env.example.compose .env
+# Edit .env: set ONE of the API key variables (OPENROUTER_API_KEY,
+# ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, SILICONFLOW_API_KEY,
+# MOONSHOT_API_KEY, …). The daemon auto-detects which one is set.
+
+docker compose up -d
+
+# First boot seeds the vault with 10 synthetic conversations so
+# you can watch refines happen in real time:
+docker compose run --rm daemon \
+    python -m throughline_cli import sample
+docker compose logs -f daemon
+```
+
+Defaults tuned for fast eval: `EMBEDDER=openai` (no local torch
+download), `RERANKER=skip` (no cross-encoder). To enable the full
+local-privacy path (`bge-m3` + `bge-reranker-v2-m3`):
+
+```bash
+docker compose build --build-arg INSTALL_LOCAL=1
+# Then set EMBEDDER=bge-m3, RERANKER=bge-reranker-v2-m3 in .env
+# and `docker compose up -d --force-recreate`.
+```
+
+Volumes are named by default (persist across `docker compose
+down`); bind them to host paths for direct Obsidian editing by
+editing `volumes.vault` in `docker-compose.yml`. See the comments
+in that file for the exact bind syntax.
+
+OpenWebUI is **not** bundled — users typically already have one
+running, and the Filter's paste-into-Admin UI flow doesn't benefit
+from containerisation. Point your existing OpenWebUI at
+`http://<host>:8000` (the exposed rag_server port) and follow the
+Filter install in [§ Step 5](#step-5--openwebui-filter).
 
 ---
 
