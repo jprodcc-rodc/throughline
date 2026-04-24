@@ -165,7 +165,25 @@ editing `config.toml` / setting env vars before launch:
 | Embedder (`EMBEDDER`) | `bge-m3` (local) | `openai` | `nomic` / `minilm` natively |
 | Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage` / `jina` natively |
 | Vector store (`VECTOR_STORE`) | `qdrant` | `chroma` (optional dep) | `lancedb` / `duckdb_vss` / `sqlite_vec` / `pgvector` |
-| LLM provider | OpenRouter | direct OpenAI / Anthropic / xAI / Gemini / DeepSeek / Qwen / etc. | — |
+
+### LLM providers (16 preset routes)
+
+Wizard step 4 picks the backend; step 5 picks a scoped model.
+Every preset is OpenAI-compatible (shared `/v1/chat/completions`
+shape), so switching providers is one env var, not a rewrite.
+
+| Region | Providers |
+|---|---|
+| **Global** | OpenRouter · OpenAI (direct) · Anthropic (OpenAI-compat shim) · DeepSeek · Together.ai · Fireworks.ai · Groq · xAI |
+| **China (大陆 access)** | SiliconFlow (硅基流动) · Moonshot (Kimi) · DashScope (Alibaba Qwen) · Zhipu (智谱 GLM) · Doubao (字节豆包) |
+| **Local / self-hosted** | Ollama · LM Studio |
+| **Escape hatch** | Generic OpenAI-compatible endpoint (`THROUGHLINE_LLM_URL` + `THROUGHLINE_LLM_API_KEY`) |
+
+Each provider has its own env var (`OPENROUTER_API_KEY`,
+`SILICONFLOW_API_KEY`, `DEEPSEEK_API_KEY`, `MOONSHOT_API_KEY`, …).
+The wizard auto-detects whichever one you already have set and
+defaults to that provider; no migration needed for existing
+`OPENROUTER_API_KEY` users.
 
 Smoke test the install: ask something in OpenWebUI that overlaps your
 existing notes. You should see an `⚡ anchor pass` or `auto recall:

@@ -53,7 +53,15 @@ class WizardConfig:
     # Step 4 — API key (stored via keyring/env; this is just a pointer)
     api_key_source: str = "env"  # env | keyring | file
 
-    # Step 5 — LLM provider (U11)
+    # Step 5a — LLM provider backend (U28 multi-provider)
+    # Which HTTP endpoint / env var to use. See
+    # `throughline_cli.providers` for the full registry.
+    llm_provider: str = "openrouter"
+    # Step 5b — model id, SCOPED to the provider above. OpenRouter
+    # expects namespace-prefixed IDs ("anthropic/claude-sonnet-4.6");
+    # direct providers expect their own IDs ("claude-sonnet-4-5-20250929"
+    # for Anthropic, "gpt-5-mini" for OpenAI, "Qwen/Qwen2.5-72B-Instruct"
+    # for SiliconFlow, etc.).
     llm_provider_id: str = "anthropic/claude-sonnet-4.6"
 
     # Step 6 — Privacy level (U18)

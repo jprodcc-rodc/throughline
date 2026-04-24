@@ -130,37 +130,111 @@ def step_03_vector_db(cfg: WizardConfig) -> Optional[str]:
 
 
 def step_04_api_key(cfg: WizardConfig) -> Optional[str]:
-    ui.step_header(4, TOTAL, "API key")
-    ui.info_line("Keys are not persisted inside this config — set them "
-                 "in your shell as env vars. Each provider uses its own "
-                 "variable name; the wizard's multi-provider step (U28) "
-                 "enumerates them per choice. Re-run "
-                 "`python install.py --step 4` after setting the key.")
+    """U28 — pick the provider BACKEND first so step 5 can scope
+    model IDs to that provider. Backward-compat default: openrouter."""
+    from . import providers as _providers
+    ui.step_header(4, TOTAL, "LLM provider backend")
+    ui.intro("Which HTTP endpoint handles your LLM calls. Same key "
+             "variable per provider; model IDs in the next step are "
+             "scoped to whatever you pick here. Default is OpenRouter, "
+             "which routes to most models through a single key.")
+
+    presets = _providers.list_presets()
+
+    # Group by region for cleaner display: global / cn / local / custom.
+    def _group_label(region: str) -> str:
+        return {
+            "global": "— Global",
+            "cn":     "— China (大陆 access)",
+            "local":  "— Local (self-hosted)",
+            "custom": "— Custom",
+        }.get(region, "")
+
+    options: list[tuple[str, str, str]] = []
+    current_region: Optional[str] = None
+    for p in presets:
+        if p.region != current_region:
+            # Not an option — pick_option doesn't support section headers,
+            # so we embed the region hint in the description of the next
+            # provider instead.
+            current_region = p.region
+        region_tag = f"[{p.region}] "
+        # Auto-detect: if the user already has the env var set, prefix
+        # the display name with a small indicator.
+        key_set = bool(__import__("os").environ.get(p.env_var, "").strip())
+        marker = "● " if key_set else ""
+        options.append((
+            p.id,
+            f"{marker}{region_tag}{p.name}",
+            f"{p.notes}  (env: {p.env_var})",
+        ))
+
+    # Smart default: if a key is already set for some provider, default
+    # to that; else OpenRouter.
+    autodetected = _providers.detect_configured_provider()
+    default_key = autodetected or "openrouter"
+
+    cfg.llm_provider = ui.pick_option(
+        "Pick an LLM provider:",
+        options,
+        default_key=default_key,
+    )
+
+    preset = _providers.get_preset(cfg.llm_provider)
+    key_set = bool(__import__("os").environ.get(preset.env_var, "").strip())
+    if key_set:
+        ui.info_line(f"[green]{preset.env_var} is set.[/] "
+                      f"The preview (step 13) will call {preset.name}.")
+    else:
+        if preset.signup_url:
+            ui.info_line(
+                f"[yellow]{preset.env_var} is NOT set.[/] Get a key at "
+                f"{preset.signup_url}, then export it in your shell "
+                f"(e.g. `export {preset.env_var}=sk-...`) and re-run "
+                f"`python install.py --step 4` to verify."
+            )
+        else:
+            ui.info_line(
+                f"[yellow]{preset.env_var} is NOT set.[/] Also set "
+                f"THROUGHLINE_LLM_URL to your custom endpoint, then "
+                f"re-run `python install.py --step 4`."
+            )
     return None
 
 
 def step_05_llm_provider(cfg: WizardConfig) -> Optional[str]:
-    """U11 — provider matrix."""
-    ui.step_header(5, TOTAL, "LLM provider")
-    cfg.llm_provider_id = ui.pick_option(
-        "Pick a default provider model:",
-        [
-            ("anthropic/claude-sonnet-4.6", "Anthropic Sonnet 4.6",  "Default, balanced quality/cost"),
-            ("anthropic/claude-haiku-4.5",  "Anthropic Haiku 4.5",   "Cheap / fast"),
-            ("anthropic/claude-opus-4.7",   "Anthropic Opus 4.7",    "Expensive / best quality"),
-            ("openai/gpt-5-mini",           "OpenAI GPT-5-mini",     "Alt cheap option"),
-            ("google/gemini-3-flash",       "Google Gemini 3 Flash", "Alt cheap; judgement-friendly"),
-            ("xai/grok-3",                  "xAI Grok 3",            "Timely content, coding"),
-            ("deepseek/v3.2",               "DeepSeek v3.2",         "Cheapest Sonnet-class alternative"),
-        ],
-        default_key="anthropic/claude-sonnet-4.6",
-    )
-    # Auto-derive prompt family (U22).
-    if cfg.llm_provider_id.startswith("anthropic/"):
+    """U11 + U28 — model picker SCOPED to whatever provider step 4
+    chose. Model IDs differ per provider; the registry knows them."""
+    from . import providers as _providers
+    ui.step_header(5, TOTAL, "LLM model")
+
+    preset = _providers.get_preset(cfg.llm_provider)
+    if not preset.models:
+        # Generic / custom provider: user has to supply the model ID.
+        ui.info_line(
+            f"[yellow]{preset.name} is a generic endpoint — no preset "
+            f"model list.[/] Enter the model ID your endpoint expects."
+        )
+        cfg.llm_provider_id = ui.ask_text(
+            "Model ID", default=cfg.llm_provider_id or "").strip()
+    else:
+        ui.intro(f"Models offered by {preset.name}. Defaults are "
+                  f"the provider's most-used one; press Enter for the "
+                  f"first entry or pick another.")
+        options = [(mid, label, "") for mid, label in preset.models]
+        cfg.llm_provider_id = ui.pick_option(
+            f"Pick a model from {preset.name}:",
+            options,
+            default_key=preset.models[0][0],
+        )
+
+    # Auto-derive prompt family (U22) from the model ID.
+    mid = cfg.llm_provider_id.lower()
+    if "claude" in mid or cfg.llm_provider == "anthropic":
         cfg.prompt_family = "claude"
-    elif cfg.llm_provider_id.startswith("openai/"):
+    elif "gpt" in mid or cfg.llm_provider == "openai":
         cfg.prompt_family = "gpt"
-    elif cfg.llm_provider_id.startswith("google/"):
+    elif "gemini" in mid:
         cfg.prompt_family = "gemini"
     else:
         cfg.prompt_family = "generic"
@@ -707,6 +781,7 @@ def step_13_preview(cfg: WizardConfig) -> Optional[str]:
             system_prompt=system_prompt,
             user_message=conv_body,
             response_format={"type": "json_object"},
+            provider_id=cfg.llm_provider,
         )
     except llm.LLMError as e:
         ui.info_line(f"[red]LLM call failed:[/] {e}")
@@ -823,6 +898,7 @@ def _rerun_preview_with_dials(cfg: WizardConfig, system_prompt: str,
             system_prompt=prompt_with_dials,
             user_message=conv_body,
             response_format={"type": "json_object"},
+            provider_id=cfg.llm_provider,
         )
     except llm.LLMError as e:
         ui.info_line(f"[red]Re-render failed:[/] {e}")
@@ -918,7 +994,7 @@ def step_16_summary(cfg: WizardConfig) -> Optional[str]:
     ui.kv_row("mission", cfg.mission)
     if cfg.mission != "notes_only":
         ui.kv_row("vector_db", cfg.vector_db)
-    ui.kv_row("llm_provider", cfg.llm_provider_id)
+    ui.kv_row("llm_provider", f"{cfg.llm_provider} · {cfg.llm_provider_id}")
     ui.kv_row("privacy", cfg.privacy)
     if cfg.mission != "notes_only":
         ui.kv_row("embedder", cfg.embedder)

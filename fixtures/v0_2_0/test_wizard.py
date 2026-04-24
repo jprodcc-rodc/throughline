@@ -157,18 +157,95 @@ class TestVectorDbBranch:
 
 
 class TestProviderAutoDerivesPromptFamily:
+    """U28 — step 5 is SCOPED to whichever provider step 4 picked.
+    Walking the OpenRouter preset's model list: 1=sonnet, 2=haiku,
+    3=opus, 4=gpt-5-mini, 5=gpt-5, 6=gemini-flash, 7=gemini-pro,
+    8=grok-3, 9=deepseek-v3.2, 10=llama-3.3-70b.
+    """
     @pytest.mark.parametrize("choice,expected", [
-        ("1", "claude"),   # anthropic sonnet
-        ("4", "gpt"),      # openai gpt-5-mini
-        ("5", "gemini"),   # google gemini
-        ("6", "generic"),  # xai grok
-        ("7", "generic"),  # deepseek
+        ("1", "claude"),   # Anthropic Sonnet 4.6
+        ("4", "gpt"),      # OpenAI GPT-5-mini
+        ("6", "gemini"),   # Google Gemini 3 Flash
+        ("8", "generic"),  # xAI Grok 3
+        ("9", "generic"),  # DeepSeek v3.2
     ])
-    def test_family_derivation(self, monkeypatch, choice, expected):
+    def test_family_derivation_openrouter(self, monkeypatch, choice, expected):
         cfg = WizardConfig()
+        cfg.llm_provider = "openrouter"
         monkeypatch.setattr("builtins.input", _stub_input([choice]))
         step_05_llm_provider(cfg)
         assert cfg.prompt_family == expected
+
+    def test_family_derivation_direct_anthropic(self, monkeypatch):
+        """Direct Anthropic provider: model IDs don't carry the
+        'anthropic/' namespace prefix, but prompt_family still
+        resolves to 'claude' via the provider name + 'claude' in
+        model id."""
+        cfg = WizardConfig()
+        cfg.llm_provider = "anthropic"
+        # First model in the direct-Anthropic list.
+        monkeypatch.setattr("builtins.input", _stub_input(["1"]))
+        step_05_llm_provider(cfg)
+        assert cfg.prompt_family == "claude"
+
+    def test_family_derivation_direct_openai(self, monkeypatch):
+        cfg = WizardConfig()
+        cfg.llm_provider = "openai"
+        monkeypatch.setattr("builtins.input", _stub_input(["1"]))
+        step_05_llm_provider(cfg)
+        assert cfg.prompt_family == "gpt"
+
+    def test_family_derivation_siliconflow(self, monkeypatch):
+        """Chinese-market provider: Qwen model IDs route to 'generic'
+        prompt family (no claude / gpt / gemini family exists for Qwen
+        yet)."""
+        cfg = WizardConfig()
+        cfg.llm_provider = "siliconflow"
+        monkeypatch.setattr("builtins.input", _stub_input(["1"]))  # Qwen2.5 72B
+        step_05_llm_provider(cfg)
+        assert cfg.prompt_family == "generic"
+
+
+class TestStep04ProviderPick:
+    """U28 — step 4 chooses the backend, auto-defaults to whichever
+    provider already has its env var set (backward compat for
+    existing OPENROUTER_API_KEY users)."""
+
+    def test_default_is_openrouter_when_no_key_set(self, monkeypatch):
+        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+                     "DEEPSEEK_API_KEY", "TOGETHER_API_KEY", "FIREWORKS_API_KEY",
+                     "GROQ_API_KEY", "XAI_API_KEY", "SILICONFLOW_API_KEY",
+                     "MOONSHOT_API_KEY", "DASHSCOPE_API_KEY", "ZHIPU_API_KEY",
+                     "ARK_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+        from throughline_cli.wizard import step_04_api_key
+        cfg = WizardConfig()
+        monkeypatch.setattr("builtins.input", _stub_input([""]))  # Enter
+        step_04_api_key(cfg)
+        assert cfg.llm_provider == "openrouter"
+
+    def test_auto_detects_existing_siliconflow_key(self, monkeypatch):
+        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("SILICONFLOW_API_KEY", "sk-abc")
+        from throughline_cli.wizard import step_04_api_key
+        cfg = WizardConfig()
+        monkeypatch.setattr("builtins.input", _stub_input([""]))  # accept default
+        step_04_api_key(cfg)
+        assert cfg.llm_provider == "siliconflow"
+
+    def test_user_picks_deepseek_by_number(self, monkeypatch):
+        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+        from throughline_cli.providers import list_presets
+        ids = [p.id for p in list_presets()]
+        # Find deepseek's 1-indexed position.
+        pos = ids.index("deepseek") + 1
+        from throughline_cli.wizard import step_04_api_key
+        cfg = WizardConfig()
+        monkeypatch.setattr("builtins.input", _stub_input([str(pos)]))
+        step_04_api_key(cfg)
+        assert cfg.llm_provider == "deepseek"
 
 
 class TestImportSourceColdStartLoop:
