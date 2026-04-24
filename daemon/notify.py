@@ -98,7 +98,7 @@ def _notify_mac_remote(title: str, body: str, sound: str, group: str):
         return False
 
 
-def notify(title: str, body: str, sound: str = "Glass", group: str = ""):
+def notify(title: str, body: str, sound: str = "Glass", group: str = "") -> None:
     """Send a desktop notification. Silent on failure.
 
     Args:

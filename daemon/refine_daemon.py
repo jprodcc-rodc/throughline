@@ -1705,10 +1705,10 @@ _queued_lock = Lock()
 
 
 class RawWatcher(FileSystemEventHandler):
-    def on_created(self, event):
+    def on_created(self, event) -> None:
         self._enqueue(event)
 
-    def on_modified(self, event):
+    def on_modified(self, event) -> None:
         self._enqueue(event)
 
     def _enqueue(self, event):
