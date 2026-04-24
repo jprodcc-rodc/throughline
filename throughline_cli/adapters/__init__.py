@@ -29,12 +29,16 @@ USAGE = """\
 throughline import — bring an existing chat-history export into throughline.
 
 Usage:
-    python -m throughline_cli import <source> <path> [options]
+    python -m throughline_cli import <source> [path] [options]
 
 Sources:
     claude    Claude.ai data export (ZIP or conversations.jsonl|json)
     chatgpt   ChatGPT data export   (ZIP or conversations.json)
     gemini    Google Takeout Gemini Apps (ZIP or MyActivity JSON)
+    sample    Bundled 10-conversation synthetic export (zero arg path).
+              For first-time users to see the loop without exporting
+              their own data. Auto-tagged `sample-YYYY-MM-DD` so it's
+              easy to bulk-purge later.
 
 Options:
     --out PATH       Output root (default: $THROUGHLINE_RAW_ROOT or
@@ -44,6 +48,14 @@ Options:
                      (default: <source>-YYYY-MM-DD)
     --limit N        Process at most N conversations (for quick tests)
 """
+
+
+def _sample_path() -> str:
+    """Resolve the bundled sample export path. Lives next to the
+    repo's `samples/` directory."""
+    from pathlib import Path
+    return str(Path(__file__).resolve().parents[2] / "samples"
+                / "claude_sample.jsonl")
 
 
 def main(argv: list[str]) -> int:
@@ -61,6 +73,20 @@ def main(argv: list[str]) -> int:
     if source == "gemini":
         from . import gemini_takeout
         return gemini_takeout.cli(rest)
+    if source == "sample":
+        # Drive the Claude adapter against the bundled file. Forward
+        # any extra options (--dry-run / --out / --tag) the user
+        # passed; the path is supplied automatically.
+        from . import claude_export
+        from datetime import datetime
+        sample = _sample_path()
+        # Auto-tag with today's date so multiple sample imports don't
+        # collide and bulk-purge of just the samples is one tag.
+        tag = f"sample-{datetime.now().strftime('%Y-%m-%d')}"
+        # Don't clobber a user-supplied --tag.
+        if "--tag" not in rest:
+            rest = rest + ["--tag", tag]
+        return claude_export.cli([sample] + rest)
     print(f"Unknown source: {source!r}", file=sys.stderr)
     print(USAGE, file=sys.stderr)
     return 2
