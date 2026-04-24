@@ -6,6 +6,82 @@ list behind any entry, `git log vX..vY`.
 This project follows [Semantic Versioning](https://semver.org/);
 pre-1.0 minor bumps can include breaking config shape changes.
 
+> **Contributors:** add new entries under `[Unreleased]` below.
+> When the next version is cut, the maintainer renames that section
+> to the new version number, dates it, and starts a fresh
+> `[Unreleased]` block on top.
+
+---
+
+## [Unreleased]
+
+### Added
+- Open-source-project hardening: GitHub Actions CI (pytest 3.11 +
+  3.12, ruff lint), CodeQL weekly scan, Dependabot for pip +
+  github-actions, branch protection ruleset, repo metadata + topics,
+  3 seeded `good first issue` tickets, YAML-form issue templates,
+  PR template, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `ROADMAP.md`,
+  `pyproject.toml` package skeleton with optional-dep extras
+  (`local` / `openai` / `chroma` / `all` / `dev`) + console-script
+  entry points (`throughline-{install, import, taxonomy, doctor}`).
+- UX wave (post-v0.2.0):
+  - **`python -m throughline_cli doctor`** — 10-check health probe
+    (Python / imports / config / state / services / caches) with
+    remediation hints, `--quiet` and `--json` modes.
+  - **`python -m throughline_cli import sample`** — bundled
+    10-conversation synthetic export at `samples/claude_sample.jsonl`
+    so users can see the loop without their own export.
+  - **`python -m throughline_cli --version`** / **`-V`** /
+    **`version`** — print package version. `__version__` resolved
+    from `importlib.metadata`, falling back to a literal for source
+    checkouts.
+  - **Wizard end-of-flow next-steps panel** — mission-tailored
+    copy-paste commands for rag_server, daemon, and Filter install.
+  - **Wizard step 13 cost preflight** — explicit `ask_yes_no("Run
+    the preview?")` gate before the ~$0.01 LLM call.
+  - **README polish** — comparison table vs mem0 / Letta /
+    SuperMemory / OpenWebUI memory; before/after card example;
+    Mermaid architecture diagram replacing the ASCII flow.
+- Documentation:
+  - `CONTRIBUTING.md` expanded — dev setup, claim-issue flow,
+    commit conventions, house style.
+  - `docs/DEPLOYMENT.md` — new "Quick install (via wizard)",
+    "Pluggable backends", "Diagnostics" sections; Windows note
+    upgraded to tier 1 for dev + wizard + tests.
+  - `docs/ARCHITECTURE.md` — new §13 covers v0.2.0 additions
+    (U12/U20/U21 abstractions, U23 dials, U27 growth loop, U3
+    budget, doctor surface) without rewriting §1-12.
+  - `docs/DESIGN_DECISIONS.md` — entries 10-13 capture v0.2.0
+    design calls (aliased backends, `proposed_x_ideal` as separate
+    field, dial defaults render to empty string, three-state
+    doctor reporting).
+  - `docs/ALPHA_USER_NOTES.md` — v0.2.0 update section: which
+    deferrable rough edges got fixed + 5 new UX edges surfaced.
+
+### Fixed
+- **Daemon import on a fresh clone.** `daemon/refine_daemon.py`
+  imported four names from `daemon/taxonomy.py` (`JD_ROOT_MAP`,
+  `JD_LEAF_WHITELIST`, `normalize_route_path`, `is_valid_leaf_route`)
+  that the module never exported. A `git clone` + `python -m
+  daemon.refine_daemon` ImportError'd at module load. Aliases
+  added; regression test in `test_daemon_import_surface.py`.
+- **rag_server actually uses the U12/U20/U21 abstractions.** Before
+  the wiring commit (`3568b22`), `EMBEDDER` / `RERANKER` /
+  `VECTOR_STORE` env vars set in the wizard were ignored — the
+  server hard-coded bge-m3 + bge-reranker-v2-m3 + Qdrant. Now the
+  env vars flip the backend end-to-end.
+- **Error messages without remediation.** Audit pass added "what to
+  do next" hints to user-facing failures in `scripts/ingest_qdrant.py`
+  (`VAULT_PATH` missing, openai missing), `daemon/pack_source_model_guard.py`
+  CLI handler, `throughline_cli/llm.py` no-API-key.
+- **`scripts/ingest_qdrant.py` openai import deferred.** Was a
+  module-load `sys.exit(1)` if openai was missing; now lazy via
+  `_get_embed_client()` so the module imports cleanly without the
+  optional dep.
+- **Ruff F + E9 dead-code sweep.** 22 unused imports + 4 unused
+  local-variable bindings cleaned up across daemon / ui / adapters
+  / tests.
+
 ---
 
 ## [v0.2.0] — 2026-04-23

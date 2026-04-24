@@ -1,0 +1,39 @@
+# Pre-commit hooks for contributors. Optional but recommended:
+#
+#     pip install pre-commit
+#     pre-commit install
+#
+# After that, every `git commit` runs the same checks CI runs, so
+# you don't push a PR only to find the lint job failing 30 seconds
+# later. Skip locally with `git commit --no-verify` when needed
+# (CI still runs).
+
+repos:
+  # Mirrors the `lint (ruff)` job in .github/workflows/test.yml.
+  # Same rule set (F + E9), same Python target (3.11+).
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.0
+    hooks:
+      - id: ruff
+        args: [--select, F,E9]
+        # ruff-pre-commit defaults to fixing in place; CI re-runs without
+        # --fix to confirm the diff is clean.
+
+  # Generic stdlib hooks — cheap, catch most footguns before they hit CI.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        # GitHub Actions uses non-spec YAML extensions in some places;
+        # let pre-commit defer that to the actions runner itself.
+        exclude: ^\.github/
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=2000]
+        # Sample export at samples/claude_sample.jsonl is ~10 KB; the
+        # bundled MD docs are all under 100 KB. 2 MB cap blocks
+        # accidental binary asset commits without false-positive on
+        # legitimate text files.

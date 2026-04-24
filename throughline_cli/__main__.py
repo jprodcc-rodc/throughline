@@ -21,6 +21,7 @@ Usage:
     python -m throughline_cli import <source> <path> [options]
     python -m throughline_cli taxonomy [review | reject TAG]
     python -m throughline_cli doctor [--quiet | --json]
+    python -m throughline_cli --version
 
 Subcommands:
     install    Run the 16-step install wizard (also the default if
@@ -28,6 +29,9 @@ Subcommands:
     import     Turn a chat export into raw Markdown the daemon consumes.
     taxonomy   Review self-growing taxonomy signals (U27 loop).
     doctor     Health check: config + services + caches. Exit 0 if green.
+
+Flags:
+    --version  Print package version and exit.
 
 For subcommand help:
     python -m throughline_cli import --help
@@ -57,6 +61,10 @@ def main(argv: list[str]) -> int:
         return doctor.main(rest)
     if head in ("-h", "--help", "help"):
         print(USAGE)
+        return 0
+    if head in ("-V", "--version", "version"):
+        from . import __version__
+        print(f"throughline {__version__}")
         return 0
     print(f"Unknown subcommand: {head!r}\n", file=sys.stderr)
     print(USAGE, file=sys.stderr)

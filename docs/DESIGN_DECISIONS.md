@@ -18,6 +18,10 @@
 - [7. Separate Qdrant collections for sensitive packs](#7-separate-qdrant-collections-for-sensitive-packs)
 - [8. Prompts stay hardcoded in Python](#8-prompts-stay-hardcoded-in-python)
 - [9. English-only open-source build](#9-english-only-open-source-build)
+- [10. Aliased backends over hard failures (v0.2.0)](#10-aliased-backends-over-hard-failures-v020)
+- [11. `proposed_x_ideal` as a separate field, not a flag (v0.2.0)](#11-proposed_x_ideal-as-a-separate-field-not-a-flag-v020)
+- [12. Dial defaults render to empty string (v0.2.0)](#12-dial-defaults-render-to-empty-string-v020)
+- [13. Doctor reports warnings vs failures distinctly (v0.2.0)](#13-doctor-reports-warnings-vs-failures-distinctly-v020)
 
 ---
 
@@ -372,3 +376,148 @@ safeguards. See `CHINESE_STRIP_LOG.md` for what was stripped.
 Open-source safety matters more than user reach. The upstream user's
 identity is thoroughly removable from an English-only build in a way
 it cannot be from a bilingual one.
+
+---
+
+## 10. Aliased backends over hard failures (v0.2.0)
+
+### Alternatives considered
+
+- **Hard-fail on unknown backend names.** `VECTOR_STORE=lancedb` →
+  ImportError until the LanceDB driver actually ships.
+- **Silent fallback to default.** `VECTOR_STORE=lancedb` → silently
+  uses Qdrant. The user's request is ignored without a peep.
+- **Aliased routing with documentation** (chosen). Unknown-but-named
+  backends route to a working fallback (`lancedb` → `qdrant`) and the
+  alias is documented in `_ALIASES` next to the registry.
+
+### Call
+
+`create_vector_store("lancedb")` succeeds and returns a `QdrantStore`
+instance. The wizard can list `lancedb` as a v0.3 expansion point
+without crashing if the user picks it. `create_vector_store("milvus")`
+(no alias, no registry entry) raises `ValueError` with the known list.
+
+### Reason
+
+- **Wizard surface vs implementation surface.** The wizard listing
+  tomorrow's backends today helps users plan their setup. Crashing
+  the wizard because a planned backend isn't implemented yet is
+  hostile.
+- **Silent fallback corrupts trust.** If `VECTOR_STORE=lancedb`
+  silently writes to Qdrant, the next time the user `docker stop`s
+  Qdrant their "LanceDB" install evaporates. The alias is documented
+  in code so curious readers see what's actually happening.
+- **The same pattern applies across U12 / U20 / U21.** Embedder,
+  reranker, and vector-store factories all do this consistently.
+  Three backends with the same shape is easier to reason about than
+  three backends with three different unknown-name policies.
+
+---
+
+## 11. `proposed_x_ideal` as a separate field, not a flag (v0.2.0)
+
+### Alternatives considered
+
+- **Single `primary_x` field, with the LLM allowed to emit
+  out-of-vocabulary values** that the daemon then maps to
+  `Inbox/Unclassified`. The "drift" is recoverable from the original
+  string before mapping.
+- **A boolean `primary_x_is_ideal` flag** alongside the constrained
+  tag. Compact wire format.
+- **Two separate fields** (chosen): `primary_x` (must be in
+  VALID_X_SET, the routing invariant) and `proposed_x_ideal` (the
+  refiner's unconstrained preferred tag). Both always emitted.
+
+### Call
+
+Every refiner prompt (8 variants) requires both fields. When
+`primary_x == proposed_x_ideal` the fit is perfect. When they differ,
+`proposed_x_ideal` is the growth signal the U27 observer logs.
+
+### Reason
+
+- **Compactness loses information.** A boolean tells you "the
+  refiner wishes this tag were different" but not what it would
+  prefer. The signal is the alternative, not its existence.
+- **The mapping path is fragile.** Allowing the LLM to emit
+  out-of-vocabulary values and mapping them post-hoc means the
+  daemon's routing layer has to handle every possible string. The
+  schema is the contract.
+- **Defaulting `proposed_x_ideal = primary_x` when the LLM omits it
+  keeps the observer log uniform.** Every row is well-formed; older
+  prompts that never knew about the field produce benign no-drift
+  rows the detector ignores.
+
+---
+
+## 12. Dial defaults render to empty string (v0.2.0)
+
+### Alternatives considered
+
+- **Always render the dial block** with the literal default
+  values. Consistent prompt shape; +200-400 tokens per refine.
+- **Render only when any dial diverges from default** (chosen).
+  `render_dial_modifier(Dials())` returns `""`. Untouched
+  configs pay zero prompt-token overhead.
+- **Render at config-write time, embed in the active prompt
+  template.** Removes the runtime check but couples the prompt
+  files to the config layer.
+
+### Call
+
+`Dials.is_default()` returns True when every dial is at its
+documented default. `render_dial_modifier()` checks this first
+and returns the empty string in that case.
+
+### Reason
+
+- **Most users won't change dials.** The "all Enter" wizard path
+  leaves every dial at default. Asking those users to pay 200+
+  prompt tokens per refine for a no-op modifier is theft.
+- **Empty string vs no-op block.** A literal "no overrides" block
+  is still ~20 tokens of context the model has to read. Empty
+  string lets the base prompt land verbatim.
+- **The check is centralised.** `is_default()` lives on the
+  dataclass; future dials added to the schema just extend it. No
+  per-call-site flag-juggling.
+
+---
+
+## 13. Doctor reports warnings vs failures distinctly (v0.2.0)
+
+### Alternatives considered
+
+- **Two states (ok / fail).** Simple, but every check that depends
+  on a non-running service (rag_server, daemon) reads as a failure
+  even when the user hasn't started those yet. The exit code becomes
+  noise.
+- **Three states (ok / warn / fail)** (chosen). Failures are
+  remediable problems with the install (config missing, deps absent,
+  Qdrant unreachable). Warnings are "you haven't started this yet,
+  here's how" or "consider doing X".
+- **Per-check severity in config.** Lets users mark a particular
+  warning as a failure for their setup. Over-engineered for the
+  current surface.
+
+### Call
+
+Each `CheckResult` has a `status` of `ok` / `warn` / `fail`. The CLI
+exit code is 1 iff any failure; warnings don't block. The `--quiet`
+flag suppresses ok lines but always shows warnings + failures.
+
+### Reason
+
+- **CI usability.** A `doctor --quiet` invocation in a deploy
+  script needs to distinguish "the install is broken" from "the
+  daemon isn't running yet (which is fine, we're about to start it)".
+  Two-state would conflate both.
+- **First-run UX.** A new user who just ran the wizard hasn't
+  started rag_server / daemon / OpenWebUI Filter yet. Showing five
+  red ✗s would be honest but discouraging. Yellow ! warnings with
+  "Start it: `python rag_server/...`" hints turn the same data into
+  a checklist.
+- **Three states, not seven.** No info / debug / hint /
+  recommendation tiers — they'd dilute the signal. The three states
+  map cleanly to the user's question: "does it work, will it work
+  soon, or is it broken?"

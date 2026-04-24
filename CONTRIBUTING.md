@@ -39,8 +39,21 @@ ruff check --select F,E9 .                    # linter (CI runs the same)
 python -m throughline_cli doctor              # health check
 ```
 
-The full suite has ~585 tests and stays under a minute on a modern
+The full suite has ~590 tests and stays under a minute on a modern
 laptop. CI runs the same pytest invocation on Python 3.11 and 3.12.
+
+### Optional: pre-commit hooks
+
+Install once and every `git commit` runs the same checks CI runs,
+catching lint failures before you push:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Skip with `git commit --no-verify` when you genuinely need to bypass
+(CI still runs). See `.pre-commit-config.yaml` for the hook list.
 
 ### Without the heavy optional deps
 
