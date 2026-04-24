@@ -980,7 +980,96 @@ def run_wizard(cfg: Optional[WizardConfig] = None,
     path = save(cfg)
     ui.print_blank()
     ui.info_line(f"[green]Config written:[/] {path}")
+    if only_step is None:
+        _print_next_steps_panel(cfg)
     return cfg
+
+
+def _print_next_steps_panel(cfg: WizardConfig) -> None:
+    """Final hand-off — what to do AFTER the wizard finishes.
+
+    Without this, users who Enter-Enter through 16 steps stare at an
+    empty prompt and ask "now what?". The single most common adoption
+    failure mode the project has shipped with so far. Tailored per
+    mission so Notes-only users don't get told to start a RAG server
+    they don't need.
+    """
+    ui.print_blank()
+    ui.section_title("✅ Wizard complete — your next 3 steps")
+    ui.print_blank()
+
+    # Step ordering varies by mission. RAG-server + daemon for Full /
+    # RAG-only; daemon only for Notes-only; Filter only when chats
+    # actually feed back into a vault index.
+    next_n = 1
+
+    def _step(title: str, body_lines: list[str], pick_if: str = "") -> None:
+        nonlocal next_n
+        ui.console.print(f"  [bold cyan]{next_n}.[/] [bold]{title}[/]")
+        for line in body_lines:
+            ui.console.print(f"     {line}")
+        if pick_if:
+            ui.console.print(f"     [dim]{pick_if}[/]")
+        ui.print_blank()
+        next_n += 1
+
+    if cfg.mission != "notes_only":
+        _step(
+            "Start the RAG server",
+            [
+                "[green]python rag_server/rag_server.py[/]",
+                "[dim]Serves /v1/embeddings + /v1/rerank + /v1/rag on :8000.[/]",
+            ],
+            pick_if="Detached: see config/launchd.plist + config/systemd.service.",
+        )
+
+    _step(
+        "Start the refine daemon",
+        [
+            "[green]python daemon/refine_daemon.py[/]",
+            "[dim]Watches your raw conversations directory and writes "
+            "refined cards into your vault.[/]",
+        ],
+        pick_if="On first start it catches up on any raw files already on disk.",
+    )
+
+    if cfg.mission == "full":
+        _step(
+            "Install the OpenWebUI Filter",
+            [
+                "Paste [green]filter/openwebui_filter.py[/] into",
+                "OpenWebUI → Admin → Functions → New Function.",
+                "Set the [cyan]RAG_SERVER_URL[/] valve to "
+                "[green]http://localhost:8000[/], save, and enable for "
+                "the models you use.",
+            ],
+            pick_if="See docs/DEPLOYMENT.md §Filter for screenshots.",
+        )
+    elif cfg.mission == "rag_only":
+        _step(
+            "Point your retrieval client at the RAG server",
+            [
+                "POST a query to "
+                "[green]http://localhost:8000/v1/rag[/] (JSON body: "
+                "[cyan]{\"query\": \"...\", \"top_k\": 10}[/]).",
+                "[dim]The OpenAI-shape /v1/embeddings + /v1/rerank "
+                "endpoints are also live for use by other tools.[/]",
+            ],
+        )
+
+    # Cross-cutting tools the user will reach for soon.
+    ui.console.print("  [dim]Health-check anytime:[/] "
+                       "[green]python -m throughline_cli doctor[/]")
+    ui.console.print("  [dim]Re-run a single step:[/]    "
+                       "[green]python install.py --step N[/]")
+    if cfg.mission != "notes_only":
+        ui.console.print("  [dim]Review taxonomy growth signals:[/] "
+                           "[green]python -m throughline_cli taxonomy review[/]")
+    ui.print_blank()
+    ui.info_line(
+        f"[dim]Full guide: docs/DEPLOYMENT.md  ·  "
+        f"Bug? https://github.com/jprodcc-rodc/throughline/issues[/]"
+    )
 
 
 def effective_step_list(mission: str) -> list[int]:
