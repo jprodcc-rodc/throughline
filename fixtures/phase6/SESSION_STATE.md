@@ -2,11 +2,87 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-24 (v0.2.0 shipped + open-source hardening + UX wave all complete — release tagged, CI green, 3 good-first-issues seeded, doctor command + sample import + wizard next-steps panel + ergonomic cleanup of error messages all live)
+**Last updated:** 2026-04-24 late-night (v0.2.0 + UX wave + v0.2.x polish + fresh-clone audit fixes + U28 multi-provider — all shipped, CI green)
 
 ## Where we are right now (TL;DR for next session)
 
-**Latest commit on `main`:** `d261b75` (ruff lint fix after UX wave). All pushed to origin. CI green across lint + pytest 3.11 + pytest 3.12. · **GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `9536ba0` (daemon provider wiring); doctor provider check pending commit. CI green across lint + pytest 3.11 + pytest 3.12. **668 passed, 10 xfailed.** · **GitHub:** `jprodcc-rodc/throughline`
+
+**Session ran `/effort max` + resumed multi-provider + fresh-clone audit in one stretch. Key deliveries beyond the earlier UX wave:**
+
+### Fresh-clone audit (commit `cf5326c`)
+- Literally `git clone`d to /tmp, new venv, walked the user flow.
+- Found BLOCKER: `requirements.txt` had UTF-8 em-dashes that pip
+  can't decode on Chinese-locale Windows (GBK codec) — AND pip
+  returned exit 0 anyway. Users would think install worked.
+  Fixed: pure ASCII + inline PYTHONUTF8=1 hint. Regression test
+  in `TestRequirementsFileAscii`.
+- Fixed: `python install.py --help` used to silently start the
+  wizard; now prints WIZARD_USAGE with a full step list + env
+  vars and exits 0.
+- Fixed: stale "v0.2.0-dev" labels in banner + step 4 — banner
+  now reads dynamically from `throughline_cli.__version__`.
+
+### U28 multi-provider (commits `ab7e189` + `9536ba0`)
+- **New module `throughline_cli/providers.py`** — 16 OpenAI-compatible
+  provider presets grouped by region:
+  - Global: openrouter, openai, anthropic (OpenAI-compat shim),
+    deepseek, together, fireworks, groq, xai
+  - China: siliconflow (硅基流动), moonshot (Kimi), dashscope (阿里
+    Qwen), zhipu (智谱 GLM), doubao (字节豆包 / Volcengine Ark)
+  - Local: ollama, lm_studio
+  - Escape: generic (user-supplied base_url + key)
+- **`llm.py` provider-aware** — `call_chat(provider_id=...)` reads
+  endpoint + env var + extra headers from the preset. Unknown
+  provider_id falls through to legacy chain (no crash). Error
+  messages cite the provider's specific env var + signup URL.
+- **Wizard step 4 + 5 split** — step 4 picks provider backend
+  (auto-defaults to whichever env var is already set, ● marker
+  next to providers with key configured); step 5 picks a model
+  SCOPED to that provider's list. OpenRouter shows
+  `anthropic/claude-sonnet-4.6` style; direct Anthropic shows
+  `claude-sonnet-4-5-20250929`; SiliconFlow shows
+  `Qwen/Qwen2.5-72B-Instruct`; etc. prompt_family auto-derivation
+  still works across all provider shapes.
+- **New module `throughline_cli/active_provider.py`** — resolves
+  active provider for NON-wizard callers (daemon, scripts).
+  Precedence: THROUGHLINE_LLM_PROVIDER env > llm_provider in
+  config.toml > autodetect > "openrouter". Never raises.
+- **Daemon `call_llm_json` wired** — module-load `_LLM_URL` /
+  `_LLM_KEY` / `_LLM_EXTRA_HEADERS` / `_LLM_PROVIDER_ID` from
+  `active_provider.resolve_endpoint_and_key()`. Provider-specific
+  headers merged (daemon keeps its own X-Title so cost dashboards
+  can distinguish wizard preview from real refines). Legacy
+  OPENROUTER_URL / OPENROUTER_API_KEY still work. Startup log
+  prints `LLM PROV = <id> -> <url>` + `LLM KEY = set | MISSING`.
+- **Doctor gained `check_llm_provider_key`** — new 6th check
+  (positioned between state_dir and qdrant). Reads the resolved
+  provider and verifies its env var is set; warn (not fail) if
+  missing so fresh installs don't see red on their first doctor
+  run. Tested for each provider family.
+- **57 new tests** split across `test_providers.py` (32),
+  `test_llm_providers.py` (13), `test_active_provider.py` (12),
+  plus extensions to `test_wizard.py` + `test_doctor.py`.
+- **README updated** — real 16-preset provider table replacing
+  the hand-wavy "direct OpenAI / Anthropic / …" line.
+- **Backward compatibility guaranteed** — existing installs with
+  just `OPENROUTER_API_KEY` set keep working without any config
+  change. The resolver autodetects it, the daemon keeps routing
+  to OpenRouter. No migration required.
+
+### What else I did in the resume
+- SESSION_STATE + DEPLOYMENT + ARCHITECTURE + ALPHA_USER_NOTES +
+  PHASE_6_CHECKLIST + ONBOARDING_DATA_IMPORT all brought current
+  with v0.2.x reality (commit `3ffd749`).
+- `__version__` exposure via importlib.metadata + `--version` CLI
+  flag (commit `9b932b4`).
+- `.pre-commit-config.yaml` ruff F+E9 hooks for contributors.
+- CHANGELOG `[Unreleased]` section scaffolded per Keep-a-Changelog.
+- `samples/record_wizard_demo.sh` asciinema-ready wizard demo
+  driver.
+- docs/DESIGN_DECISIONS.md gained §10-13 covering v0.2.0-era
+  design calls (aliased backends, proposed_x_ideal as separate
+  field, dial defaults render to empty string, three-state doctor).
 
 **v0.2.0 is live:** `git tag v0.2.0` + GitHub Release page. Release URL:
 <https://github.com/jprodcc-rodc/throughline/releases/tag/v0.2.0>

@@ -151,6 +151,61 @@ class TestEmbedderModelCache:
         assert r.status == "ok"
 
 
+class TestLlmProviderKey:
+    """U28 · doctor check for provider key presence."""
+
+    def _clear_keys(self, monkeypatch):
+        from throughline_cli import providers as pr
+        for preset in pr.list_presets():
+            monkeypatch.delenv(preset.env_var, raising=False)
+        monkeypatch.delenv("THROUGHLINE_LLM_PROVIDER", raising=False)
+
+    def test_openrouter_key_set(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        self._clear_keys(monkeypatch)
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or")
+        r = d.check_llm_provider_key()
+        assert r.status == "ok"
+        assert "OpenRouter" in r.detail
+
+    def test_siliconflow_key_set(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        self._clear_keys(monkeypatch)
+        monkeypatch.setenv("SILICONFLOW_API_KEY", "sk-sf")
+        r = d.check_llm_provider_key()
+        assert r.status == "ok"
+        assert "SiliconFlow" in r.detail
+        assert "SILICONFLOW_API_KEY" in r.detail
+
+    def test_no_key_warns_not_fails(self, tmp_path, monkeypatch):
+        """Fresh install, no provider key yet — warn, don't fail,
+        so the overall `doctor` exit code stays 0 on first run."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        self._clear_keys(monkeypatch)
+        r = d.check_llm_provider_key()
+        assert r.status == "warn"
+        assert "not set" in r.detail
+
+    def test_config_picks_provider_warn_missing_key(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        (tmp_path / "config.toml").write_text(
+            'llm_provider = "moonshot"\n', encoding="utf-8")
+        self._clear_keys(monkeypatch)
+        r = d.check_llm_provider_key()
+        assert r.status == "warn"
+        assert "Moonshot" in r.detail
+        assert "MOONSHOT_API_KEY" in r.fix
+
+    def test_unknown_provider_id_warn(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        self._clear_keys(monkeypatch)
+        monkeypatch.setenv("THROUGHLINE_LLM_PROVIDER", "typo-ai")
+        r = d.check_llm_provider_key()
+        # Unknown provider: active_provider.resolve_provider_id() returns
+        # "typo-ai" as-is; the check flags it.
+        assert r.status == "warn"
+
+
 class TestTaxonomyObservations:
     def test_missing(self, tmp_path, monkeypatch):
         monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path))

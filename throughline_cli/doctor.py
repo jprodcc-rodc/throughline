@@ -231,6 +231,49 @@ def check_embedder_model_cache() -> CheckResult:
     )
 
 
+def check_llm_provider_key() -> CheckResult:
+    """U28 · check that the resolved provider has a key set.
+
+    Uses the same precedence as the daemon: env > config.toml >
+    autodetect > openrouter. This is the check that catches the
+    classic "wizard picked SiliconFlow but I forgot to export
+    SILICONFLOW_API_KEY" failure mode.
+    """
+    try:
+        from . import active_provider as ap
+        from . import providers as pr
+    except ImportError:  # pragma: no cover
+        return CheckResult("llm_provider", "warn",
+                            "couldn't import throughline_cli.active_provider")
+
+    provider_id = ap.resolve_provider_id()
+    try:
+        preset = pr.get_preset(provider_id)
+    except ValueError:
+        return CheckResult(
+            "llm_provider", "warn",
+            f"resolved to unknown provider id {provider_id!r}",
+            fix=("Run `python install.py --step 4` to re-pick, or "
+                  "clear THROUGHLINE_LLM_PROVIDER env var."),
+        )
+
+    key = pr.resolve_api_key(provider_id)
+    if key:
+        return CheckResult(
+            "llm_provider", "ok",
+            f"{preset.name} · {preset.env_var} set",
+        )
+    # No key — but don't fail hard unless config explicitly picks this
+    # provider (warn so fresh installs don't see red).
+    return CheckResult(
+        "llm_provider", "warn",
+        f"{preset.name} selected but {preset.env_var} not set",
+        fix=(f"Get a key at {preset.signup_url or '<check provider docs>'}, "
+              f"then `export {preset.env_var}=...` in your shell. If you "
+              f"meant a different provider, re-run `python install.py --step 4`."),
+    )
+
+
 def check_taxonomy_observations() -> CheckResult:
     p = Path(
         os.getenv(
@@ -270,6 +313,7 @@ DEFAULT_CHECKS: List[Callable[[], CheckResult]] = [
     check_optional_imports,
     check_config_file,
     check_state_dir,
+    check_llm_provider_key,
     check_qdrant_reachable,
     check_rag_server_reachable,
     check_daemon_state,
