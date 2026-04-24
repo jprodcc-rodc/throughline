@@ -24,6 +24,7 @@ Usage:
     python -m throughline_cli uninstall [--yes | --drop-collection | --dry-run]
     python -m throughline_cli cost [today | week | month | all | YYYY-MM-DD]
     python -m throughline_cli stats [--json]
+    python -m throughline_cli refine --dry-run <path/to/raw.md>
     python -m throughline_cli --version
 
 Subcommands:
@@ -35,6 +36,8 @@ Subcommands:
     uninstall  Tear down config / state / logs / raw. Vault untouched.
     cost       LLM spend dashboard (reads state/cost_stats.json).
     stats      Vault + taxonomy + lifetime-cost summary (screenshot-friendly).
+    refine     Preview the refiner prompt for a raw conversation without
+               calling any LLM. Zero-cost debug/tuning aid.
 
 Flags:
     --version  Print package version and exit.
@@ -43,6 +46,7 @@ For subcommand help:
     python -m throughline_cli import --help
     python -m throughline_cli taxonomy --help
     python -m throughline_cli doctor --help
+    python -m throughline_cli refine --help
 """
 
 
@@ -74,6 +78,9 @@ def main(argv: list[str]) -> int:
     if head == "stats":
         from . import stats
         return stats.main(rest)
+    if head == "refine":
+        from . import refine
+        return refine.main(rest)
     if head in ("-h", "--help", "help"):
         print(USAGE)
         return 0
