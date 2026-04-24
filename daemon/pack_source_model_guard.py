@@ -248,9 +248,17 @@ def _cli():
 
 
 if __name__ == "__main__":
+    import sys
     try:
-        import sys
         sys.exit(_cli())
     except GuardConfigError as e:
-        print(f"CONFIG ERROR: {e}", file=__import__("sys").stderr)
-        __import__("sys").exit(3)
+        print(
+            f"CONFIG ERROR: {e}\n"
+            f"  → Pack source-model guard configuration is malformed.\n"
+            f"    Check the YAML syntax of any pack file under `packs/`\n"
+            f"    that defines `source_model:` rules. The daemon will\n"
+            f"    still run with this guard disabled; the CLI is just\n"
+            f"    refusing to evaluate against an invalid config.",
+            file=sys.stderr,
+        )
+        sys.exit(3)

@@ -57,7 +57,11 @@ def call_chat(model_id: str,
     wizard can catch + render a readable message."""
     key = api_key or get_api_key()
     if not key:
-        raise LLMError("no API key — set OPENROUTER_API_KEY or OPENAI_API_KEY")
+        raise LLMError(
+            "no API key — set OPENROUTER_API_KEY or OPENAI_API_KEY in your "
+            "shell, then re-run. (OpenRouter free tier signup: "
+            "https://openrouter.ai)"
+        )
     body: dict = {
         "model": model_id,
         "messages": [

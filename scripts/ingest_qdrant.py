@@ -53,7 +53,16 @@ import urllib.request
 
 VAULT = os.getenv("VAULT_PATH", "").strip()
 if not VAULT:
-    print("ERROR: VAULT_PATH env var is required (absolute path to vault root).", file=sys.stderr)
+    print(
+        "ERROR: VAULT_PATH env var is required.\n"
+        "       Set it to the absolute path of your vault root, e.g.:\n"
+        "         export VAULT_PATH=\"$HOME/ObsidianVault\"\n"
+        "       (Windows PowerShell: $env:VAULT_PATH=\"C:\\Users\\you\\ObsidianVault\")\n"
+        "       The wizard normally writes this for you; run\n"
+        "         python install.py\n"
+        "       if you haven't yet.",
+        file=sys.stderr,
+    )
     sys.exit(2)
 
 EMBED_URL = os.getenv("RAG_EMBED_URL", "http://localhost:8000/v1")
@@ -126,8 +135,16 @@ def _get_embed_client():
         try:
             from openai import OpenAI
         except ImportError:
-            print("ERROR: openai package is required. pip install openai",
-                  file=sys.stderr)
+            print(
+                "ERROR: the `openai` package is required for ingest "
+                "(it speaks the OpenAI-compatible /v1/embeddings shape\n"
+                "       that the rag_server exposes — even when EMBEDDER=bge-m3).\n"
+                "       Install it with:\n"
+                "         pip install openai\n"
+                "       or re-run the wizard's install step:\n"
+                "         python install.py --step 1",
+                file=sys.stderr,
+            )
             sys.exit(1)
         _embed_client = OpenAI(api_key="not-needed",
                                 base_url=EMBED_URL, timeout=120)

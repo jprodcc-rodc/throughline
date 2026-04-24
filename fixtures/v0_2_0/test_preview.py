@@ -217,9 +217,29 @@ class TestStep13Preview:
             import urllib.error
             raise urllib.error.URLError("connection refused")
 
+        # Approve the cost-preflight gate (Y) so the LLM call actually fires.
+        monkeypatch.setattr("builtins.input", lambda _="": "y")
+
         with patch("throughline_cli.llm.urllib.request.urlopen", raise_llm):
             # Must not raise; wizard should log + continue.
             step_13_preview(cfg)
+
+    def test_cost_preflight_decline_skips_llm_call(self, monkeypatch, tmp_path):
+        """U-task F: user answering 'n' at the preflight gate must
+        skip the LLM call entirely. Otherwise the gate is decorative
+        and the user pays for a preview they declined."""
+        from throughline_cli.wizard import step_13_preview
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+        cfg = self._build_cfg_with_claude_sample(tmp_path)
+
+        def must_not_call(*a, **kw):
+            raise AssertionError(
+                "LLM was called despite user declining at the cost preflight"
+            )
+
+        monkeypatch.setattr("builtins.input", lambda _="": "n")
+        with patch("throughline_cli.llm.urllib.request.urlopen", must_not_call):
+            assert step_13_preview(cfg) is None  # graceful return, no raise
 
     def test_no_renderable_conversation_skips_cleanly(self, monkeypatch, tmp_path):
         from throughline_cli.wizard import step_13_preview
