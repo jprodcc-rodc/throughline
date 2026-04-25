@@ -153,6 +153,61 @@ enforces this.
 
 ---
 
+## Combinatorial-config testing strategy
+
+The wizard exposes ~9 axes (mission, vector_db, llm_provider,
+embedder, reranker, privacy, refine_tier, card_structure,
+taxonomy) with a full Cartesian of ~5.6 million combinations
+across the user-pickable values, more if you count the 80+
+provider-scoped models. Running all of them is impossible —
+running ad-hoc samples leaves interaction bugs (provider X +
+reranker Y) uncaught. The repo uses a four-layer strategy:
+
+**Layer 1 — 1-wise (each-choice) coverage.** Every value of
+every axis runs through the wizard at least once.
+Lives in `fixtures/v0_2_0/test_wizard_combinations.py`. ~105 tests.
+Catches "this enum value isn't wired to anything" bugs (we
+recently fixed step 7 silently writing 4 broken embedder/reranker
+keys this way).
+
+**Layer 2 — 2-wise (pairwise) covering array.** A greedy
+covering-array generator builds ~96 cases such that every
+(axis_i_value, axis_j_value) pair fires at least once across
+all axis pairs. Empirically catches 70-90% of real-world
+combinatorial bugs (Kuhn et al., NIST 2004).
+Lives in `fixtures/v0_2_0/test_wizard_pairwise.py`. ~175 tests
+including a meta-check that the array is actually a valid covering
+array (so a bug in the generator can't silently shrink coverage).
+
+**Layer 3 — Property-based / randomized.** Each CI run picks 30
+random configs from the full Cartesian and walks the wizard. Seed
+is fixed per session; failing CI prints `PROPERTY_TEST_SEED=N` so
+the contributor can reproduce locally. Set
+`PROPERTY_TEST_ITERATIONS=1000` for a long-form fuzz session.
+Lives in `fixtures/v0_2_0/test_wizard_property.py`.
+
+**Layer 4 — Schema/contract enforcement.** Every wizard pick key
+that lands in `config.toml` MUST resolve through its registry
+(`create_vector_store / create_embedder / create_reranker /
+get_preset`). The contract test in
+`fixtures/v0_2_0/test_wizard_keys_resolve.py` enumerates the keys
+and pins them to the registries — adding a new option that
+isn't wired up fails CI.
+
+**If you add a new wizard option:** update the matching axis in
+`_AXES` (pairwise) and the `_BASE_ANSWERS` dict
+(combinations) and verify the contract test still passes. The
+test infrastructure walks the whole 4-layer pyramid for free
+once the axis is declared.
+
+**If you change a registry:** the dynamic schema validator (added
+to `config.validate()`, exercised by `test_doc_drift.py`) verifies
+that every registered provider/backend round-trips through the
+schema. README/DEPLOYMENT prose claims (e.g. "13 doctor checks")
+are pinned to the actual code by the same drift test.
+
+---
+
 ## Code of conduct
 
 See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Short version: be
