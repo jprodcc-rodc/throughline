@@ -99,43 +99,50 @@ Default `EMBEDDER=openai` + `RERANKER=skip` keeps the image to
 (`bge-m3` + reranker) path. Full walkthrough in
 [`docs/DEPLOYMENT.md` § Docker compose](docs/DEPLOYMENT.md#docker-compose-try-it-in-5-minutes).
 
-### Install wizard (16 steps, all-Enter defaults — or 1-command express)
+### Local install — 1 command (`--express`)
 
 ```bash
 git clone https://github.com/jprodcc-rodc/throughline.git
 cd throughline
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python install.py --express                          # ← already exported an API key? skip the 16-step interview
-# OR
-python install.py                                    # ← the full 16-step wizard
+export ANTHROPIC_API_KEY=sk-...                      # or any of 16 supported providers
+python install.py --express                          # ~3 seconds, writes config, prints next steps
+python rag_server/rag_server.py &                    # FastAPI on :8000
+python daemon/refine_daemon.py &                     # watchdog → refine → vault writer
 ```
 
-`--express` auto-detects whichever LLM provider env var you have
-exported (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`,
-…), fills sane defaults for everything else, prints the
-per-conversation cost + daily cap, and writes config in ~3 seconds.
-Run `--express --dry-run` to preview without committing.
-
-What the full wizard covers, in order: Python check → mission (Full /
-RAG-only / Notes-only) → vector DB → LLM provider → privacy level →
-embedder + reranker → prompt family → import source + path → import
-scan + cost estimate + **explicit privacy consent** → refine tier
-(Skim / Normal / Deep) → card structure → live-LLM preview of your
-first card with optional 5-dial tuning → taxonomy strategy → daily
-USD cap → summary + run import.
-
-After the wizard:
-
-```bash
-python rag_server/rag_server.py        # FastAPI on :8000 — embed + rerank + retrieval
-python daemon/refine_daemon.py         # watchdog → refine → vault writer
-```
+That's the whole install. `--express` auto-detects whichever LLM
+provider env var you have exported (`OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, …), picks `bge-m3` local
+embedder + local reranker + Qdrant + sensible budget cap, prints
+per-conversation cost + daily cap, and writes config. No interactive
+prompts. Run `--express --dry-run` to preview without committing.
 
 Drop `filter/openwebui_filter.py` into OpenWebUI's Admin → Functions
 panel; set its `RAG_SERVER_URL` valve to your local server. Now your
 chats refine into cards, the cards get indexed, and the next chat
 that overlaps gets the relevant cards injected.
+
+### Local install — full wizard (16 steps, when you want full control)
+
+If you want to pick a different vector DB, change the privacy tier,
+import an existing OpenWebUI / ChatGPT / Claude history, or override
+any default `--express` chose for you:
+
+```bash
+python install.py            # walks you through all 16 steps
+python install.py --reconfigure   # later: change a few without restarting
+python install.py --dry-run       # preview the full wizard, no save
+```
+
+Steps, in order: Python check → mission (Full / RAG-only / Notes-only)
+→ vector DB → LLM provider → privacy level → embedder + reranker →
+prompt family → import source + path → import scan + cost estimate +
+**explicit privacy consent** → refine tier (Skim / Normal / Deep) →
+card structure → live-LLM preview of your first card with optional
+5-dial tuning → taxonomy strategy → daily USD cap → summary + run
+import.
 
 ### Re-run, health-check, sample
 
