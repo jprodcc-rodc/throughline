@@ -84,11 +84,11 @@ class TestVectorStoreWiring:
         assert r.VECTOR_STORE.name == "chroma"
 
     def test_alias_routes_through(self, monkeypatch):
-        """pgvector / duckdb_vss / sqlite_vec should not crash the
-        import — they alias to qdrant until v0.3 ships the real impls.
-        (lancedb shipped as a real impl in v0.2.x.)"""
+        """`none` (Notes-only mission stub) routes to qdrant. All
+        four originally-aliased v0.3 backends shipped real impls in
+        v0.2.x (lancedb / sqlite_vec / duckdb_vss / pgvector)."""
         monkeypatch.setenv("EMBEDDER", "openai")
-        monkeypatch.setenv("VECTOR_STORE", "pgvector")
+        monkeypatch.setenv("VECTOR_STORE", "none")
         r = _fresh_import_rag_server()
         assert r.VECTOR_STORE.name == "qdrant"
 

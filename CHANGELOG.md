@@ -38,8 +38,21 @@ pre-1.0 minor bumps can include breaking config shape changes.
   DO UPDATE`; search via `array_distance()` ORDER BY dist LIMIT k.
   VSS extension auto-installed/loaded on connect. `_DuckDBVSSUnavailable`
   stub when `duckdb` is missing. 7 tests via fake `duckdb` module
-  with a minimal SQL parser. `pgvector` is the last remaining alias
-  stub (good-first-issue #9).
+  with a minimal SQL parser.
+- **pgvector** is a first-class `VECTOR_STORE` backend (closes #9) —
+  Postgres + the pgvector extension. The only server-based backend
+  in the embedded-alternates set; useful when the team already
+  operates Postgres and wants vectors in the same DB. Connection
+  via `PGVECTOR_DSN` env (falls back to `DATABASE_URL`); per-
+  collection table `(id TEXT PK, vector vector(N), payload JSONB)`;
+  HNSW index with `vector_cosine_ops` (auto-falls-back to IVFFlat
+  on older pgvector). Upsert via `INSERT ... ON CONFLICT (id)
+  DO UPDATE`; search via `vector <=> %s::vector ORDER BY dist
+  LIMIT k`. `_PgVectorUnavailable` stub when `psycopg` (v3) is
+  missing. 8 tests via fake `psycopg` module. **All four originally-
+  aliased v0.3 backends (lancedb / sqlite_vec / duckdb_vss / pgvector)
+  are now first-class in v0.2.x — only `none` remains as an
+  alias-to-qdrant placeholder.**
 - **`throughline_cli refine --dry-run <path.md>`** — zero-cost
   refiner-prompt preview. Parses a raw conversation, reports which
   slicer tier WOULD fire + which model, and prints the refiner

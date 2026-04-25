@@ -924,6 +924,232 @@ class DuckDBVSSStore(BaseVectorStore):
 
 
 # =========================================================
+# PgVectorStore — Postgres + pgvector extension
+# =========================================================
+
+class _PgVectorUnavailable(BaseVectorStore):
+    """Stub returned when `psycopg` (v3) isn't installed."""
+
+    name = "pgvector"
+    _HINT = (
+        "pgvector backend selected but `psycopg` (v3) is not installed. "
+        "Run `pip install psycopg[binary]` and restart the server. "
+        "Make sure your Postgres instance has the pgvector extension "
+        "(`CREATE EXTENSION IF NOT EXISTS vector` once per database). "
+        "Alternatively, `pip install throughline[pgvector]` once published."
+    )
+
+    def ensure_collection(self, *a, **kw): raise RuntimeError(self._HINT)
+    def upsert(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def search(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def delete(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def count(self, *a, **kw):              raise RuntimeError(self._HINT)
+
+
+class PgVectorStore(BaseVectorStore):
+    """Postgres + pgvector extension. The only server-based backend
+    in the embedded-alternates set; useful when the team already
+    operates Postgres and wants to keep vectors in the same database
+    as the rest of the application data.
+
+    Connection: DSN string from `PGVECTOR_DSN` env, falling back to
+    `DATABASE_URL`. Format: `postgresql://user:pass@host:port/db`.
+
+    Schema per collection: a single table.
+        id      TEXT PRIMARY KEY
+        vector  vector(<dim>)
+        payload JSONB
+
+    Distance: cosine (`<=>` operator). Caller can pre-convert to
+    L2 (`<->`) by passing `distance="l2"` to ensure_collection but
+    the search query stays cosine — pgvector picks the operator
+    based on the index, not the per-query call.
+
+    Upsert via `INSERT ... ON CONFLICT (id) DO UPDATE SET ...` —
+    proper update semantics across Postgres ≥ 9.5.
+    """
+
+    name = "pgvector"
+
+    def __new__(cls, *a, **kw):
+        try:
+            import psycopg  # noqa: F401  -- psycopg v3
+        except Exception:
+            return _PgVectorUnavailable()
+        return super().__new__(cls)
+
+    def __init__(self, dsn: Optional[str] = None) -> None:
+        import psycopg
+        self.dsn = (
+            dsn
+            or os.getenv("PGVECTOR_DSN")
+            or os.getenv("DATABASE_URL")
+            or "postgresql://localhost/throughline"
+        )
+        # autocommit: simpler caller contract; each call commits.
+        # Tunable via subclass if pipeline batching is wanted.
+        self._conn = psycopg.connect(self.dsn, autocommit=True)
+        # Ensure the pgvector extension is loaded (idempotent).
+        # Skipped silently if the connecting role lacks CREATE EXTENSION
+        # privilege — a DBA typically does this once per database.
+        try:
+            self._conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        except Exception:
+            pass
+        self._vector_size: Dict[str, int] = {}
+
+    # --- ABC methods -----------------------------------------------
+    def ensure_collection(self, name: str, vector_size: int,
+                            distance: str = "cosine") -> None:
+        self._vector_size[name] = int(vector_size)
+        self._conn.execute(
+            f"CREATE TABLE IF NOT EXISTS {name} ("
+            f"  id      TEXT PRIMARY KEY,"
+            f"  vector  vector({int(vector_size)}),"
+            f"  payload JSONB"
+            f")"
+        )
+        # HNSW index for cosine distance. `IF NOT EXISTS` keeps this
+        # idempotent. Index builds can be slow on large tables; users
+        # with > 1M rows may prefer to bulk-load first then create
+        # the index manually with their own ops parameters.
+        op_class = "vector_cosine_ops" if distance == "cosine" \
+            else "vector_l2_ops"
+        try:
+            self._conn.execute(
+                f"CREATE INDEX IF NOT EXISTS {name}_vector_hnsw "
+                f"ON {name} USING hnsw (vector {op_class})"
+            )
+        except Exception:
+            # Older pgvector versions (< 0.5) lack HNSW; fall back
+            # to IVFFlat.
+            try:
+                self._conn.execute(
+                    f"CREATE INDEX IF NOT EXISTS {name}_vector_ivf "
+                    f"ON {name} USING ivfflat (vector {op_class}) "
+                    f"WITH (lists = 100)"
+                )
+            except Exception:
+                pass  # leave as a sequential scan; correctness > speed.
+
+    def upsert(self, collection: str,
+                points: List[Dict[str, Any]]) -> int:
+        if not points:
+            return 0
+        import json as _json
+        n = 0
+        for p in points:
+            pid = str(p["id"])
+            vec_literal = self._vec_literal(p["vector"])
+            payload = _json.dumps(p.get("payload") or {},
+                                    ensure_ascii=False)
+            self._conn.execute(
+                f"INSERT INTO {collection}(id, vector, payload) "
+                f"VALUES (%s, %s::vector, %s::jsonb) "
+                f"ON CONFLICT (id) DO UPDATE SET "
+                f"  vector = excluded.vector, "
+                f"  payload = excluded.payload",
+                [pid, vec_literal, payload],
+            )
+            n += 1
+        return n
+
+    def search(self, collection: str, vector: List[float],
+                limit: int = 10,
+                filter_: Optional[Dict[str, Any]] = None
+                ) -> List[SearchHit]:
+        import json as _json
+        vec_literal = self._vec_literal(vector)
+        # Cosine distance: 0 = identical, 2 = opposite. Score = 1 - d
+        # gives the standard "higher = better" ordering that callers
+        # expect across all backends.
+        cur = self._conn.execute(
+            f"SELECT id, vector <=> %s::vector AS dist, payload "
+            f"FROM {collection} "
+            f"ORDER BY dist LIMIT %s",
+            [vec_literal, int(limit)],
+        )
+        rows = cur.fetchall()
+        hits: List[SearchHit] = []
+        for sid, dist, payload_raw in rows:
+            if isinstance(payload_raw, dict):
+                payload = payload_raw  # psycopg returns dict for JSONB
+            else:
+                try:
+                    payload = _json.loads(payload_raw or "{}")
+                except (_json.JSONDecodeError, TypeError):
+                    payload = {}
+            if filter_:
+                want = {}
+                for clause in (filter_.get("must") or []):
+                    k = clause.get("key")
+                    v = clause.get("match", {}).get("value")
+                    if k is not None:
+                        want[k] = v
+                skip = False
+                for k, v in want.items():
+                    if payload.get(k) != v:
+                        skip = True
+                        break
+                if skip:
+                    continue
+            score = 1.0 - float(dist)
+            hits.append({"id": sid, "score": score, "payload": payload})
+        return hits
+
+    def delete(self, collection: str, point_ids: List[Any]) -> int:
+        if not point_ids:
+            return 0
+        ids = [str(p) for p in point_ids]
+        # ANY(%s::text[]) is the idiomatic pgvector / Postgres pattern
+        # for an IN-style filter with a list parameter.
+        self._conn.execute(
+            f"DELETE FROM {collection} WHERE id = ANY(%s::text[])", [ids])
+        return len(ids)
+
+    def count(self, collection: str,
+                filter_: Optional[Dict[str, Any]] = None) -> int:
+        if filter_ is None:
+            row = self._conn.execute(
+                f"SELECT COUNT(*) FROM {collection}").fetchone()
+            return int(row[0] if row else 0)
+        # Filtered count: pull payloads + count matches client-side.
+        # Same trade-off as the other embedded backends; fine at RAG
+        # cardinality. A v0.3 candidate is to translate `must` clauses
+        # into `payload @> jsonb_build_object(k, v)` for server-side
+        # filter — defer until usage warrants the complexity.
+        import json as _json
+        matched = 0
+        for (payload_raw,) in self._conn.execute(
+                f"SELECT payload FROM {collection}").fetchall():
+            if isinstance(payload_raw, dict):
+                payload = payload_raw
+            else:
+                try:
+                    payload = _json.loads(payload_raw or "{}")
+                except (_json.JSONDecodeError, TypeError):
+                    continue
+            ok = True
+            for clause in (filter_.get("must") or []):
+                k = clause.get("key")
+                v = clause.get("match", {}).get("value")
+                if k is not None and payload.get(k) != v:
+                    ok = False
+                    break
+            if ok:
+                matched += 1
+        return matched
+
+    # --- helpers ---------------------------------------------------
+    def _vec_literal(self, vector: List[float]) -> str:
+        """pgvector's text representation of a vector: `[1.0,2.0,...]`.
+        Sent as a string + cast to ::vector inside the SQL — works
+        across psycopg versions without needing a custom type adapter."""
+        inside = ",".join(repr(float(x)) for x in vector)
+        return "[" + inside + "]"
+
+
+# =========================================================
 # Registry + factory
 # =========================================================
 
@@ -933,17 +1159,15 @@ _REGISTRY: Dict[str, Callable[[], BaseVectorStore]] = {
     "lancedb":    LanceDBStore,
     "sqlite_vec": SqliteVecStore,
     "duckdb_vss": DuckDBVSSStore,
+    "pgvector":   PgVectorStore,
 }
 
 _ALIASES: Dict[str, str] = {
-    # v0.3 expansion points — currently route to Qdrant so the wizard
-    # can list them, the user can pick them, and nothing crashes.
-    # LanceDB + sqlite-vec + DuckDB-VSS shipped as real impls in
-    # v0.2.x (moved out of this map). The hyphen-spelling aliases
-    # resolve to the underscore-spelled primaries.
+    # All four originally-aliased v0.3 backends shipped as real impls
+    # in v0.2.x: lancedb / sqlite_vec / duckdb_vss / pgvector. The
+    # hyphen-spelling aliases for the underscore primaries are kept.
     "sqlite-vec":  "sqlite_vec",
     "duckdb-vss":  "duckdb_vss",
-    "pgvector":    "qdrant",
     "none":        "qdrant",  # 'none' means "no vector store" — for
                                  # Notes-only mission. See rag_server
                                  # mission branch; stubbed here.

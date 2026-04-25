@@ -40,11 +40,10 @@ class TestCreateVectorStore:
         assert vs.create_vector_store().name == "qdrant"
 
     def test_alias_routing_to_qdrant(self):
-        """v0.3 expansion points route to Qdrant for now. The wizard
-        can list them; the user can pick them without crashing.
-        (lancedb / sqlite_vec / duckdb_vss moved out — shipped as
-        real impls in v0.2.x.)"""
-        for alias in ("pgvector", "none"):
+        """All four originally-aliased v0.3 backends shipped as real
+        impls in v0.2.x. Only `none` (the Notes-only mission stub)
+        still routes to qdrant."""
+        for alias in ("none",):
             s = vs.create_vector_store(alias)
             assert s.name == "qdrant", f"{alias} failed to resolve"
 
@@ -86,10 +85,10 @@ class TestCreateVectorStore:
 
     def test_available_lists_primaries_and_aliases(self):
         names = set(vs.available_vector_stores())
-        # Primaries include LanceDB + sqlite_vec + duckdb_vss as of v0.2.x.
+        # All five non-Qdrant primaries are available in v0.2.x.
         assert {"qdrant", "chroma", "lancedb",
-                 "sqlite_vec", "duckdb_vss"}.issubset(names)
-        assert {"sqlite-vec", "duckdb-vss", "pgvector", "none"}.issubset(names)
+                 "sqlite_vec", "duckdb_vss", "pgvector"}.issubset(names)
+        assert {"sqlite-vec", "duckdb-vss", "none"}.issubset(names)
 
 
 # ------- QdrantStore wire-level tests -------
@@ -1074,3 +1073,232 @@ class TestDuckDBVSSStoreWithFakeDuckDB:
         s.ensure_collection("obs", 3)
         assert s.upsert("obs", []) == 0
         assert s.delete("obs", []) == 0
+
+
+# ------- PgVectorStore behaviour — stub path when unavailable -------
+
+class TestPgVectorStoreWithoutPsycopg:
+    def test_stub_when_psycopg_missing(self, monkeypatch):
+        """If psycopg isn't importable, instantiation succeeds and
+        returns a stub; real calls raise RuntimeError with the
+        install hint."""
+        import builtins
+        real_import = builtins.__import__
+
+        def guard(name, *a, **kw):
+            if name == "psycopg" or name.startswith("psycopg."):
+                raise ImportError("psycopg not installed (simulated)")
+            return real_import(name, *a, **kw)
+
+        monkeypatch.setattr(builtins, "__import__", guard)
+        s = vs.PgVectorStore()
+        assert s.name == "pgvector"
+        with pytest.raises(RuntimeError) as ei:
+            s.ensure_collection("x", 1024)
+        assert "psycopg" in str(ei.value).lower()
+
+
+class TestPgVectorStoreWithFakePsycopg:
+    """Simulate `psycopg` (v3) via an in-memory fake — minimal SQL
+    parser tracking per-table dicts of (id, vector, payload)."""
+
+    def _inject_fake_psycopg(self, monkeypatch):
+        import types
+        import re as _re
+        import math as _math
+
+        fake = types.ModuleType("psycopg")
+
+        def _parse_vec_literal(s):
+            # `[1.0,2.0,...]` → list of floats. Tolerate whitespace.
+            inside = s.strip().lstrip("[").rstrip("]")
+            if not inside:
+                return []
+            return [float(x) for x in inside.split(",")]
+
+        class _FakeCursor:
+            def __init__(self, rows):
+                self._rows = list(rows)
+
+            def fetchall(self):
+                return self._rows
+
+            def fetchone(self):
+                return self._rows[0] if self._rows else None
+
+        class _FakeConn:
+            def __init__(self, dsn):
+                self.dsn = dsn
+                self.autocommit = True
+                self._tables = {}  # name -> {id: (vector, payload)}
+
+            def execute(self, sql, params=()):
+                stripped = sql.strip()
+                up = stripped.upper()
+                # No-ops we ignore.
+                if up.startswith("CREATE EXTENSION") or \
+                   up.startswith("CREATE INDEX"):
+                    return _FakeCursor([])
+                # CREATE TABLE IF NOT EXISTS <name>(...)
+                m = _re.match(
+                    r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s*\(",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    self._tables.setdefault(m.group(1), {})
+                    return _FakeCursor([])
+                # INSERT INTO <name>(...) VALUES (%s, %s::vector, %s::jsonb)
+                #   ON CONFLICT (id) DO UPDATE ...
+                m = _re.match(
+                    r"INSERT\s+INTO\s+(\w+)\s*\(", stripped, _re.IGNORECASE)
+                if m and "ON CONFLICT" in up:
+                    name = m.group(1)
+                    pid, vec_literal, payload_json = params
+                    vec = _parse_vec_literal(vec_literal)
+                    self._tables.setdefault(name, {})
+                    self._tables[name][pid] = (vec, payload_json)
+                    return _FakeCursor([])
+                # SELECT id, vector <=> %s::vector AS dist, payload FROM ...
+                m = _re.match(
+                    r"SELECT\s+id,\s+vector\s+<=>\s+%s::vector\s+AS\s+dist,\s+payload\s+FROM\s+(\w+)\s+ORDER\s+BY\s+dist\s+LIMIT\s+%s",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    qvec_literal, limit = params
+                    qvec = _parse_vec_literal(qvec_literal)
+                    rows = []
+                    for pid, (vec, payload) in self._tables.get(name, {}).items():
+                        if not vec:
+                            d = 1.0
+                        else:
+                            d = _math.sqrt(sum(
+                                (float(a) - float(b)) ** 2
+                                for a, b in zip(qvec, vec)))
+                        rows.append((pid, d, payload))
+                    rows.sort(key=lambda r: r[1])
+                    return _FakeCursor(rows[:int(limit)])
+                # DELETE FROM <name> WHERE id = ANY(%s::text[])
+                m = _re.match(
+                    r"DELETE\s+FROM\s+(\w+)\s+WHERE\s+id\s+=\s+ANY",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    ids = params[0]
+                    for pid in ids:
+                        self._tables.get(name, {}).pop(pid, None)
+                    return _FakeCursor([])
+                # SELECT COUNT(*) FROM <name>
+                m = _re.match(
+                    r"SELECT\s+COUNT\(\*\)\s+FROM\s+(\w+)$",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    return _FakeCursor([(len(self._tables.get(name, {})),)])
+                # SELECT payload FROM <name>
+                m = _re.match(
+                    r"SELECT\s+payload\s+FROM\s+(\w+)$",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    return _FakeCursor(
+                        [(payload,) for (_, payload)
+                         in self._tables.get(name, {}).values()])
+                raise AssertionError(
+                    f"unrecognized SQL in fake psycopg: {sql!r}")
+
+        fake.connect = lambda dsn, autocommit=False: _FakeConn(dsn)
+        monkeypatch.setitem(sys.modules, "psycopg", fake)
+
+    def test_upsert_and_search_roundtrip(self, monkeypatch):
+        self._inject_fake_psycopg(monkeypatch)
+        s = vs.PgVectorStore(dsn="postgresql://test/throughline_test")
+        s.ensure_collection("obs", vector_size=3, distance="cosine")
+        n = s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"t": "one"}},
+            {"id": "b", "vector": [0.4, 0.5, 0.6], "payload": {"t": "two"}},
+        ])
+        assert n == 2
+        hits = s.search("obs", [0.1, 0.2, 0.3], limit=2)
+        assert len(hits) == 2
+        assert {h["id"] for h in hits} == {"a", "b"}
+        assert hits[0]["id"] == "a"
+        assert hits[0]["score"] > hits[1]["score"]
+        assert hits[0]["payload"] == {"t": "one"}
+
+    def test_upsert_updates_in_place(self, monkeypatch):
+        self._inject_fake_psycopg(monkeypatch)
+        s = vs.PgVectorStore(dsn="postgresql://test/db")
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"v": 1}},
+        ])
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"v": 2}},
+        ])
+        assert s.count("obs") == 1
+        hits = s.search("obs", [0.1, 0.2, 0.3], limit=5)
+        assert hits[0]["payload"] == {"v": 2}
+
+    def test_delete(self, monkeypatch):
+        self._inject_fake_psycopg(monkeypatch)
+        s = vs.PgVectorStore(dsn="postgresql://test/db")
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3]},
+            {"id": "b", "vector": [0.4, 0.5, 0.6]},
+        ])
+        assert s.count("obs") == 2
+        assert s.delete("obs", ["a"]) == 1
+        assert s.count("obs") == 1
+
+    def test_search_filter_must_clause(self, monkeypatch):
+        self._inject_fake_psycopg(monkeypatch)
+        s = vs.PgVectorStore(dsn="postgresql://test/db")
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3],
+             "payload": {"knowledge_identity": "universal"}},
+            {"id": "b", "vector": [0.2, 0.3, 0.4],
+             "payload": {"knowledge_identity": "personal"}},
+        ])
+        hits = s.search(
+            "obs", [0.1, 0.2, 0.3], limit=5,
+            filter_={"must": [{"key": "knowledge_identity",
+                                "match": {"value": "universal"}}]})
+        assert len(hits) == 1
+        assert hits[0]["id"] == "a"
+
+    def test_count_with_filter(self, monkeypatch):
+        self._inject_fake_psycopg(monkeypatch)
+        s = vs.PgVectorStore(dsn="postgresql://test/db")
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p1"}},
+            {"id": "b", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p2"}},
+            {"id": "c", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p1"}},
+        ])
+        assert s.count("obs") == 3
+        assert s.count("obs", filter_={
+            "must": [{"key": "pack", "match": {"value": "p1"}}]}) == 2
+
+    def test_empty_upsert_and_delete_shortcircuit(self, monkeypatch):
+        self._inject_fake_psycopg(monkeypatch)
+        s = vs.PgVectorStore(dsn="postgresql://test/db")
+        s.ensure_collection("obs", 3)
+        assert s.upsert("obs", []) == 0
+        assert s.delete("obs", []) == 0
+
+    def test_dsn_precedence_env_then_default(self, monkeypatch):
+        self._inject_fake_psycopg(monkeypatch)
+        # No explicit DSN, no env var → default
+        monkeypatch.delenv("PGVECTOR_DSN", raising=False)
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        s = vs.PgVectorStore()
+        assert "throughline" in s.dsn
+        # PGVECTOR_DSN takes precedence over DATABASE_URL
+        monkeypatch.setenv("PGVECTOR_DSN", "postgresql://pg/specific")
+        monkeypatch.setenv("DATABASE_URL", "postgresql://generic/db")
+        s2 = vs.PgVectorStore()
+        assert s2.dsn == "postgresql://pg/specific"

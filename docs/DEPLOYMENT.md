@@ -434,7 +434,7 @@ single environment variable (or the matching field in the wizard).
 |---|---|---|---|---|
 | Embedder | `EMBEDDER` | `bge-m3` (local torch) | `openai` | `nomic`, `minilm` native |
 | Reranker | `RERANKER` | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage`, `jina` native, `bge-reranker-v2-gemma` |
-| Vector store | `VECTOR_STORE` | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (optional deps — all embedded, zero-server) | `pgvector` |
+| Vector store | `VECTOR_STORE` | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (embedded, zero-server), `pgvector` (Postgres) — all real impls | — |
 
 The local-default backends carry a ~4.6 GB one-time download each
 (see the pre-flight section above). The cloud alternates (`openai`,
@@ -456,6 +456,7 @@ pip install .[chroma]     # chromadb — needed for VECTOR_STORE=chroma
 pip install .[lancedb]    # lancedb + pyarrow — needed for VECTOR_STORE=lancedb
 pip install .[sqlite-vec] # sqlite-vec — needed for VECTOR_STORE=sqlite_vec
 pip install .[duckdb-vss] # duckdb (loads VSS extension) — needed for VECTOR_STORE=duckdb_vss
+pip install .[pgvector]   # psycopg[binary] — needed for VECTOR_STORE=pgvector
 pip install .[all]        # everything (full local-only path)
 ```
 
