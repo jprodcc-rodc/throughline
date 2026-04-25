@@ -24,6 +24,26 @@ Docs: <https://jprodcc-rodc.github.io/throughline/>
 
 ---
 
+## 👋 Who this is for
+
+throughline is built for people whose context is complex enough that
+re-explaining it costs real time, energy, or accuracy:
+
+- People with multiple chronic conditions, polypharmacy, or layered
+  medical history that no single chat ever fully captures.
+- Long-term solo builders who keep losing the *reasoning* behind
+  decisions they made months ago — not the decision itself, the why.
+- Neurodivergent thinkers (ADHD, autism, AuDHD, …) whose working
+  memory is already at capacity before the AI loop even starts.
+
+If your use case is "occasional ChatGPT chats and I'd like them
+remembered," ChatGPT's built-in memory is probably enough. throughline
+is designed for the cases where built-in memory is **not** enough,
+and where carrying that context across model + provider switches
+matters more than zero-friction onboarding.
+
+---
+
 ## ✨ What it does
 
 **Before throughline:** Every new chat starts from zero. Your AI
