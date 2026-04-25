@@ -1187,6 +1187,16 @@ def step_16_summary(cfg: WizardConfig) -> Optional[str]:
         f"[dim]Cost: {_format_cost_line(cfg.refine_tier, cfg.daily_budget_usd)}[/]"
     )
 
+    # Skip the confirm prompt + import in dry-run mode — run_wizard()
+    # is responsible for the "DRY RUN" footer and for not writing
+    # config.toml. The import adapter writes raw MD files (separate
+    # from config.toml), so it must also be guarded by the same flag.
+    if _DRY_RUN_ACTIVE:
+        ui.info_line(
+            "[dim](dry run — confirm prompt skipped; import not run)[/]"
+        )
+        return None
+
     if not ui.ask_yes_no("Write this to ~/.throughline/config.toml"
                           + (" and run the import now" if cfg.import_source != "none" else "")
                           + "?", default=True):
@@ -1223,9 +1233,18 @@ ALL_STEPS: list[tuple[int, Callable[[WizardConfig], Optional[str]]]] = [
 ]
 
 
+# Module-level flag toggled by run_wizard(dry_run=True). Read by
+# step_16_summary so the import-adapter call (which writes raw MD
+# files to disk) gets skipped in dry-run mode. Module-level instead
+# of a cfg field because dry_run is a transient run-time choice,
+# not config the wizard should persist.
+_DRY_RUN_ACTIVE = False
+
+
 def run_wizard(cfg: Optional[WizardConfig] = None,
                only_step: Optional[int] = None,
-               step_filter: Optional[list[int]] = None) -> WizardConfig:
+               step_filter: Optional[list[int]] = None,
+               dry_run: bool = False) -> WizardConfig:
     """Run the wizard.
 
     - `only_step=N`    — run exactly step N, skip everything else.
@@ -1234,33 +1253,59 @@ def run_wizard(cfg: Optional[WizardConfig] = None,
       (e.g. "change step 5 + step 15" without walking 1-4 + 6-14).
     - Both `None`      — full 16-step run (first-time install or
       --force). Banner + ticker + next-steps panel all shown.
+    - `dry_run=True`   — walk every step interactively but skip the
+      final config save AND the import-adapter run. Lets users
+      preview the full 16-step UX without touching disk. Same
+      contract as `--express --dry-run`.
     """
-    cfg = cfg or load()
-    full_run = only_step is None and step_filter is None
-    if full_run:
-        # Full run: show the banner once at the top.
-        ui.banner()
-    for n, fn in ALL_STEPS:
-        if only_step is not None and n != only_step:
-            continue
-        if step_filter is not None and n not in step_filter:
-            continue
-        # Progress ticker between steps (not before step 1 when doing a
-        # full run; redundant with the banner).
-        if full_run and n > 1:
-            ui.progress_ticker(n - 1, TOTAL)
-        result = fn(cfg)
-        if result != "SKIPPED":
-            if n not in cfg.completed_steps:
-                cfg.completed_steps.append(n)
-    if full_run:
-        ui.progress_ticker(TOTAL, TOTAL)
-    path = save(cfg)
-    ui.print_blank()
-    ui.info_line(f"[green]Config written:[/] {path}")
-    if full_run:
-        _print_next_steps_panel(cfg)
-    return cfg
+    global _DRY_RUN_ACTIVE
+    _DRY_RUN_ACTIVE = bool(dry_run)
+    try:
+        cfg = cfg or load()
+        full_run = only_step is None and step_filter is None
+        if full_run:
+            # Full run: show the banner once at the top.
+            ui.banner()
+            if dry_run:
+                ui.info_line(
+                    "[bold yellow]DRY RUN MODE[/] — wizard will walk all "
+                    "steps but will NOT write config.toml and will NOT "
+                    "run the import adapter."
+                )
+                ui.print_blank()
+        for n, fn in ALL_STEPS:
+            if only_step is not None and n != only_step:
+                continue
+            if step_filter is not None and n not in step_filter:
+                continue
+            # Progress ticker between steps (not before step 1 when doing a
+            # full run; redundant with the banner).
+            if full_run and n > 1:
+                ui.progress_ticker(n - 1, TOTAL)
+            result = fn(cfg)
+            if result != "SKIPPED":
+                if n not in cfg.completed_steps:
+                    cfg.completed_steps.append(n)
+        if full_run:
+            ui.progress_ticker(TOTAL, TOTAL)
+        if dry_run:
+            ui.print_blank()
+            ui.info_line(
+                "[bold yellow]DRY RUN: config NOT written.[/] Re-run "
+                "without --dry-run to commit your choices to "
+                "~/.throughline/config.toml."
+            )
+        else:
+            path = save(cfg)
+            ui.print_blank()
+            ui.info_line(f"[green]Config written:[/] {path}")
+        if full_run and not dry_run:
+            _print_next_steps_panel(cfg)
+        return cfg
+    finally:
+        # Always clear the module-level flag so a later programmatic
+        # run_wizard() call doesn't accidentally inherit dry-run mode.
+        _DRY_RUN_ACTIVE = False
 
 
 def _print_next_steps_panel(cfg: WizardConfig) -> None:
@@ -1372,6 +1417,11 @@ Usage:
                                           defaults. No prompts. (~3 sec)
     python install.py --express --dry-run Preview --express without
                                           writing config.
+    python install.py --dry-run           Walk all 16 steps interactively
+                                          but skip the final config save
+                                          AND the import adapter. Useful
+                                          for previewing the wizard's UX
+                                          without touching disk.
     python install.py --step N            Re-run only step N.
     python install.py --step=N            Same, equals form.
     python install.py --reconfigure       Alias for the picker (skip
@@ -1670,9 +1720,14 @@ def main(argv: Optional[list[str]] = None) -> int:
     if express:
         return run_express(dry_run=dry_run)
 
+    # Build kwargs lazily so existing test mocks of `run_wizard` that
+    # don't take `dry_run` keep working — only thread the kwarg
+    # through when the user actually asked for it.
+    extra: dict = {"dry_run": True} if dry_run else {}
+
     # --step N short-circuits the picker (explicit user intent).
     if only is not None:
-        run_wizard(only_step=only)
+        run_wizard(only_step=only, **extra)
         return 0
 
     # Reconfigure picker: show it when a config.toml exists and the
@@ -1690,13 +1745,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         # otherwise we run steps in order and let the skipped ones
         # keep their cfg values.
         if selected == list(range(1, TOTAL + 1)):
-            run_wizard(cfg=cfg)
+            run_wizard(cfg=cfg, **extra)
         else:
-            run_wizard(cfg=cfg, step_filter=selected)
+            run_wizard(cfg=cfg, step_filter=selected, **extra)
         return 0
 
     # Fresh install or --force: run the whole wizard.
-    run_wizard()
+    run_wizard(**extra)
     return 0
 
 

@@ -324,6 +324,19 @@ def _pick_option_arrow(question: str,
             title_text = label
         choices.append(Choice(title=title_text, value=key))
 
+    # Pointer + style overrides for Windows-terminal compatibility.
+    # The default pointer (») doesn't always re-render on conhost
+    # when the user navigates; an explicit ❯ + a high-contrast
+    # selected-row style helps Windows Terminal / PowerShell ISE
+    # reliably redraw the highlight on every arrow press.
+    from questionary import Style
+    pt_style = Style([
+        ("pointer",         "fg:#00d7ff bold"),  # bright cyan ❯
+        ("highlighted",     "fg:#000000 bg:#00d7ff bold"),  # selected row: dark text on cyan
+        ("selected",        "fg:#00d7ff"),
+        ("instruction",     "fg:#888888 italic"),
+        ("question",        "bold"),
+    ])
     try:
         answer = questionary.select(
             question,
@@ -331,6 +344,13 @@ def _pick_option_arrow(question: str,
             default=default_key,
             instruction="(↑/↓ to move · Enter to select)",
             qmark="?",
+            pointer="❯",
+            style=pt_style,
+            use_jk_keys=False,        # disable j/k vim keys; some
+                                       # terminals leak them as raw
+                                       # chars when arrows mis-render.
+            use_emacs_keys=False,     # same — emacs keybindings can
+                                       # confuse Windows conhost.
         ).unsafe_ask()
     except (KeyboardInterrupt, EOFError):
         console.print("\n[red]Aborted.[/]")

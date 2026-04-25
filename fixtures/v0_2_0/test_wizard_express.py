@@ -247,6 +247,199 @@ class TestExpressArgvDispatch:
 
 
 # ============================================================
+# Full wizard --dry-run (all 16 steps, no save)
+# ============================================================
+
+class TestFullWizardDryRun:
+    """`python install.py --dry-run` walks every step but does NOT
+    write config.toml and does NOT run the import adapter. Same
+    semantics as `--express --dry-run` but for the interactive
+    wizard."""
+
+    def test_run_wizard_dry_run_does_not_save(self, tmp_path, monkeypatch):
+        """Walk a full mocked wizard run with dry_run=True and
+        assert no config.toml is written."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR",
+                            str(tmp_path / ".throughline"))
+        # Reload modules so env var takes effect.
+        for mod in list(sys.modules):
+            if mod in ("throughline_cli.wizard", "throughline_cli.config"):
+                del sys.modules[mod]
+
+        from throughline_cli import wizard as wiz
+        from throughline_cli.config import WizardConfig
+
+        # Mock the ui surface so the steps don't block on input.
+        # Mirrors the _ScriptedUI used by combinatorial tests.
+        captured: list = []
+
+        class _Mock:
+            def step_header(self, *a, **kw): pass
+            def intro(self, *a, **kw): pass
+            def info_line(self, msg, *a, **kw):
+                captured.append(str(msg))
+            def warn_box(self, *a, **kw): pass
+            def panel_example(self, *a, **kw): pass
+            def kv_row(self, *a, **kw): pass
+            def summary_tree(self, *a, **kw): pass
+            def section_title(self, *a, **kw): pass
+            def banner(self, *a, **kw): pass
+            def progress_ticker(self, *a, **kw): pass
+            def print_blank(self, *a, **kw): pass
+            def subrule(self, *a, **kw): pass
+            def pick_option(self, q, options, default_key):
+                return default_key
+            def ask_yes_no(self, q, default=True):
+                return default
+            def ask_text(self, q, default=""):
+                return default
+
+            def status(self, msg):
+                class _Null:
+                    def __enter__(s): return s
+                    def __exit__(s, *e): return False
+                    def update(s, m): pass
+                return _Null()
+
+            class _Console:
+                def print(self, *a, **kw): pass
+
+            console = _Console()
+
+        monkeypatch.setattr(wiz, "ui", _Mock())
+
+        # Run with dry_run=True.
+        wiz.run_wizard(cfg=WizardConfig(import_source="none"),
+                        dry_run=True)
+
+        # Critical: no config.toml in the redirected dir.
+        config_path = tmp_path / ".throughline" / "config.toml"
+        assert not config_path.exists(), (
+            "dry_run=True must NOT write config.toml")
+        # Critical: the dry-run footer message fired.
+        joined = "\n".join(captured)
+        assert "DRY RUN" in joined or "not written" in joined.lower()
+
+    def test_run_wizard_normal_does_save(self, tmp_path, monkeypatch):
+        """Inverse: dry_run=False (the default) MUST write config."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR",
+                            str(tmp_path / ".throughline"))
+        for mod in list(sys.modules):
+            if mod in ("throughline_cli.wizard", "throughline_cli.config"):
+                del sys.modules[mod]
+
+        from throughline_cli import wizard as wiz
+        from throughline_cli.config import WizardConfig
+
+        class _Mock:
+            def step_header(self, *a, **kw): pass
+            def intro(self, *a, **kw): pass
+            def info_line(self, *a, **kw): pass
+            def warn_box(self, *a, **kw): pass
+            def panel_example(self, *a, **kw): pass
+            def kv_row(self, *a, **kw): pass
+            def summary_tree(self, *a, **kw): pass
+            def section_title(self, *a, **kw): pass
+            def banner(self, *a, **kw): pass
+            def progress_ticker(self, *a, **kw): pass
+            def print_blank(self, *a, **kw): pass
+            def subrule(self, *a, **kw): pass
+            def pick_option(self, q, options, default_key): return default_key
+            def ask_yes_no(self, q, default=True): return default
+            def ask_text(self, q, default=""): return default
+
+            def status(self, msg):
+                class _Null:
+                    def __enter__(s): return s
+                    def __exit__(s, *e): return False
+                    def update(s, m): pass
+                return _Null()
+
+            class _Console:
+                def print(self, *a, **kw): pass
+
+            console = _Console()
+
+        monkeypatch.setattr(wiz, "ui", _Mock())
+        wiz.run_wizard(cfg=WizardConfig(import_source="none"))
+        assert (tmp_path / ".throughline" / "config.toml").exists()
+
+    def test_dry_run_flag_resets_after_run(self, tmp_path, monkeypatch):
+        """The module-level `_DRY_RUN_ACTIVE` flag must be cleared
+        after run_wizard returns, so a subsequent programmatic call
+        without dry_run= doesn't accidentally inherit it."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR",
+                            str(tmp_path / ".throughline"))
+        for mod in list(sys.modules):
+            if mod in ("throughline_cli.wizard", "throughline_cli.config"):
+                del sys.modules[mod]
+
+        from throughline_cli import wizard as wiz
+        from throughline_cli.config import WizardConfig
+
+        class _Mock:
+            def step_header(self, *a, **kw): pass
+            def intro(self, *a, **kw): pass
+            def info_line(self, *a, **kw): pass
+            def warn_box(self, *a, **kw): pass
+            def panel_example(self, *a, **kw): pass
+            def kv_row(self, *a, **kw): pass
+            def summary_tree(self, *a, **kw): pass
+            def section_title(self, *a, **kw): pass
+            def banner(self, *a, **kw): pass
+            def progress_ticker(self, *a, **kw): pass
+            def print_blank(self, *a, **kw): pass
+            def subrule(self, *a, **kw): pass
+            def pick_option(self, q, options, default_key): return default_key
+            def ask_yes_no(self, q, default=True): return default
+            def ask_text(self, q, default=""): return default
+
+            def status(self, msg):
+                class _Null:
+                    def __enter__(s): return s
+                    def __exit__(s, *e): return False
+                    def update(s, m): pass
+                return _Null()
+
+            class _Console:
+                def print(self, *a, **kw): pass
+
+            console = _Console()
+
+        monkeypatch.setattr(wiz, "ui", _Mock())
+        wiz.run_wizard(cfg=WizardConfig(import_source="none"), dry_run=True)
+        # After dry-run completes, the flag must be back to False so
+        # later code paths (tests, scripts) aren't poisoned.
+        assert wiz._DRY_RUN_ACTIVE is False
+
+    def test_main_routes_dry_run_to_full_wizard(self, tmp_path, monkeypatch):
+        """`python install.py --dry-run` (no --express) routes through
+        the full wizard with dry_run=True."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR",
+                            str(tmp_path / ".throughline"))
+        for mod in list(sys.modules):
+            if mod in ("throughline_cli.wizard", "throughline_cli.config"):
+                del sys.modules[mod]
+
+        from throughline_cli import wizard as wiz
+
+        called = {"dry_run": None}
+
+        def fake_run_wizard(cfg=None, only_step=None, step_filter=None,
+                              dry_run=False):
+            called["dry_run"] = dry_run
+
+        monkeypatch.setattr(wiz, "run_wizard", fake_run_wizard)
+        # Force the path that hits the fresh-install branch.
+        monkeypatch.setattr("throughline_cli.config.config_path",
+                              lambda: tmp_path / "no-such-config.toml")
+
+        rc = wiz.main(["--dry-run", "--force"])
+        assert rc == 0
+        assert called["dry_run"] is True
+
+
+# ============================================================
 # Regression: cost projection is in the step 16 summary panel
 # ============================================================
 
