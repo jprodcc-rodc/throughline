@@ -6,38 +6,57 @@
 [![license](https://img.shields.io/github/license/jprodcc-rodc/throughline)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 
-**v0.2.0 alpha.** Core pipeline is stable (running 24/7 in production).
-Install wizard, import adapters, self-growing taxonomy, and 16 LLM-provider
-presets all shipped. Expect rough edges around external deployment —
-[issues welcome](https://github.com/jprodcc-rodc/throughline/issues).
+<!--
+  ╭─────────────────────────────────────────────────────────────╮
+  │  HERO GIF GOES HERE — 10-15 seconds, three scenes:           │
+  │    1) Plain ChatGPT forgetting context (frustrated face)     │
+  │    2) Same ask in OpenWebUI + throughline (RAG injects card) │
+  │    3) Cut to Obsidian, new card appears in graph             │
+  │  Tools: Arcade.software / Screen Studio / ScreenToGif        │
+  │  Drop the .gif in docs/assets/hero.gif and uncomment ↓        │
+  ╰─────────────────────────────────────────────────────────────╯
 
+![throughline hero demo](docs/assets/hero.gif)
+-->
+
+**v0.2.0 alpha** — running 24/7 in production. [Issues welcome](https://github.com/jprodcc-rodc/throughline/issues).
 Docs: <https://jprodcc-rodc.github.io/throughline/>
 
 ---
 
 ## ✨ What it does
 
-**Before throughline**
+**Before throughline:** Every new chat starts from zero. Your AI
+forgets your medical history, your project, your preferences, the
+conclusions you reached last month. You re-explain yourself every
+time. Past conversations pile up somewhere you never look again.
 
-Every new conversation starts from zero. Your AI forgets your medical
-history, your project context, your preferences, the conclusions you
-reached last month. You re-explain yourself, every time. Your past
-conversations pile up somewhere you never look again.
+**After throughline:** Every conversation gets refined into a durable
+six-section Markdown card in your Obsidian vault. The next chat that
+overlaps automatically pulls the card back in. Your AI already knows
+you.
 
-**After throughline**
+- **Cards are plain Markdown** — grep them, edit them, read them in
+  five years no matter what tool you use then.
+- **Taxonomy grows as you write** — 5 broad domains seed; system
+  observes drift, proposes new ones for your approval.
+- **Zero lock-in** — 16 OpenAI-compatible LLM providers, 5 swappable
+  vector stores, 5 swappable rerankers.
 
-Every conversation you finish gets refined into a durable six-section
-knowledge card and dropped into your Obsidian vault. The next time you
-ask something that overlaps, a RAG layer pulls the relevant cards back
-in automatically. Your AI already knows you.
+---
 
-- Cards are plain Markdown — grep them, edit them, read them in five
-  years regardless of what tool you use then.
-- The taxonomy grows as you write. Start with 5 broad domains; the
-  system observes drift and proposes new ones for your approval.
-- Zero lock-in: 16 OpenAI-compatible providers (Anthropic, OpenAI,
-  DeepSeek, SiliconFlow, Ollama, …), swappable vector store (Qdrant,
-  Chroma, +4 more), swappable embedder + reranker.
+## 💡 Why this exists
+
+Most personal-knowledge tools either:
+- **Record** but don't **synthesize** (raw transcripts pile up)
+- **Synthesize** but lose **personal context** (generic answers about
+  your own meds / projects / history)
+- **Inject personal context** but leak it into the **public index**
+  (your RAG now has your address in it)
+
+throughline separates *mechanism* (system provides) from *content*
+(you provide) at every layer, so you can safely share the engine
+without sharing yourself.
 
 ---
 
@@ -130,12 +149,16 @@ server + daemon, install the Filter.
 | Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `voyage`, `jina`, `skip` (all real impls) | — |
 | Vector store (`VECTOR_STORE`) | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (embedded, zero-server), `pgvector` (Postgres) — all real impls | — |
 
-### LLM providers (16 preset routes)
+### LLM providers
 
-Wizard step 4 picks the backend; step 5 picks a scoped model.
-Every preset speaks the OpenAI-compatible `/v1/chat/completions`
-shape. The wizard auto-detects whichever provider's env var you've
-already exported — no preferred vendor.
+**16 preset routes** — wizard auto-detects whichever env var you've
+exported. Direct (OpenAI / Anthropic / DeepSeek / xAI), hosted
+open-weights (Together / Fireworks / Groq), 5 China-market routes,
+OpenRouter proxy, Ollama / LM Studio for fully local, plus a
+generic OpenAI-compatible escape hatch.
+
+<details>
+<summary><b>Click for the full provider grid + env vars</b></summary>
 
 | Region | Providers |
 |---|---|
@@ -146,31 +169,36 @@ already exported — no preferred vendor.
 | **Local / self-hosted** | Ollama · LM Studio |
 | **Escape hatch** | Generic OpenAI-compatible endpoint (`THROUGHLINE_LLM_URL` + `THROUGHLINE_LLM_API_KEY`) |
 
-Each provider has its own env var (`OPENAI_API_KEY`,
-`ANTHROPIC_API_KEY`, `SILICONFLOW_API_KEY`, `DEEPSEEK_API_KEY`,
-`MOONSHOT_API_KEY`, `DASHSCOPE_API_KEY`, …). Existing users with
+Each provider reads its own env var (`OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, `SILICONFLOW_API_KEY`, …). Existing users with
 `OPENROUTER_API_KEY` already set keep working with zero config
 change.
 
-Smoke-test the install: ask something in OpenWebUI that overlaps your
-existing notes. You should see `⚡ anchor pass` or `auto recall:
-mode=general · conf=0.82 · N cards` above the reply, an injected
-context in the answer, and a `🛰️ daemon · …` outlet badge when the
-daemon is running.
+</details>
+
+**Smoke-test the install** (after step 16): ask something in
+OpenWebUI that overlaps your existing notes. You should see
+`⚡ anchor pass` or `auto recall: mode=general · conf=0.82 · N cards`
+above the reply.
+
+<!-- TODO: drop screenshot of the OpenWebUI status badge here -->
+<!-- ![OpenWebUI status badge](docs/assets/screenshot-recall-badge.png) -->
+
 
 ---
 
 ## 🃏 What a refined card looks like
 
-You said this in chat six months ago:
+You ask in chat six months ago: *"I lost 12kg on strict keto but my
+weight's creeping back even at <30g carbs/day. What's going on?"*
 
-> *I lost 12kg on a strict keto diet over 6 months but in the last
-> month my weight is creeping back up even though I'm still under
-> 30g carbs/day. What's going on?*
+Six months later you hit it again. Without throughline, the AI starts
+from scratch. With throughline, the daemon already refined that
+conversation into a card — `Keto rebound after 6 months — three
+mechanisms, not willpower` — and the next chat pulls it back in.
 
-Six months later you hit it again. Without throughline, the AI has
-no memory of what you already figured out. With throughline, the
-daemon refined that conversation into a card in your vault:
+<details>
+<summary><b>Click to see the full card</b> (Markdown, ~50 lines, lives in your Obsidian vault)</summary>
 
 ```markdown
 ---
@@ -188,39 +216,32 @@ willpower failure; usually not.
 
 # Core Knowledge & First Principles
 Three compounding mechanisms, in order of likely magnitude:
-1. Adaptive thermogenesis — BMR drops 10-15% during weight loss. At
-   month 6 you're burning ~200-300 fewer kcal/day at rest than at month 1.
-2. Calorie creep — fat-fueled meals are calorie-dense (avocado, nuts,
-   oils). Satiety adapts; portions drift up unconsciously.
-3. Insulin-sensitivity recovery — improved insulin response means the
-   small glucose loads you do ingest get stored more efficiently.
+1. Adaptive thermogenesis — BMR drops 10-15% during weight loss.
+2. Calorie creep — fat-fueled meals are calorie-dense; satiety adapts.
+3. Insulin-sensitivity recovery — small glucose loads stored more efficiently.
 
 # Detailed Execution Plan
-- Track 7 days of intake honestly. Compare to TDEE-calculator output
-  minus 15% for the adaptation deficit.
-- Re-introduce measured portions; eyeballing stops working after
-  4-6 months (sensory-specific satiety adapts).
+- Track 7 days of intake honestly vs TDEE minus 15% adaptation deficit.
+- Re-introduce measured portions; eyeballing stops working at 4-6 months.
 - If the gap is real, the intervention is calories, not carbs.
 
 # Pitfalls & Boundaries
-- "Still under 30g carbs" doesn't mean "still hypocaloric". Don't
-  assume protocol-adherence maps to caloric deficit.
-- Eyeballing feels like it works during the novelty phase because
-  the brain is hyper-vigilant. That attention isn't sustainable.
+- "Still under 30g carbs" ≠ "still hypocaloric". Protocol-adherence
+  doesn't equal caloric deficit.
 
 # Insights & Mental Models
-6-month weight rebound is a data story, not a discipline story. The
-rebound is recovering biology doing exactly what it's designed to do.
+6-month rebound is a data story, not a discipline story. Recovering
+biology doing exactly what it's designed to do.
 
 # Length Summary
-Keto rebound at month 6 is three things compounding: adaptive
-thermogenesis, portion drift, and better insulin response. The fix
-is a measurement week, not more willpower.
+Keto rebound at month 6 = adaptive thermogenesis + portion drift +
+insulin recovery. Fix is a measurement week, not more willpower.
 ```
 
-This is the file you'll commit to your vault, grep with `ripgrep`,
-embed for RAG, and re-read in five years. The conversation it came
-from is one line in a daemon log.
+</details>
+
+This is the file you grep with `ripgrep`, embed for RAG, and re-read
+in five years. The conversation it came from is one line in a daemon log.
 
 ---
 
@@ -246,43 +267,54 @@ you can grep them with `rg` like any other text.
 
 ## 🏗️ Architecture
 
-```mermaid
-flowchart TD
-    user[User in OpenWebUI]
-    filter[Filter inlet<br/>3-tier gate]
-    rag[RAG server<br/>embed + rerank]
-    qdrant[(Vector store)]
-    llm[LLM]
-    exporter[Exporter]
-    raw[Raw Markdown]
-    daemon[Refine daemon]
-    vault[Markdown vault]
-    buffer[Buffer stub]
+**Two independent pipelines, one shared substrate.** They meet only
+on append-only storage (Markdown vault + vector store).
 
-    user -->|turn| filter
-    filter -->|cheap / judge / slash| rag
-    rag --> qdrant
-    rag -->|context cards| filter
-    filter -->|injected system prompt| llm
-    llm -->|reply + status badge| user
+### Pipeline 1 — per-turn, in-band (every chat message)
 
-    user -. conversation .-> exporter
-    exporter --> raw
-    raw --> daemon
-    daemon -->|formal note| vault
-    daemon -->|stub| buffer
-    daemon -->|upsert embeddings| qdrant
-    buffer -. human triage .-> vault
+```text
+   ┌──────────────┐    query    ┌──────────────┐   vec    ┌──────────┐
+   │  OpenWebUI   │ ───────────► │  RAG server  │ ───────► │  Vector  │
+   │   Filter     │              │ embed+rerank │ ◄─────── │  store   │
+   │  (3-tier     │ ◄─────────── │              │   cards  └──────────┘
+   │   gate)      │   context    └──────────────┘
+   └──────┬───────┘
+          │
+          │ injected system prompt
+          ▼
+   ┌──────────────┐  reply +
+   │     LLM      │  status     ┌──────────────┐
+   │              │ ──────────► │   You see    │
+   └──────────────┘  badge      └──────────────┘
 ```
 
-Two independent pipelines meet at the vector store and the Markdown
-vault on disk. The Filter pipeline runs per-turn, in-band with the
-conversation, and never writes to the vault. The daemon pipeline runs
-out-of-band, produces knowledge cards from completed conversations, and
-never reads live chat sessions. Filter bugs cannot corrupt the vault;
-daemon bugs cannot pollute a live reply.
+Reads from the vector store. **Never writes to the vault.**
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full story.
+### Pipeline 2 — per-conversation, out-of-band (after each chat)
+
+```text
+                                        ┌────────────────────┐
+                                        │  Markdown vault    │
+                                ┌─────► │  (formal card)     │
+                                │       └────────────────────┘
+   ┌──────────┐    ┌──────────┐ │       ┌────────────────────┐
+   │  raw     │ ── │  Refine  │ ├─────► │  Buffer stub       │
+   │  .md     │ ──►│  daemon  │ │       │  (00_Buffer/, needs│
+   │ (export) │    │          │ │       │   human triage)    │
+   └──────────┘    └──────────┘ │       └────────────────────┘
+                                │       ┌────────────────────┐
+                                └─────► │  Vector store      │
+                                        │  (embeddings)      │
+                                        └────────────────────┘
+```
+
+Writes to the vault + buffer + vector store. **Never reads live chat.**
+
+---
+
+Filter bugs **cannot corrupt the vault**. Daemon bugs **cannot
+pollute a live reply**. Full breakdown:
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
@@ -304,21 +336,6 @@ throughline/
 
 Each top-level directory has its own `README.md` for local detail.
 Regression tests: see [`docs/TESTING.md`](docs/TESTING.md).
-
----
-
-## 💡 Why this exists
-
-Most personal-knowledge tools either:
-- **Record** but don't **synthesize** (raw transcripts pile up)
-- **Synthesize** but lose **personal context** (generic answers about
-  your own meds / projects / history)
-- **Inject personal context** but leak it into the **public index**
-  (your RAG now has your address in it)
-
-This project separates *mechanism* (system provides) from *content*
-(you provide) at every layer, so you can safely share the engine
-without sharing yourself.
 
 ---
 
