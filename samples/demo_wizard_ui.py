@@ -43,29 +43,61 @@ def main() -> int:
     # ---- T1: arrow-key picker ----
     ui.section_title("[1/3] T1: arrow-key picker")
     ui.info_line(
-        "Press [bold]↑/↓[/] to move, [bold]Enter[/] to select. The "
-        "wizard's step 3 (vector DB picker) looks like this:"
+        "The wizard's step 3 (vector DB picker) is now a multi-line "
+        "menu with arrow-key navigation. To prove you can see it:"
     )
     ui.print_blank()
-    pick = ui.pick_option(
-        "Pick a vector DB backend (demo — your pick is discarded):",
-        [
-            ("qdrant",     "Qdrant (needs Docker)",
-             "Production-ready. Millions of cards. Default for Full."),
-            ("chroma",     "Chroma (pip install)",
-             "Embeddable. Lowest setup. Good to 10K cards."),
-            ("lancedb",    "LanceDB (embedded Rust)",
-             "File-based. Fast. Good to 100K."),
-            ("duckdb_vss", "DuckDB + VSS extension",
-             "SQL-friendly. File-based. Good to 100K."),
-            ("sqlite_vec", "SQLite + sqlite-vec",
-             "Smallest footprint. Good to 10K."),
-            ("pgvector",   "pgvector (requires Postgres)",
-             "If you already run Postgres."),
-        ],
+    ui.info_line(
+        "[bold yellow]Round 1:[/] press [bold]Enter[/] to accept the "
+        "default ([cyan]Qdrant[/]). You should see a 6-line menu with "
+        "[cyan]❯[/] pointing at the highlighted row."
+    )
+    ui.print_blank()
+    options = [
+        ("qdrant",     "Qdrant (needs Docker)",
+         "Production-ready. Millions of cards. Default for Full."),
+        ("chroma",     "Chroma (pip install)",
+         "Embeddable. Lowest setup. Good to 10K cards."),
+        ("lancedb",    "LanceDB (embedded Rust)",
+         "File-based. Fast. Good to 100K."),
+        ("duckdb_vss", "DuckDB + VSS extension",
+         "SQL-friendly. File-based. Good to 100K."),
+        ("sqlite_vec", "SQLite + sqlite-vec",
+         "Smallest footprint. Good to 10K."),
+        ("pgvector",   "pgvector (requires Postgres)",
+         "If you already run Postgres."),
+    ]
+    pick1 = ui.pick_option(
+        "Round 1 — accept default with Enter:",
+        options,
         default_key="qdrant",
     )
-    ui.info_line(f"[green]✓[/] You selected: [bold]{pick}[/] (discarded)")
+    ui.info_line(
+        f"[green]✓[/] Round 1 picked: [bold]{pick1}[/]")
+    ui.print_blank()
+
+    ui.info_line(
+        "[bold yellow]Round 2:[/] this time the default is [cyan]chroma[/]. "
+        "Press [bold]↓ ↓[/] (down arrow twice) then [bold]Enter[/] to "
+        "land on [cyan]duckdb_vss[/]. Try it — proves the arrow keys "
+        "work and your pick wasn't predetermined."
+    )
+    ui.print_blank()
+    pick2 = ui.pick_option(
+        "Round 2 — navigate with ↓ ↓ then Enter:",
+        options,
+        default_key="chroma",
+    )
+    if pick2 == "duckdb_vss":
+        ui.info_line(f"[green]✓[/] Round 2 picked: [bold]{pick2}[/] — "
+                      f"arrow-key navigation confirmed.")
+    elif pick2 == "chroma":
+        ui.info_line(f"[yellow]Round 2 picked: [bold]{pick2}[/] — you "
+                      f"hit Enter without navigating. The picker still "
+                      f"works, you just didn't try the arrows.[/]")
+    else:
+        ui.info_line(f"[green]✓[/] Round 2 picked: [bold]{pick2}[/] — "
+                      f"arrow-key navigation confirmed.")
     ui.print_blank()
 
     # ---- T2: animated spinner ----
@@ -73,12 +105,24 @@ def main() -> int:
     ui.info_line(
         "Step 13 (first-card preview) blocks for 5-30 seconds while "
         "the LLM responds. Without the spinner, the screen sat blank "
-        "and users wondered if the wizard hung. Now:"
+        "and users wondered if the wizard hung. Watch for the rotating "
+        "[bold]⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏[/] character at the start of each "
+        "phase — it stays animated for the full duration:"
     )
     ui.print_blank()
-    with ui.status("Calling claude-sonnet-4-5-20250929 (one refine pass)..."):
-        time.sleep(3.0)  # simulate LLM round-trip
-    ui.info_line("[green]✓[/] LLM call complete (faked).")
+    with ui.status("Phase 1/3 — connecting to api.anthropic.com...") as s:
+        time.sleep(2.5)
+        s.update("Phase 2/3 — sending refiner prompt + slice (1.2 KB)...")
+        time.sleep(2.5)
+        s.update("Phase 3/3 — awaiting response (cache miss; ~2-30s typical)...")
+        time.sleep(2.5)
+    ui.info_line("[green]✓[/] LLM call complete (faked) — total ~7.5s "
+                  "with three phase transitions.")
+    ui.info_line(
+        "[dim]Note: rich's `console.status()` clears its line on exit, "
+        "so the spinner leaves no trace once done. That's by design — "
+        "the user only sees what's NEW after the operation finishes.[/]"
+    )
     ui.print_blank()
 
     # ---- T3: summary tree ----
