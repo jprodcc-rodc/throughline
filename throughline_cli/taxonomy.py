@@ -559,6 +559,20 @@ def cmd_status(out: Optional[Callable[[str], None]] = None) -> int:
     return 0
 
 
+def pending_candidates_count() -> int:
+    """U27.5 — non-interactive helper for doctor / Filter / etc.
+    Returns the number of growth candidates that currently pass the
+    threshold guards. 0 when the observation log is empty or no
+    cluster crossed the floor; the function never raises."""
+    try:
+        valid_x = load_valid_x_from_config()
+        observations = load_observations()
+        rejected = load_rejected_tags()
+        return len(detect_candidates(observations, valid_x, rejected))
+    except Exception:
+        return 0
+
+
 def _prompt(label: str, reader: Callable[[str], str]) -> str:
     return reader(label).strip()
 

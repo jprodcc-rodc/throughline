@@ -360,6 +360,37 @@ def check_taxonomy_observations() -> CheckResult:
     )
 
 
+def check_taxonomy_pending() -> CheckResult:
+    """U27.5 — surface pending taxonomy growth candidates.
+
+    The U27 loop's value collapses if users never run `taxonomy
+    review`. The doctor is the obvious place to remind them. Status
+    `ok` when nothing is pending; `warn` when the user has work to
+    do — never `fail` because pending candidates are normal, not
+    broken.
+    """
+    try:
+        from . import taxonomy as tx
+    except Exception as e:
+        return CheckResult(
+            "taxonomy_pending", "warn",
+            f"taxonomy module unavailable: {e}",
+        )
+    n = tx.pending_candidates_count()
+    if n == 0:
+        return CheckResult(
+            "taxonomy_pending", "ok",
+            "no growth candidates pending review",
+        )
+    plural = "s" if n != 1 else ""
+    return CheckResult(
+        "taxonomy_pending", "warn",
+        f"{n} taxonomy candidate{plural} pending review",
+        fix=("Run `python -m throughline_cli taxonomy review` to "
+              "approve / reject / rename each."),
+    )
+
+
 # =========================================================
 # Runner
 # =========================================================
@@ -380,6 +411,7 @@ DEFAULT_CHECKS: List[Callable[[], CheckResult]] = [
     check_daemon_state,
     check_embedder_model_cache,
     check_taxonomy_observations,
+    check_taxonomy_pending,
 ]
 
 
