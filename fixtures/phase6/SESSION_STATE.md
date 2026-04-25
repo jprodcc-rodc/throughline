@@ -2,7 +2,67 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-26 (third stretch) — Wizard UX wave
+**Last updated:** 2026-04-25 (external review response wave) — 9
+commits closing all 13 P0-P3 items from external Opus 4.7 review of
+public repo. Tests: 1304 → 1260 passed / 10 xfailed (count drop is
+because no new tests were added; existing ones all stay green —
+review wave was 100% docs + docstring + ROADMAP + README, zero
+behaviour change). Working tree clean.
+
+## 🆕 External-review-response wave (2026-04-25, latest stretch)
+
+External reviewer was a context-free Opus 4.7 instance reading just
+public README + ARCHITECTURE + DESIGN_DECISIONS — i.e. the genuine
+first-impression a stranger gets. Brief at
+`c:\Users\Jprod\Downloads\cc_brief_review_response.md`. All 13
+items shipped today as 9 commits:
+
+**P0 — trust + first-impression (3 commits):**
+- `7d2f536` SECURITY.md: data flow + read/write/not-do +
+  threat-model awareness sections (was 52-line "how to report" stub)
+- `d1f1677` README comparison table: drop ❌ marks on competitors
+  (mem0/Letta have full self-host; rephrased as factual descriptions
+  per row)
+- `edaea19` README: add "Who this is for" right after status block
+  (target user identification + graceful exit ramp for non-targets)
+
+**P1 — README + backends sync (3 commits):**
+- `2ae42ca` README: replace "3-tier gate" jargon with "auto-recall"
+  in pipeline diagram (last internal-code leak from prior polish)
+- `c6190e6` backends docstring + README table truthing: 6 real vector
+  backends (was claiming 4 still aliased), reranker registry has
+  voyage+jina, embedder aliases route through OpenAI-compat endpoint
+- `26d6fde` README: promote --express to primary install path;
+  16-step wizard demoted to "want full control"
+
+**P2 — ROADMAP + cost transparency (2 commits):**
+- `1acfd3b` ROADMAP.md rewrite: v0.3 around frontend decoupling
+  (MCP adapter, OpenAI-compatible proxy) + engineering hardening
+  (forward-slash lint, recall-accuracy regression suite,
+  stale-triage auto-archive). Stale items moved to new "Shipped in
+  v0.2.x" log.
+- `1c05d9f` README: 💰 Cost expectations section (per-tier
+  unit cost + 3 daily-cap usage profiles + free local-only path).
+  Numbers sourced from _TIER_COST_PER_CONV in wizard.py — single
+  source of truth.
+
+**P3 — philosophy / scope (1 commit):**
+- `4645786` docs/FAQ.md "What throughline is not" + ARCHITECTURE
+  § 13.3 "On 'self-growing'" transparency note + ARCHITECTURE § 13.1
+  stale-fixes (rerankers + vector stores). FAQ section explicitly
+  cuts SaaS / multi-device sync / team mode / mobile app /
+  ChatGPT-replacement so non-fitters self-select out.
+
+**Net effect:** every credibility hit a no-context external reviewer
+flagged is now either fixed in code/docs or explicitly positioned in
+ROADMAP / FAQ. Repo is materially more honest about scope, costs,
+and what does/doesn't exist today.
+
+**Latest commit on main:** `4645786`. CI pending push verification.
+
+---
+
+**Previous stretch (2026-04-26):** Wizard UX wave
 (T1+T2+T3 + back nav + provider/key gate + "Other" model escape
 hatch + run-time taxonomy derivation) + provider model audit +
 README polish (mermaid → ASCII, hero/screenshot anchors, why-section
