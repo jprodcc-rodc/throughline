@@ -19,6 +19,7 @@ If your question isn't here,
 - [Can I self-host all of it?](#can-i-self-host-all-of-it)
 - [Why 16 LLM providers? Feature creep?](#why-16-llm-providers-feature-creep)
 - [Does it support Chinese / Japanese / other languages?](#does-it-support-chinese--japanese--other-languages)
+- [What throughline is *not*](#what-throughline-is-not)
 - [What's the roadmap?](#whats-the-roadmap)
 - [I hit a bug. What do you want from me?](#i-hit-a-bug-what-do-you-want-from-me)
 
@@ -215,16 +216,58 @@ User-content handling is locale-neutral:
 To contribute translated prompts, see
 [`prompts/README.md` § Adding a new language](../prompts/README.md#adding-a-new-language).
 
+## What throughline is *not*
+
+External reviewers (and good-faith first-time visitors) sometimes
+arrive expecting a SaaS-shaped tool and bounce off when throughline
+doesn't fit. Stating the negative space explicitly so nobody wastes
+their time:
+
+throughline is **not** a SaaS, not a cloud product, not a multi-
+device sync layer, and not a team collaboration tool. It is a
+**single-user, local-first** system designed for one person managing
+their own context on their own machine. The vault you build is
+yours, on your disk, in plain Markdown — no account, no shared
+namespace, no admin panel.
+
+What that means for specific shapes of need:
+
+- **"I need this to follow me across phone + laptop + tablet."**
+  throughline doesn't ship sync. The vault is a folder; layer
+  Syncthing / Resilio / iCloud Drive / Obsidian Sync on top if you
+  want cross-device. We may add an opt-in sync bridge later, but
+  "your data, your machine" stays the core philosophy.
+- **"My team needs to share context."** Wrong tool. throughline
+  optimises for individual cognitive density, not for handing
+  context off between people. A shared vault would dilute the
+  privacy + identity scoping the refiner relies on.
+- **"I want a polished mobile app."** Reading surface is OpenWebUI
+  + Obsidian; both have their own mobile stories. throughline's
+  daemon + RAG server are server-side processes that wouldn't run
+  on a phone anyway.
+- **"Can it replace ChatGPT / Claude / Gemini for me?"** No. It
+  *augments* whichever LLM you already pay for — it gives that LLM
+  durable memory of you, not a UI to talk to it.
+
+If any of those shapes is your blocker, throughline is the wrong
+tool for you and we'd rather you find that out here than after a
+16-step install.
+
 ## What's the roadmap?
 
-- **v0.2.x** (now): bug fixes against v0.2.0.
-- **v0.3**: native implementations of the 4 aliased vector stores
-  (LanceDB / DuckDB-VSS / SQLite-vec / pgvector), native rerankers
-  (Voyage / Jina), U27.5/.6/.7 taxonomy growth extensions, PyPI
-  publish, Docker compose (done in v0.2.x), hero screencast.
+- **v0.2.x** (now): bug fixes + small polish against v0.2.0. Several
+  items originally pencilled in for v0.3 already shipped here —
+  see ["Shipped in v0.2.x"](../ROADMAP.md#shipped-in-v02x) in the
+  full roadmap.
+- **v0.3**: frontend decoupling (MCP server adapter, OpenAI-compatible
+  proxy adapter), engineering hardening (path-invariant lint rule,
+  recall-accuracy regression suite), stale-triage auto-archive,
+  remaining native embedders (`nomic` / `MiniLM`), `taxonomy retag`
+  CLI, PyPI release, hero screencast.
 - **v1.0**: stability commitment on config.toml / CLI / ABI; shipped
   when someone OTHER than the author has been running it in
-  production for meaningful hours.
+  production for meaningful hours and the recall-accuracy suite has
+  3+ model-version data points.
 
 Full list: [`ROADMAP.md`](../ROADMAP.md).
 

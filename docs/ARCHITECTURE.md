@@ -585,17 +585,18 @@ Three abstractions live under `rag_server/`:
   `nomic` / `minilm` → `bge-m3` and `jina` / `voyage` / `cohere` →
   `openai` until v0.3 ships dedicated impls.
 - **`rerankers.py`** — `BaseReranker` ABC. Same factory shape.
-  Default `bge-reranker-v2-m3` plus `cohere` and `skip`. Cohere's
-  response re-aligned back to input-order so downstream
-  `zip(docs, scores)` works. Missing `COHERE_API_KEY` degrades to
-  the skip path rather than erroring.
+  Default `bge-reranker-v2-m3` plus `cohere`, `voyage`, `jina`, and
+  `skip` — five real impls. Cohere's response re-aligned back to
+  input-order so downstream `zip(docs, scores)` works. Missing
+  provider key degrades to the skip path rather than erroring.
 - **`vector_stores.py`** — `BaseVectorStore` ABC: five operations
   (`ensure_collection`, `upsert`, `search`, `delete`, `count`).
-  Default `qdrant` preserves the v0.1 raw-urllib wire calls; `chroma`
-  is the alternate reference (optional dep, returns a stub if
-  `chromadb` isn't importable so the wizard never crashes at import).
-  Aliases route `lancedb` / `duckdb_vss` / `sqlite_vec` / `pgvector`
-  → `qdrant` for now.
+  Six real backends in v0.2.x: `qdrant` (default, raw-urllib), `chroma`
+  (chromadb client, optional dep with stub fallback), `lancedb`
+  (file-backed, Arrow / Lance), `sqlite_vec` (sqlite3 + extension),
+  `duckdb_vss` (DuckDB + VSS extension), and `pgvector` (Postgres +
+  pgvector extension). Only spelling aliases remain in the registry
+  (`sqlite-vec` → `sqlite_vec`, `duckdb-vss` → `duckdb_vss`).
 
 `rag_server/rag_server.py` is wired through the three factories.
 Setting `EMBEDDER=openai RERANKER=cohere VECTOR_STORE=chroma` flips
@@ -624,6 +625,40 @@ body section would break the 6-section retention gate; the loader
 refuses an empty section list and retains the defaults.
 
 ### 13.3 Self-growing taxonomy (U27)
+
+#### On "self-growing" — what we mean by it
+
+This term does honest-but-limited work, and external reviewers
+sometimes read more into it than is intended. Before the mechanics:
+
+> **"Self-growing" means the system *proposes* taxonomy expansions
+> based on observed conversation patterns, then routes those proposals
+> through human approval before adoption. It does not autonomously
+> modify the taxonomy.**
+
+This is by design, not a limitation we plan to remove. In practice
+LLMs propose multiple variants of the same concept across calls
+(`AI/Agent` ≡ `AI/代理` ≡ `AI/Agentic` ≡ `AI/AgentLoop`), and an
+unsupervised acceptance loop creates taxonomy noise that degrades
+retrieval over time — the very problem the taxonomy was supposed to
+solve. Human-in-the-loop is the trade-off chosen.
+
+The loop stays useful because:
+1. The observer is **passive** — zero cost per refine, zero
+   periodic scan; signal accumulates as a side effect of normal
+   refining (U27.3).
+2. The reviewer is **batch + clustered** — `taxonomy review` clusters
+   variants of the same proposal so the user makes one decision per
+   concept, not one per call (U27.4).
+3. The decision is **surgical + auditable** — accepted proposals
+   land via regex insert into `config/taxonomy.py`'s VALID_X_SET
+   literal, so every taxonomy change is git-blameable.
+
+If you want fully autonomous taxonomy mutation, throughline is the
+wrong tool. If you want "the system notices drift and offers it to
+me on a quiet schedule", that's exactly what U27 does.
+
+#### Mechanics
 
 v0.1 shipped a one-shot LLM-derived taxonomy (`scripts/derive_taxonomy.py`
 for users with 100+ existing cards) and static template fallbacks
