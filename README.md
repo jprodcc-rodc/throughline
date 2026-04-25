@@ -74,9 +74,9 @@ python install.py                                    # ← the full 16-step wiza
 
 `--express` auto-detects whichever LLM provider env var you have
 exported (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`,
-…), fills sane defaults for everything else, prints a cost
-projection, and writes config in ~3 seconds. Run `--express --dry-run`
-to preview without committing.
+…), fills sane defaults for everything else, prints the
+per-conversation cost + daily cap, and writes config in ~3 seconds.
+Run `--express --dry-run` to preview without committing.
 
 What the full wizard covers, in order: Python check → mission (Full /
 RAG-only / Notes-only) → vector DB → LLM provider → privacy level →

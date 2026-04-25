@@ -1077,33 +1077,41 @@ def _run_adapter_for_real(cfg: WizardConfig) -> None:
         ui.kv_row("manifest", summary.manifest_path)
 
 
-# Per-tier per-conversation cost estimates (USD). Sources:
-# wizard step 11 prose + the daemon's MODEL_PRICING table + observed
-# typical conversation lengths (~3K input tokens, ~2K output tokens
-# per refine call, midpoint of the cost-spread examples).
+# Per-tier per-conversation cost estimates (USD). Sources: wizard
+# step 11 prose + the daemon's MODEL_PRICING table + observed typical
+# conversation lengths (~3K input tokens, ~2K output tokens per
+# refine call, midpoint of the cost-spread examples).
+#
+# We deliberately do NOT extrapolate to a monthly figure. Real usage
+# is bursty and project-driven (10 hours one day, 20 idle days).
+# Multiplying per-conv cost by an assumed daily rate misrepresents
+# this for most users. Better to surface only what the user can
+# directly reason about: the unit cost they pay per refine + the
+# daily cap they configured.
 _TIER_COST_PER_CONV: dict[str, float] = {
     "skim":   0.005,   # one Haiku call
     "normal": 0.040,   # Sonnet 6-section
     "deep":   0.200,   # Opus multi-pass + critique
 }
-# Median throughline alpha-user signal: ~10 conversations/day.
-# Heavy users hit ~40, light users hit ~3. The summary shows the
-# midpoint so users understand the order of magnitude without
-# pretending the wizard knows their actual usage.
-_ASSUMED_CONVS_PER_DAY = 10
 
 
-def _project_monthly_cost(refine_tier: str,
-                          convs_per_day: int = _ASSUMED_CONVS_PER_DAY
-                          ) -> tuple[float, float]:
-    """Return (monthly_cost, daily_cost) projection in USD given a
-    refine tier + assumed conversations per day. Uses the per-tier
-    cost-per-conv constants above. Best-effort estimate so the user
-    has a magnitude before they commit."""
-    per_conv = _TIER_COST_PER_CONV.get(refine_tier, 0.04)
-    daily = per_conv * convs_per_day
-    monthly = daily * 30
-    return monthly, daily
+def _per_conv_cost(refine_tier: str) -> float:
+    """Estimated USD cost per refined conversation at the given tier."""
+    return _TIER_COST_PER_CONV.get(refine_tier, 0.04)
+
+
+def _format_cost_line(refine_tier: str, daily_cap_usd: float) -> str:
+    """Build the single-line cost summary. Only mentions per-
+    conversation cost + the daily cap — no monthly extrapolation,
+    because real usage is bursty and any "X/month" figure would
+    misrepresent it for most users."""
+    per_conv = _per_conv_cost(refine_tier)
+    if per_conv <= 0:
+        return ""
+    max_per_day = int(daily_cap_usd / per_conv) if per_conv else 0
+    return (f"~${per_conv:.3f} per conversation on the {refine_tier} "
+            f"tier. Daily cap: ${daily_cap_usd:g} (≈ {max_per_day:,} "
+            f"refines max/day; daemon pauses + resets at midnight).")
 
 
 def step_16_summary(cfg: WizardConfig) -> Optional[str]:
@@ -1129,16 +1137,14 @@ def step_16_summary(cfg: WizardConfig) -> Optional[str]:
     ui.kv_row("taxonomy_source", cfg.taxonomy_source)
     ui.kv_row("daily_budget_usd", f"${cfg.daily_budget_usd}")
 
-    # --- Monthly cost projection (the most-asked question) ----------
-    ongoing_monthly, ongoing_daily = _project_monthly_cost(cfg.refine_tier)
+    # --- Cost line: per-conversation unit cost + daily cap ---------
+    # No monthly extrapolation: real usage is bursty (heavy week +
+    # idle weeks), so any "$N/month" figure would misrepresent it for
+    # most users. Surface what the user controls: cost per refine and
+    # the daily cap (which IS the worst-case spend per day).
     ui.print_blank()
     ui.info_line(
-        f"[dim]Ongoing cost projection (after one-time import): "
-        f"~${ongoing_daily:.2f}/day, ~${ongoing_monthly:.0f}/month at "
-        f"{_ASSUMED_CONVS_PER_DAY} conversations/day on the {cfg.refine_tier} "
-        f"tier. Heavy users (~40 conv/day) ~{4*ongoing_monthly:.0f}; light "
-        f"users (~3 conv/day) ~{0.3*ongoing_monthly:.0f}. Daemon pauses at "
-        f"the daily cap (${cfg.daily_budget_usd}); rolls over at midnight.[/]"
+        f"[dim]Cost: {_format_cost_line(cfg.refine_tier, cfg.daily_budget_usd)}[/]"
     )
 
     if not ui.ask_yes_no("Write this to ~/.throughline/config.toml"
@@ -1552,10 +1558,10 @@ def run_express(dry_run: bool = False) -> int:
     ui.info_line(f"[dim]Vector DB:[/]    {cfg.vector_db}")
     ui.info_line(f"[dim]Refine tier:[/]  {cfg.refine_tier}")
     ui.info_line(f"[dim]Daily budget:[/] ${cfg.daily_budget_usd}")
-    monthly, daily = _project_monthly_cost(cfg.refine_tier)
-    ui.info_line(f"[dim]Cost projection:[/] ~${daily:.2f}/day, "
-                  f"~${monthly:.0f}/month at "
-                  f"{_ASSUMED_CONVS_PER_DAY} conv/day")
+    ui.info_line(
+        f"[dim]Cost:[/] "
+        f"{_format_cost_line(cfg.refine_tier, cfg.daily_budget_usd)}"
+    )
     ui.print_blank()
 
     if dry_run:

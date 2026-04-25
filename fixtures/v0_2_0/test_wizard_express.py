@@ -18,43 +18,60 @@ sys.path.insert(0, str(REPO_ROOT))
 
 
 # ============================================================
-# Cost projection helper
+# Cost helpers
 # ============================================================
 
-class TestCostProjection:
-    def test_skim_tier_cheap(self):
-        from throughline_cli.wizard import _project_monthly_cost
-        m, d = _project_monthly_cost("skim")
-        assert d > 0
-        assert m == d * 30
-        # Skim is the cheap tier — should be well under $5/month at
-        # 10 conv/day (the default).
-        assert m < 5
+class TestPerConvCost:
+    """The wizard surfaces per-conversation cost + daily cap, NOT
+    a monthly extrapolation. Real usage is bursty (heavy week +
+    idle weeks); a "$X/month" figure would misrepresent it for
+    most users."""
 
-    def test_normal_tier_midrange(self):
-        from throughline_cli.wizard import _project_monthly_cost
-        m, _ = _project_monthly_cost("normal")
-        assert 5 <= m <= 50  # ~$12 at 10 conv/day
+    def test_skim_cheap(self):
+        from throughline_cli.wizard import _per_conv_cost
+        assert _per_conv_cost("skim") < _per_conv_cost("normal")
 
-    def test_deep_tier_expensive(self):
-        from throughline_cli.wizard import _project_monthly_cost
-        m_normal, _ = _project_monthly_cost("normal")
-        m_deep, _ = _project_monthly_cost("deep")
-        # Deep tier MUST be substantially more expensive than normal
-        # — otherwise the prose contradicts itself.
-        assert m_deep > m_normal * 2
+    def test_deep_expensive(self):
+        from throughline_cli.wizard import _per_conv_cost
+        # Deep MUST be substantially more expensive than normal.
+        assert _per_conv_cost("deep") > _per_conv_cost("normal") * 2
 
-    def test_unknown_tier_falls_back_to_normal(self):
-        from throughline_cli.wizard import _project_monthly_cost
-        m_unknown, _ = _project_monthly_cost("future_tier")
-        m_normal, _ = _project_monthly_cost("normal")
-        assert m_unknown == m_normal
+    def test_unknown_tier_falls_back(self):
+        from throughline_cli.wizard import _per_conv_cost
+        assert _per_conv_cost("future_tier") == _per_conv_cost("normal")
 
-    def test_convs_per_day_scales_linearly(self):
-        from throughline_cli.wizard import _project_monthly_cost
-        m_10, _ = _project_monthly_cost("normal", convs_per_day=10)
-        m_40, _ = _project_monthly_cost("normal", convs_per_day=40)
-        assert abs(m_40 - 4 * m_10) < 0.01
+    def test_format_includes_per_conv_and_cap(self):
+        """The cost line must mention BOTH the unit cost (so users
+        can scale to their actual usage) and the daily cap (so they
+        know the worst case)."""
+        from throughline_cli.wizard import _format_cost_line
+        line = _format_cost_line("normal", 20.0)
+        assert "per conversation" in line.lower()
+        assert "20" in line  # daily cap dollar figure
+        assert "midnight" in line  # cap-reset behaviour
+
+    def test_format_no_monthly_extrapolation(self):
+        """Regression: don't pretend we know the user's monthly
+        usage. Bursty patterns make any "$N/month" or "$N/day"
+        projection misleading. (The string "max/day" is fine — that
+        describes the cap, not a fictional daily spend rate.)"""
+        import re
+        from throughline_cli.wizard import _format_cost_line
+        line = _format_cost_line("normal", 20.0)
+        assert "month" not in line.lower()
+        # Forbidden: "$<number>/day" or "$<number>/month".
+        assert not re.search(r"\$[\d.]+\s*/\s*(day|month)",
+                              line, re.IGNORECASE), (
+            f"line implies a fictional daily/monthly spend rate: {line}")
+
+    def test_format_includes_max_refines_per_day(self):
+        """Helpful concrete number: at the configured cap, how many
+        refines per day max? Lets the user sanity-check whether
+        their cap matches their expected usage."""
+        from throughline_cli.wizard import _format_cost_line
+        line = _format_cost_line("normal", 20.0)
+        # Normal tier: $0.04/conv → cap=$20 → max ~500/day
+        assert "500" in line
 
 
 # ============================================================
@@ -234,10 +251,10 @@ class TestExpressArgvDispatch:
 # ============================================================
 
 class TestStep16CostProjection:
-    def test_cost_projection_appears_in_summary(self, tmp_path,
-                                                       monkeypatch):
-        """Step 16 must surface the monthly cost projection so users
-        commit with informed expectations."""
+    def test_cost_line_appears_in_summary(self, tmp_path, monkeypatch):
+        """Step 16 must surface per-conversation cost + daily cap so
+        users commit with informed expectations — without any fake
+        monthly extrapolation that ignores bursty real-world usage."""
         from throughline_cli.config import WizardConfig
         from throughline_cli import wizard as wiz
 
@@ -257,6 +274,8 @@ class TestStep16CostProjection:
         except SystemExit:
             pass  # the abort branch sys.exit(0)s
         joined = "\n".join(captured)
-        assert "month" in joined.lower()
-        # The default tier is `normal` ($0.04/conv * 10/day * 30 ≈ $12)
-        assert "12" in joined or "$" in joined
+        # Must mention per-conversation unit + daily cap.
+        assert "per conversation" in joined.lower()
+        assert "midnight" in joined.lower()
+        # Must NOT pretend to know monthly usage.
+        assert "month" not in joined.lower()
