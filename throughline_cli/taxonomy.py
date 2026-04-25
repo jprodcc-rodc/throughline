@@ -614,6 +614,19 @@ def cmd_zero_usage(out: Optional[Callable[[str], None]] = None) -> int:
         out("VALID_X_SET is empty — nothing to evaluate. Run the wizard"
             " first.")
         return 0
+    # Distinguish "vault doesn't exist" from "all leaves used" — they
+    # both produce an empty `detect_zero_usage_leaves()` return but
+    # mean very different things. Surface the vault status explicitly.
+    try:
+        from . import stats as _stats
+        scan = _stats.scan_vault()
+    except Exception:
+        scan = {"vault_exists": False}
+    if not scan.get("vault_exists"):
+        out(f"Vault not found at {scan.get('vault_root', '(unknown)')}.")
+        out("Set THROUGHLINE_VAULT_ROOT to your vault, or refine at"
+            " least one card before running this check.")
+        return 0
     unused = detect_zero_usage_leaves(valid_x=valid_x)
     if not unused:
         out(f"All {len(valid_x)} VALID_X_SET leaves have at least one"

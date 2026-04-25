@@ -263,6 +263,23 @@ class TestCmdZeroUsage:
         assert rc == 0
         assert "empty" in "\n".join(captured).lower()
 
+    def test_missing_vault_distinct_message(self, tmp_path, monkeypatch):
+        """Regression: a missing vault must NOT print 'all leaves
+        have at least one card' — that's a misleading false positive
+        ('your vault is fine!') when actually the vault doesn't exist.
+        Surface the vault-missing condition explicitly."""
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT",
+                            str(tmp_path / "does_not_exist"))
+        from throughline_cli import taxonomy as tx
+        monkeypatch.setattr(tx, "load_valid_x_from_config",
+                              lambda: ["AI/LLM", "Tech/PKM"])
+        captured: list = []
+        rc = tx.cmd_zero_usage(out=captured.append)
+        assert rc == 0
+        joined = "\n".join(captured)
+        assert "Vault not found" in joined
+        assert "All" not in joined  # not the false-positive message
+
     def test_dispatcher_routes_zero_usage(self, tmp_path, monkeypatch, capsys):
         vault = tmp_path / "vault"
         vault.mkdir()
