@@ -134,10 +134,22 @@ def _use_questionary() -> bool:
 # ---------- headers / structure ----------
 
 def step_header(step: int, total: int, title: str) -> None:
-    """Big rule at the top of each wizard step."""
+    """Big rule at the top of each wizard step.
+
+    Renders as:
+      ── [N/16] Title ──────────────────────────
+    with the step counter cyan + bold AND the title bright-white +
+    bold, so the header reads as one visually-strong unit. Some
+    terminals mute `console.rule(...)` titles by default; the
+    explicit color tags ensure both halves stand out from the dim
+    rule line."""
     console.print()
+    # Two-piece title: the [N/total] counter and the actual step
+    # name. Both bold so the header doesn't get swallowed by the
+    # rule's own dim-cyan style.
     console.rule(
-        f"[bold cyan]\\[{step}/{total}][/] [bold white]{title}[/]",
+        f"[bold cyan]\\[{step}/{total}][/] "
+        f"[bold bright_white]{title}[/]",
         style="cyan",
         align="left",
     )
@@ -335,25 +347,45 @@ def _pick_option_arrow(question: str,
     for key, label, desc in options:
         # Render label + dim description in the same line. Truncate
         # description so the picker stays one-line-per-option.
+        # Append "(default)" tag so users can spot the recommended
+        # pick without relying on a second color (color-double-up
+        # was confusing — see selected style note above).
+        is_default = (key == default_key)
+        default_tag = "  [default]" if is_default else ""
         if desc:
             short_desc = desc if len(desc) <= 70 else desc[:67] + "..."
-            title_text = f"{label}  —  {short_desc}"
+            title_text = f"{label}{default_tag}  —  {short_desc}"
         else:
-            title_text = label
+            title_text = f"{label}{default_tag}"
         choices.append(Choice(title=title_text, value=key))
 
     # Pointer + style overrides for Windows-terminal compatibility.
     # The default pointer (») doesn't always re-render on conhost
     # when the user navigates; an explicit ❯ + a high-contrast
-    # selected-row style helps Windows Terminal / PowerShell ISE
+    # cursor-row style helps Windows Terminal / PowerShell ISE
     # reliably redraw the highlight on every arrow press.
+    #
+    # IMPORTANT — only ONE row should look "highlighted" at a time:
+    # the row the cursor is currently on. Earlier styling also
+    # styled `selected` (which questionary uses to mark the default
+    # / pre-selected row) so users saw TWO highlighted rows after
+    # navigating: the cursor's new row AND the lingering default
+    # row. Confusing — they couldn't tell which one Enter would
+    # commit.
+    #
+    # Fix: remove all visual emphasis from `selected`. The cursor
+    # row (`pointer` + `highlighted`) is the only thing that lights
+    # up; the default row gets a "(default)" text tag in the
+    # description instead, so users still know which one auto-
+    # commits if they just hit Enter.
     from questionary import Style
     pt_style = Style([
         ("pointer",         "fg:#00d7ff bold"),  # bright cyan ❯
-        ("highlighted",     "fg:#000000 bg:#00d7ff bold"),  # selected row: dark text on cyan
-        ("selected",        "fg:#00d7ff"),
+        ("highlighted",     "fg:#000000 bg:#00d7ff bold"),  # cursor row only
+        ("selected",        ""),  # NO emphasis — text-tag default instead
         ("instruction",     "fg:#888888 italic"),
-        ("question",        "bold"),
+        ("question",        "bold fg:#ffffff"),
+        ("answer",          "fg:#00d7ff bold"),
     ])
     try:
         answer = questionary.select(

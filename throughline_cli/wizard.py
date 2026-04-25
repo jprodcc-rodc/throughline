@@ -52,11 +52,11 @@ def step_02_mission(cfg: WizardConfig) -> Optional[str]:
 
     ui.subrule("[1] Full flywheel — cards in Obsidian AND indexed for RAG")
     ui.panel_example(
-        "After each chat",
+        "After each chat (illustrative — your folders + topics differ)",
         "```\n"
-        "Obsidian vault:   40_Learning/pytorch_mps_m2.md  (readable 6-section card)\n"
+        "Obsidian vault:   <vault>/<your-domain>/<your-card>.md  (readable 6-section card)\n"
         "Vector DB:        card + embeddings, retrievable\n"
-        "Next chat:        'how did I set up MPS?'\n"
+        "Next chat:        'how did I set up <whatever you searched>?'\n"
         "                   -> RAG injects the card -> LLM cites it\n"
         "```\n",
         pick_if="you want Obsidian as knowledge garden AND you want the "
@@ -65,12 +65,12 @@ def step_02_mission(cfg: WizardConfig) -> Optional[str]:
 
     ui.subrule("[2] RAG-only — cards are machine food, you never read them")
     ui.panel_example(
-        "After each chat",
+        "After each chat (illustrative)",
         "```\n"
         "Vault:            NOT USED AS A READING SURFACE\n"
         "                  (files exist on disk, but dense, not prose)\n"
         "Vector DB:        title + entities + 3-8 atomic claims\n"
-        "Next chat:        'how did I set up MPS?'\n"
+        "Next chat:        'how did I set up <whatever>?'\n"
         "                   -> RAG injects claims -> LLM cites them\n"
         "```\n",
         pick_if="you use throughline as pure LLM memory; Obsidian is not "
@@ -79,9 +79,9 @@ def step_02_mission(cfg: WizardConfig) -> Optional[str]:
 
     ui.subrule("[3] Notes-only — Obsidian cards, no RAG infrastructure")
     ui.panel_example(
-        "After each chat",
+        "After each chat (illustrative)",
         "```\n"
-        "Obsidian vault:   40_Learning/pytorch_mps_m2.md  (readable 6-section card)\n"
+        "Obsidian vault:   <vault>/<your-domain>/<your-card>.md  (readable 6-section card)\n"
         "Vector DB:        NOT INSTALLED\n"
         "Next chat:        normal LLM reply, no enrichment\n"
         "```\n",
@@ -834,18 +834,18 @@ def step_12_card_structure(cfg: WizardConfig) -> Optional[str]:
         ui.step_header(12, TOTAL,
                        "Card structure — FIXED to 'rag_optimized' (U25)")
         ui.panel_example(
-            "Fixed RAG-optimized format",
+            "Fixed RAG-optimized format (illustrative — your topic differs)",
             "```yaml\n"
             "---\n"
-            'title: "Setting up PyTorch on M2 Mac with MPS backend"\n'
-            "entities: [PyTorch, M2 Mac, MPS, Apple Silicon, GPU]\n"
+            'title: "FastAPI dev server with hot-reload"\n'
+            "entities: [FastAPI, uvicorn, hot-reload, ASGI, nginx]\n"
             "---\n"
             "```\n"
-            "- PyTorch 2.0+ supports MPS backend natively\n"
-            "- Use `torch.device('mps')` instead of `cuda`\n"
-            "- Fallback: `PYTORCH_ENABLE_MPS_FALLBACK=1`\n"
-            "- Install: `conda install pytorch torchvision -c pytorch-nightly`\n"
-            "- Verify: `torch.backends.mps.is_available()`\n",
+            "- uvicorn `--reload` watches all .py files in cwd\n"
+            "- Use `uvicorn main:app --reload` in dev only\n"
+            "- Production: `--workers 4` behind nginx; never `--reload`\n"
+            "- Bind `0.0.0.0` only when nginx is in front\n"
+            "- Verify: `curl localhost:8000` returns expected JSON\n",
         )
         return "SKIPPED"
 
@@ -856,15 +856,18 @@ def step_12_card_structure(cfg: WizardConfig) -> Optional[str]:
              "re-refine with a different shape later via "
              "`python install.py --step 12`. Three shapes ship:")
 
+    # All three example cards below use the same FastAPI topic so users
+    # can compare card SHAPES at a glance without topic noise. Topic
+    # is intentionally device/OS-neutral — see step 11 comment.
     ui.subrule("[1] Compact — title + one paragraph + tags")
     ui.panel_example(
-        "Compact card",
-        "# Setting up PyTorch MPS on M2 Mac\n\n"
-        "PyTorch 2.0+ supports MPS natively via `torch.device('mps')`. "
-        "Set `PYTORCH_ENABLE_MPS_FALLBACK=1` for unsupported ops. Install "
-        "via `conda install pytorch torchvision -c pytorch-nightly`, then "
-        "verify with `torch.backends.mps.is_available()`.\n\n"
-        "`#pytorch` `#m2` `#mps`\n",
+        "Compact card (illustrative — same content, three shapes)",
+        "# FastAPI dev server with hot-reload\n\n"
+        "Use `uvicorn main:app --reload`. The `--reload` flag watches "
+        "all Python files in the working directory. Drop it for "
+        "production and add `--workers 4` behind nginx. Never expose "
+        "`0.0.0.0` directly.\n\n"
+        "`#fastapi` `#python` `#asgi`\n",
         pick_if="you think in single atomic claims, want small cards, "
                 "prefer Zettelkasten-style linking over narrative notes.",
     )
@@ -872,21 +875,26 @@ def step_12_card_structure(cfg: WizardConfig) -> Optional[str]:
     ui.subrule("[2] Standard — 6-section skeleton (default, current v0.1 shape)")
     ui.panel_example(
         "Standard card",
-        "# Setting up PyTorch MPS on M2 Mac\n\n"
+        "# FastAPI dev server with hot-reload\n\n"
         "## Scenario & pain point\n"
-        "Why this matters. What triggered you to search it up.\n\n"
+        "Iterating on routes; manual server-restart-on-edit kills flow.\n\n"
         "## Core knowledge & first principles\n"
-        "Metal Performance Shaders backend, cousin to CUDA.\n\n"
+        "uvicorn = ASGI server. `--reload` runs a watchdog that "
+        "kills + respawns workers on file change.\n\n"
         "## Execution — step-by-step\n"
-        "1. Install via conda nightly.\n"
-        "2. Use `torch.device('mps')`.\n"
-        "3. Flip `PYTORCH_ENABLE_MPS_FALLBACK=1` if ops are missing.\n\n"
+        "1. Dev: `uvicorn main:app --reload`.\n"
+        "2. Prod: `uvicorn main:app --host 0.0.0.0 --port 8000 "
+        "--workers 4` behind nginx.\n"
+        "3. Lock `--host` only when nginx is in front.\n\n"
         "## Avoid — pitfalls and edges\n"
-        "Sparse ops / some reductions -> CPU.\n\n"
+        "Don't use `--reload` in production. Don't expose `0.0.0.0` "
+        "directly to the internet.\n\n"
         "## Insight & mental model\n"
-        "Treat 'mps' like 'cuda' with gaps.\n\n"
+        "uvicorn = the ASGI process. nginx = the public face. They "
+        "have different jobs.\n\n"
         "## Summary\n"
-        "MPS on M2 = near-CUDA dev ergonomics with known gaps.\n",
+        "Dev: `--reload`. Prod: `--workers 4` behind nginx. Never "
+        "the same flags.\n",
         pick_if="you want cards a future-you can read cold and immediately "
                 "recomprehend, with narrative scaffolding.",
     )
@@ -895,10 +903,10 @@ def step_12_card_structure(cfg: WizardConfig) -> Optional[str]:
     ui.panel_example(
         "Detailed card (tail only — add after Standard's 6 sections)",
         "---\n"
-        "Related cards: M1 GPU benchmarking notes, CUDA-MPS diff summary\n\n"
-        "Contradictions: 2023 docs said 'experimental'; 2024 says GA\n\n"
-        "Open questions: does FAISS-GPU work on MPS yet?\n\n"
-        "Confidence: 0.85 (multi-source, 3 independent tests)\n",
+        "Related cards: ASGI vs WSGI primer, nginx reverse-proxy templates\n\n"
+        "Contradictions: 2022 fastapi docs hinted Gunicorn; 2024 says uvicorn-only\n\n"
+        "Open questions: does --workers play nice with --reload? (no — by design)\n\n"
+        "Confidence: 0.92 (official FastAPI docs + tested locally)\n",
         pick_if="decision-making / research projects; you want to track "
                 "confidence + related work + open threads alongside content. "
                 "Costs ~20% more per refine than Standard.",
