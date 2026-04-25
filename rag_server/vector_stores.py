@@ -514,24 +514,259 @@ class LanceDBStore(BaseVectorStore):
 
 
 # =========================================================
+# SqliteVecStore — embedded, single-file, near-zero deps
+# =========================================================
+
+class _SqliteVecUnavailable(BaseVectorStore):
+    """Stub returned when the `sqlite_vec` extension package isn't
+    installed. Same pattern as Chroma / LanceDB stubs: instantiation
+    succeeds, real calls hit a readable RuntimeError."""
+
+    name = "sqlite_vec"
+    _HINT = (
+        "sqlite-vec backend selected but `sqlite_vec` is not installed. "
+        "Run `pip install sqlite-vec` and restart the server. "
+        "Alternatively, `pip install throughline[sqlite-vec]` once the "
+        "extra is published."
+    )
+
+    def ensure_collection(self, *a, **kw): raise RuntimeError(self._HINT)
+    def upsert(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def search(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def delete(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def count(self, *a, **kw):              raise RuntimeError(self._HINT)
+
+
+class SqliteVecStore(BaseVectorStore):
+    """Lightest-weight credible vector backend — a single SQLite file
+    + the `sqlite-vec` loadable extension. Zero-server, zero Python-
+    level deps beyond `sqlite_vec` itself (sqlite3 is stdlib).
+
+    Schema per collection: TWO tables.
+      - `<name>_vec`  : vec0 virtual table, holds the embeddings.
+      - `<name>_meta` : (id TEXT PK, payload TEXT JSON, rowid INTEGER)
+                         maps vec0's integer rowid back to the
+                         daemon's string ids + JSON payload.
+
+    The two-table split is forced by vec0's API: it tracks vectors
+    by integer rowid only, and it doesn't store ancillary columns.
+    Any caller that wants to retrieve by string id or apply payload
+    filters has to maintain a parallel mapping. We do.
+    """
+
+    name = "sqlite_vec"
+
+    def __new__(cls, *a, **kw):
+        try:
+            import sqlite_vec  # noqa: F401
+        except Exception:
+            return _SqliteVecUnavailable()
+        return super().__new__(cls)
+
+    def __init__(self, path: Optional[str] = None) -> None:
+        import sqlite3
+        import sqlite_vec
+        self.path = path or os.getenv(
+            "SQLITE_VEC_PATH",
+            os.path.expanduser("~/throughline_runtime/sqlite-vec.db"),
+        )
+        # Make sure the parent dir exists (sqlite3 won't create it).
+        os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+        self._conn = sqlite3.connect(self.path)
+        self._conn.enable_load_extension(True)
+        sqlite_vec.load(self._conn)
+        self._conn.enable_load_extension(False)
+        self._vector_size: Dict[str, int] = {}
+
+    # --- helpers ---------------------------------------------------
+    def _vec_table(self, collection: str) -> str:
+        return f"{collection}_vec"
+
+    def _meta_table(self, collection: str) -> str:
+        return f"{collection}_meta"
+
+    def _vec_blob(self, vector: List[float]) -> bytes:
+        """Pack a Python list of floats into the byte format vec0
+        expects (little-endian float32). Stdlib `struct` keeps us
+        dep-free."""
+        import struct as _struct
+        return _struct.pack(f"{len(vector)}f", *(float(x) for x in vector))
+
+    # --- ABC methods -----------------------------------------------
+    def ensure_collection(self, name: str, vector_size: int,
+                            distance: str = "cosine") -> None:
+        # vec0's CREATE-VIRTUAL-TABLE syntax: vector column declared
+        # as `vec_type[N]` where vec_type is float / int8 / bit. We
+        # use float for fidelity-first; quantization is a v0.3
+        # optimisation.
+        self._vector_size[name] = int(vector_size)
+        self._conn.execute(
+            f"CREATE VIRTUAL TABLE IF NOT EXISTS {self._vec_table(name)} "
+            f"USING vec0(vector float[{int(vector_size)}])"
+        )
+        self._conn.execute(
+            f"CREATE TABLE IF NOT EXISTS {self._meta_table(name)} ("
+            f"  id TEXT PRIMARY KEY, payload TEXT, rowid INTEGER)"
+        )
+        self._conn.commit()
+
+    def upsert(self, collection: str,
+                points: List[Dict[str, Any]]) -> int:
+        if not points:
+            return 0
+        import json as _json
+        vec_table = self._vec_table(collection)
+        meta_table = self._meta_table(collection)
+        cur = self._conn.cursor()
+        n = 0
+        for p in points:
+            pid = str(p["id"])
+            payload = _json.dumps(p.get("payload") or {},
+                                    ensure_ascii=False)
+            blob = self._vec_blob(p["vector"])
+            # Look up existing rowid for this string id (if any).
+            existing = cur.execute(
+                f"SELECT rowid FROM {meta_table} WHERE id = ?", (pid,)
+            ).fetchone()
+            if existing is not None:
+                rowid = existing[0]
+                cur.execute(
+                    f"UPDATE {vec_table} SET vector = ? WHERE rowid = ?",
+                    (blob, rowid))
+                cur.execute(
+                    f"UPDATE {meta_table} SET payload = ? WHERE id = ?",
+                    (payload, pid))
+            else:
+                cur.execute(
+                    f"INSERT INTO {vec_table}(vector) VALUES (?)", (blob,))
+                rowid = cur.lastrowid
+                cur.execute(
+                    f"INSERT INTO {meta_table}(id, payload, rowid) "
+                    f"VALUES (?, ?, ?)", (pid, payload, rowid))
+            n += 1
+        self._conn.commit()
+        return n
+
+    def search(self, collection: str, vector: List[float],
+                limit: int = 10,
+                filter_: Optional[Dict[str, Any]] = None
+                ) -> List[SearchHit]:
+        import json as _json
+        vec_table = self._vec_table(collection)
+        meta_table = self._meta_table(collection)
+        # vec0 MATCH syntax: `WHERE vector MATCH ? AND k = ?`.
+        # `distance` is automatically populated for the result.
+        # We use `LIMIT ?` instead of vec0's `k = ?` parameter for
+        # broader vec0 version compat.
+        blob = self._vec_blob(vector)
+        rows = self._conn.execute(
+            f"SELECT v.rowid, v.distance, m.id, m.payload "
+            f"FROM {vec_table} v JOIN {meta_table} m ON m.rowid = v.rowid "
+            f"WHERE v.vector MATCH ? "
+            f"ORDER BY v.distance LIMIT ?",
+            (blob, int(limit)),
+        ).fetchall()
+        hits: List[SearchHit] = []
+        for _rowid, dist, sid, payload_raw in rows:
+            try:
+                payload = _json.loads(payload_raw or "{}")
+            except _json.JSONDecodeError:
+                payload = {}
+            if filter_:
+                # Same Qdrant-shape `must` clause translation as
+                # LanceDBStore — applied client-side.
+                want = {}
+                for clause in (filter_.get("must") or []):
+                    k = clause.get("key")
+                    v = clause.get("match", {}).get("value")
+                    if k is not None:
+                        want[k] = v
+                skip = False
+                for k, v in want.items():
+                    if payload.get(k) != v:
+                        skip = True
+                        break
+                if skip:
+                    continue
+            # Convert distance → score (higher-is-better) so callers
+            # can sort descending uniformly across backends.
+            score = 1.0 - float(dist)
+            hits.append({"id": sid, "score": score, "payload": payload})
+        return hits
+
+    def delete(self, collection: str, point_ids: List[Any]) -> int:
+        if not point_ids:
+            return 0
+        vec_table = self._vec_table(collection)
+        meta_table = self._meta_table(collection)
+        cur = self._conn.cursor()
+        deleted = 0
+        for pid in point_ids:
+            sid = str(pid)
+            row = cur.execute(
+                f"SELECT rowid FROM {meta_table} WHERE id = ?", (sid,)
+            ).fetchone()
+            if row is None:
+                continue
+            rowid = row[0]
+            cur.execute(
+                f"DELETE FROM {vec_table} WHERE rowid = ?", (rowid,))
+            cur.execute(
+                f"DELETE FROM {meta_table} WHERE id = ?", (sid,))
+            deleted += 1
+        self._conn.commit()
+        return deleted
+
+    def count(self, collection: str,
+                filter_: Optional[Dict[str, Any]] = None) -> int:
+        meta_table = self._meta_table(collection)
+        if filter_ is None:
+            row = self._conn.execute(
+                f"SELECT COUNT(*) FROM {meta_table}").fetchone()
+            return int(row[0] if row else 0)
+        # Filtered count: pull payloads + count matches client-side.
+        # Same tradeoff as LanceDB — fine at RAG cardinality, not
+        # for analytical scans.
+        import json as _json
+        matched = 0
+        for (payload_raw,) in self._conn.execute(
+                f"SELECT payload FROM {meta_table}"):
+            try:
+                payload = _json.loads(payload_raw or "{}")
+            except _json.JSONDecodeError:
+                continue
+            ok = True
+            for clause in (filter_.get("must") or []):
+                k = clause.get("key")
+                v = clause.get("match", {}).get("value")
+                if k is not None and payload.get(k) != v:
+                    ok = False
+                    break
+            if ok:
+                matched += 1
+        return matched
+
+
+# =========================================================
 # Registry + factory
 # =========================================================
 
 _REGISTRY: Dict[str, Callable[[], BaseVectorStore]] = {
-    "qdrant":  QdrantStore,
-    "chroma":  ChromaStore,
-    "lancedb": LanceDBStore,
+    "qdrant":     QdrantStore,
+    "chroma":     ChromaStore,
+    "lancedb":    LanceDBStore,
+    "sqlite_vec": SqliteVecStore,
 }
 
 _ALIASES: Dict[str, str] = {
     # v0.3 expansion points — currently route to Qdrant so the wizard
     # can list them, the user can pick them, and nothing crashes.
-    # Real impls land in v0.3+. LanceDB shipped as a real impl in
-    # v0.2.x (moved out of this map).
+    # LanceDB + sqlite-vec shipped as real impls in v0.2.x (moved out
+    # of this map). The hyphen-spelling alias for sqlite-vec resolves
+    # to the underscore-spelled primary.
+    "sqlite-vec":  "sqlite_vec",
     "duckdb_vss":  "qdrant",
     "duckdb-vss":  "qdrant",
-    "sqlite_vec":  "qdrant",
-    "sqlite-vec":  "qdrant",
     "pgvector":    "qdrant",
     "none":        "qdrant",  # 'none' means "no vector store" — for
                                  # Notes-only mission. See rag_server

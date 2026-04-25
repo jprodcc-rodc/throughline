@@ -434,7 +434,7 @@ single environment variable (or the matching field in the wizard).
 |---|---|---|---|---|
 | Embedder | `EMBEDDER` | `bge-m3` (local torch) | `openai` | `nomic`, `minilm` native |
 | Reranker | `RERANKER` | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage`, `jina` native, `bge-reranker-v2-gemma` |
-| Vector store | `VECTOR_STORE` | `qdrant` | `chroma`, `lancedb` (optional deps — both embedded, zero-server) | `duckdb_vss`, `sqlite_vec`, `pgvector` |
+| Vector store | `VECTOR_STORE` | `qdrant` | `chroma`, `lancedb`, `sqlite_vec` (optional deps — embedded, zero-server) | `duckdb_vss`, `pgvector` |
 
 The local-default backends carry a ~4.6 GB one-time download each
 (see the pre-flight section above). The cloud alternates (`openai`,
@@ -450,11 +450,12 @@ collection with the matching schema.
 Install only the optional packages you need:
 
 ```bash
-pip install .[local]    # torch + transformers — needed for EMBEDDER=bge-m3
-pip install .[openai]   # openai client — needed for EMBEDDER=openai and ingest
-pip install .[chroma]   # chromadb — needed for VECTOR_STORE=chroma
-pip install .[lancedb]  # lancedb + pyarrow — needed for VECTOR_STORE=lancedb
-pip install .[all]      # everything (full local-only path)
+pip install .[local]      # torch + transformers — needed for EMBEDDER=bge-m3
+pip install .[openai]     # openai client — needed for EMBEDDER=openai and ingest
+pip install .[chroma]     # chromadb — needed for VECTOR_STORE=chroma
+pip install .[lancedb]    # lancedb + pyarrow — needed for VECTOR_STORE=lancedb
+pip install .[sqlite-vec] # sqlite-vec — needed for VECTOR_STORE=sqlite_vec
+pip install .[all]        # everything (full local-only path)
 ```
 
 ---

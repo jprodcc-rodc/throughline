@@ -78,6 +78,11 @@ lancedb = [
     "lancedb>=0.6",
     "pyarrow>=14",
 ]
+# Alternate VECTOR_STORE backend (single SQLite file + loadable extension;
+# lightest-weight credible vector backend — runs on a Raspberry Pi).
+sqlite-vec = [
+    "sqlite-vec>=0.1",
+]
 # Convenience: install everything (full local-only path).
 all = [
     "torch>=2.0",
@@ -86,6 +91,7 @@ all = [
     "chromadb>=0.5",
     "lancedb>=0.6",
     "pyarrow>=14",
+    "sqlite-vec>=0.1",
     "uvicorn[standard]>=0.27",
 ]
 # Test + lint dev tooling.

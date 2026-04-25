@@ -42,11 +42,18 @@ class TestCreateVectorStore:
     def test_alias_routing_to_qdrant(self):
         """v0.3 expansion points route to Qdrant for now. The wizard
         can list them; the user can pick them without crashing.
-        (lancedb moved out — shipped as a real impl in v0.2.x.)"""
-        for alias in ("duckdb_vss", "duckdb-vss",
-                       "sqlite_vec", "sqlite-vec", "pgvector", "none"):
+        (lancedb + sqlite_vec moved out — shipped as real impls in
+        v0.2.x.)"""
+        for alias in ("duckdb_vss", "duckdb-vss", "pgvector", "none"):
             s = vs.create_vector_store(alias)
             assert s.name == "qdrant", f"{alias} failed to resolve"
+
+    def test_sqlite_vec_hyphen_alias_routes_to_underscore(self):
+        """`sqlite-vec` (hyphen, the spelling on the project's site)
+        is an alias to the underscore-spelled primary."""
+        s = vs.create_vector_store("sqlite-vec")
+        # Stub or real, the name field is the underscore form.
+        assert s.name == "sqlite_vec"
 
     def test_unknown_raises(self):
         with pytest.raises(ValueError) as ei:
@@ -74,10 +81,9 @@ class TestCreateVectorStore:
 
     def test_available_lists_primaries_and_aliases(self):
         names = set(vs.available_vector_stores())
-        # Primaries include LanceDB as of v0.2.x (real impl, not alias).
-        assert {"qdrant", "chroma", "lancedb"}.issubset(names)
-        assert {"duckdb_vss", "sqlite_vec",
-                 "pgvector", "none"}.issubset(names)
+        # Primaries include LanceDB + sqlite_vec as of v0.2.x.
+        assert {"qdrant", "chroma", "lancedb", "sqlite_vec"}.issubset(names)
+        assert {"sqlite-vec", "duckdb_vss", "pgvector", "none"}.issubset(names)
 
 
 # ------- QdrantStore wire-level tests -------
@@ -599,6 +605,261 @@ class TestLanceDBStoreWithFakeLancedb:
     def test_empty_upsert_and_delete_shortcircuit(self, tmp_path, monkeypatch):
         self._inject_fake_lancedb(monkeypatch)
         s = vs.LanceDBStore(path=str(tmp_path))
+        s.ensure_collection("obs", 3)
+        assert s.upsert("obs", []) == 0
+        assert s.delete("obs", []) == 0
+
+
+# ------- SqliteVecStore behaviour — stub path when unavailable -------
+
+class TestSqliteVecStoreWithoutSqliteVec:
+    def test_stub_when_sqlite_vec_missing(self, monkeypatch):
+        """If sqlite_vec isn't importable, instantiation succeeds and
+        returns a stub; real calls raise RuntimeError with the
+        install hint."""
+        import builtins
+        real_import = builtins.__import__
+
+        def guard(name, *a, **kw):
+            if name == "sqlite_vec" or name.startswith("sqlite_vec."):
+                raise ImportError("sqlite_vec not installed (simulated)")
+            return real_import(name, *a, **kw)
+
+        monkeypatch.setattr(builtins, "__import__", guard)
+        s = vs.SqliteVecStore()
+        assert s.name == "sqlite_vec"
+        with pytest.raises(RuntimeError) as ei:
+            s.ensure_collection("x", 1024)
+        assert "sqlite-vec" in str(ei.value).lower() or \
+               "sqlite_vec" in str(ei.value).lower()
+
+
+class TestSqliteVecStoreWithFakeSqliteVec:
+    """Use real stdlib sqlite3 (in-memory) but fake the `sqlite_vec`
+    extension. The fake replaces vec0 virtual tables with regular
+    tables that keep the bytes blob; MATCH queries are emulated via
+    a Python UDF that ranks by L2 distance.
+
+    The trick: monkey-patch `sqlite3.Connection.execute` to rewrite
+    `CREATE VIRTUAL TABLE ... USING vec0(...)` into a regular CREATE
+    TABLE. The store's other SQL is portable as-is; only the MATCH
+    operator needs an emulation hook."""
+
+    def _inject_fake_sqlite_vec(self, monkeypatch):
+        """Replaces `sqlite_vec` + wraps `sqlite3.connect` to return a
+        proxy that simulates vec0 (CREATE VIRTUAL TABLE ... USING
+        vec0 → regular table; vector MATCH → Python-side L2 ranking).
+
+        This is a pragmatic test rig — it doesn't validate the SQL
+        we'd actually send to a real sqlite-vec install, but it does
+        validate every code path in SqliteVecStore that doesn't
+        involve the extension's actual implementation."""
+        import types
+        import math as _math
+        import struct as _struct
+        import re as _re
+        import sqlite3 as _sqlite3
+
+        fake_sv = types.ModuleType("sqlite_vec")
+        fake_sv.load = lambda _conn: None  # the proxy below handles it
+        monkeypatch.setitem(sys.modules, "sqlite_vec", fake_sv)
+
+        real_connect = _sqlite3.connect
+
+        class _ProxyCursor:
+            def __init__(self, rows):
+                self._rows = list(rows)
+
+            def fetchall(self):
+                return self._rows
+
+            def fetchone(self):
+                return self._rows[0] if self._rows else None
+
+        class _ProxyConn:
+            def __init__(self, real):
+                self._real = real
+                # Track autoincrement rowid per table for inserts that
+                # land in our rewritten vec0 tables (which have an
+                # explicit AUTOINCREMENT rowid column).
+                self._next_rowid = {}
+
+            def enable_load_extension(self, _flag):
+                pass
+
+            def execute(self, sql, params=()):
+                # Rewrite vec0 CREATE → regular table.
+                if "USING vec0" in sql or "using vec0" in sql:
+                    m = _re.search(
+                        r"CREATE\s+VIRTUAL\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?"
+                        r"(\w+)\s+USING\s+vec0\(",
+                        sql, _re.IGNORECASE)
+                    if m:
+                        table = m.group(1)
+                        return self._real.execute(
+                            f"CREATE TABLE IF NOT EXISTS {table} ("
+                            f" rowid INTEGER PRIMARY KEY AUTOINCREMENT,"
+                            f" vector BLOB)")
+                # Handle MATCH queries: parse + Python-side ranking.
+                if "MATCH" in sql.upper() and params:
+                    return self._exec_match_query(sql, params)
+                return self._real.execute(sql, params)
+
+            def cursor(self):
+                # Wrap a real cursor with the same execute logic.
+                real_cur = self._real.cursor()
+                proxy = self  # noqa
+
+                class _CurProxy:
+                    def __init__(self):
+                        self.lastrowid = None
+
+                    def execute(self, sql, params=()):
+                        if "USING vec0" in sql or "using vec0" in sql:
+                            return proxy.execute(sql, params)
+                        if "MATCH" in sql.upper() and params:
+                            return proxy._exec_match_query(sql, params)
+                        real_cur.execute(sql, params)
+                        self.lastrowid = real_cur.lastrowid
+                        return real_cur
+
+                    def fetchone(self):
+                        return real_cur.fetchone()
+
+                    def fetchall(self):
+                        return real_cur.fetchall()
+
+                return _CurProxy()
+
+            def commit(self):
+                self._real.commit()
+
+            def _exec_match_query(self, sql, params):
+                # Expected shape (matches SqliteVecStore.search()):
+                #   SELECT v.rowid, v.distance, m.id, m.payload
+                #   FROM <vec> v JOIN <meta> m ON m.rowid = v.rowid
+                #   WHERE v.vector MATCH ? ORDER BY v.distance LIMIT ?
+                m = _re.search(
+                    r"FROM\s+(\w+)\s+v\s+JOIN\s+(\w+)\s+m\b",
+                    sql, _re.IGNORECASE)
+                assert m, f"unrecognized MATCH query: {sql}"
+                vec_table = m.group(1)
+                meta_table = m.group(2)
+                blob = params[0]
+                limit = int(params[1]) if len(params) > 1 else 10
+                size = len(blob) // 4
+                qvec = _struct.unpack(f"{size}f", blob)
+                vecs = self._real.execute(
+                    f"SELECT rowid, vector FROM {vec_table}").fetchall()
+                scored = []
+                for rowid, vblob in vecs:
+                    if vblob is None:
+                        continue
+                    rsize = len(vblob) // 4
+                    rvec = _struct.unpack(f"{rsize}f", vblob)
+                    d = _math.sqrt(sum(
+                        (float(a) - float(b)) ** 2
+                        for a, b in zip(qvec, rvec)))
+                    scored.append((rowid, d))
+                scored.sort(key=lambda r: r[1])
+                scored = scored[:limit]
+                results = []
+                for rowid, dist in scored:
+                    row = self._real.execute(
+                        f"SELECT id, payload FROM {meta_table} "
+                        f"WHERE rowid = ?", (rowid,)).fetchone()
+                    if row is None:
+                        continue
+                    results.append((rowid, dist, row[0], row[1]))
+                return _ProxyCursor(results)
+
+        def _proxy_connect(path, *args, **kwargs):
+            return _ProxyConn(real_connect(path, *args, **kwargs))
+
+        monkeypatch.setattr(_sqlite3, "connect", _proxy_connect)
+
+    def test_upsert_and_search_roundtrip(self, tmp_path, monkeypatch):
+        self._inject_fake_sqlite_vec(monkeypatch)
+        s = vs.SqliteVecStore(path=str(tmp_path / "vec.db"))
+        s.ensure_collection("obs", vector_size=3, distance="cosine")
+        n = s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"t": "one"}},
+            {"id": "b", "vector": [0.4, 0.5, 0.6], "payload": {"t": "two"}},
+        ])
+        assert n == 2
+        hits = s.search("obs", [0.1, 0.2, 0.3], limit=5)
+        assert len(hits) == 2
+        assert {h["id"] for h in hits} == {"a", "b"}
+        # Nearest result returns highest score.
+        assert hits[0]["id"] == "a"
+        assert hits[0]["score"] > hits[1]["score"]
+        assert hits[0]["payload"] == {"t": "one"}
+
+    def test_upsert_updates_in_place(self, tmp_path, monkeypatch):
+        self._inject_fake_sqlite_vec(monkeypatch)
+        s = vs.SqliteVecStore(path=str(tmp_path / "vec.db"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"v": 1}},
+        ])
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"v": 2}},
+        ])
+        assert s.count("obs") == 1  # update, not duplicate insert.
+        hits = s.search("obs", [0.1, 0.2, 0.3], limit=5)
+        assert hits[0]["payload"] == {"v": 2}
+
+    def test_delete(self, tmp_path, monkeypatch):
+        self._inject_fake_sqlite_vec(monkeypatch)
+        s = vs.SqliteVecStore(path=str(tmp_path / "vec.db"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3]},
+            {"id": "b", "vector": [0.4, 0.5, 0.6]},
+        ])
+        assert s.count("obs") == 2
+        assert s.delete("obs", ["a"]) == 1
+        assert s.count("obs") == 1
+        # Deleting a non-existent id is a no-op (returns 0).
+        assert s.delete("obs", ["nope"]) == 0
+
+    def test_search_filter_must_clause(self, tmp_path, monkeypatch):
+        self._inject_fake_sqlite_vec(monkeypatch)
+        s = vs.SqliteVecStore(path=str(tmp_path / "vec.db"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3],
+             "payload": {"knowledge_identity": "universal"}},
+            {"id": "b", "vector": [0.2, 0.3, 0.4],
+             "payload": {"knowledge_identity": "personal"}},
+        ])
+        hits = s.search(
+            "obs", [0.1, 0.2, 0.3], limit=5,
+            filter_={"must": [{"key": "knowledge_identity",
+                                "match": {"value": "universal"}}]})
+        assert len(hits) == 1
+        assert hits[0]["id"] == "a"
+
+    def test_count_with_filter(self, tmp_path, monkeypatch):
+        self._inject_fake_sqlite_vec(monkeypatch)
+        s = vs.SqliteVecStore(path=str(tmp_path / "vec.db"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p1"}},
+            {"id": "b", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p2"}},
+            {"id": "c", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p1"}},
+        ])
+        assert s.count("obs") == 3
+        n = s.count("obs", filter_={
+            "must": [{"key": "pack", "match": {"value": "p1"}}]})
+        assert n == 2
+
+    def test_empty_upsert_and_delete_shortcircuit(self, tmp_path, monkeypatch):
+        self._inject_fake_sqlite_vec(monkeypatch)
+        s = vs.SqliteVecStore(path=str(tmp_path / "vec.db"))
         s.ensure_collection("obs", 3)
         assert s.upsert("obs", []) == 0
         assert s.delete("obs", []) == 0

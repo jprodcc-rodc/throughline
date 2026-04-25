@@ -22,8 +22,16 @@ pre-1.0 minor bumps can include breaking config shape changes.
   returned when the optional dep is missing so the wizard can list
   it without an import-time crash. 7 tests
   (`TestLanceDBStoreWithoutLancedb` + `TestLanceDBStoreWithFakeLancedb`).
-  `duckdb_vss` / `sqlite_vec` / `pgvector` remain alias-to-Qdrant
-  stubs for v0.3 (good-first-issues #9/#10/#11 opened).
+- **sqlite-vec** is a first-class `VECTOR_STORE` backend (closes #11)
+  — single SQLite file + the `sqlite-vec` loadable extension, the
+  lightest-weight credible backend. Runs on a Raspberry Pi; sqlite3
+  is stdlib so the only dep is `sqlite-vec` itself. Two-table schema
+  (vec0 virtual table for embeddings + companion meta table mapping
+  rowids back to string ids + JSON payloads). `_SqliteVecUnavailable`
+  stub when missing. 7 tests using a sqlite3.connect proxy that
+  emulates vec0's MATCH operator with Python-side L2 ranking.
+  `duckdb_vss` / `pgvector` remain alias-to-Qdrant stubs for v0.3
+  (good-first-issues #9/#10 still open).
 - **`throughline_cli refine --dry-run <path.md>`** — zero-cost
   refiner-prompt preview. Parses a raw conversation, reports which
   slicer tier WOULD fire + which model, and prints the refiner
