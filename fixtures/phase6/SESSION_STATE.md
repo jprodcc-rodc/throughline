@@ -2,10 +2,43 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-26 (continued) — Pluggable-backend arc
-fully closed: all 4 originally-aliased vector backends + both
-remaining native rerankers + U27.5/.7 taxonomy growth surfaces
-shipped. 848 → 899 tests (+51) across 6 additional commits.
+**Last updated:** 2026-04-26 (third stretch) — Wizard UX wave
+(T1+T2+T3 + back nav + provider/key gate + "Other" model escape
+hatch + run-time taxonomy derivation) + provider model audit +
+README polish (mermaid → ASCII, hero/screenshot anchors, why-section
+moved up). Tests: 899 → 1304+. **User parked further wizard work**;
+focus shifted to distribution / GitHub homepage / hero GIF.
+
+## 🔴 Cross-session resume order
+
+If picking this up cold, read in this order:
+
+1. **This file** (you're here).
+2. **CHANGELOG.md `[Unreleased]` section** — every commit since v0.2.0.
+3. `git log --oneline -40 main` — fresh state from main.
+4. `python -m pytest fixtures/ -q` — confirm CI-equivalent passes
+   locally before any change.
+
+**Latest commit on main**: `8371de3` (README polish — mermaid →
+ASCII split into two diagrams, why-this-exists moved up, long
+card example + provider table collapsed behind `<details>`,
+hero/screenshot anchors prepared).
+
+## 🟡 What the user is currently doing (mid-flight)
+
+- ☑ Code-side wizard UX work **PARKED** by user explicit signal.
+  Wizard tests 1304 green; remaining polish (back nav for
+  ask_yes_no / ask_text / step 7 reranker / dial pickers)
+  intentionally NOT shipped. Pick up later via TodoWrite if user
+  re-prioritizes.
+- ☐ User is recording **Hero GIF + screenshots** for README.
+  Anchors already prepared in README.md (commented-out
+  `<!-- ... -->` blocks pointing to `docs/assets/hero.gif`,
+  `docs/assets/screenshot-recall-badge.png`). User uncomments
+  when files land.
+- ☐ Optional: GitHub homepage strategy work (repo description /
+  topics / pinned issues / launch message) — offered but not yet
+  picked up.
 
 ## ✅ Feature freeze LIFTED (2026-04-26)
 
@@ -61,26 +94,153 @@ Plus 3-item post-v0.2.0 polish round (2026-04-26):
     `678532c`) — typo detection with Levenshtein suggestions +
     `llm_provider` validated against the 16-entry registry.
 
+Plus pluggable-backend arc closure (2026-04-26 second stretch):
+13. ☑ **sqlite-vec native** (`ea1a478`, closes #11) — embedded,
+    sqlite3-stdlib + sqlite_vec extension. Lightest credible vector
+    backend.
+14. ☑ **DuckDB-VSS native** (`017240f`, closes #10) — embedded
+    analytical SQL + vector search.
+15. ☑ **pgvector native** (`39446e6`, closes #9) — server-based
+    Postgres + pgvector. **All 4 originally-aliased v0.3 backends
+    now first-class in v0.2.x**.
+16. ☑ **Voyage + Jina rerankers native** (`50acbba`) — moved out of
+    Cohere alias into real impls.
+17. ☑ **U27.5 (lite)** — pending-candidates surface in doctor
+    (`5528434`).
+18. ☑ **U27.7 (lite)** — zero-usage leaf detection (`ec32dae`).
+
+Plus wizard UX wave (2026-04-26 third stretch):
+19. ☑ **`--express` mode + step 16 cost projection** (`fc07ecd`,
+    `e6c3a4e`) — 1-command install with auto-detected provider +
+    cost-per-conversation summary (NO monthly extrapolation —
+    bursty usage makes that misleading).
+20. ☑ **T1: questionary arrow-key picker + T2: rich spinner**
+    (`c9b0e76`) — modern interactive UI for steps with auto-fallback
+    to legacy numbered input on non-TTY (CI / pytest) and
+    `THROUGHLINE_LEGACY_UI=1` opt-out for picky terminals.
+21. ☑ **T3: hierarchical summary tree at step 16** (`d7f6aea`) —
+    grouped 6-section view replacing flat KV cascade.
+22. ☑ **Defensive questionary fallback + demo script** (`9bf455f`,
+    `c1343ee`) — try/except around questionary on Windows mintty/
+    git-bash where prompt_toolkit's console probe fails;
+    `samples/demo_wizard_ui.py` for live UI preview.
+23. ☑ **questionary `default=` cursor positioning fix** (`621589f`)
+    — passing Choice instance broke positioning; now passes value
+    string. Affected steps 11 / 12 / 14 in particular (defaults
+    weren't first-of-list).
+24. ☑ **demo + README clarity** (`110fe58`, `185326a`) — demo
+    re-titled "UI component preview NOT install"; README mentions
+    `config validate` command.
+25. ☑ **wizard A+B+C polish wave** (`e9e464b`):
+    - **A**: step 12 picker shows card-shape examples in inline
+      single-line descriptions (panel_examples got clobbered by
+      questionary screen-takeover).
+    - **B**: step 4 + step 13 hard-block on provider/key mismatch.
+      User had `OPENROUTER_API_KEY` set, picked `gpt-5-mini`,
+      wizard hit OpenAI's endpoint, 401, then auto-skipped to
+      step 14 leaving them with broken config they didn't notice.
+      Now warn_box at step 4 ("Continue anyway?", default NO),
+      defensive double-check at step 13 entry too.
+    - **C**: BACK NAVIGATION. `ui.BackRequest` + `pick_option(...,
+      show_back=True)` + index-driven orchestrator that catches +
+      rewinds. Steps 3, 4, 5, 6, 7, 9, 11, 12, 14 opt in. Step 2
+      doesn't (first interactive). At first active step, "← Back"
+      re-fires same step instead of unwinding past index 0.
+26. ☑ **Provider model audit + universal Other escape hatch**
+    (`4977f59`) — caught hallucinations: `claude-opus-4-5-20250929`
+    doesn't exist (4.x track went 4.x preview → 4.7); Haiku 4.5
+    date was wrong (`20250929` → `20251001`); OpenRouter prefixes
+    for Grok/DeepSeek/Gemini uncertain so trimmed. Every preset's
+    model list now ends with `__OTHER__` → free-form ask_text
+    so users paste from official docs. Verification policy +
+    date written into providers.py docstring.
+27. ☑ **`derive_from_imports` runs DURING wizard** (`d5ad6ab`) —
+    used to be a config flag with no action; user had to remember
+    `python scripts/derive_taxonomy.py --from-imports ...`. Now
+    chains automatically at end of step 16's import. Step 14's
+    intro explicitly clarifies U27 self-growth is ALWAYS on
+    regardless of seed pick.
+28. ☑ **Adapter progress bars** (`73cf583`) — gemini / claude /
+    chatgpt all accept `progress_cb(phase, current, total)`.
+    Wizard wraps with rich.progress (bar + percent + ETA) on TTY,
+    falls back to spinner on non-TTY.
+29. ☑ **M2 Mac → FastAPI examples** (`73cf583`, `bd4b43a`) — step
+    11 + step 12 panel examples were hardcoded "PyTorch MPS on
+    M2 Mac" which users mistook for auto-detection. Swapped to
+    "FastAPI dev server with hot-reload" — device/OS-neutral.
+    `bd4b43a` also caught 4 more M2 Mac instances at step 12 the
+    first pass missed.
+30. ☑ **`--dry-run` for full wizard** (`1a52d4a`) — was express-only,
+    now full wizard supports it too. Walks all 16 steps, skips
+    final save() + import-adapter run.
+31. ☑ **README polish** (`8371de3`) — mermaid → two clean ASCII
+    diagrams (per-turn + per-conversation pipelines split for
+    clarity); long card example + LLM provider table collapsed
+    behind `<details>`; "Why this exists" promoted from line ~310
+    to line ~48 (convince before install); hero GIF + screenshot
+    anchors prepared as commented-out blocks.
+
 ## Human-action queue (items I literally cannot do)
 
-- **Hero GIF** — 10-15s three-scene demo. See the full storyboard
-  below under "Hero GIF spec".
+**Most urgent (highest leverage):**
+
+- **Hero GIF** — 10-15s three-scene demo. See storyboard below.
+  Anchor in README.md ready: `<!-- HERO GIF GOES HERE ... -->`.
+  When file lands at `docs/assets/hero.gif`, uncomment the
+  `![throughline hero demo]` line and the GIF surfaces above the
+  fold immediately.
+- **Wizard mid-flow screenshot** (5 min) — now that questionary
+  picker is pretty (T1+T2+T3 + bd4b43a polish), capture e.g.
+  step 3's vector-DB picker with cyan highlight + descriptions
+  visible. Save to `docs/assets/screenshot-wizard-step3.png`.
+- **OpenWebUI status badge screenshot** (5 min) — capture
+  `⚡ auto recall: 3 cards · conf=0.91` line above a real reply.
+  Anchor in README ready as commented-out
+  `<!-- ![OpenWebUI status badge](docs/assets/screenshot-recall-badge.png) -->`.
+  Strongest "this is what it actually does" visual.
+
+**Bigger lifts (do when you have a spare hour):**
+
 - **First YouTube video** — 4-6 min. Script outline below under
   "YouTube spec".
-- **Mermaid → PNG via excalidraw** — front-page diagram aesthetics.
-  User chose to defer the visual upgrade; README no longer has a
-  front-block mermaid anyway (replaced with before/after text), so
-  this is lower priority. Still tracked.
-- **Medical-scenario card example** — user asked for their
-  real (redacted) medical scenario. I declined to fabricate; kept
-  the keto-rebound scenario from the bundled samples/claude_sample.jsonl
-  as a placeholder. User can swap in their own redacted card at
-  README.md § "What a refined card looks like" anytime.
-- **Star the repo** from the user's own account.
-- **Pin 1-3 good-first-issue tickets** on the Issues tab.
-- **Watch → Custom** on the repo page (instructions given earlier).
-- **asciinema demo recording** via `samples/record_wizard_demo.sh`.
+- **GitHub repo metadata polish** — repo description currently
+  generic; could pin 1-3 good-first-issues to Issues tab; could
+  enable Discussions categories; "Watch → Custom" instructions
+  given earlier.
+- **Medical-scenario card example** — user asked for their real
+  (redacted) medical scenario. Kept keto-rebound from bundled
+  sample as a placeholder. User can swap any redacted card in at
+  README.md § "What a refined card looks like" — `<details>` block
+  shown by default after my polish, but content's the same.
 - **Post to HN / Reddit / X / awesome-lists** — user's voice.
+
+**Out of my reach (need a person):**
+
+- Star the repo from your own account.
+- asciinema demo recording via `samples/record_wizard_demo.sh`.
+
+## Parked work (wizard polish, by user signal 2026-04-26)
+
+User's verbatim: "把这个wizard弄到todo，以后再修" — wizard work
+parked, focus shifted to distribution. Pick up via TodoWrite when
+re-prioritized:
+
+- `ask_yes_no` doesn't support `show_back` (so steps 8/13/16 with
+  Y/N prompts can't go back via that prompt — but their picker
+  prompts already can).
+- `ask_text` doesn't support back either.
+- step 7's reranker pick (the SECOND picker within step 7) doesn't
+  show the back arrow — only embedder does. Going back from
+  step 7 means losing the reranker pick and re-doing both.
+- Dial pickers within step 13 (`_dial_panel`) don't show back —
+  they're sub-prompts within step 13, not standalone steps.
+- step 13 LLM-call failure auto-skips to step 14. By design (don't
+  block on a transient network blip), but UX-wise users want it
+  to halt visibly. The provider/key hard-block at step 4 + step
+  13 entry catches the most common case (mismatch); rate-limit
+  / network blips still silent-skip.
+- Reconfigure picker (`_reconfigure_picker`) doesn't have back
+  navigation either — it's a meta-picker for which steps to re-run.
 
 ## Hero GIF spec (user will record)
 
@@ -231,12 +391,22 @@ Anthropic native adapter `3b94051`).
 Fresh picklist (post-2026-04-26 round, after the long auto-mode
 stretch):
 
-All shipped this session:
+All shipped this session (cumulative):
 - ☑ duckdb_vss / sqlite_vec / pgvector native backends
 - ☑ `throughline_cli config validate` subcommand
 - ☑ Native Voyage / Jina rerankers
 - ☑ U27.5 (lite): doctor pending-candidates check
 - ☑ U27.7 (lite): zero-usage leaf detection
+- ☑ Wizard UX wave: T1 questionary picker / T2 spinner / T3 summary
+  tree / `--express` / `--dry-run` / back navigation / provider-key
+  hard-block / "Other" model escape hatch / cost projection
+- ☑ Provider model audit + verification policy in providers.py
+  docstring
+- ☑ `derive_from_imports` runs DURING wizard (not just config flag)
+- ☑ Adapter progress bars (gemini / claude / chatgpt)
+- ☑ M2 Mac → FastAPI examples in step 11 + step 12
+- ☑ README polish: mermaid → ASCII, hero/screenshot anchors, why
+  section moved up
 
 Still on the table (intentionally NOT picked up because they need
 real-world signal or user judgment):
@@ -255,6 +425,14 @@ real-world signal or user judgment):
 4. **U27.7 (full): merge proposal for similar leaves** — needs
    embedding-similarity, which means picking an embedder or
    reusing the active one; non-trivial. Deferred.
+5. **GitHub homepage strategy** — repo description still generic;
+   topics could be tightened; pin 1-3 good-first-issues to Issues
+   tab; Discussions categories to seed; first-week launch message
+   for HN/Reddit/X. Offered to user; not yet picked up.
+6. **Wizard polish remainders** (parked by user signal):
+   `ask_yes_no` / `ask_text` back support; step 7 reranker back;
+   dial pickers back; step 13 LLM-failure visible-halt; reconfigure
+   picker back. Pick up via TodoWrite when re-prioritized.
 
 Closed-out arcs:
 - Vector store pluggable backends: 4-of-4 originally-aliased
