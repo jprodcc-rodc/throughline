@@ -343,9 +343,24 @@ def pick_option(question: str,
     """Pick one of `options` (key, label, description tuples).
     Returns the chosen key. Auto-routes between the arrow-key
     questionary picker (real TTY) and the legacy numbered input
-    (CI / pytest / piped stdin / THROUGHLINE_LEGACY_UI=1)."""
+    (CI / pytest / piped stdin / THROUGHLINE_LEGACY_UI=1).
+
+    The questionary path is wrapped in a defensive try/except for
+    environments that pass the TTY check but trip the deeper
+    `prompt_toolkit` console probe (mintty / git-bash / cygwin /
+    weird PTY proxies on Windows). On any such failure we fall
+    back to the legacy picker rather than crashing the wizard."""
     if _use_questionary():
-        return _pick_option_arrow(question, options, default_key)
+        try:
+            return _pick_option_arrow(question, options, default_key)
+        except Exception as e:
+            console.print(
+                f"  [yellow]Arrow-key picker unavailable in this terminal "
+                f"({type(e).__name__}); using numbered picker instead.[/]"
+            )
+            console.print(
+                "  [dim]Set THROUGHLINE_LEGACY_UI=1 to skip this probe.[/]"
+            )
     return _pick_option_legacy(question, options, default_key)
 
 
@@ -365,7 +380,9 @@ def ask_text(question: str, default: str = "") -> str:
 
 def ask_yes_no(question: str, default: bool = True) -> bool:
     """Y/N prompt. Routes to questionary.confirm on real TTYs;
-    falls back to ask_text-based parsing for CI / pytest."""
+    falls back to ask_text-based parsing for CI / pytest. Same
+    defensive try/except as pick_option for terminals that pass
+    `isatty()` but trip prompt_toolkit's console probe."""
     if _use_questionary():
         try:
             import questionary
@@ -376,6 +393,10 @@ def ask_yes_no(question: str, default: bool = True) -> bool:
         except (KeyboardInterrupt, EOFError):
             console.print("\n[red]Aborted.[/]")
             sys.exit(130)
+        except Exception:
+            # Mintty / git-bash on Windows etc. — fall through
+            # to the text-based path.
+            pass
     default_s = "Y/n" if default else "y/N"
     raw = ask_text(question, default_s).lower()
     if raw in ("y", "yes"):
