@@ -108,6 +108,31 @@ def step_02_mission(cfg: WizardConfig) -> Optional[str]:
     return None
 
 
+_VECTOR_DB_DEP_HINT: dict[str, tuple[tuple[str, ...], str]] = {
+    # vector_db key -> (importable module names, install hint)
+    "chroma":     (("chromadb",),                  "pip install chromadb"),
+    "lancedb":    (("lancedb", "pyarrow"),         "pip install lancedb pyarrow  (or `pip install throughline[lancedb]`)"),
+    "duckdb_vss": (("duckdb",),                    "pip install duckdb           (or `pip install throughline[duckdb-vss]`)"),
+    "sqlite_vec": (("sqlite_vec",),                "pip install sqlite-vec       (or `pip install throughline[sqlite-vec]`)"),
+    "pgvector":   (("psycopg",),                   "pip install 'psycopg[binary]' (or `pip install throughline[pgvector]`)"),
+}
+
+
+def _check_vector_db_available(vector_db: str) -> tuple[bool, str]:
+    """Return (available, hint). Available=False when an optional dep
+    is missing; hint is the user-facing install command."""
+    deps_hint = _VECTOR_DB_DEP_HINT.get(vector_db)
+    if not deps_hint:
+        return True, ""  # qdrant uses stdlib urllib; nothing to check.
+    deps, hint = deps_hint
+    for d in deps:
+        try:
+            __import__(d)
+        except ImportError:
+            return False, hint
+    return True, ""
+
+
 def step_03_vector_db(cfg: WizardConfig) -> Optional[str]:
     """U21 — skipped for Notes-only missions."""
     if cfg.mission == "notes_only":
@@ -126,6 +151,25 @@ def step_03_vector_db(cfg: WizardConfig) -> Optional[str]:
         ],
         default_key="qdrant" if cfg.privacy != "local_only" else "chroma",
     )
+    # --- proactive optional-dep check (catches the silent-stub trap)
+    available, hint = _check_vector_db_available(cfg.vector_db)
+    if not available:
+        ui.info_line(
+            f"[yellow]Heads-up:[/] {cfg.vector_db!r} is selected but its "
+            f"Python dep is not installed. Without it, the daemon's first "
+            f"refine will raise RuntimeError. Run:\n  {hint}"
+        )
+    # --- pgvector-specific: needs a DSN to a running Postgres
+    if cfg.vector_db == "pgvector":
+        import os as _os
+        if not (_os.environ.get("PGVECTOR_DSN")
+                or _os.environ.get("DATABASE_URL")):
+            ui.info_line(
+                "[yellow]Heads-up:[/] PGVECTOR_DSN and DATABASE_URL are "
+                "both unset. The daemon will try "
+                "`postgresql://localhost/throughline` by default. Set "
+                "PGVECTOR_DSN to your real DB before starting the daemon."
+            )
     return None
 
 
@@ -241,6 +285,9 @@ def step_05_llm_provider(cfg: WizardConfig) -> Optional[str]:
     return None
 
 
+_LOCAL_PROVIDERS = frozenset({"ollama", "lm_studio", "generic"})
+
+
 def step_06_privacy(cfg: WizardConfig) -> Optional[str]:
     """U18 — privacy level, orthogonal to refine tier."""
     ui.step_header(6, TOTAL, "Privacy level")
@@ -253,11 +300,41 @@ def step_06_privacy(cfg: WizardConfig) -> Optional[str]:
         ],
         default_key="hybrid",
     )
+    # --- cross-step validation: local_only + cloud LLM provider is a
+    # contradiction the user almost certainly didn't intend.
+    if (cfg.privacy == "local_only"
+            and cfg.llm_provider not in _LOCAL_PROVIDERS):
+        ui.info_line(
+            f"[yellow]Conflict warning:[/] privacy=local_only but "
+            f"llm_provider={cfg.llm_provider!r} sends every refine call "
+            f"to a cloud endpoint. To honour local-only, re-run "
+            f"`python install.py --step 4` and pick `ollama` or `lm_studio` "
+            f"(or set up a generic localhost endpoint)."
+        )
+    # --- inverse: local LLM + cloud_max is harmless but probably an
+    # accident worth flagging once.
+    if (cfg.privacy == "cloud_max"
+            and cfg.llm_provider in _LOCAL_PROVIDERS):
+        ui.info_line(
+            f"[yellow]Heads-up:[/] privacy=cloud_max but "
+            f"llm_provider={cfg.llm_provider!r} is a local endpoint, so "
+            f"refine calls stay on this machine regardless. The "
+            f"cloud_max label only matters for embed/rerank."
+        )
     return None
 
 
 def step_07_retrieval(cfg: WizardConfig) -> Optional[str]:
-    """U12 + U20 — embedder + reranker paired."""
+    """U12 + U20 — embedder + reranker paired.
+
+    The KEYS below MUST match either rag_server.embedders._REGISTRY /
+    _ALIASES (embedder) or rag_server.rerankers._REGISTRY / _ALIASES
+    (reranker). The pick keys land in config.toml verbatim; the
+    daemon + rag_server look them up via create_embedder / create_reranker.
+    Picking a key that's not in the registry would fail at runtime
+    with a ValueError — see fixtures/v0_2_0/test_wizard_step7_keys.py
+    for the regression guard.
+    """
     if cfg.mission == "notes_only":
         ui.step_header(7, TOTAL, "Retrieval backend — SKIPPED (Notes-only)")
         return "SKIPPED"
@@ -265,23 +342,34 @@ def step_07_retrieval(cfg: WizardConfig) -> Optional[str]:
     cfg.embedder = ui.pick_option(
         "Embedder:",
         [
-            ("bge-m3",                       "BGE-M3 (local, 1024d)",                       "Default. 9/10 quality. ~8GB RAM."),
-            ("openai-text-embedding-3-large","OpenAI text-embedding-3-large (API, 3072d)",  "No local GPU."),
-            ("nomic-embed-text-v1.5",        "nomic-embed v1.5 (local, 768d)",              "Lighter, 8/10 quality."),
-            ("all-MiniLM-L6-v2",             "all-MiniLM-L6-v2 (local, 384d)",              "CPU-only minimum viable."),
-            ("voyage-3",                     "Voyage voyage-3 (API, 1024d)",                "Long-document retrieval."),
+            ("bge-m3", "BGE-M3 (local, 1024d)",
+             "Default. 9/10 quality. ~8GB RAM."),
+            ("openai", "OpenAI text-embedding-3-large (API, 3072d)",
+             "No local GPU. Set EMBEDDER_MODEL to pick a specific OpenAI model."),
+            ("nomic",  "nomic-embed v1.5 (local, 768d)",
+             "Lighter, 8/10 quality. v0.2.x routes via bge-m3."),
+            ("minilm", "all-MiniLM-L6-v2 (local, 384d)",
+             "CPU-only minimum viable. v0.2.x routes via bge-m3."),
+            ("voyage", "Voyage voyage-3 (API, 1024d)",
+             "Long-document retrieval. v0.2.x uses OpenAI-compat shape."),
         ],
         default_key="bge-m3",
     )
     cfg.reranker = ui.pick_option(
         "Reranker:",
         [
-            ("bge-reranker-v2-m3",    "BGE reranker v2-m3 (local)",     "Default. 9/10. 2.3GB model."),
-            ("bge-reranker-v2-gemma", "BGE reranker v2-gemma (local)",  "Newer, larger."),
-            ("cohere-rerank-v3",      "Cohere rerank-v3 (API)",         "No local RAM."),
-            ("voyage-rerank-2",       "Voyage rerank-2 (API)",          "Long-text friendly."),
-            ("jina-rerank-v2",        "Jina reranker v2 (API)",         "Cheapest API."),
-            ("skip",                  "Skip reranker (embedding-only)", "Fastest, least precise. 7/10."),
+            ("bge-reranker-v2-m3",    "BGE reranker v2-m3 (local)",
+             "Default. 9/10. 2.3GB model."),
+            ("bge-reranker-v2-gemma", "BGE reranker v2-gemma (local)",
+             "v0.2.x routes via bge-m3."),
+            ("cohere", "Cohere rerank-v3.5 (API)",
+             "No local RAM. Set COHERE_RERANK_MODEL to switch model."),
+            ("voyage", "Voyage rerank-2 (API)",
+             "Long-text friendly. Set VOYAGE_RERANK_MODEL to switch."),
+            ("jina",   "Jina reranker v2 (API, multilingual)",
+             "Multilingual default. Set JINA_RERANK_MODEL to switch."),
+            ("skip",   "Skip reranker (embedding-only)",
+             "Fastest, least precise. 7/10."),
         ],
         default_key="bge-reranker-v2-m3",
     )
