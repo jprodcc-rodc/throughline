@@ -1077,6 +1077,35 @@ def _run_adapter_for_real(cfg: WizardConfig) -> None:
         ui.kv_row("manifest", summary.manifest_path)
 
 
+# Per-tier per-conversation cost estimates (USD). Sources:
+# wizard step 11 prose + the daemon's MODEL_PRICING table + observed
+# typical conversation lengths (~3K input tokens, ~2K output tokens
+# per refine call, midpoint of the cost-spread examples).
+_TIER_COST_PER_CONV: dict[str, float] = {
+    "skim":   0.005,   # one Haiku call
+    "normal": 0.040,   # Sonnet 6-section
+    "deep":   0.200,   # Opus multi-pass + critique
+}
+# Median throughline alpha-user signal: ~10 conversations/day.
+# Heavy users hit ~40, light users hit ~3. The summary shows the
+# midpoint so users understand the order of magnitude without
+# pretending the wizard knows their actual usage.
+_ASSUMED_CONVS_PER_DAY = 10
+
+
+def _project_monthly_cost(refine_tier: str,
+                          convs_per_day: int = _ASSUMED_CONVS_PER_DAY
+                          ) -> tuple[float, float]:
+    """Return (monthly_cost, daily_cost) projection in USD given a
+    refine tier + assumed conversations per day. Uses the per-tier
+    cost-per-conv constants above. Best-effort estimate so the user
+    has a magnitude before they commit."""
+    per_conv = _TIER_COST_PER_CONV.get(refine_tier, 0.04)
+    daily = per_conv * convs_per_day
+    monthly = daily * 30
+    return monthly, daily
+
+
 def step_16_summary(cfg: WizardConfig) -> Optional[str]:
     ui.step_header(16, TOTAL, "Summary")
     ui.kv_row("mission", cfg.mission)
@@ -1099,6 +1128,19 @@ def step_16_summary(cfg: WizardConfig) -> Optional[str]:
     ui.kv_row("card_structure", cfg.card_structure)
     ui.kv_row("taxonomy_source", cfg.taxonomy_source)
     ui.kv_row("daily_budget_usd", f"${cfg.daily_budget_usd}")
+
+    # --- Monthly cost projection (the most-asked question) ----------
+    ongoing_monthly, ongoing_daily = _project_monthly_cost(cfg.refine_tier)
+    ui.print_blank()
+    ui.info_line(
+        f"[dim]Ongoing cost projection (after one-time import): "
+        f"~${ongoing_daily:.2f}/day, ~${ongoing_monthly:.0f}/month at "
+        f"{_ASSUMED_CONVS_PER_DAY} conversations/day on the {cfg.refine_tier} "
+        f"tier. Heavy users (~40 conv/day) ~{4*ongoing_monthly:.0f}; light "
+        f"users (~3 conv/day) ~{0.3*ongoing_monthly:.0f}. Daemon pauses at "
+        f"the daily cap (${cfg.daily_budget_usd}); rolls over at midnight.[/]"
+    )
+
     if not ui.ask_yes_no("Write this to ~/.throughline/config.toml"
                           + (" and run the import now" if cfg.import_source != "none" else "")
                           + "?", default=True):
@@ -1279,6 +1321,11 @@ Usage:
     python install.py                     Full run, but shows a
                                           reconfigure picker if a
                                           prior config exists.
+    python install.py --express           One-command install with
+                                          auto-detected provider + sane
+                                          defaults. No prompts. (~3 sec)
+    python install.py --express --dry-run Preview --express without
+                                          writing config.
     python install.py --step N            Re-run only step N.
     python install.py --step=N            Same, equals form.
     python install.py --reconfigure       Alias for the picker (skip
@@ -1289,6 +1336,8 @@ Usage:
 
 Examples:
     python install.py                     First-time setup
+    python install.py --express           Already exported an API key?
+                                          Skip the 16-step interview.
     python install.py --step 4            Change LLM provider only
     python install.py --step 13           Re-run first-card preview
     python install.py --step 15           Change daily budget cap
@@ -1430,6 +1479,102 @@ def _reconfigure_picker(cfg: WizardConfig) -> list[int]:
         return steps
 
 
+def run_express(dry_run: bool = False) -> int:
+    """Single-command install for the 'I have an API key, just give
+    me a working config' user. Auto-detects the LLM provider from
+    env, fills in sensible defaults for everything else, writes
+    config + prints the next-steps panel.
+
+    Returns:
+        0 on success, 2 if no provider key is detected and the user
+        needs to run the wizard normally to pick one.
+    """
+    from .config import save, WizardConfig
+    from . import providers as _providers
+
+    autodetected = _providers.detect_configured_provider()
+    if not autodetected:
+        ui.banner()
+        ui.section_title("Express install — no LLM key detected")
+        ui.print_blank()
+        ui.info_line(
+            "Express mode auto-detects whichever LLM provider's env "
+            "var is exported (OPENAI_API_KEY, ANTHROPIC_API_KEY, "
+            "OPENROUTER_API_KEY, …). None are set on this shell."
+        )
+        ui.info_line("")
+        ui.info_line(
+            "Either:\n"
+            "  1. Export an API key for one of the 16 supported "
+            "providers, then re-run [green]python install.py "
+            "--express[/].\n"
+            "  2. Run the full wizard ([green]python install.py[/]) "
+            "to pick a provider interactively, including ollama for "
+            "fully-local installs that don't need a cloud key."
+        )
+        return 2
+
+    preset = _providers.get_preset(autodetected)
+    cfg = WizardConfig(
+        mission="full",
+        vector_db="qdrant",
+        api_key_source="env",
+        llm_provider=autodetected,
+        llm_provider_id=preset.models[0][0] if preset.models else "",
+        privacy="local_only" if autodetected in ("ollama", "lm_studio")
+                else "hybrid",
+        embedder="bge-m3",
+        reranker="bge-reranker-v2-m3",
+        prompt_family=("claude" if "claude" in (preset.models[0][0]
+                                                 if preset.models
+                                                 else "").lower()
+                       else "gpt" if "gpt" in (preset.models[0][0]
+                                                if preset.models
+                                                else "").lower()
+                       else "generic"),
+        import_source="none",
+        refine_tier="normal",
+        card_structure="standard",
+        taxonomy_source="minimal",
+        daily_budget_usd=20.0,
+        completed_steps=list(range(1, 17)),
+    )
+
+    ui.banner()
+    ui.section_title(
+        f"Express install — auto-detected {preset.name}"
+        + ("  [DRY RUN]" if dry_run else ""))
+    ui.print_blank()
+    ui.info_line(f"[dim]LLM provider:[/] {preset.name} (env: {preset.env_var})")
+    ui.info_line(f"[dim]Model:[/]        {cfg.llm_provider_id or '(none)'}")
+    ui.info_line(f"[dim]Mission:[/]      {cfg.mission}")
+    ui.info_line(f"[dim]Privacy:[/]      {cfg.privacy}")
+    ui.info_line(f"[dim]Vector DB:[/]    {cfg.vector_db}")
+    ui.info_line(f"[dim]Refine tier:[/]  {cfg.refine_tier}")
+    ui.info_line(f"[dim]Daily budget:[/] ${cfg.daily_budget_usd}")
+    monthly, daily = _project_monthly_cost(cfg.refine_tier)
+    ui.info_line(f"[dim]Cost projection:[/] ~${daily:.2f}/day, "
+                  f"~${monthly:.0f}/month at "
+                  f"{_ASSUMED_CONVS_PER_DAY} conv/day")
+    ui.print_blank()
+
+    if dry_run:
+        ui.info_line("[yellow]DRY RUN: config NOT written. "
+                      "Re-run without --dry-run to commit.[/]")
+        return 0
+
+    path = save(cfg)
+    ui.info_line(f"[green]Config written:[/] {path}")
+    ui.print_blank()
+    _print_next_steps_panel(cfg)
+    ui.print_blank()
+    ui.info_line(
+        "[dim]Want to customize? Run [green]python install.py "
+        "--reconfigure[/][dim] to pick which steps to redo.[/]"
+    )
+    return 0
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     # Windows terminals default to GBK / cp1252; reconfigure stdio to UTF-8
     # so box characters + emoji render instead of crashing. Idempotent --
@@ -1439,6 +1584,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     only = None
     force_full = False
     force_picker = False
+    express = False
+    dry_run = False
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -1449,6 +1596,10 @@ def main(argv: Optional[list[str]] = None) -> int:
             force_full = True
         elif a == "--reconfigure":
             force_picker = True
+        elif a == "--express":
+            express = True
+        elif a == "--dry-run":
+            dry_run = True
         elif a.startswith("--step"):
             tail = a.split("=", 1)[1] if "=" in a else None
             if tail is None and i + 1 < len(argv):
@@ -1468,6 +1619,10 @@ def main(argv: Optional[list[str]] = None) -> int:
                 print(WIZARD_USAGE)
                 return 2
         i += 1
+
+    # --express short-circuits everything else (explicit user intent).
+    if express:
+        return run_express(dry_run=dry_run)
 
     # --step N short-circuits the picker (explicit user intent).
     if only is not None:

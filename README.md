@@ -60,17 +60,25 @@ Default `EMBEDDER=openai` + `RERANKER=skip` keeps the image to
 (`bge-m3` + reranker) path. Full walkthrough in
 [`docs/DEPLOYMENT.md` § Docker compose](docs/DEPLOYMENT.md#docker-compose-try-it-in-5-minutes).
 
-### Install wizard (16 steps, all-Enter defaults)
+### Install wizard (16 steps, all-Enter defaults — or 1-command express)
 
 ```bash
 git clone https://github.com/jprodcc-rodc/throughline.git
 cd throughline
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python install.py                                    # ← the 16-step wizard
+python install.py --express                          # ← already exported an API key? skip the 16-step interview
+# OR
+python install.py                                    # ← the full 16-step wizard
 ```
 
-What the wizard covers, in order: Python check → mission (Full /
+`--express` auto-detects whichever LLM provider env var you have
+exported (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`,
+…), fills sane defaults for everything else, prints a cost
+projection, and writes config in ~3 seconds. Run `--express --dry-run`
+to preview without committing.
+
+What the full wizard covers, in order: Python check → mission (Full /
 RAG-only / Notes-only) → vector DB → LLM provider → privacy level →
 embedder + reranker → prompt family → import source + path → import
 scan + cost estimate + **explicit privacy consent** → refine tier
