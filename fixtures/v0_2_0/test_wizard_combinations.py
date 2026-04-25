@@ -126,8 +126,9 @@ def _run_with_script(tmp_path, monkeypatch, answers: Dict[str, Any]):
 # Combination matrix
 # ============================================================
 
-# Keys are (substring of the prompt) -> answer.
-# We rely on the wizard's prompts being stable + readable English.
+# Keys are the (substring of the actual prompt the wizard emits) ->
+# answer. Substring matched lowercase; the matcher returns the first
+# matching entry, so list more-specific keys first.
 _BASE_ANSWERS: Dict[str, Any] = {
     # step 2 - mission (interactive subrule + numbered text picker)
     "mission": "full",
@@ -148,19 +149,14 @@ _BASE_ANSWERS: Dict[str, Any] = {
     "Override prompt family": "claude",
     # step 9 - import source
     "existing LLM chat history to import": "none",
-    # step 11 - refine tier
-    "refine tier": "normal",
-    "Refine tier": "normal",
-    "tier": "normal",
-    # step 12 - card structure
-    "card structure": "standard",
-    "Card structure": "standard",
-    # step 14 - taxonomy
-    "taxonomy seed": "minimal",
-    "Taxonomy": "minimal",
-    # step 15 - budget
-    "Daily budget": 20.0,
-    "daily budget": 20.0,
+    # step 11 - "How deep should the refiner think on each conversation?"
+    "How deep": "normal",
+    # step 12 - "Pick a card shape:"
+    "card shape": "standard",
+    # step 14 - "How should throughline pick card folders?"
+    "card folders": "minimal",
+    # step 15 - "Daily budget (USD)" (ask_text)
+    "Daily budget": "20.0",
     # step 16 - confirm
     "Save the config": True,
     "Confirm": True,
@@ -374,3 +370,216 @@ class TestWizardCombinations:
         # prompt_family auto-derives to claude
         assert cfg.prompt_family == "claude"
         self._verify_clean(tmp_path, cfg)
+
+
+# ============================================================
+# Exhaustive: every LLM provider with its default model
+# ============================================================
+
+import pytest as _pytest
+from throughline_cli.providers import list_presets as _list_presets
+
+
+@_pytest.fixture(scope="module")
+def all_provider_ids():
+    return [p.id for p in _list_presets()]
+
+
+@_pytest.mark.parametrize("provider_id",
+                            [p.id for p in _list_presets()])
+class TestEveryProviderDefaultModel:
+    """Exhaustive: every one of the 16 LLM providers must wizard
+    cleanly with its declared default model. Catches the
+    wizard.py-vs-providers.py drift class that broke step 7
+    (different shape, same root cause)."""
+
+    def _provider_preset(self, provider_id):
+        from throughline_cli.providers import get_preset
+        return get_preset(provider_id)
+
+    def test_default_model_round_trip(self, tmp_path, monkeypatch,
+                                        provider_id):
+        preset = self._provider_preset(provider_id)
+        # Generic provider has no preset model list; user supplies.
+        if not preset.models:
+            model = "custom-model-id"
+        else:
+            model = preset.models[0][0]
+
+        cfg, _ = _run_with_script(tmp_path, monkeypatch, _combo(
+            **{"LLM provider":  provider_id,
+                "Pick a model":  model,
+                "Model ID":      model,  # for generic free-form input
+                }
+        ))
+        assert cfg.llm_provider == provider_id
+        assert cfg.llm_provider_id == model
+        # The config must validate clean — including the new dynamic
+        # llm_provider validation (added in 678532c).
+        from throughline_cli import config as cfg_mod
+        import tomllib
+        config_path = tmp_path / ".throughline" / "config.toml"
+        raw = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        issues = cfg_mod.validate(raw)
+        assert issues == [], (
+            f"provider {provider_id!r} produced config issues: " +
+            "; ".join(f"{i.kind}:{i.key}" for i in issues))
+
+
+@_pytest.mark.parametrize("provider_id",
+                            [p.id for p in _list_presets() if p.models])
+def test_provider_prompt_family_auto_derives(tmp_path, monkeypatch,
+                                                provider_id):
+    """prompt_family auto-derivation in step 5 (lines 232-240 of
+    wizard.py). Each provider's default model must derive a valid
+    family — claude / gpt / gemini / generic."""
+    from throughline_cli.providers import get_preset
+    preset = get_preset(provider_id)
+    model = preset.models[0][0]
+    cfg, _ = _run_with_script(tmp_path, monkeypatch, _combo(
+        **{"LLM provider":  provider_id,
+            "Pick a model":  model,
+            "Model ID":      model,
+            }
+    ))
+    assert cfg.prompt_family in {"claude", "gpt", "gemini", "generic"}, (
+        f"provider {provider_id!r} model {model!r} derived "
+        f"unrecognized prompt_family {cfg.prompt_family!r}")
+
+
+# ============================================================
+# Exhaustive: every embedder × reranker combination
+# ============================================================
+
+# Mirror of step_07_retrieval keys (covered by the sibling
+# `test_wizard_keys_resolve.py`; this expands to every PAIR).
+_ALL_EMBEDDERS = ("bge-m3", "openai", "nomic", "minilm", "voyage")
+_ALL_RERANKERS = ("bge-reranker-v2-m3", "bge-reranker-v2-gemma",
+                   "cohere", "voyage", "jina", "skip")
+
+
+@_pytest.mark.parametrize("embedder", _ALL_EMBEDDERS)
+@_pytest.mark.parametrize("reranker", _ALL_RERANKERS)
+def test_every_embedder_reranker_pair(tmp_path, monkeypatch,
+                                          embedder, reranker):
+    """5 × 6 = 30 pairs. Each must produce a config that
+    (a) wizards cleanly, (b) validates, (c) resolves both
+    backends through their registries without ValueError."""
+    cfg, _ = _run_with_script(tmp_path, monkeypatch, _combo(
+        Embedder=embedder, Reranker=reranker,
+    ))
+    assert cfg.embedder == embedder
+    assert cfg.reranker == reranker
+
+    # Validate config.
+    from throughline_cli import config as cfg_mod
+    import tomllib
+    raw = tomllib.loads(
+        (tmp_path / ".throughline" / "config.toml").read_text(
+            encoding="utf-8"))
+    assert cfg_mod.validate(raw) == [], (
+        f"pair ({embedder}, {reranker}) failed validation")
+
+    # Resolve through registries — ImportError is OK (extras not
+    # installed in CI), ValueError is the registry-drift bug.
+    from rag_server import embedders as em
+    from rag_server import rerankers as rr
+    try:
+        em.create_embedder(embedder)
+    except ImportError:
+        pass
+    except ValueError as e:
+        raise AssertionError(
+            f"embedder {embedder!r} not in registry: {e}")
+    try:
+        rr.create_reranker(reranker)
+    except ImportError:
+        pass
+    except ValueError as e:
+        raise AssertionError(
+            f"reranker {reranker!r} not in registry: {e}")
+
+
+# ============================================================
+# Exhaustive: every refine_tier × card_structure combination
+# ============================================================
+
+_ALL_TIERS = ("skim", "normal", "deep")
+# `rag_optimized` is FORCED by mission=rag_only (step 12 returns
+# SKIPPED) — not user-pickable when mission=full. Tested separately.
+_ALL_CARD_STRUCTURES = ("compact", "standard", "detailed")
+
+
+@_pytest.mark.parametrize("tier", _ALL_TIERS)
+@_pytest.mark.parametrize("structure", _ALL_CARD_STRUCTURES)
+def test_every_tier_structure_pair(tmp_path, monkeypatch,
+                                      tier, structure):
+    """3 × 3 = 9 user-pickable pairs. Each writes config + validates."""
+    cfg, _ = _run_with_script(tmp_path, monkeypatch, _combo(
+        **{"How deep":   tier,
+            "card shape": structure}
+    ))
+    assert cfg.refine_tier == tier
+    assert cfg.card_structure == structure
+
+    from throughline_cli import config as cfg_mod
+    import tomllib
+    raw = tomllib.loads(
+        (tmp_path / ".throughline" / "config.toml").read_text(
+            encoding="utf-8"))
+    assert cfg_mod.validate(raw) == []
+
+
+def test_rag_only_forces_rag_optimized_card_structure(tmp_path, monkeypatch):
+    """The 4th card structure value, `rag_optimized`, is reachable
+    only via the mission=rag_only forced-path (step 12 SKIPPED)."""
+    cfg, _ = _run_with_script(tmp_path, monkeypatch,
+                                _combo(mission="rag_only"))
+    assert cfg.card_structure == "rag_optimized"
+    # Same validate sweep:
+    from throughline_cli import config as cfg_mod
+    import tomllib
+    raw = tomllib.loads(
+        (tmp_path / ".throughline" / "config.toml").read_text(
+            encoding="utf-8"))
+    assert cfg_mod.validate(raw) == []
+
+
+# ============================================================
+# Exhaustive: every taxonomy_source × privacy combination
+# ============================================================
+
+_ALL_TAXONOMY = ("minimal", "derive_from_vault", "derive_from_imports",
+                   "jd", "para", "zettel")
+_ALL_PRIVACY = ("local_only", "hybrid", "cloud_max")
+
+
+@_pytest.mark.parametrize("taxonomy", _ALL_TAXONOMY)
+@_pytest.mark.parametrize("privacy", _ALL_PRIVACY)
+def test_every_taxonomy_privacy_pair(tmp_path, monkeypatch,
+                                          taxonomy, privacy):
+    """6 × 3 = 18 pairs. Catches taxonomy_source values that aren't
+    in the WizardConfig schema (would land in config.toml as a typo
+    and fail validate())."""
+    # local_only privacy + cloud llm_provider would warn but not
+    # fail; pick ollama for clean local-only path.
+    provider = "ollama" if privacy == "local_only" else "openrouter"
+    model = ("llama3.3:70b" if provider == "ollama"
+             else "anthropic/claude-sonnet-4.6")
+
+    cfg, _ = _run_with_script(tmp_path, monkeypatch, _combo(
+        **{"card folders":      taxonomy,
+            "pipeline may hit":  privacy,
+            "LLM provider":      provider,
+            "Pick a model":      model,
+            }
+    ))
+    assert cfg.taxonomy_source == taxonomy
+    assert cfg.privacy == privacy
+
+    from throughline_cli import config as cfg_mod
+    import tomllib
+    raw = tomllib.loads(
+        (tmp_path / ".throughline" / "config.toml").read_text(
+            encoding="utf-8"))
+    assert cfg_mod.validate(raw) == []
