@@ -214,6 +214,58 @@ above the reply.
 
 ---
 
+## 💰 Cost expectations
+
+throughline costs whatever your chosen LLM / embedder / reranker
+providers charge — there's no throughline subscription on top. The
+wizard surfaces the unit cost up-front so you can decide before
+committing.
+
+### Per-conversation cost (refined into a card)
+
+| Tier | Approx cost per refine | What you get |
+|---|---|---|
+| **`skim`** | ~$0.005 | One Haiku call, 2-section card |
+| **`normal`** *(default)* | ~$0.040 | Sonnet 6-section card with full taxonomy routing |
+| **`deep`** | ~$0.200 | Opus multi-pass + critique + provenance audit |
+
+Numbers are calibrated against `MODEL_PRICING` in the daemon and a
+~3K-input / ~2K-output-token typical refine call. Your actual spend
+depends on (1) which provider you pick, (2) the conversation length
+distribution, and (3) how much of your existing chat history you
+backfill on the first import.
+
+### What this means in practice
+
+We deliberately don't extrapolate "$X/month" — real usage is bursty
+(10 hours one day, 20 idle days). Instead the wizard asks you to
+set a **daily USD cap** at step 16; the daemon pauses when the cap
+is hit and resumes at midnight. Cap suggestions:
+
+- **Light evaluator** ($5/day cap) — ~125 normal refines max/day.
+  Plenty for a 50-conversation backfill + ongoing daily use.
+- **Daily user** ($20/day cap, the default) — ~500 normal refines
+  max/day. Headroom for catching up on a year of history without
+  flagging.
+- **Power user with deep tier** ($50/day cap) — ~250 deep refines
+  or a mixed daily flow. Unusual; most users never hit it.
+
+Run `python -m throughline_cli cost` after a few days for actual
+measured spend per provider, per tier, per day.
+
+### Free local-only path
+
+If you pick `EMBEDDER=bge-m3` + `RERANKER=bge-reranker-v2-m3` +
+`VECTOR_STORE=qdrant` + `ollama` (or `lm_studio`) as the LLM
+backend, **nothing leaves your machine and nothing costs anything**
+beyond the disk + RAM + GPU time you already pay for. Hardware
+floor: ~8 GB RAM for inference; a discrete GPU helps refine speed
+but isn't required (CPU-only refines run at ~30–60s per card).
+This is the path the wizard's `local_only` privacy tier
+pre-configures.
+
+---
+
 ## 🃏 What a refined card looks like
 
 You ask in chat six months ago: *"I lost 12kg on strict keto but my
