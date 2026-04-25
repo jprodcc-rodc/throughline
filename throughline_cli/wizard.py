@@ -476,7 +476,8 @@ def _run_adapter_dry_run(cfg: WizardConfig):
     else:
         return None
     try:
-        summary = adp.run(path, dry_run=True, limit=_adapter_limit())
+        with ui.status(f"Scanning {cfg.import_source} export at {path}..."):
+            summary = adp.run(path, dry_run=True, limit=_adapter_limit())
     except Exception as e:
         ui.info_line(f"[red]Scan failed:[/] {type(e).__name__}: {e}")
         return None
@@ -864,13 +865,14 @@ def step_13_preview(cfg: WizardConfig) -> Optional[str]:
         )
         return None
     try:
-        content = llm.call_chat(
-            model_id=cfg.llm_provider_id,
-            system_prompt=system_prompt,
-            user_message=conv_body,
-            response_format={"type": "json_object"},
-            provider_id=cfg.llm_provider,
-        )
+        with ui.status(f"Calling {cfg.llm_provider_id} (one refine pass)..."):
+            content = llm.call_chat(
+                model_id=cfg.llm_provider_id,
+                system_prompt=system_prompt,
+                user_message=conv_body,
+                response_format={"type": "json_object"},
+                provider_id=cfg.llm_provider,
+            )
     except llm.LLMError as e:
         ui.info_line(f"[red]LLM call failed:[/] {e}")
         ui.info_line("Wizard continuing; real refine during daemon ingest may still work.")
@@ -1065,9 +1067,10 @@ def _run_adapter_for_real(cfg: WizardConfig) -> None:
         from .adapters import gemini_takeout as adp
     else:
         return
-    ui.info_line(f"Importing {cfg.import_source} export — this may take a moment...")
     try:
-        summary = adp.run(path, dry_run=False, limit=_adapter_limit())
+        with ui.status(f"Importing {cfg.import_source} export — "
+                        f"this may take a moment..."):
+            summary = adp.run(path, dry_run=False, limit=_adapter_limit())
     except Exception as e:
         ui.info_line(f"[red]Import failed:[/] {type(e).__name__}: {e}")
         return

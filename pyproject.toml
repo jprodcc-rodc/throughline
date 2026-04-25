@@ -55,6 +55,11 @@ dependencies = [
     "watchdog>=3.0",
     "rich>=13.0",
     "markdownify>=0.11",
+    # Wizard arrow-key picker (Tier-1 UX). Falls back to legacy
+    # numbered-input path on non-TTY (CI / pytest / piped stdin) so
+    # the dep is OPTIONAL at runtime — but listed as a default
+    # because every interactive install benefits from it.
+    "questionary>=2.0",
 ]
 
 [project.optional-dependencies]

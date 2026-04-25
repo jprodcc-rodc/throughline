@@ -36,6 +36,10 @@ watchdog>=3.0
 
 # --- install wizard (v0.2.0) ---
 rich>=13.0
+# Tier-1 UX: arrow-key picker for the 16-step wizard. Falls back to
+# legacy numbered input on non-TTY (CI / pytest / piped stdin) and on
+# THROUGHLINE_LEGACY_UI=1 so the dep is effectively optional at runtime.
+questionary>=2.0
 
 # --- Gemini Takeout adapter (v0.2.0) ---
 # Gemini's My Activity export stores responses as HTML; markdownify

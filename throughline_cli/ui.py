@@ -15,9 +15,18 @@ Colour palette (semantic, not decorative):
 The wizard must remain usable without colour. rich auto-detects
 non-TTY output (pipes, CI logs, `> out.txt`) and strips ANSI escapes;
 users who want to force plain output set NO_COLOR=1.
+
+UX layer 2 (added 2026-04-26):
+    pick_option / ask_yes_no transparently use `questionary` for
+    arrow-key navigation when stdin is a real TTY, falling back to
+    the legacy numbered-input path otherwise. CI / pytest / piped
+    stdin all hit the legacy path automatically — no test mock
+    rewrites needed. Users who hate the new picker can force the
+    legacy path with `THROUGHLINE_LEGACY_UI=1`.
 """
 from __future__ import annotations
 
+import os
 import sys
 from typing import Optional
 
@@ -31,6 +40,76 @@ from rich.text import Text
 # right in test captures; highlight=False so arbitrary '1.0' strings
 # aren't auto-coloured as numbers inside our messages.
 console = Console(highlight=False)
+
+
+def _is_real_tty() -> bool:
+    """Best-effort 'are we in front of a real human at a TTY' check.
+    Reused by `_use_questionary` and by the spinner — a non-TTY (CI,
+    pytest, redirected stdout) shouldn't render an animated spinner
+    that just emits hundreds of frames into the captured log."""
+    try:
+        return bool(sys.stdout.isatty() and sys.stdin.isatty())
+    except (AttributeError, ValueError):
+        return False
+
+
+class _NullStatus:
+    """Drop-in replacement for `console.status()` when we don't have
+    a TTY. Same context-manager interface, no animation."""
+    def __init__(self, message: str):
+        self.message = message
+
+    def __enter__(self):
+        # Print the message once so non-TTY users still see what
+        # the wizard is waiting on.
+        console.print(f"[dim]{self.message}[/]")
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def update(self, message: str) -> None:
+        console.print(f"[dim]{message}[/]")
+
+
+def status(message: str) -> "object":
+    """Spinner context manager for blocking operations (LLM call,
+    adapter run). Uses rich's animated `console.status` on real TTYs;
+    falls back to a static print on CI / pytest / piped output so test
+    captures stay clean.
+
+    Returns a context manager. Concrete type is either
+    `rich.status.Status` or `_NullStatus` — both expose the same
+    enter/exit/update API but they don't share a base class so the
+    return type is widened to `object` for the public surface."""
+    if _is_real_tty() and os.environ.get("THROUGHLINE_LEGACY_UI", "").strip() == "":
+        return console.status(f"[dim]{message}[/]", spinner="dots")
+    return _NullStatus(message)
+
+
+def _use_questionary() -> bool:
+    """Return True iff we should use questionary for prompts.
+
+    Falls back to legacy numbered input when:
+    - stdin isn't a TTY (CI, pytest, piped input) — the existing
+      `monkeypatch("builtins.input", ...)` test pattern works.
+    - THROUGHLINE_LEGACY_UI is set — opt-out for users on terminals
+      that mishandle the arrow-key navigation.
+    - questionary isn't installed — keeps the wizard working on
+      installs that skipped the optional dep.
+    """
+    if os.environ.get("THROUGHLINE_LEGACY_UI", "").strip():
+        return False
+    try:
+        if not sys.stdin.isatty():
+            return False
+    except (AttributeError, ValueError):
+        return False
+    try:
+        import questionary  # noqa: F401
+    except Exception:
+        return False
+    return True
 
 
 # ---------- headers / structure ----------
@@ -160,15 +239,12 @@ def kv_row(key: str, value: str) -> None:
 
 # ---------- prompts (keep input() underneath for testability) ----------
 
-def pick_option(question: str,
-                options: list[tuple[str, str, str]],
-                default_key: str) -> str:
-    """Numbered choice prompt.
-
-    options = [(key, label, description), ...]
-    Returns the chosen key. Stdin is read via builtins.input so tests
-    can monkeypatch it straight.
-    """
+def _pick_option_legacy(question: str,
+                          options: list[tuple[str, str, str]],
+                          default_key: str) -> str:
+    """The classic numbered-input picker. Used when stdin isn't a
+    TTY (pytest, CI, piped input) or when the user opts out via
+    THROUGHLINE_LEGACY_UI=1."""
     console.print(f"\n[bold]{question}[/]")
     default_idx = 1
     for i, (key, label, desc) in enumerate(options, 1):
@@ -190,6 +266,66 @@ def pick_option(question: str,
     return options[idx - 1][0]
 
 
+def _pick_option_arrow(question: str,
+                         options: list[tuple[str, str, str]],
+                         default_key: str) -> str:
+    """Arrow-key navigation via questionary. Real TTYs only.
+
+    Each option becomes a `Choice` whose visible title is
+    `<label>  —  <description>` (truncated so even a 16-provider list
+    fits on one line per item). The default option is pre-selected
+    so pressing Enter immediately accepts it (the Tier-1 UX win:
+    cursor is already on the recommended pick).
+    """
+    import questionary
+    from questionary import Choice
+
+    # Build choices with the default pre-selected. questionary uses
+    # Choice.title for display + Choice.value for the returned key.
+    choices = []
+    default_choice = None
+    for key, label, desc in options:
+        # Render label + dim description in the same line. Truncate
+        # description so the picker stays one-line-per-option.
+        if desc:
+            short_desc = desc if len(desc) <= 70 else desc[:67] + "..."
+            title_text = f"{label}  —  {short_desc}"
+        else:
+            title_text = label
+        c = Choice(title=title_text, value=key)
+        if key == default_key:
+            default_choice = c
+        choices.append(c)
+
+    try:
+        answer = questionary.select(
+            question,
+            choices=choices,
+            default=default_choice,
+            instruction="(↑/↓ to move · Enter to select)",
+            qmark="?",
+        ).unsafe_ask()
+    except (KeyboardInterrupt, EOFError):
+        console.print("\n[red]Aborted.[/]")
+        sys.exit(130)
+    if answer is None:
+        # questionary returns None on Ctrl-C in some flows.
+        return default_key
+    return answer
+
+
+def pick_option(question: str,
+                options: list[tuple[str, str, str]],
+                default_key: str) -> str:
+    """Pick one of `options` (key, label, description tuples).
+    Returns the chosen key. Auto-routes between the arrow-key
+    questionary picker (real TTY) and the legacy numbered input
+    (CI / pytest / piped stdin / THROUGHLINE_LEGACY_UI=1)."""
+    if _use_questionary():
+        return _pick_option_arrow(question, options, default_key)
+    return _pick_option_legacy(question, options, default_key)
+
+
 def ask_text(question: str, default: str = "") -> str:
     """Plain text input with default. Blue question, dim bracketed default."""
     suffix = f" [dim]\\[{default}][/]" if default else ""
@@ -205,6 +341,18 @@ def ask_text(question: str, default: str = "") -> str:
 
 
 def ask_yes_no(question: str, default: bool = True) -> bool:
+    """Y/N prompt. Routes to questionary.confirm on real TTYs;
+    falls back to ask_text-based parsing for CI / pytest."""
+    if _use_questionary():
+        try:
+            import questionary
+            return bool(questionary.confirm(
+                question, default=default,
+                qmark="?",
+            ).unsafe_ask())
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[red]Aborted.[/]")
+            sys.exit(130)
     default_s = "Y/n" if default else "y/N"
     raw = ask_text(question, default_s).lower()
     if raw in ("y", "yes"):
