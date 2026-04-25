@@ -514,6 +514,9 @@ Usage:
     python -m throughline_cli taxonomy              Status (non-interactive).
     python -m throughline_cli taxonomy review       Interactive approval loop.
     python -m throughline_cli taxonomy reject TAG   Reject a tag unattended.
+    python -m throughline_cli taxonomy zero-usage   List VALID_X_SET leaves
+                                                     with no cards in the vault
+                                                     (U27.7 deprecation hint).
 
 Environment:
     TAXONOMY_GROWTH_MIN_COUNT   minimum cards before a tag is proposed
@@ -524,6 +527,7 @@ Environment:
     TAXONOMY_GROWTH_WINDOW_DAYS observation window to scan
                                 (default: 14)
     THROUGHLINE_STATE_DIR       observation + history log location
+    THROUGHLINE_VAULT_ROOT      vault root for `zero-usage` scan
 """
 
 
@@ -571,6 +575,59 @@ def pending_candidates_count() -> int:
         return len(detect_candidates(observations, valid_x, rejected))
     except Exception:
         return 0
+
+
+def detect_zero_usage_leaves(valid_x: Optional[Iterable[str]] = None,
+                              vault_root: Optional[Path] = None
+                              ) -> List[str]:
+    """U27.7 — flag VALID_X_SET leaves with zero cards in the vault.
+
+    These are deprecation candidates: tags that the wizard / U13 /
+    U27.4 added at some point but that the user has never actually
+    refined into. Removing them keeps the taxonomy from accumulating
+    dead weight that the refiner has to ignore on every call.
+
+    Returns the sorted list of unused leaves. Empty list when the
+    vault is missing (we can't meaningfully say "this leaf is unused"
+    if there's no vault to count cards in).
+    """
+    valid = list(valid_x) if valid_x is not None else load_valid_x_from_config()
+    if not valid:
+        return []
+    try:
+        from . import stats as _stats
+        scan = _stats.scan_vault(root=vault_root)
+    except Exception:
+        return []
+    if not scan.get("vault_exists"):
+        return []
+    used = set(scan.get("by_domain", {}).keys())
+    return sorted(set(valid) - used)
+
+
+def cmd_zero_usage(out: Optional[Callable[[str], None]] = None) -> int:
+    """`throughline_cli taxonomy zero-usage` — print VALID_X_SET
+    leaves that have no cards in the vault."""
+    out = out or print
+    valid_x = load_valid_x_from_config()
+    if not valid_x:
+        out("VALID_X_SET is empty — nothing to evaluate. Run the wizard"
+            " first.")
+        return 0
+    unused = detect_zero_usage_leaves(valid_x=valid_x)
+    if not unused:
+        out(f"All {len(valid_x)} VALID_X_SET leaves have at least one"
+            " card. Nothing to deprecate.")
+        return 0
+    out(f"{len(unused)} of {len(valid_x)} VALID_X_SET leaves are unused"
+        " in the vault:")
+    for tag in unused:
+        out(f"  - {tag}")
+    out("")
+    out("These are deprecation candidates. Removing them from"
+        " config/taxonomy.py keeps the refiner's prompt lean. If you"
+        " expect to use them later, leave them alone — there's no harm.")
+    return 0
 
 
 def _prompt(label: str, reader: Callable[[str], str]) -> str:
@@ -653,6 +710,8 @@ def main(argv: List[str]) -> int:
             print("taxonomy reject: missing TAG argument", file=sys.stderr)
             return 2
         return cmd_reject_unattended(rest[0])
+    if head in ("zero-usage", "zero_usage"):
+        return cmd_zero_usage()
     print(f"Unknown taxonomy subcommand: {head!r}", file=sys.stderr)
     print(USAGE, file=sys.stderr)
     return 2

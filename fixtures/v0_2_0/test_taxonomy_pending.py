@@ -148,3 +148,129 @@ class TestCheckTaxonomyPending:
         from throughline_cli import doctor
         names = [c.__name__ for c in doctor.DEFAULT_CHECKS]
         assert "check_taxonomy_pending" in names
+
+
+# =========================================================
+# U27.7 — zero-usage leaf detection
+# =========================================================
+
+def _write_card(vault: Path, primary_x: str, title: str = "T",
+                 body: str = None) -> Path:
+    """Write a refined-card-shaped Markdown file the vault scanner
+    will recognise (frontmatter + ≥100 bytes of body)."""
+    p = vault / f"{primary_x.replace('/', '_')}_{title}.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    body = body or (
+        "# Scene & Pain Point\nReal scenario goes here.\n\n"
+        "# Core Knowledge & First Principles\nUseful structured content.\n\n"
+        "# Detailed Execution Plan\nStep one. Step two. Step three.\n\n"
+        "# Pitfalls & Boundaries\nWatch out for X.\n\n"
+        "# Insights & Mental Models\nFramework here.\n\n"
+        "# Length Summary\nShort recap of the above sections.\n"
+    )
+    p.write_text(
+        "---\n"
+        f"title: \"{title}\"\n"
+        f"primary_x: \"{primary_x}\"\n"
+        "form_y: \"y/Reference\"\n"
+        "z_axis: \"z/Node\"\n"
+        "---\n\n"
+        + body,
+        encoding="utf-8",
+    )
+    return p
+
+
+class TestDetectZeroUsageLeaves:
+    def test_no_vault_returns_empty(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT",
+                            str(tmp_path / "missing_vault"))
+        from throughline_cli import taxonomy as tx
+        out = tx.detect_zero_usage_leaves(valid_x=["A", "B", "C"])
+        assert out == []
+
+    def test_all_leaves_used_returns_empty(self, tmp_path, monkeypatch):
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(vault))
+        _write_card(vault, "AI/LLM", "card1")
+        _write_card(vault, "Tech/PKM", "card2")
+        from throughline_cli import taxonomy as tx
+        out = tx.detect_zero_usage_leaves(valid_x=["AI/LLM", "Tech/PKM"])
+        assert out == []
+
+    def test_some_leaves_unused(self, tmp_path, monkeypatch):
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(vault))
+        _write_card(vault, "AI/LLM", "card1")
+        # `Tech/PKM` and `Misc` have no cards.
+        from throughline_cli import taxonomy as tx
+        out = tx.detect_zero_usage_leaves(
+            valid_x=["AI/LLM", "Tech/PKM", "Misc"])
+        assert out == ["Misc", "Tech/PKM"]  # alphabetical
+
+    def test_empty_valid_x_returns_empty(self, tmp_path, monkeypatch):
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(vault))
+        from throughline_cli import taxonomy as tx
+        assert tx.detect_zero_usage_leaves(valid_x=[]) == []
+
+
+class TestCmdZeroUsage:
+    def test_no_unused_message(self, tmp_path, monkeypatch, capsys):
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(vault))
+        _write_card(vault, "AI/LLM", "c1")
+        from throughline_cli import taxonomy as tx
+        captured: list = []
+        rc = tx.cmd_zero_usage(out=captured.append)
+        # Patch valid_x via monkeypatch on load_valid_x_from_config
+        # so the test doesn't depend on the active taxonomy file.
+        # Re-run with explicit valid_x via monkeypatch shim.
+        monkeypatch.setattr(tx, "load_valid_x_from_config",
+                              lambda: ["AI/LLM"])
+        captured = []
+        rc = tx.cmd_zero_usage(out=captured.append)
+        assert rc == 0
+        joined = "\n".join(captured)
+        assert "All 1" in joined or "Nothing to deprecate" in joined
+
+    def test_unused_listed(self, tmp_path, monkeypatch):
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(vault))
+        _write_card(vault, "AI/LLM", "c1")
+        from throughline_cli import taxonomy as tx
+        monkeypatch.setattr(tx, "load_valid_x_from_config",
+                              lambda: ["AI/LLM", "Tech/PKM", "Misc"])
+        captured: list = []
+        rc = tx.cmd_zero_usage(out=captured.append)
+        assert rc == 0
+        joined = "\n".join(captured)
+        assert "Tech/PKM" in joined
+        assert "Misc" in joined
+        assert "deprecation" in joined.lower()
+
+    def test_empty_valid_x_message(self, tmp_path, monkeypatch):
+        from throughline_cli import taxonomy as tx
+        monkeypatch.setattr(tx, "load_valid_x_from_config",
+                              lambda: [])
+        captured: list = []
+        rc = tx.cmd_zero_usage(out=captured.append)
+        assert rc == 0
+        assert "empty" in "\n".join(captured).lower()
+
+    def test_dispatcher_routes_zero_usage(self, tmp_path, monkeypatch, capsys):
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(vault))
+        from throughline_cli import taxonomy as tx
+        monkeypatch.setattr(tx, "load_valid_x_from_config",
+                              lambda: ["AI/LLM"])
+        rc = tx.main(["zero-usage"])
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "AI/LLM" in out or "deprecate" in out.lower()

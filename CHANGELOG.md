@@ -45,6 +45,13 @@ pre-1.0 minor bumps can include breaking config shape changes.
   pointer to `python -m throughline_cli taxonomy review`); ok otherwise.
   The U27 loop's value collapses if users never run the review command;
   the doctor is the obvious place to remind them. 9 tests.
+- **U27.7 (lite): zero-usage leaf detection.** New
+  `taxonomy.detect_zero_usage_leaves()` helper + `taxonomy zero-usage`
+  CLI subcommand. Walks the vault, intersects `primary_x` frontmatter
+  against `VALID_X_SET`, and lists leaves with no cards as deprecation
+  candidates. Read-only — actual deprecation is a manual `taxonomy.py`
+  edit, mirroring the cautious philosophy of U27.4 (the user always
+  signs off on taxonomy mutations). 8 tests.
 - **Voyage + Jina rerankers** now ship as real `RERANKER` backends
   alongside Cohere — no longer alias to Cohere. Both follow the same
   `{index, relevance_score}` shape; `VoyageReranker` defaults to
