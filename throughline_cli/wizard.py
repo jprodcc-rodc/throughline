@@ -460,6 +460,85 @@ def _adapter_limit() -> Optional[int]:
         return None
 
 
+def _run_adapter_with_progress(adp, path, *, dry_run: bool):
+    """Run the import adapter wrapped in a rich.Progress UI.
+
+    Adapters that accept a `progress_cb` kwarg get a real progress
+    bar with bar + percent + ETA. Adapters that don't (older
+    signatures or future ones we haven't instrumented yet) fall back
+    to the simple spinner via `ui.status` — same code path the
+    wizard had before progress bars existed.
+
+    Why detect the kwarg instead of just calling: keeps the per-
+    adapter instrumentation incremental. Right now only
+    gemini_takeout.run() takes progress_cb; claude_export and
+    chatgpt_export will be added as users hit them.
+    """
+    import inspect as _inspect
+    try:
+        sig = _inspect.signature(adp.run)
+        supports_progress = "progress_cb" in sig.parameters
+    except (TypeError, ValueError):
+        supports_progress = False
+
+    if not supports_progress or not ui._is_real_tty():
+        # Fallback: legacy spinner. Also kicks in for non-TTY (CI /
+        # pytest / piped) so test captures stay clean.
+        with ui.status(f"Scanning export at {path}..."):
+            return adp.run(path, dry_run=dry_run, limit=_adapter_limit())
+
+    from rich.progress import (
+        Progress, SpinnerColumn, BarColumn,
+        TaskProgressColumn, TextColumn, TimeElapsedColumn,
+    )
+
+    # Human-readable label per phase key (adapters speak these). New
+    # phases auto-fall-back to a Title-cased version of the key.
+    _PHASE_LABELS = {
+        "scanning_events": "Scanning events",
+        "processing_days": "Processing days",
+        "processing":      "Processing conversations",
+    }
+
+    with Progress(
+        SpinnerColumn(style="cyan"),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        console=ui.console,
+        transient=False,
+    ) as progress:
+        # Tasks lazy-created on first emit per phase. Generic across
+        # claude / chatgpt (single phase) and gemini (two phases) —
+        # the wizard doesn't need to know what the adapter decides
+        # to emit, only how to render whatever phases show up.
+        tasks: dict = {}
+
+        def cb(phase: str, current: int, total: int) -> None:
+            label = _PHASE_LABELS.get(phase, phase.replace("_", " ").title())
+            if phase not in tasks:
+                # Lazy-create on first sighting. total=None marks
+                # indeterminate while we wait for a determinate tick.
+                tasks[phase] = progress.add_task(
+                    f"{label}...",
+                    total=total if total > 0 else None,
+                    start=True,
+                )
+                if total <= 0:
+                    return
+            tid = tasks[phase]
+            if total > 0:
+                # Determinate update: covers both progress mid-flight
+                # and the final tick (current==total fills the bar).
+                progress.update(tid, total=total, completed=current)
+            else:
+                progress.update(tid, completed=current)
+
+        return adp.run(path, dry_run=dry_run, limit=_adapter_limit(),
+                       progress_cb=cb)
+
+
 def _run_adapter_dry_run(cfg: WizardConfig):
     """Dispatch to the adapter's run() in dry-run mode; returns a
     summary dict (scanned/emitted/tokens/costs) or None on failure."""
@@ -476,8 +555,7 @@ def _run_adapter_dry_run(cfg: WizardConfig):
     else:
         return None
     try:
-        with ui.status(f"Scanning {cfg.import_source} export at {path}..."):
-            summary = adp.run(path, dry_run=True, limit=_adapter_limit())
+        summary = _run_adapter_with_progress(adp, path, dry_run=True)
     except Exception as e:
         ui.info_line(f"[red]Scan failed:[/] {type(e).__name__}: {e}")
         return None
@@ -590,13 +668,17 @@ def step_11_refine_tier(cfg: WizardConfig) -> Optional[str]:
              "Below: the SAME source conversation refined at each tier, "
              "showing what you pay for and what you get.")
 
+    # Note: examples are device/OS-neutral by design. Don't swap to
+    # platform-specific topics (M2 Mac, Windows registry, etc.) —
+    # users misread those as "the wizard detected my hardware".
     ui.subrule("[1] Skim — ~$0.005/conv (one Haiku call)")
     ui.panel_example(
-        "Skim output",
-        "# PyTorch MPS on M2 Mac\n\n"
-        "Use `torch.device('mps')`. Install via conda nightly channel. "
-        "Set `PYTORCH_ENABLE_MPS_FALLBACK=1` for unsupported ops.\n\n"
-        "`#pytorch`\n",
+        "Skim output (example — same for every user, not auto-detected)",
+        "# FastAPI dev server with hot-reload\n\n"
+        "Use `uvicorn main:app --reload`. The `--reload` flag watches "
+        "all Python files in the working directory. Drop it for "
+        "production and add `--workers 4` behind nginx instead.\n\n"
+        "`#fastapi` `#python`\n",
         pick_if="you want a searchable index of old chat history. Card "
                 "is a flashcard, not a knowledge note. Cost for 1,247 "
                 "imported conversations: ~$6.",
@@ -605,21 +687,29 @@ def step_11_refine_tier(cfg: WizardConfig) -> Optional[str]:
     ui.subrule("[2] Normal — ~$0.04/conv (Sonnet slice + refine + route · default)")
     ui.panel_example(
         "Normal output — the full 6-section skeleton",
-        "# PyTorch MPS on M2 Mac\n\n"
+        "# FastAPI dev server with hot-reload\n\n"
         "## Scenario & pain point\n"
-        "Why this matters. What triggered you to search it up.\n\n"
+        "You're iterating on routes; restarting the server after every "
+        "edit kills flow. Need autoreload that's also production-safe.\n\n"
         "## Core knowledge & first principles\n"
-        "Metal Performance Shaders backend, cousin to CUDA, dispatches via torch.\n\n"
+        "uvicorn is an ASGI server. `--reload` runs a watchdog that "
+        "kills + respawns workers on file change. Production uses "
+        "multiple workers behind a reverse proxy.\n\n"
         "## Execution — step-by-step\n"
-        "1. Install via conda nightly.\n"
-        "2. Use `torch.device('mps')`.\n"
-        "3. Flip `PYTORCH_ENABLE_MPS_FALLBACK=1` if ops are missing.\n\n"
+        "1. Dev: `uvicorn main:app --reload`.\n"
+        "2. Production: `uvicorn main:app --host 0.0.0.0 --port 8000 "
+        "--workers 4` behind nginx.\n"
+        "3. Lock the bind addr in `--host` only when nginx is in front.\n\n"
         "## Avoid — pitfalls and edges\n"
-        "Sparse ops / some reductions still hit CPU.\n\n"
+        "Don't use `--reload` in production (single worker, no signal "
+        "handling). Don't expose `0.0.0.0` directly to the internet.\n\n"
         "## Insight & mental model\n"
-        "Treat `mps` like `cuda` with a smaller op set.\n\n"
+        "uvicorn = the ASGI process. nginx = the public face. They have "
+        "different jobs; conflate them and you'll end up with a "
+        "dev-server in production.\n\n"
         "## Summary\n"
-        "MPS on M2 = near-CUDA dev ergonomics with known gaps.\n",
+        "Dev: `uvicorn ... --reload`. Prod: `--workers 4` behind nginx. "
+        "Never the same flags.\n",
         pick_if="daily use, readable cards, balanced quality/cost. "
                 "Cost for 1,247 imports: ~$48.",
     )
@@ -1068,9 +1158,7 @@ def _run_adapter_for_real(cfg: WizardConfig) -> None:
     else:
         return
     try:
-        with ui.status(f"Importing {cfg.import_source} export — "
-                        f"this may take a moment..."):
-            summary = adp.run(path, dry_run=False, limit=_adapter_limit())
+        summary = _run_adapter_with_progress(adp, path, dry_run=False)
     except Exception as e:
         ui.info_line(f"[red]Import failed:[/] {type(e).__name__}: {e}")
         return

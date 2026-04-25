@@ -329,10 +329,16 @@ def run(input_path: Path,
         dry_run: bool = False,
         import_tag: Optional[str] = None,
         limit: Optional[int] = None,
-        state_dir: Optional[Path] = None) -> ImportSummary:
+        state_dir: Optional[Path] = None,
+        progress_cb: Optional[callable] = None) -> ImportSummary:
     """Drive one Claude export -> raw MD conversion.
 
     Separate from cli() so tests can call this directly with a Path.
+
+    `progress_cb(phase, current, total)` (optional) is called every
+    100 conversations so the wizard can render a live progress bar.
+    Phase: `"processing"`. Total is 0 until known (Claude's JSONL
+    isn't pre-counted) — the wizard treats total=0 as indeterminate.
     """
     jsonl = _find_jsonl(input_path)
     out = out_dir or resolve_out_dir(None)
@@ -340,6 +346,9 @@ def run(input_path: Path,
     summary = ImportSummary(source="claude", import_tag=tag,
                             out_dir=str(out), dry_run=dry_run)
     emitted_ids: list[str] = []
+
+    if progress_cb:
+        progress_cb("processing", 0, 0)
 
     for i, conv in enumerate(iter_conversations(jsonl)):
         if limit is not None and i >= limit:
@@ -373,14 +382,20 @@ def run(input_path: Path,
                 summary.sample_paths.append(
                     str(target_path(out, conv_date, conv_id))
                 )
-            continue
-        path = target_path(out, conv_date, conv_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(body, encoding="utf-8")
-        summary.emitted += 1
-        emitted_ids.append(conv_id)
-        if len(summary.sample_paths) < 3:
-            summary.sample_paths.append(str(path))
+        else:
+            path = target_path(out, conv_date, conv_id)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body, encoding="utf-8")
+            summary.emitted += 1
+            emitted_ids.append(conv_id)
+            if len(summary.sample_paths) < 3:
+                summary.sample_paths.append(str(path))
+        if progress_cb and (i % 100) == 0:
+            progress_cb("processing", i, 0)
+
+    # Final tick — switches the bar to determinate / fills it.
+    if progress_cb:
+        progress_cb("processing", summary.scanned, summary.scanned)
 
     if not dry_run and summary.emitted > 0:
         write_manifest(out, summary, emitted_ids, state_dir=state_dir)

@@ -295,13 +295,24 @@ def run(input_path: Path,
         dry_run: bool = False,
         import_tag: Optional[str] = None,
         limit: Optional[int] = None,
-        state_dir: Optional[Path] = None) -> ImportSummary:
+        state_dir: Optional[Path] = None,
+        progress_cb: Optional[callable] = None) -> ImportSummary:
+    """Drive a ChatGPT export → raw MD conversion.
+
+    `progress_cb(phase, current, total)` (optional) ticks every 100
+    conversations. Phase: "processing". Total starts at 0 (the JSON
+    isn't pre-counted) and the wizard treats 0 as indeterminate;
+    the final tick passes total=current to fill the bar.
+    """
     json_path = _find_json(input_path)
     out = out_dir or resolve_out_dir(None)
     tag = import_tag or make_import_tag("chatgpt")
     summary = ImportSummary(source="chatgpt", import_tag=tag,
                             out_dir=str(out), dry_run=dry_run)
     emitted_ids: list[str] = []
+
+    if progress_cb:
+        progress_cb("processing", 0, 0)
 
     for i, conv in enumerate(iter_conversations(json_path)):
         if limit is not None and i >= limit:
@@ -335,14 +346,19 @@ def run(input_path: Path,
                 summary.sample_paths.append(
                     str(target_path(out, conv_date, conv_id))
                 )
-            continue
-        path = target_path(out, conv_date, conv_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(body, encoding="utf-8")
-        summary.emitted += 1
-        emitted_ids.append(conv_id)
-        if len(summary.sample_paths) < 3:
-            summary.sample_paths.append(str(path))
+        else:
+            path = target_path(out, conv_date, conv_id)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body, encoding="utf-8")
+            summary.emitted += 1
+            emitted_ids.append(conv_id)
+            if len(summary.sample_paths) < 3:
+                summary.sample_paths.append(str(path))
+        if progress_cb and (i % 100) == 0:
+            progress_cb("processing", i, 0)
+
+    if progress_cb:
+        progress_cb("processing", summary.scanned, summary.scanned)
 
     if not dry_run and summary.emitted > 0:
         write_manifest(out, summary, emitted_ids, state_dir=state_dir)

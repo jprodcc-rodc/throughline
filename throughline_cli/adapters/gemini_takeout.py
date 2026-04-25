@@ -290,12 +290,21 @@ def run(input_path: Path,
         dry_run: bool = False,
         import_tag: Optional[str] = None,
         limit: Optional[int] = None,
-        state_dir: Optional[Path] = None) -> ImportSummary:
+        state_dir: Optional[Path] = None,
+        progress_cb: Optional[callable] = None) -> ImportSummary:
     """Drive Gemini Takeout -> raw MD conversion.
 
     `limit` caps the number of EVENTS processed (not days). Useful for
     quick smoke tests on large exports (a 30K-event Gemini user can
     test with --limit 100 without waiting for the full ingest).
+
+    `progress_cb` (optional) is called at major phase transitions so
+    the wizard can render a real progress bar instead of just a
+    spinner. Signature: `progress_cb(phase: str, current: int,
+    total: int)`. Phases: "scanning_events" (current=event index,
+    total=0 means indeterminate, total=current means done) and
+    "processing_days" (current=day index, total=total day count).
+    No-op when None.
     """
     json_path = _find_activity_json(input_path)
     out = out_dir or resolve_out_dir(None)
@@ -308,6 +317,9 @@ def run(input_path: Path,
     # memory-wise; iter_events itself is a generator for the rare
     # huge case but we materialise here.
     events: list[dict] = []
+    if progress_cb:
+        # Indeterminate phase: we don't know event count up front.
+        progress_cb("scanning_events", 0, 0)
     for i, e in enumerate(iter_events(json_path)):
         if limit is not None and i >= limit:
             break
@@ -316,15 +328,28 @@ def run(input_path: Path,
             summary.skipped_malformed += 1
             continue
         events.append(e)
+        # Throttle to every 100 events — 30K-event reports flooded
+        # to a Progress task slow it down.
+        if progress_cb and (i % 100) == 0:
+            progress_cb("scanning_events", i, 0)
+    if progress_cb:
+        # Final tick: total = current => the bar fills.
+        progress_cb("scanning_events", len(events), len(events))
 
     buckets = _group_by_day(events)
+    n_days = len(buckets)
     emitted_ids: list[str] = []
 
-    for day in sorted(buckets.keys()):
+    if progress_cb:
+        progress_cb("processing_days", 0, n_days)
+
+    for day_idx, day in enumerate(sorted(buckets.keys()), start=1):
         day_events = buckets[day]
         title, messages, conv_id = _day_to_conversation(day, day_events)
         if not messages:
             summary.skipped_no_content += len(day_events)
+            if progress_cb:
+                progress_cb("processing_days", day_idx, n_days)
             continue
         body = render_markdown(
             title=title,
@@ -344,6 +369,8 @@ def run(input_path: Path,
                 summary.sample_paths.append(
                     str(target_path(out, day, conv_id))
                 )
+            if progress_cb:
+                progress_cb("processing_days", day_idx, n_days)
             continue
         path = target_path(out, day, conv_id)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -352,6 +379,8 @@ def run(input_path: Path,
         emitted_ids.append(conv_id)
         if len(summary.sample_paths) < 3:
             summary.sample_paths.append(str(path))
+        if progress_cb:
+            progress_cb("processing_days", day_idx, n_days)
 
     if not dry_run and summary.emitted > 0:
         write_manifest(out, summary, emitted_ids, state_dir=state_dir)
