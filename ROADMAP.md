@@ -22,49 +22,75 @@ Triage label: [`v0.2.x`](https://github.com/jprodcc-rodc/throughline/labels/v0.2
 
 ---
 
-## Next (`v0.3` — driving the abstractions to ground)
+## Next (`v0.3` — frontend decoupling + engineering hardening)
 
-v0.2.0 shipped clean abstractions for embedder, reranker, and vector
-store, plus alias routing for half a dozen unimplemented backends. v0.3
-ships the missing concrete drivers AND the next layer of taxonomy
-self-healing.
+v0.2.x already drove the embedder / reranker / vector-store
+abstractions to ground (six real vector backends + native voyage /
+jina rerankers — see "Shipped in v0.2.x" below). v0.3 turns to the
+remaining two areas reviewers consistently flag: frontend coupling
+to OpenWebUI, and engineering hygiene around long-running install
+hygiene.
 
 ### v0.3 will deliver
 
-- **Vector-store backends.** Real implementations of the four backends
-  v0.2.0 routes to Qdrant via alias:
-  - `lancedb` — file-backed, zero-server, smallest install.
-  - `duckdb_vss` — for users who already use DuckDB for analytics.
-  - `sqlite_vec` — fully embedded, no separate process.
-  - `pgvector` — for users on a Postgres ops stack.
-- **Reranker backends.** Native `voyage` and `jina` clients (currently
-  alias to Cohere); evaluate `bge-reranker-v2-gemma` as a separate
-  registry entry rather than aliasing to `bge-reranker-v2-m3`.
-- **U27.5** — Filter outlet `🌱 N taxonomy candidates` hint, surfaced
-  weekly via OpenWebUI's `__event_emitter__`. Closes the manual-CLI gap
-  that lets growth signals pile up unread.
+- **MCP server adapter** — expose retrieval (and optionally refine
+  status) over the Model Context Protocol so any MCP-aware client
+  (Claude Desktop, Cursor, etc.) can pull from the same vault
+  without OpenWebUI in the loop. Closes the "tightly coupled to
+  OpenWebUI" feedback in external review.
+- **OpenAI-compatible proxy adapter** — a small FastAPI proxy that
+  exposes `/v1/chat/completions` and injects throughline RAG before
+  forwarding to the user's actual LLM provider. Lets any OpenAI-SDK
+  client (LibreChat, custom apps, etc.) use throughline transparently.
+- **`bge-reranker-v2-gemma`** — separate registry entry rather than
+  aliasing to `bge-reranker-v2-m3`. The Gemma cross-encoder has a
+  different size / accuracy trade-off worth surfacing.
+- **`nomic-embed` + `MiniLM`** — distinct native embedder impls.
+  Currently aliased to `bge-m3`; v0.3 ships the real models with
+  their own vector-size + tokenizer wiring.
 - **U27.6** — `python -m throughline_cli taxonomy retag --since DATE
-  --domain X` for batch re-refining historical cards under a newly-added
-  taxonomy leaf. Cost-bearing operation; gated behind the daily budget
-  cap (U3) and an explicit `--confirm-cost`.
+  --domain X` for batch re-refining historical cards under a newly-
+  added taxonomy leaf. Cost-bearing operation; gated behind the
+  daily budget cap and an explicit `--confirm-cost`.
+- **Stale-triage auto-archive** — `00_Buffer/` stubs older than
+  N days (configurable, default 90) get auto-archived to
+  `00_Buffer/_stale/` with a one-line manifest. Closes the "dual-
+  write design has no expiry" feedback. Surfaced via doctor + a
+  one-shot `throughline_cli triage prune --dry-run`.
+- **`_norm_path` invariant lint rule** — pre-commit hook (or ruff
+  custom check) that flags any `qdrant_client.upsert(point_id=...)`
+  / equivalent call where `point_id` is not provably routed through
+  `_norm_path()`. Forward-slash normalisation on Windows currently
+  rests on convention + docstring; this turns it into a build
+  failure when violated.
+- **Recall accuracy regression suite** — the Haiku-judge
+  `RecallJudge` 93.8% number was a one-shot eval. v0.3 ships an
+  ongoing regression set (~50 ground-truth queries × ground-truth
+  cards) re-run on every model upgrade (Haiku 4.6 → 5 → …) with
+  results history surfaced in a new `docs/RECALL_HISTORY.md` and
+  linked from README. Turns a "single point of failure" into a
+  monitored dependency.
 - **PyPI release.** `pip install throughline` instead of `git clone +
   venv + pip install -r requirements.txt`. Console-script entry
   points (`throughline-install`, `throughline-import`,
   `throughline-taxonomy`).
-- **Docker compose for "try it out".** One-command spin-up of OpenWebUI
-  + Qdrant + the daemon + an empty vault, with a sample import.
 - **5-minute screencast / GIF in the README.** Removes the "what
-  does it actually look like" friction.
+  does it actually look like" friction. (User recording in
+  parallel with v0.3 dev work — anchor commented in README is
+  ready.)
 
 ### v0.3 may deliver (depends on user signal)
 
-- **U27.7** — Deprecation of zero-usage taxonomy leaves with a merge
-  proposal flow. Risk: users get attached to folders they never write
-  to; the threshold + surfacing UX needs care.
-- **MCP server interface** — expose retrieval over MCP so other LLM
-  apps can pull from the same vault.
 - **Cross-language taxonomy clustering** — bge-m3 embedding similarity
   to cluster `AI/Agent` ≡ `AI/代理` for multilingual users.
+- **Per-pack Qdrant collection auto-routing** — `packs/pack_runtime.py`
+  already supports collection override; auto-routing (e.g. `pack:
+  medical/*` → its own collection) is the next step. Limits blast
+  radius of a per-pack data leak.
+- **Encrypted-at-rest vault option** — write cards through `age` or
+  `gpg` so a stolen disk doesn't leak the vault. Offered as opt-in;
+  default stays plaintext to keep `rg` searchability the headline
+  feature.
 
 ---
 
@@ -88,12 +114,42 @@ in the next) before any 1.x release:
 
 `v1.0` ships when:
 
-- the four named v0.3 backends have been used in anger by someone other
-  than the author (production hours, not just CI),
+- the v0.3 backends + frontend adapters have been used in anger by
+  someone other than the author (production hours, not just CI),
 - `v0.2.x → v0.3 → v1.0` migration is documented end-to-end with no
   manual fixups,
+- the recall-accuracy regression suite has at least 3 model-version
+  data points showing stability,
 - the test suite covers all five user paths (Full / RAG-only /
   Notes-only × cold-start / warm-import).
+
+---
+
+## Shipped in v0.2.x (since v0.2.0)
+
+Things this roadmap previously listed under v0.3 that landed early.
+Tracking here so reviewers cross-checking ROADMAP vs CHANGELOG see
+the deltas:
+
+- **Vector-store backends**: `lancedb` (#6), `sqlite_vec` (#11),
+  `duckdb_vss` (#10), `pgvector` (#9) — all shipped as real impls.
+  Only spelling aliases remain in the registry (`sqlite-vec` →
+  `sqlite_vec` etc.).
+- **Reranker backends**: `voyage` + `jina` shipped as native HTTP
+  clients (separate from the Cohere alias they used to share).
+- **U27.5** — Filter outlet `🌱 N taxonomy candidates` hint via
+  doctor + `__event_emitter__`.
+- **U27.7** — zero-usage taxonomy leaf detection in doctor with a
+  deprecation hint.
+- **Docker compose for "try it out"** — single-command spin-up of
+  Qdrant + daemon + an empty vault, with a sample import. README
+  Quickstart leads with it.
+- **`--express` install** — auto-detect provider from env var, sane
+  defaults, ~3s config write. The 16-step wizard is now demoted to
+  "when you want full control".
+- **Wizard UX wave** — questionary arrow-key picker, rich spinner,
+  hierarchical step-16 summary tree, back navigation, provider/key
+  hard-block, universal "Other" model escape hatch.
 
 ---
 
@@ -105,13 +161,20 @@ These have come up; they're not on any roadmap:
   is planned.
 - **Mobile app.** The reading surface is OpenWebUI / Obsidian; both
   have their own mobile stories.
-- **Replacing OpenWebUI.** throughline is a Filter + daemon + RAG
-  server that OpenWebUI hosts; the chat UI itself is upstream.
+- **Replacing OpenWebUI.** v0.3's MCP + OpenAI-compatible adapters
+  decouple the engine, but a from-scratch chat UI is not a goal.
 - **Replacing Obsidian.** Cards land as plain Markdown with YAML
-  frontmatter. Obsidian is recommended but not required (see U5).
+  frontmatter. Obsidian is recommended but not required.
 - **Built-in LLM provider proxy.** The wizard collects an
   OpenRouter / OpenAI / Anthropic / etc. key and uses the provider
-  directly. We don't add a proxy hop.
+  directly. We don't add a proxy hop. (The v0.3 OpenAI-compatible
+  adapter is the *opposite* direction — letting other clients call
+  through throughline, not throughline routing through a hop.)
+- **Multi-device sync layer.** "your data, your machine" stays the
+  core philosophy. If you need cross-device, layer your own sync
+  (Syncthing, Resilio, iCloud Drive on the vault folder, …).
+- **Team collaboration / multi-user mode.** Single-user, local-first,
+  by design.
 
 ---
 
