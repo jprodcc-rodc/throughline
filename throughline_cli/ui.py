@@ -34,6 +34,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.text import Text
+from rich.tree import Tree
 
 
 # Single shared Console. force_terminal=False so piped output looks
@@ -235,6 +236,28 @@ def note(text: str) -> None:
 def kv_row(key: str, value: str) -> None:
     """Summary-screen key/value line."""
     console.print(f"  [cyan]{key:<18}[/] [bold]{value}[/]")
+
+
+def summary_tree(groups: list[tuple[str, list[tuple[str, str]]]]) -> None:
+    """Render a hierarchical summary tree (Tier-3 UX).
+
+    `groups` is a list of (group_label, [(key, value), ...]) tuples.
+    The tree shows each group as a top-level branch with key/value
+    leaves below. Keys are cyan, values are bold; group labels are
+    bold-cyan.
+
+    On a real TTY, rich draws the unicode tree chars (├── etc.). On
+    a non-TTY (CI, pytest), rich auto-strips the box-drawing into
+    ASCII so test captures stay readable.
+    """
+    tree = Tree("[bold cyan]your throughline config[/]", guide_style="dim cyan")
+    for group_label, items in groups:
+        if not items:
+            continue
+        branch = tree.add(f"[bold cyan]{group_label}[/]")
+        for k, v in items:
+            branch.add(f"[cyan]{k}[/]: [bold]{v}[/]")
+    console.print(tree)
 
 
 # ---------- prompts (keep input() underneath for testability) ----------

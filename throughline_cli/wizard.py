@@ -1117,28 +1117,65 @@ def _format_cost_line(refine_tier: str, daily_cap_usd: float) -> str:
             f"refines max/day; daemon pauses + resets at midnight).")
 
 
+def _build_summary_groups(cfg: WizardConfig) -> list[tuple[str, list[tuple[str, str]]]]:
+    """Group cfg fields semantically for the summary tree (Tier-3 UX).
+    Pure function — exposed for tests."""
+    groups: list[tuple[str, list[tuple[str, str]]]] = []
+
+    # 1. Mission + storage — "what's it for, where does it live"
+    storage_items: list[tuple[str, str]] = [("mission", cfg.mission)]
+    if cfg.mission != "notes_only":
+        storage_items.append(("vector_db", cfg.vector_db))
+    groups.append(("Mission & Storage", storage_items))
+
+    # 2. LLM — provider, model, prompt family, privacy posture
+    llm_items: list[tuple[str, str]] = [
+        ("provider",      cfg.llm_provider),
+        ("model",         cfg.llm_provider_id),
+        ("prompt_family", cfg.prompt_family),
+        ("privacy",       cfg.privacy),
+    ]
+    groups.append(("LLM", llm_items))
+
+    # 3. Retrieval — embedder + reranker (skipped for notes_only)
+    if cfg.mission != "notes_only":
+        groups.append(("Retrieval", [
+            ("embedder", cfg.embedder),
+            ("reranker", cfg.reranker),
+        ]))
+
+    # 4. Refine pipeline — tier, card shape, taxonomy seed
+    groups.append(("Refine pipeline", [
+        ("tier",           cfg.refine_tier),
+        ("card_structure", cfg.card_structure),
+        ("taxonomy",       cfg.taxonomy_source),
+    ]))
+
+    # 5. Import — only when there's something to import
+    src = cfg.import_source + (f" ({cfg.import_path})" if cfg.import_path else "")
+    import_items: list[tuple[str, str]] = [("source", src)]
+    if cfg.import_source != "none" and cfg.import_scanned:
+        import_items.append(("scanned", str(cfg.import_scanned)))
+        import_items.append(("emit_est", str(cfg.import_emitted)))
+        import_items.append((
+            "est_cost",
+            f"${cfg.import_est_normal_cost_usd:.2f} (Normal) "
+            f"/ ${cfg.import_est_skim_cost_usd:.2f} (Skim)",
+        ))
+    groups.append(("Import", import_items))
+
+    # 6. Cost guardrails — daily cap (the cost LINE prints separately
+    # below the tree, since it's a sentence not a leaf).
+    groups.append(("Cost guardrails", [
+        ("daily_budget", f"${cfg.daily_budget_usd}"),
+    ]))
+
+    return groups
+
+
 def step_16_summary(cfg: WizardConfig) -> Optional[str]:
     ui.step_header(16, TOTAL, "Summary")
-    ui.kv_row("mission", cfg.mission)
-    if cfg.mission != "notes_only":
-        ui.kv_row("vector_db", cfg.vector_db)
-    ui.kv_row("llm_provider", f"{cfg.llm_provider} · {cfg.llm_provider_id}")
-    ui.kv_row("privacy", cfg.privacy)
-    if cfg.mission != "notes_only":
-        ui.kv_row("embedder", cfg.embedder)
-        ui.kv_row("reranker", cfg.reranker)
-    ui.kv_row("prompt_family", cfg.prompt_family)
-    src = cfg.import_source + (f" ({cfg.import_path})" if cfg.import_path else "")
-    ui.kv_row("import_source", src)
-    if cfg.import_source != "none" and cfg.import_scanned:
-        ui.kv_row("import_scanned", str(cfg.import_scanned))
-        ui.kv_row("import_emit_est", str(cfg.import_emitted))
-        ui.kv_row("est. cost", f"${cfg.import_est_normal_cost_usd:.2f} (Normal) "
-                              f"/ ${cfg.import_est_skim_cost_usd:.2f} (Skim)")
-    ui.kv_row("refine_tier", cfg.refine_tier)
-    ui.kv_row("card_structure", cfg.card_structure)
-    ui.kv_row("taxonomy_source", cfg.taxonomy_source)
-    ui.kv_row("daily_budget_usd", f"${cfg.daily_budget_usd}")
+    ui.summary_tree(_build_summary_groups(cfg))
 
     # --- Cost line: per-conversation unit cost + daily cap ---------
     # No monthly extrapolation: real usage is bursty (heavy week +

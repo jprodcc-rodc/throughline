@@ -84,11 +84,29 @@ class _ScriptedUI:
     def warn_box(self, *a, **kw): pass
     def panel_example(self, *a, **kw): pass
     def kv_row(self, *a, **kw): pass
+    def summary_tree(self, *a, **kw): pass
     def section_title(self, *a, **kw): pass
     def banner(self, *a, **kw): pass
     def progress_ticker(self, *a, **kw): pass
     def print_blank(self, *a, **kw): pass
     def subrule(self, *a, **kw): pass
+
+    def status(self, message, *a, **kw):
+        # Context manager that just emits the message and exits.
+        captured = self.captured_msgs
+
+        class _Null:
+            def __enter__(self_inner):
+                captured.append(str(message))
+                return self_inner
+
+            def __exit__(self_inner, *exc):
+                return False
+
+            def update(self_inner, m):
+                captured.append(str(m))
+
+        return _Null()
 
     class _Console:
         def print(self, *a, **kw): pass
