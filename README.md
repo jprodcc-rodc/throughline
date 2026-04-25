@@ -299,8 +299,8 @@ on append-only storage (Markdown vault + vector store).
    ┌──────────────┐    query    ┌──────────────┐   vec    ┌──────────┐
    │  OpenWebUI   │ ───────────► │  RAG server  │ ───────► │  Vector  │
    │   Filter     │              │ embed+rerank │ ◄─────── │  store   │
-   │  (3-tier     │ ◄─────────── │              │   cards  └──────────┘
-   │   gate)      │   context    └──────────────┘
+   │  (auto-      │ ◄─────────── │              │   cards  └──────────┘
+   │   recall)    │   context    └──────────────┘
    └──────┬───────┘
           │
           │ injected system prompt
