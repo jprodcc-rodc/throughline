@@ -1096,6 +1096,16 @@ def _rerun_preview_with_dials(cfg: WizardConfig, system_prompt: str,
 def step_14_taxonomy(cfg: WizardConfig) -> Optional[str]:
     """U13 + U27.1 — LLM-derived vs skeletal-then-grown vs fallback template."""
     ui.step_header(14, TOTAL, "Taxonomy")
+    ui.intro(
+        "Taxonomy = which folders / domain tags exist for the refiner "
+        "to drop cards into. WHATEVER you pick here, the U27 self-"
+        "growing loop is always on: every refine logs a "
+        "(primary_x, proposed_x_ideal) observation, and "
+        "`throughline_cli taxonomy review` surfaces growth candidates "
+        "once 5+ cards over 3+ days drift toward a tag you don't yet "
+        "have. So this step picks the SEED — the system grows from "
+        "there forever."
+    )
     # Pick a sensible default by scanned import size:
     #   - cold start (none / < 100 cards)         -> minimal (grows via U27)
     #   - warm import (>= 100 cards available)    -> derive_from_imports (U13)
@@ -1112,15 +1122,15 @@ def step_14_taxonomy(cfg: WizardConfig) -> Optional[str]:
         [
             ("minimal",             "Minimal starter (5 broad domains, grows automatically)",
              "Ship with Tech / Creative / Health / Life / Misc. The refiner observes what you actually write about; `throughline_cli taxonomy review` surfaces growth candidates for your approval. Best for <100 cards or cold start."),
-            ("derive_from_vault",   "Derive from my existing Obsidian vault",
-             "U13: one-shot LLM pass over your vault dirs + sample cards. Best if you have 100+ refined cards already."),
-            ("derive_from_imports", "Derive from my imported conversations",
-             "U13 variant: cluster titles from imported raw MD. Needs 30+ imported conversations."),
-            ("jd",                  "Fallback: Johnny Decimal template",
-             "10-90 number-prefixed top-level folders (10_Tech, 20_Health, ...)."),
-            ("para",                "Fallback: PARA template",
-             "Projects / Areas / Resources / Archive."),
-            ("zettel",              "Fallback: Zettelkasten template",
+            ("derive_from_vault",   "Derive from my existing Obsidian vault (manual, post-wizard)",
+             "U13: one-shot LLM pass over your vault dirs + sample cards. Best if you have 100+ refined cards already. Run `python scripts/derive_taxonomy.py --from-vault <path>` AFTER the wizard."),
+            ("derive_from_imports", "Derive from my imported conversations (runs NOW, ~$0.05)",
+             "U13 variant: at the end of step 16, the wizard samples 30 titles from your imports and asks the LLM to cluster them into a taxonomy. Writes config/taxonomy.py automatically. Needs >=30 imported conversations + import_source != 'none'."),
+            ("jd",                  "Fallback: Johnny Decimal template (static, no LLM)",
+             "10-90 number-prefixed top-level folders (10_Tech, 20_Health, ...). Does NOT look at your data."),
+            ("para",                "Fallback: PARA template (static, no LLM)",
+             "Projects / Areas / Resources / Archive. Does NOT look at your data."),
+            ("zettel",              "Fallback: Zettelkasten template (static, no LLM)",
              "Flat folder, linked atomic notes; almost no taxonomy."),
         ],
         default_key=default,
@@ -1285,18 +1295,128 @@ def step_16_summary(cfg: WizardConfig) -> Optional[str]:
         )
         return None
 
-    if not ui.ask_yes_no("Write this to ~/.throughline/config.toml"
-                          + (" and run the import now" if cfg.import_source != "none" else "")
-                          + "?", default=True):
+    will_derive_taxonomy = (
+        cfg.taxonomy_source == "derive_from_imports"
+        and cfg.import_source in ("claude", "chatgpt", "gemini")
+        and cfg.import_path
+    )
+
+    confirm_q = "Write this to ~/.throughline/config.toml"
+    if cfg.import_source != "none":
+        confirm_q += " and run the import now"
+    if will_derive_taxonomy:
+        confirm_q += (" and derive taxonomy from your imports "
+                      "(~$0.05, one LLM call)")
+    confirm_q += "?"
+    if not ui.ask_yes_no(confirm_q, default=True):
         ui.info_line("[red]Aborted — no config written, no import run.[/]")
         sys.exit(0)
+
     # Kick off the real import immediately so the user sees the result
     # before the wizard exits. Skip for 'none' / missing path.
     if cfg.import_source in ("claude", "chatgpt", "gemini") and cfg.import_path:
         ui.print_blank()
         ui.section_title("Running import...")
         _run_adapter_for_real(cfg)
+
+    # Now that raw MD is on disk, run U13 taxonomy derivation if the
+    # user picked derive_from_imports at step 14. Without this hook
+    # the wizard wrote `taxonomy_source = "derive_from_imports"` to
+    # config.toml but did nothing — the user had to remember to run
+    # `python scripts/derive_taxonomy.py --from-imports ...` later.
+    if will_derive_taxonomy:
+        ui.print_blank()
+        ui.section_title("Deriving taxonomy from your imports...")
+        _run_taxonomy_derivation_from_imports(cfg)
     return None
+
+
+def _run_taxonomy_derivation_from_imports(cfg: WizardConfig) -> None:
+    """Sample 30 titles from the just-imported raw MD, send to the
+    LLM via the taxonomy_deriver prompt, render config/taxonomy.py.
+
+    Costs ~$0.01-0.05 per run (30 titles is a small payload). All
+    failures are non-fatal — wizard continues, user can re-run via
+    `python scripts/derive_taxonomy.py --from-imports <raw_root>`.
+    """
+    import os as _os
+    import sys as _sys
+    from pathlib import Path as _P
+
+    # Resolve raw root: same precedence as the daemon.
+    raw_root_env = _os.environ.get("THROUGHLINE_RAW_ROOT", "").strip()
+    if raw_root_env:
+        raw_root = _P(raw_root_env).expanduser()
+    else:
+        raw_root = _P.home() / "throughline_runtime" / "sources" / "openwebui_raw"
+
+    if not raw_root.exists():
+        ui.info_line(
+            f"[yellow]Skipping taxonomy derivation:[/] raw root "
+            f"{raw_root} does not exist. Run "
+            f"[green]python scripts/derive_taxonomy.py --from-imports "
+            f"<your-raw-root>[/] manually after the daemon writes "
+            f"some cards."
+        )
+        return
+
+    # Lazy-import the script's helpers so the wizard module doesn't
+    # pull derive_taxonomy at import time (the script imports llm
+    # which expects an env var).
+    _sys.path.insert(0, str(_P(__file__).resolve().parents[1] / "scripts"))
+    try:
+        import derive_taxonomy as _td
+    except ImportError as e:
+        ui.info_line(f"[yellow]Could not import derive_taxonomy: {e}[/]")
+        return
+
+    titles = _td.sample_imports(raw_root, cap=30)
+    if not titles:
+        ui.info_line(
+            f"[yellow]No imported MD files found under {raw_root}. "
+            f"Skipping derivation; re-run via the script later if "
+            f"the import wrote files to a different location.[/]"
+        )
+        return
+
+    ui.kv_row("sampled titles", str(len(titles)))
+    ui.kv_row("provider", cfg.llm_provider_id)
+
+    user_msg = _td.format_imports_input(titles)
+    try:
+        with ui.status(
+            f"Calling {cfg.llm_provider_id} for taxonomy derivation..."
+        ):
+            proposal = _td.call_deriver(
+                user_msg,
+                provider_id=cfg.llm_provider_id,
+                family=cfg.prompt_family,
+            )
+    except Exception as e:
+        ui.info_line(f"[red]Derivation failed:[/] {type(e).__name__}: {e}")
+        ui.info_line(
+            "[dim]Wizard continues. Re-run later: "
+            f"python scripts/derive_taxonomy.py --from-imports {raw_root}[/]"
+        )
+        return
+
+    # Render + write taxonomy.py.
+    rendered = _td.render_taxonomy_module(proposal)
+    out_path = _P(__file__).resolve().parents[1] / "config" / "taxonomy.py"
+    try:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(rendered, encoding="utf-8")
+    except OSError as e:
+        ui.info_line(f"[red]Could not write {out_path}: {e}[/]")
+        return
+
+    ui.info_line(f"[green]✓ Wrote derived taxonomy:[/] {out_path}")
+    n_x = len(proposal.get("x_domains") or [])
+    n_y = len(proposal.get("y_forms") or [])
+    n_z = len(proposal.get("z_axes") or [])
+    ui.info_line(
+        f"  x_domains={n_x} · y_forms={n_y} · z_axes={n_z}"
+    )
 
 
 # ---------- orchestrator ----------
