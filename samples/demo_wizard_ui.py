@@ -1,15 +1,21 @@
-"""Self-contained demo of the wizard's three UX layers.
+"""VISUAL component demo (NOT the install — see install.py for that).
 
-Run this in a REAL terminal (not piped, not in CI) to see:
-- T1: questionary-based arrow-key picker
-- T2: animated rich spinner during a simulated LLM call
-- T3: hierarchical summary tree at step 16
+This script is a 30-second visual showcase of the THREE new UI
+components used INSIDE the 16-step install wizard. It is NOT itself
+a wizard. It does not configure anything, install anything, or
+write any file.
 
-    python samples/demo_wizard_ui.py
+The real install is still:
+    python install.py             # full 16-step wizard
+    python install.py --express   # auto-detect + 1-command install
 
-It does NOT call any LLM, does NOT write any config — purely a visual
-demonstration so you can decide if you like the look before running
-the actual wizard.
+This file shows only the LOOK of the components those wizards use:
+- T1: arrow-key picker (used in 10 of the 16 wizard steps)
+- T2: rich spinner during blocking ops (steps 10, 13, 16)
+- T3: hierarchical summary tree (step 16's final summary)
+
+Run it to see how the components render in your terminal — then go
+run the real wizard.
 """
 from __future__ import annotations
 
@@ -26,7 +32,18 @@ def main() -> int:
     from throughline_cli import ui
 
     ui.banner()
-    ui.section_title("throughline wizard UX demo (no real install)")
+    ui.section_title("UI component preview — NOT an install")
+    ui.print_blank()
+    ui.info_line(
+        "[bold yellow]This is not the wizard.[/] It's a 30-second visual "
+        "demo of the 3 reusable UI components the wizard uses internally. "
+        "Nothing here writes config or calls an LLM."
+    )
+    ui.info_line(
+        "[dim]For the real install, exit this and run "
+        "[green]python install.py[/][dim] (16 steps) or "
+        "[green]python install.py --express[/][dim] (1 command).[/]"
+    )
     ui.print_blank()
 
     if not sys.stdin.isatty():
@@ -148,10 +165,21 @@ def main() -> int:
     ui.print_blank()
     _demo_tree(_make_demo_cfg())
     ui.print_blank()
+    ui.section_title("Demo finished — nothing was installed")
     ui.info_line(
-        "[dim]This was a UX demo — no config written, no LLM called. "
-        "Run [green]python install.py --express[/][dim] to do an actual "
-        "install.[/]"
+        "[bold]No config was written. No LLM was called.[/] This was "
+        "purely a visual preview of the wizard's 3 reusable UI "
+        "components."
+    )
+    ui.info_line("")
+    ui.info_line("[bold]To actually install throughline, run ONE of:[/]")
+    ui.info_line(
+        "  [green]python install.py --express[/]     "
+        "[dim]# 1 command, auto-detects your API key, ~3 seconds[/]"
+    )
+    ui.info_line(
+        "  [green]python install.py[/]               "
+        "[dim]# full 16-step wizard, every option explained[/]"
     )
     return 0
 
