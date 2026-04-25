@@ -38,12 +38,11 @@ class TestCreateReranker:
         r = rr.create_reranker("none")
         assert isinstance(r, rr.SkipReranker)
 
-    def test_voyage_and_jina_route_to_cohere(self):
-        """Documented v0.3 expansion points: Voyage and Jina both
-        share the Cohere rerank schema, so they route to the Cohere
-        impl for now."""
-        for alias in ("voyage", "jina"):
-            assert rr.create_reranker(alias).name == "cohere"
+    def test_voyage_and_jina_are_real_in_v0_2_x(self):
+        """Voyage + Jina shipped as real rerankers in v0.2.x — they
+        no longer alias to Cohere."""
+        assert isinstance(rr.create_reranker("voyage"), rr.VoyageReranker)
+        assert isinstance(rr.create_reranker("jina"), rr.JinaReranker)
 
     def test_bge_gemma_alias_routes_to_m3(self):
         r = rr.create_reranker("bge-reranker-v2-gemma")
@@ -216,8 +215,158 @@ class TestLazyImport:
 class TestAvailableList:
     def test_lists_primaries_and_aliases(self):
         names = set(rr.available_rerankers())
-        # Primary registry.
-        assert {"bge-reranker-v2-m3", "cohere", "skip"}.issubset(names)
-        # Aliases.
-        assert {"bge", "bge-reranker", "voyage", "jina", "none",
+        # Primary registry — voyage + jina joined v0.2.x.
+        assert {"bge-reranker-v2-m3", "cohere", "voyage", "jina",
+                 "skip"}.issubset(names)
+        # Aliases — voyage/jina removed from this set.
+        assert {"bge", "bge-reranker", "none",
                  "bge-reranker-v2-gemma"}.issubset(names)
+
+
+# ------- VoyageReranker HTTP path -------
+
+class TestVoyageReranker:
+    def test_empty_input_skips_http(self, monkeypatch):
+        monkeypatch.setattr("urllib.request.urlopen",
+                             lambda *a, **k: (_ for _ in ()).throw(
+                                 AssertionError("must not call HTTP")))
+        assert rr.VoyageReranker(api_key="k").rerank("q", []) == []
+
+    def test_no_api_key_falls_back_to_skip(self, monkeypatch):
+        monkeypatch.delenv("VOYAGE_API_KEY", raising=False)
+        monkeypatch.setattr("urllib.request.urlopen",
+                             lambda *a, **k: (_ for _ in ()).throw(
+                                 AssertionError("must not call HTTP")))
+        out = rr.VoyageReranker().rerank("q", ["a", "b", "c"])
+        assert len(out) == 3
+        assert out[0] > out[1] > out[2]
+
+    def test_realigns_to_input_order(self, monkeypatch):
+        captured = {}
+
+        class FakeResp:
+            def __init__(self, b): self._b = b
+            def read(self): return self._b
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        def fake(req, timeout=None):
+            captured["url"] = req.full_url
+            captured["payload"] = json.loads(req.data.decode("utf-8"))
+            captured["headers"] = {
+                k.lower(): v for k, v in req.header_items()}
+            # Voyage shape: data: [{"index", "relevance_score"}, ...]
+            return FakeResp(json.dumps({"data": [
+                {"index": 2, "relevance_score": 0.95},
+                {"index": 0, "relevance_score": 0.80},
+                {"index": 1, "relevance_score": 0.10},
+            ]}).encode("utf-8"))
+
+        monkeypatch.setattr("urllib.request.urlopen", fake)
+        scores = rr.VoyageReranker(api_key="vk-test").rerank(
+            "q", ["a", "b", "c"])
+        assert scores == [0.80, 0.10, 0.95]
+        assert "voyageai.com" in captured["url"] or \
+               "/v1/rerank" in captured["url"]
+        assert captured["payload"]["model"].startswith("rerank-")
+        assert captured["payload"]["query"] == "q"
+        # Bearer auth.
+        assert captured["headers"].get("authorization") == "Bearer vk-test"
+
+    def test_partial_results_default_zero(self, monkeypatch):
+        class FakeResp:
+            def __init__(self, b): self._b = b
+            def read(self): return self._b
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            lambda req, timeout=None: FakeResp(json.dumps({
+                "data": [{"index": 1, "relevance_score": 0.7}],
+            }).encode("utf-8")))
+        scores = rr.VoyageReranker(api_key="k").rerank(
+            "q", ["a", "b", "c"])
+        assert scores == [0.0, 0.7, 0.0]
+
+    def test_custom_base_url(self, monkeypatch):
+        captured = {}
+
+        class FakeResp:
+            def __init__(self, b): self._b = b
+            def read(self): return self._b
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        def fake(req, timeout=None):
+            captured["url"] = req.full_url
+            return FakeResp(b'{"data": []}')
+
+        monkeypatch.setattr("urllib.request.urlopen", fake)
+        rr.VoyageReranker(api_key="k",
+                            base_url="http://proxy/v1").rerank(
+            "q", ["a"])
+        assert captured["url"] == "http://proxy/v1/rerank"
+
+
+# ------- JinaReranker HTTP path -------
+
+class TestJinaReranker:
+    def test_empty_input_skips_http(self, monkeypatch):
+        monkeypatch.setattr("urllib.request.urlopen",
+                             lambda *a, **k: (_ for _ in ()).throw(
+                                 AssertionError("must not call HTTP")))
+        assert rr.JinaReranker(api_key="k").rerank("q", []) == []
+
+    def test_no_api_key_falls_back_to_skip(self, monkeypatch):
+        monkeypatch.delenv("JINA_API_KEY", raising=False)
+        monkeypatch.setattr("urllib.request.urlopen",
+                             lambda *a, **k: (_ for _ in ()).throw(
+                                 AssertionError("must not call HTTP")))
+        out = rr.JinaReranker().rerank("q", ["a", "b"])
+        assert len(out) == 2
+        assert out[0] > out[1]
+
+    def test_realigns_to_input_order(self, monkeypatch):
+        captured = {}
+
+        class FakeResp:
+            def __init__(self, b): self._b = b
+            def read(self): return self._b
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        def fake(req, timeout=None):
+            captured["url"] = req.full_url
+            captured["payload"] = json.loads(req.data.decode("utf-8"))
+            return FakeResp(json.dumps({"results": [
+                {"index": 1, "relevance_score": 0.92},
+                {"index": 0, "relevance_score": 0.30},
+            ]}).encode("utf-8"))
+
+        monkeypatch.setattr("urllib.request.urlopen", fake)
+        scores = rr.JinaReranker(api_key="jk").rerank("q", ["a", "b"])
+        assert scores == [0.30, 0.92]
+        # Jina-specific payload field: return_documents=False.
+        assert captured["payload"].get("return_documents") is False
+        assert captured["payload"]["model"].startswith("jina-reranker")
+
+    def test_default_model_is_multilingual(self):
+        """Default Jina model handles 100+ languages — important for
+        the project's Chinese-default heritage."""
+        assert "multilingual" in rr.JinaReranker(api_key="x").model
+
+    def test_partial_results_default_zero(self, monkeypatch):
+        class FakeResp:
+            def __init__(self, b): self._b = b
+            def read(self): return self._b
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            lambda req, timeout=None: FakeResp(json.dumps({
+                "results": [{"index": 0, "relevance_score": 0.5}],
+            }).encode("utf-8")))
+        scores = rr.JinaReranker(api_key="k").rerank("q", ["a", "b"])
+        assert scores == [0.5, 0.0]

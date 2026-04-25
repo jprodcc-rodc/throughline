@@ -433,7 +433,7 @@ single environment variable (or the matching field in the wizard).
 | Component | Env var | Default | Alternates (today) | Coming in v0.3 |
 |---|---|---|---|---|
 | Embedder | `EMBEDDER` | `bge-m3` (local torch) | `openai` | `nomic`, `minilm` native |
-| Reranker | `RERANKER` | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage`, `jina` native, `bge-reranker-v2-gemma` |
+| Reranker | `RERANKER` | `bge-reranker-v2-m3` (local) | `cohere`, `voyage`, `jina`, `skip` (all real impls) | `bge-reranker-v2-gemma` native |
 | Vector store | `VECTOR_STORE` | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (embedded, zero-server), `pgvector` (Postgres) — all real impls | — |
 
 The local-default backends carry a ~4.6 GB one-time download each

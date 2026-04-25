@@ -204,12 +204,134 @@ class CohereReranker(BaseReranker):
 
 
 # =========================================================
+# VoyageReranker — Voyage AI's /v1/rerank endpoint
+# =========================================================
+
+class VoyageReranker(BaseReranker):
+    """Calls Voyage AI's /v1/rerank endpoint.
+
+    API docs: https://docs.voyageai.com/docs/reranker
+    Default model: `rerank-2-lite`. Cheaper / faster than rerank-2;
+    upgrade via `VOYAGE_RERANK_MODEL=rerank-2`. Requires
+    `VOYAGE_API_KEY`; without it falls through to SkipReranker so
+    callers degrade gracefully.
+
+    Response shape mirrors Cohere's: a list of `{index, relevance_score}`
+    rows that we re-align to the input order.
+    """
+
+    name = "voyage"
+
+    def __init__(self, model: Optional[str] = None,
+                  base_url: Optional[str] = None,
+                  api_key: Optional[str] = None) -> None:
+        self.model = model or os.getenv(
+            "VOYAGE_RERANK_MODEL", "rerank-2-lite")
+        self.base_url = (base_url or os.getenv("VOYAGE_BASE_URL")
+                          or "https://api.voyageai.com/v1").rstrip("/")
+        self.api_key = api_key or os.getenv("VOYAGE_API_KEY", "")
+
+    def rerank(self, query: str, documents: List[str]) -> List[float]:
+        if not documents:
+            return []
+        if not self.api_key:
+            return SkipReranker().rerank(query, documents)
+        url = f"{self.base_url}/rerank"
+        body = json.dumps({
+            "model":     self.model,
+            "query":     query,
+            "documents": documents,
+            "top_k":     len(documents),
+        }).encode("utf-8")
+        req = urllib.request.Request(url, data=body, method="POST")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Authorization", f"Bearer {self.api_key}")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        # Voyage returns {"data": [{"index": i, "relevance_score": x}, ...]}
+        n = len(documents)
+        out = [0.0] * n
+        for row in payload.get("data") or []:
+            idx = row.get("index")
+            score = row.get("relevance_score")
+            if isinstance(idx, int) and 0 <= idx < n and score is not None:
+                try:
+                    out[idx] = float(score)
+                except (TypeError, ValueError):
+                    continue
+        return out
+
+
+# =========================================================
+# JinaReranker — Jina AI's /v1/rerank endpoint
+# =========================================================
+
+class JinaReranker(BaseReranker):
+    """Calls Jina AI's /v1/rerank endpoint.
+
+    API docs: https://jina.ai/reranker
+    Default model: `jina-reranker-v2-base-multilingual` — handles
+    100+ languages without the English-only limitation Cohere v3.0
+    has by default. Override via `JINA_RERANK_MODEL=...`. Requires
+    `JINA_API_KEY`; falls through to SkipReranker without one.
+
+    Response shape: `{"results": [{"index": i, "relevance_score": x}]}`.
+    `return_documents=false` because we already have the input list
+    and don't need Jina to echo it back.
+    """
+
+    name = "jina"
+
+    def __init__(self, model: Optional[str] = None,
+                  base_url: Optional[str] = None,
+                  api_key: Optional[str] = None) -> None:
+        self.model = model or os.getenv(
+            "JINA_RERANK_MODEL", "jina-reranker-v2-base-multilingual")
+        self.base_url = (base_url or os.getenv("JINA_BASE_URL")
+                          or "https://api.jina.ai/v1").rstrip("/")
+        self.api_key = api_key or os.getenv("JINA_API_KEY", "")
+
+    def rerank(self, query: str, documents: List[str]) -> List[float]:
+        if not documents:
+            return []
+        if not self.api_key:
+            return SkipReranker().rerank(query, documents)
+        url = f"{self.base_url}/rerank"
+        body = json.dumps({
+            "model":            self.model,
+            "query":            query,
+            "documents":        documents,
+            "top_n":            len(documents),
+            "return_documents": False,
+        }).encode("utf-8")
+        req = urllib.request.Request(url, data=body, method="POST")
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Authorization", f"Bearer {self.api_key}")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        # Jina returns {"results": [{"index": i, "relevance_score": x}, ...]}
+        n = len(documents)
+        out = [0.0] * n
+        for row in payload.get("results") or []:
+            idx = row.get("index")
+            score = row.get("relevance_score")
+            if isinstance(idx, int) and 0 <= idx < n and score is not None:
+                try:
+                    out[idx] = float(score)
+                except (TypeError, ValueError):
+                    continue
+        return out
+
+
+# =========================================================
 # Registry + factory
 # =========================================================
 
 _REGISTRY: Dict[str, Callable[[], BaseReranker]] = {
     "bge-reranker-v2-m3": BgeRerankerV2M3,
     "cohere":             CohereReranker,
+    "voyage":             VoyageReranker,
+    "jina":               JinaReranker,
     "skip":               SkipReranker,
 }
 
@@ -217,8 +339,6 @@ _ALIASES: Dict[str, str] = {
     "bge":                  "bge-reranker-v2-m3",
     "bge-reranker":         "bge-reranker-v2-m3",
     "bge-reranker-v2-gemma": "bge-reranker-v2-m3",  # TODO(v0.3): dedicated gemma impl
-    "voyage":               "cohere",  # TODO(v0.3): Voyage native
-    "jina":                 "cohere",  # TODO(v0.3): Jina rerank native
     "none":                 "skip",
 }
 

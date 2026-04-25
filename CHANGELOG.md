@@ -39,6 +39,14 @@ pre-1.0 minor bumps can include breaking config shape changes.
   VSS extension auto-installed/loaded on connect. `_DuckDBVSSUnavailable`
   stub when `duckdb` is missing. 7 tests via fake `duckdb` module
   with a minimal SQL parser.
+- **Voyage + Jina rerankers** now ship as real `RERANKER` backends
+  alongside Cohere — no longer alias to Cohere. Both follow the same
+  `{index, relevance_score}` shape; `VoyageReranker` defaults to
+  `rerank-2-lite`, `JinaReranker` to `jina-reranker-v2-base-multilingual`
+  (deliberately multilingual-default given the project's Chinese-first
+  heritage). Standard env vars: `VOYAGE_API_KEY` / `JINA_API_KEY`,
+  with `*_BASE_URL` overrides for proxies. Both fall through to
+  SkipReranker on missing key — graceful degrade. +10 tests.
 - **pgvector** is a first-class `VECTOR_STORE` backend (closes #9) —
   Postgres + the pgvector extension. The only server-based backend
   in the embedded-alternates set; useful when the team already

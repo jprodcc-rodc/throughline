@@ -119,7 +119,7 @@ server + daemon, install the Filter.
 | Component | Default | Alternates (today) | Coming in v0.3 |
 |---|---|---|---|
 | Embedder (`EMBEDDER`) | `bge-m3` (local) | `openai` | `nomic` / `minilm` natively |
-| Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage` / `jina` natively |
+| Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `voyage`, `jina`, `skip` (all real impls) | — |
 | Vector store (`VECTOR_STORE`) | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (embedded, zero-server), `pgvector` (Postgres) — all real impls | — |
 
 ### LLM providers (16 preset routes)
