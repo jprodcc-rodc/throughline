@@ -616,6 +616,24 @@ class Filter:
             summary = ""
         return (merged, summary)
 
+    @staticmethod
+    def _sanitize_card_text(s: str) -> str:
+        """Defang the wrapping tags so a card body that contains
+        `</personal_context_cards>` (whether through prior prompt-
+        injection or innocent quoting of the wrapper itself) cannot
+        close the wrap and let downstream text leak out as
+        instructions to the LLM.
+
+        We replace the angle brackets with full-width variants so
+        the text remains human-readable for debugging but no longer
+        matches the wrapper grammar."""
+        if not isinstance(s, str):
+            return ""
+        return (s.replace("</personal_context_cards>",
+                          "＜/personal_context_cards＞")
+                  .replace("<personal_context_cards>",
+                          "＜personal_context_cards＞"))
+
     def _build_context_cards_block(self, cards: list) -> str:
         """Render matched context cards into a system-prompt fragment.
         Mechanism/content are orthogonal: the system provides only the render shell;
@@ -641,12 +659,26 @@ class Filter:
         if max_chars <= 0:
             max_chars = 2000
         for c in cards:
-            title = (c.get("title") or "context").strip()
-            content = (c.get("content") or "").strip()
+            if not isinstance(c, dict):
+                continue
+            # Defensively coerce to str — a malformed card whose
+            # `content` is a dict / list would crash `.strip()` and
+            # bring down the inlet (caught by the outer handler but
+            # surfaced as a misleading "RAG retrieval failed").
+            raw_title = c.get("title")
+            raw_content = c.get("content")
+            title = (raw_title if isinstance(raw_title, str)
+                      else "context").strip() or "context"
+            content = (raw_content if isinstance(raw_content, str)
+                       else "").strip()
             if not content:
                 continue
             if len(content) > max_chars:
                 content = content[:max_chars].rstrip() + "…(truncated)"
+            # Sanitize BOTH title and body so an attacker can't slip
+            # the closing tag through either field.
+            title = self._sanitize_card_text(title)
+            content = self._sanitize_card_text(content)
             parts.append(f"\n### {title}\n{content}")
         parts.append("</personal_context_cards>")
         return "\n".join(parts)
