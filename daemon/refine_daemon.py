@@ -275,6 +275,22 @@ def log(msg: str) -> None:
         pass
 
 
+_COST_STATS_LOCK = Lock()
+
+
+def _atomic_write_json(path: Path, payload: Any) -> None:
+    """Write JSON with a temp-file-rename so a concurrent reader
+    never sees a half-written file. The watchdog daemon has many
+    threads + the user's stats / cost CLIs may read mid-write;
+    truncate-then-write would let them parse garbage."""
+    ensure_dir(path.parent)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False),
+                   encoding="utf-8")
+    # os.replace is atomic on POSIX + Windows.
+    os.replace(tmp, path)
+
+
 def _record_cost(step_name: str, model: str, input_tokens: int, output_tokens: int) -> None:
     """Append a cost entry to state/cost_stats.json keyed by date+step."""
     if not step_name or not model:
@@ -288,24 +304,28 @@ def _record_cost(step_name: str, model: str, input_tokens: int, output_tokens: i
     pricing = MODEL_PRICING.get(model, (3.0, 15.0))
     cost = (input_tokens * pricing[0] + output_tokens * pricing[1]) / 1_000_000.0
     today = datetime.now().strftime("%Y-%m-%d")
-    try:
-        stats: Dict[str, Any] = {}
-        if COST_STATS_FILE.exists():
-            stats = json.loads(COST_STATS_FILE.read_text(encoding="utf-8"))
-        by_date = stats.setdefault("by_date", {})
-        day = by_date.setdefault(today, {})
-        step = day.setdefault(step_name, {"calls": 0, "input_tokens": 0, "output_tokens": 0, "cost": 0.0})
-        step["calls"] += 1
-        step["input_tokens"] += input_tokens
-        step["output_tokens"] += output_tokens
-        step["cost"] = round(step["cost"] + cost, 6)
-        dates = sorted(by_date.keys())
-        for d in dates[:-30]:
-            del by_date[d]
-        ensure_dir(COST_STATS_FILE.parent)
-        COST_STATS_FILE.write_text(json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8")
-    except Exception as e:
-        log(f"WARN | cost stats write failed: {e}")
+    # Lock the read-modify-write window: without this, two concurrent
+    # refine threads would both load the same baseline, both compute
+    # updates against it, and the second write would clobber the
+    # first thread's increments — silent cost-tracking loss.
+    with _COST_STATS_LOCK:
+        try:
+            stats: Dict[str, Any] = {}
+            if COST_STATS_FILE.exists():
+                stats = json.loads(COST_STATS_FILE.read_text(encoding="utf-8"))
+            by_date = stats.setdefault("by_date", {})
+            day = by_date.setdefault(today, {})
+            step = day.setdefault(step_name, {"calls": 0, "input_tokens": 0, "output_tokens": 0, "cost": 0.0})
+            step["calls"] += 1
+            step["input_tokens"] += input_tokens
+            step["output_tokens"] += output_tokens
+            step["cost"] = round(step["cost"] + cost, 6)
+            dates = sorted(by_date.keys())
+            for d in dates[:-30]:
+                del by_date[d]
+            _atomic_write_json(COST_STATS_FILE, stats)
+        except Exception as e:
+            log(f"WARN | cost stats write failed: {e}")
 
 
 def log_maintenance_issue(conv_id: str, step: str, error: str, action_hint: str, title_hint: str = "") -> None:
@@ -803,9 +823,11 @@ def load_state() -> Dict[str, Any]:
 
 
 def save_state(state: Dict[str, Any]) -> None:
-    ensure_dir(STATE_FILE.parent)
+    # Atomic write so a concurrent loader never sees a half-written
+    # file. Lock guards against in-process write races between
+    # daemon threads.
     with _STATE_LOCK:
-        STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+        _atomic_write_json(STATE_FILE, state)
 
 
 # =========================================================

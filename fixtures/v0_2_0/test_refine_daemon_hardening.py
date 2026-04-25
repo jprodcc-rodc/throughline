@@ -266,6 +266,78 @@ class TestCallLlmJsonEmptyChoices:
                 temperature=0.0, max_tokens=100, retries=0)
         assert "empty choices" in str(ei.value).lower()
 
+    def test_concurrent_record_cost_no_lost_updates(self, tmp_path,
+                                                          monkeypatch):
+        """20 threads each call _record_cost once. Pre-fix:
+        read-modify-write race lost updates because there was no
+        lock. Post-fix: lock + atomic write → all 20 calls land."""
+        monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "state"))
+        for mod in list(sys.modules):
+            if mod.startswith("daemon.refine_daemon"):
+                del sys.modules[mod]
+        import daemon.refine_daemon as rd
+
+        from threading import Thread
+        N = 20
+
+        def worker():
+            rd._record_cost("Refiner", "anthropic/claude-sonnet-4.6",
+                             input_tokens=100, output_tokens=50)
+
+        threads = [Thread(target=worker) for _ in range(N)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        data = json.loads(rd.COST_STATS_FILE.read_text(encoding="utf-8"))
+        days = list(data["by_date"].values())
+        assert len(days) == 1
+        refiner = days[0]["Refiner"]
+        # All N calls accounted for: race condition would have lost
+        # some updates, so this is a strict assertion.
+        assert refiner["calls"] == N, (
+            f"expected {N} calls, got {refiner['calls']} — "
+            f"concurrent race likely lost updates")
+        assert refiner["input_tokens"] == 100 * N
+        assert refiner["output_tokens"] == 50 * N
+
+    def test_atomic_write_no_partial_reads(self, tmp_path, monkeypatch):
+        """During the write window, no reader should ever observe
+        a half-written cost_stats.json. This is hard to test exactly
+        without instrumenting the write itself, so we instead assert
+        the write goes through `_atomic_write_json` (temp + rename)
+        and never touches the real path with a partial payload.
+
+        Approach: monkey-patch Path.write_text to assert it's only
+        ever called on .tmp files (i.e., the atomic-rename pattern
+        is in use)."""
+        monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "state"))
+        for mod in list(sys.modules):
+            if mod.startswith("daemon.refine_daemon"):
+                del sys.modules[mod]
+        import daemon.refine_daemon as rd
+
+        from pathlib import Path as _P
+        real_write = _P.write_text
+        observed_paths: list = []
+
+        def watching(self, *a, **kw):
+            observed_paths.append(str(self))
+            return real_write(self, *a, **kw)
+
+        monkeypatch.setattr(_P, "write_text", watching)
+
+        rd._record_cost("Refiner", "anthropic/claude-sonnet-4.6",
+                         input_tokens=10, output_tokens=5)
+        # Every direct write to disk must have hit a `.tmp` path,
+        # never the real cost_stats.json. (The .replace() rename
+        # then atomically swaps it in.)
+        cost_file_writes = [p for p in observed_paths
+                              if p.endswith("cost_stats.json")]
+        assert cost_file_writes == [], (
+            f"non-atomic write to cost_stats.json: {cost_file_writes}")
+
     def test_truncation_warning_logged(self, tmp_path, monkeypatch):
         """`finish_reason: length` (or Anthropic's `stop_reason:
         max_tokens`) means the response was truncated mid-emit. A WARN
