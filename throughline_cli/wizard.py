@@ -264,19 +264,45 @@ def step_05_llm_provider(cfg: WizardConfig) -> Optional[str]:
     else:
         ui.intro(f"Models offered by {preset.name}. Defaults are "
                   f"the provider's most-used one; press Enter for the "
-                  f"first entry or pick another.")
+                  f"first entry, pick another, or choose 'Other' to "
+                  f"paste a model ID directly from the provider's "
+                  f"docs (in case our list is stale).")
         options = [(mid, label, "") for mid, label in preset.models]
-        cfg.llm_provider_id = ui.pick_option(
+        # Append the universal escape hatch — if our verified list
+        # doesn't include the model the user wants (or our list has
+        # drifted), they can paste any ID directly.
+        options.append(
+            ("__OTHER__",
+             f"Other — type your own {preset.name} model ID",
+             "Use this if our list is missing what you want or a "
+             "model 404'd at preview. Paste from the provider's docs."),
+        )
+        chosen = ui.pick_option(
             f"Pick a model from {preset.name}:",
             options,
             default_key=preset.models[0][0],
         )
+        if chosen == "__OTHER__":
+            # Fall-through: same UX as a generic-provider model entry.
+            cfg.llm_provider_id = ui.ask_text(
+                f"Model ID for {preset.name}",
+                default=cfg.llm_provider_id or "",
+            ).strip()
+        else:
+            cfg.llm_provider_id = chosen
 
     # Auto-derive prompt family (U22) from the model ID.
     mid = cfg.llm_provider_id.lower()
     if "claude" in mid or cfg.llm_provider == "anthropic":
         cfg.prompt_family = "claude"
-    elif "gpt" in mid or cfg.llm_provider == "openai":
+    elif ("gpt" in mid
+            or cfg.llm_provider == "openai"
+            # OpenAI's reasoning models use "o4-mini" / "o3-pro"
+            # naming, no "gpt" substring. Catch them so step 8's
+            # auto-derive doesn't fall through to "generic" for an
+            # obvious OpenAI model.
+            or mid.startswith("o4-") or mid.startswith("o3-")
+            or mid.startswith("openai/o4-") or mid.startswith("openai/o3-")):
         cfg.prompt_family = "gpt"
     elif "gemini" in mid:
         cfg.prompt_family = "gemini"

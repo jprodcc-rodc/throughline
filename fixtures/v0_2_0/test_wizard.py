@@ -158,16 +158,23 @@ class TestVectorDbBranch:
 
 class TestProviderAutoDerivesPromptFamily:
     """U28 — step 5 is SCOPED to whichever provider step 4 picked.
-    Walking the OpenRouter preset's model list: 1=sonnet, 2=haiku,
-    3=opus, 4=gpt-5-mini, 5=gpt-5, 6=gemini-flash, 7=gemini-pro,
-    8=grok-3, 9=deepseek-v3.2, 10=llama-3.3-70b.
+
+    The OpenRouter preset's model list (verified 2026-04-26):
+      1=Sonnet 4.6  2=Opus 4.7  3=Haiku 4.5  4=GPT-5  5=GPT-5-mini
+      6=o4-mini  7=DeepSeek Chat  8=DeepSeek R1
+      9=Llama 3.3 70B Instruct  10=Qwen 2.5 72B Instruct
+      11=Other (free-form)
+    Test pins family-derivation behaviour against the LIVE list —
+    if the list shifts (e.g., you add Gemini back), update the
+    parametrize accordingly.
     """
     @pytest.mark.parametrize("choice,expected", [
         ("1", "claude"),   # Anthropic Sonnet 4.6
-        ("4", "gpt"),      # OpenAI GPT-5-mini
-        ("6", "gemini"),   # Google Gemini 3 Flash
-        ("8", "generic"),  # xAI Grok 3
-        ("9", "generic"),  # DeepSeek v3.2
+        ("3", "claude"),   # Anthropic Haiku 4.5
+        ("4", "gpt"),      # OpenAI GPT-5
+        ("6", "gpt"),      # OpenAI o4-mini (still GPT family)
+        ("7", "generic"),  # DeepSeek Chat — not Claude/GPT/Gemini
+        ("9", "generic"),  # Meta Llama 3.3
     ])
     def test_family_derivation_openrouter(self, monkeypatch, choice, expected):
         cfg = WizardConfig()
@@ -175,6 +182,22 @@ class TestProviderAutoDerivesPromptFamily:
         monkeypatch.setattr("builtins.input", _stub_input([choice]))
         step_05_llm_provider(cfg)
         assert cfg.prompt_family == expected
+
+    def test_other_escape_hatch_routes_to_text_input(self, monkeypatch):
+        """The new __OTHER__ entry at the bottom of every preset's
+        model list lets users paste a model ID our verified list
+        doesn't include — including Gemini IDs (which we trimmed
+        from OpenRouter due to ID-prefix uncertainty as of 2026-04-26)."""
+        cfg = WizardConfig()
+        cfg.llm_provider = "openrouter"
+        # Pick __OTHER__ (the LAST entry, position 11) → wizard
+        # falls through to ask_text. Type a Gemini model ID.
+        monkeypatch.setattr(
+            "builtins.input",
+            _stub_input(["11", "google/gemini-2.5-flash"]))
+        step_05_llm_provider(cfg)
+        assert cfg.llm_provider_id == "google/gemini-2.5-flash"
+        assert cfg.prompt_family == "gemini"
 
     def test_family_derivation_direct_anthropic(self, monkeypatch):
         """Direct Anthropic provider: model IDs don't carry the

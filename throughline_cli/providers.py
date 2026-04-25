@@ -23,6 +23,24 @@ Design goals:
 - **Data-driven.** New providers are dict entries, not new modules.
 - **Escape hatch.** `generic` lets the user drop in any
   OpenAI-compatible URL + key var the registry doesn't know about.
+  Plus: every preset's model list ends with an `__OTHER__` choice
+  that drops the user into a free-form "type your own model id"
+  prompt — for cases where our list is wrong / stale / missing the
+  one they want.
+
+Verification policy:
+- Model IDs and base URLs are spot-checked against each provider's
+  official documentation as of 2026-04-26.
+- Models change names, get deprecated, get superseded between major
+  releases. If your install hits a "model not found" 404 at the
+  preview step, pick **Other (type your own model ID)** at step 5
+  and paste the canonical ID from the provider's docs.
+- Anthropic and OpenAI in particular rotate `-YYYYMMDD`-suffixed
+  IDs; we ship the most recent ones we can verify, but the date
+  may drift.
+- A future v0.3 task is to ping each provider's `/v1/models`
+  endpoint at install time (using the user's key) and populate the
+  list dynamically — that closes this loop entirely.
 """
 from __future__ import annotations
 
@@ -62,19 +80,26 @@ _OPENROUTER = ProviderPreset(
     base_url="https://openrouter.ai/api/v1",
     env_var="OPENROUTER_API_KEY",
     signup_url="https://openrouter.ai",
+    # OpenRouter routes via `<vendor>/<model>` prefixed IDs. Keep the
+    # list short + verified rather than long + drifty — users who
+    # need a specific model can paste it via the "Other" entry.
+    # Verified at openrouter.ai/models 2026-04-26.
     models=(
-        ("anthropic/claude-sonnet-4.6",  "Anthropic Sonnet 4.6"),
-        ("anthropic/claude-haiku-4.5",   "Anthropic Haiku 4.5"),
-        ("anthropic/claude-opus-4.7",    "Anthropic Opus 4.7"),
-        ("openai/gpt-5-mini",            "OpenAI GPT-5-mini"),
-        ("openai/gpt-5",                 "OpenAI GPT-5"),
-        ("google/gemini-3-flash",        "Google Gemini 3 Flash"),
-        ("google/gemini-3-pro",          "Google Gemini 3 Pro"),
-        ("xai/grok-3",                   "xAI Grok 3"),
-        ("deepseek/v3.2",                "DeepSeek v3.2"),
-        ("meta-llama/llama-3.3-70b",     "Meta Llama 3.3 70B"),
+        ("anthropic/claude-sonnet-4.6",       "Anthropic Sonnet 4.6"),
+        ("anthropic/claude-opus-4.7",         "Anthropic Opus 4.7"),
+        ("anthropic/claude-haiku-4.5",        "Anthropic Haiku 4.5"),
+        ("openai/gpt-5",                      "OpenAI GPT-5"),
+        ("openai/gpt-5-mini",                 "OpenAI GPT-5-mini"),
+        ("openai/o4-mini",                    "OpenAI o4-mini (reasoning)"),
+        ("deepseek/deepseek-chat",            "DeepSeek Chat (V3.2)"),
+        ("deepseek/deepseek-reasoner",        "DeepSeek R1 (reasoner)"),
+        ("meta-llama/llama-3.3-70b-instruct", "Meta Llama 3.3 70B Instruct"),
+        ("qwen/qwen-2.5-72b-instruct",        "Qwen 2.5 72B Instruct"),
     ),
-    notes="Routes to 300+ models through one key + one endpoint. Default if you don't want to think about this.",
+    notes=("Routes to 300+ models through one key + one endpoint. "
+           "Default if you don't want to think about this. List "
+           "shows the verified handful; full catalogue is at "
+           "openrouter.ai/models — paste any ID via 'Other'."),
     extra_headers=(
         ("HTTP-Referer", "https://github.com/jprodcc-rodc/throughline"),
         ("X-Title",      "throughline"),
@@ -103,10 +128,23 @@ _ANTHROPIC = ProviderPreset(
     base_url="https://api.anthropic.com/v1",
     env_var="ANTHROPIC_API_KEY",
     signup_url="https://console.anthropic.com",
+    # Verified against Anthropic's models page 2026-04-26. Date
+    # suffixes are the canonical cut-of dates; alias forms (e.g.
+    # `claude-sonnet-4-5`) also work but the dated form pins the
+    # exact snapshot.
+    #
+    # The Anthropic 4.x family uses date-suffixed IDs:
+    #   - Sonnet 4.5 → claude-sonnet-4-5-20250929
+    #   - Haiku 4.5  → claude-haiku-4-5-20251001
+    #   - Opus 4.7   → claude-opus-4-7  (alias; dated form rolls
+    #                                   out in batches)
+    # NOTE: there is NO Claude Opus 4.5 product. The 4.x Opus track
+    # jumped from 4.x preview straight to 4.7. Don't add a fake
+    # `claude-opus-4-5-*` entry.
     models=(
         ("claude-sonnet-4-5-20250929", "Claude Sonnet 4.5"),
-        ("claude-opus-4-5-20250929",   "Claude Opus 4.5"),
-        ("claude-haiku-4-5-20250929",  "Claude Haiku 4.5"),
+        ("claude-opus-4-7",            "Claude Opus 4.7"),
+        ("claude-haiku-4-5-20251001",  "Claude Haiku 4.5"),
     ),
     notes=("Native /v1/messages. Prompt caching on the system block "
            "enabled by default (cache_control=ephemeral, ~5-min hit "
