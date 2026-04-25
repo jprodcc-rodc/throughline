@@ -174,3 +174,57 @@ class TestAskYesNoLegacy:
         monkeypatch.setattr("builtins.input", lambda *_: "")
         assert ui.ask_yes_no("OK?", default=True) is True
         assert ui.ask_yes_no("OK?", default=False) is False
+
+
+# ============================================================
+# Regression: questionary's default= parameter must position the
+# cursor on the requested option, not on the first option.
+# ============================================================
+
+class TestQuestionaryDefaultPositioning:
+    """A real bug found via demo: passing `default=` as a Choice
+    instance to questionary.select() makes its cursor-positioning
+    logic compare two different Choice instances by identity, so
+    the cursor silently stuck on the FIRST option regardless of
+    what we asked for. Round 2 of the demo asked for chroma; user
+    pressed Enter; got qdrant (the first option) instead.
+
+    Fix: pass the VALUE STRING, not a Choice. This test pins the
+    fix by mocking questionary.select and asserting we pass a
+    plain string."""
+
+    def test_default_passed_as_string_not_choice(self, monkeypatch):
+        from throughline_cli import ui
+        captured = {}
+
+        def fake_select(question, choices=None, default=None, **kw):
+            captured["default"] = default
+            captured["default_type"] = type(default).__name__
+
+            class _Q:
+                def unsafe_ask(self):
+                    # Return whichever choice has value matching
+                    # `default` so callers see a coherent answer.
+                    for c in choices:
+                        if c.value == default:
+                            return default
+                    return choices[0].value if choices else None
+            return _Q()
+
+        monkeypatch.setattr("questionary.select", fake_select)
+        # Force the questionary path even from pytest.
+        monkeypatch.setattr(ui, "_use_questionary", lambda: True)
+
+        ui._pick_option_arrow(
+            "Pick:",
+            [("a", "Alpha", ""), ("b", "Bravo", ""), ("c", "Charlie", "")],
+            default_key="b",
+        )
+        # Critical assertion: we pass the bare key string `"b"`, not
+        # a Choice object. Questionary's positioning logic only
+        # works correctly with the string form.
+        assert captured["default"] == "b", (
+            f"expected default='b', got {captured['default']!r}")
+        assert captured["default_type"] == "str", (
+            f"default must be a string for cursor positioning to "
+            f"work; got {captured['default_type']}")

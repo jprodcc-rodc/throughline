@@ -305,8 +305,15 @@ def _pick_option_arrow(question: str,
 
     # Build choices with the default pre-selected. questionary uses
     # Choice.title for display + Choice.value for the returned key.
+    #
+    # IMPORTANT: pass `default=` as the VALUE STRING, not as the Choice
+    # object. `Choice.__eq__` is identity-based, so passing a Choice
+    # makes questionary's cursor-positioning logic compare two
+    # different Choice instances and never match — the cursor would
+    # silently land on the first item regardless of `default_key`. The
+    # value-string branch falls into a `self.default == choice.value`
+    # comparison which is plain string equality and works.
     choices = []
-    default_choice = None
     for key, label, desc in options:
         # Render label + dim description in the same line. Truncate
         # description so the picker stays one-line-per-option.
@@ -315,16 +322,13 @@ def _pick_option_arrow(question: str,
             title_text = f"{label}  —  {short_desc}"
         else:
             title_text = label
-        c = Choice(title=title_text, value=key)
-        if key == default_key:
-            default_choice = c
-        choices.append(c)
+        choices.append(Choice(title=title_text, value=key))
 
     try:
         answer = questionary.select(
             question,
             choices=choices,
-            default=default_choice,
+            default=default_key,
             instruction="(↑/↓ to move · Enter to select)",
             qmark="?",
         ).unsafe_ask()

@@ -89,15 +89,31 @@ def main() -> int:
         default_key="chroma",
     )
     if pick2 == "duckdb_vss":
-        ui.info_line(f"[green]✓[/] Round 2 picked: [bold]{pick2}[/] — "
-                      f"arrow-key navigation confirmed.")
+        ui.info_line(
+            f"[green]✓[/] Round 2 picked: [bold]{pick2}[/] — arrow-key "
+            f"navigation confirmed. Cursor started on chroma, you "
+            f"pressed ↓ ↓ Enter, landed on duckdb_vss.")
     elif pick2 == "chroma":
-        ui.info_line(f"[yellow]Round 2 picked: [bold]{pick2}[/] — you "
-                      f"hit Enter without navigating. The picker still "
-                      f"works, you just didn't try the arrows.[/]")
+        ui.info_line(
+            f"[yellow]Round 2 picked: [bold]{pick2}[/] — you hit Enter "
+            f"without navigating. The cursor was on chroma (the new "
+            f"default), so you accepted it. Run again and try ↓ ↓.[/]")
+    elif pick2 == "qdrant":
+        # If we reach this branch, questionary's `default=` parameter
+        # is being ignored — the cursor stuck on the first option
+        # (qdrant). This was an actual bug fixed in the same commit
+        # that updated this demo (was passing a Choice instance, now
+        # passing the value string). Surface as a warning if it
+        # somehow reappears.
+        ui.info_line(
+            f"[red]Round 2 picked: [bold]{pick2}[/] — this means the "
+            f"cursor started on qdrant, not chroma. The default= "
+            f"parameter is being ignored. Open an issue.[/]")
     else:
-        ui.info_line(f"[green]✓[/] Round 2 picked: [bold]{pick2}[/] — "
-                      f"arrow-key navigation confirmed.")
+        ui.info_line(
+            f"[green]✓[/] Round 2 picked: [bold]{pick2}[/] — arrow-key "
+            f"navigation confirmed (you landed somewhere other than the "
+            f"chroma default).")
     ui.print_blank()
 
     # ---- T2: animated spinner ----
