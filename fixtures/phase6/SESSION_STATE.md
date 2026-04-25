@@ -2,9 +2,10 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-26 — Feature freeze lifted by user; A-J
-backburner wave + 3-item post-v0.2.0 polish round (LanceDB, refine
---dry-run, schema validation) all shipped and pushed to main
+**Last updated:** 2026-04-26 (continued) — Pluggable-backend arc
+fully closed: all 4 originally-aliased vector backends + both
+remaining native rerankers + U27.5/.7 taxonomy growth surfaces
+shipped. 848 → 899 tests (+51) across 6 additional commits.
 
 ## ✅ Feature freeze LIFTED (2026-04-26)
 
@@ -134,12 +135,20 @@ with pauses.
 <https://github.com/jprodcc-rodc/throughline>
 <https://jprodcc-rodc.github.io/throughline/> ← docs site also live
 
-**Latest commit on `main`:** `678532c` (config: validate
-llm_provider against the 16-entry registry). 838 passed / 10 xfailed
-(up from 712 at the last anchor — A-J wave +67, post-v0.2.0 polish
-+34, schema validation +23, LanceDB +7, dry-run +11, refine_kept
-+5). CI green across lint + pytest 3.11 + pytest 3.12 + docs. ·
-**GitHub:** `jprodcc-rodc/throughline`
+**Latest commit on `main`:** `ec32dae` (U27.7 lite: zero-usage
+leaf detection). 899 passed / 10 xfailed. CI green across lint +
+pytest 3.11 + pytest 3.12 + docs. · **GitHub:** `jprodcc-rodc/throughline`
+
+**This-session arc summary (2026-04-26):**
+- Pre-`继续` round (3 items): LanceDB #6 / refine --dry-run / config
+  schema validation + `config validate` CLI subcommand.
+- Post-`继续` round (6 items, this stretch): sqlite-vec #11 /
+  duckdb_vss #10 / pgvector #9 / Voyage+Jina rerankers / U27.5
+  doctor pending check / U27.7 zero-usage detector.
+- Net: all 4 originally-aliased vector backends are now first-class
+  in v0.2.x (only `none` remains alias-to-qdrant); both remaining
+  v0.3-deferred rerankers ship native; U27 growth loop now visible
+  in doctor + has a deprecation hint.
 
 **Tagline chosen (2026-04-25):** `"Stop re-explaining yourself to every new chat."`
 — replaces the earlier "The thread that turns every LLM conversation…"
@@ -219,22 +228,42 @@ All six of the prior picklist items have shipped (config migration
 `--reconfigure` `b7f914d`, daemon LLM integration tests `bcef4cd`,
 Anthropic native adapter `3b94051`).
 
-Fresh picklist (post-2026-04-26 round):
-1. **`duckdb_vss` / `sqlite_vec` / `pgvector` native backends** —
-   good-first-issues #9/#10/#11 are open for contributors. If no
-   contributor picks them up, self-implement following the
-   LanceDB pattern (`_REGISTRY` entry + stub-when-missing + 5-method
-   round-trip tests).
-2. **`throughline_cli config validate`** — promote the schema
-   validator to a standalone subcommand so users can run it
-   without the full doctor overhead.
-3. **U27.5/.6/.7 taxonomy growth extensions** — Filter outlet
-   "N candidates pending" hint; `taxonomy retag` batch re-refine;
-   deprecation of zero-usage leaves + merge proposal.
-4. **Native Voyage / Jina rerankers** — currently alias to Cohere
-   / bge-m3.
-5. **PyPI publish** (needs user action: register project name,
-   upload wheel, set TestPyPI trial first).
+Fresh picklist (post-2026-04-26 round, after the long auto-mode
+stretch):
+
+All shipped this session:
+- ☑ duckdb_vss / sqlite_vec / pgvector native backends
+- ☑ `throughline_cli config validate` subcommand
+- ☑ Native Voyage / Jina rerankers
+- ☑ U27.5 (lite): doctor pending-candidates check
+- ☑ U27.7 (lite): zero-usage leaf detection
+
+Still on the table (intentionally NOT picked up because they need
+real-world signal or user judgment):
+1. **U27.6: `taxonomy retag` batch re-refine** — would walk vault
+   for cards with old `primary_x`, requeue them through the daemon.
+   Cost-meaningful (re-refining 100+ cards costs $1+); needs the
+   user's signoff on which tags to retag, so adding a CLI without
+   the user telling me what they want to migrate is premature.
+2. **`bge-reranker-v2-gemma` native impl** — currently alias to
+   bge-m3. Bge-gemma model loads differently from m3
+   (causal-decoder, different tokenizer); needs benchmarking
+   against m3 on real corpora to judge if the loss-of-perf is
+   worth the dep weight. Defer to v0.3 with a real test corpus.
+3. **PyPI publish** (still user-side: register name, upload wheel,
+   TestPyPI trial first).
+4. **U27.7 (full): merge proposal for similar leaves** — needs
+   embedding-similarity, which means picking an embedder or
+   reusing the active one; non-trivial. Deferred.
+
+Closed-out arcs:
+- Vector store pluggable backends: 4-of-4 originally-aliased
+  backends shipped real (lancedb #6, sqlite_vec #11, duckdb_vss
+  #10, pgvector #9). Only `none` remains as a Notes-only mission
+  alias.
+- Reranker pluggable backends: 4-of-5 (cohere / voyage / jina /
+  skip + bge-reranker-v2-m3). Only bge-reranker-v2-gemma is still
+  an alias.
 
 **Things that need YOU (not me):**
 - **Watch → Custom** on the repo page.
