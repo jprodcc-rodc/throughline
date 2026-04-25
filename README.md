@@ -165,9 +165,9 @@ server + daemon, install the Filter.
 
 | Component | Default | Alternates (today) | Coming in v0.3 |
 |---|---|---|---|
-| Embedder (`EMBEDDER`) | `bge-m3` (local) | `openai` | `nomic` / `minilm` natively |
-| Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `voyage`, `jina`, `skip` (all real impls) | — |
-| Vector store (`VECTOR_STORE`) | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (embedded, zero-server), `pgvector` (Postgres) — all real impls | — |
+| Embedder (`EMBEDDER`) | `bge-m3` (local) | `openai` (real impl); `jina` / `voyage` / `cohere` (alias → OpenAI-compatible endpoint with custom `EMBEDDING_API_BASE`) | `nomic` / `minilm` as distinct native impls |
+| Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `voyage`, `jina`, `skip` (all real impls — separate HTTP clients, not aliases) | — |
+| Vector store (`VECTOR_STORE`) | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (all embedded, zero-server), `pgvector` (Postgres + pgvector extension) — all real impls, all six closed against tracking issues | — |
 
 ### LLM providers
 

@@ -4,17 +4,26 @@
 `rag_server`'s FastAPI app, the `ingest_qdrant.py` vault ingester, and
 any future tools pick up a concrete embedder via `create_embedder()`.
 
-v0.2.0 ships two reference backends:
+v0.2.x ships two reference backends + a small alias surface:
 
 - `bge-m3`   — local 1024-dim BAAI/bge-m3 via transformers + torch.
               Default for Full-privacy / Local-only missions.
 - `openai`  — OpenAI-compatible `text-embedding-3-small` via the
               embeddings API. 1536-dim; reference for the cloud path.
+              Also drives the `jina` / `voyage` / `cohere` aliases —
+              all three vendors expose OpenAI-compatible embedding
+              endpoints, so a single `OpenAIEmbedder` with the right
+              `EMBEDDING_API_BASE` env var serves them.
 
-Other backends (nomic-embed, MiniLM, Jina, Voyage…) are intentionally
-not implemented in this commit. The registry is the public plug-in
-point — downstream users register via `register_embedder(name, ctor)`
-and get the same call-site surface.
+The remaining alias names route to `bge-m3` because v0.2.x has not
+shipped distinct embedder code for them yet:
+
+- `nomic`   → `bge-m3`   — TODO(v0.3): dedicated Nomic impl
+- `minilm`  → `bge-m3`   — TODO(v0.3): dedicated MiniLM impl
+
+The registry is the public plug-in point — downstream users register
+via `register_embedder(name, ctor)` and get the same call-site
+surface.
 
 Design notes:
 - Torch / transformers are imported LAZILY inside `BgeM3Embedder.ensure_loaded()`

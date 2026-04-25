@@ -19,20 +19,29 @@ abstraction so:
 - Downstream users can register their own backend with
   `register_vector_store()` and everything else keeps working.
 
-v0.2.0 ships TWO reference implementations:
+v0.2.x ships SIX real backend implementations:
 
-- `qdrant`   — raw HTTP against Qdrant's REST API. No client SDK
-                dependency; stdlib urllib only. Preserves the exact
-                behaviour the daemon / rag_server already depend on.
-- `chroma`   — via chromadb's Python client. Optional dep; if
-                chromadb is not importable, instantiating returns a
-                stub that reports the install hint on every call
-                rather than crashing at import time.
+- `qdrant`     — raw HTTP against Qdrant's REST API. No client SDK
+                  dependency; stdlib urllib only. Preserves the exact
+                  behaviour the daemon / rag_server already depend on.
+- `chroma`     — via chromadb's Python client. Optional dep; if
+                  chromadb is not importable, instantiating returns a
+                  stub that reports the install hint on every call
+                  rather than crashing at import time.
+- `lancedb`    — embedded, file-backed (Arrow / Lance format), zero-
+                  server. `pip install lancedb` opt-in. Closes #6.
+- `sqlite_vec` — fully embedded, sqlite3-stdlib + sqlite_vec extension.
+                  Lightest credible footprint. Closes #11.
+- `duckdb_vss` — embedded analytical DB + the VSS extension for vector
+                  search. Picks for users already on a DuckDB stack.
+                  Closes #10.
+- `pgvector`   — server-based Postgres + pgvector extension. Picks for
+                  users on an existing Postgres ops stack. Closes #9.
 
-Other backends (`lancedb`, `duckdb_vss`, `sqlite_vec`, `pgvector`)
-are registered as aliases routing to `qdrant` for now so the wizard
-can list them without implying full support. v0.3 adds the real
-impls.
+The four backends originally aliased to `qdrant` (lancedb /
+duckdb_vss / sqlite_vec / pgvector) all shipped as first-class real
+implementations during v0.2.x. Only spelling aliases remain (e.g.
+`sqlite-vec` → `sqlite_vec`).
 
 Design notes:
 - `SearchHit` is a plain dict shape, not a dataclass, so callers
