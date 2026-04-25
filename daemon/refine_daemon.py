@@ -748,7 +748,27 @@ def call_llm_json(
             with urllib.request.urlopen(req, timeout=180) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
             obj = json.loads(raw)
-            content = obj.get("choices", [{}])[0].get("message", {}).get("content", "")
+            # Defensive: an empty `choices` array used to fall through
+            # to `[{}]`-default → empty content → parse_json_loose
+            # silently returning {}. That masked rate-limit / safety-
+            # filter / quota responses as "successful empty refine"
+            # which then wrote a malformed card or got dropped without
+            # a log line. Surface explicitly so retry / log fires.
+            choices = obj.get("choices") or []
+            if not choices:
+                raise RuntimeError(
+                    f"LLM returned 200 with empty choices array: {raw[:300]}"
+                )
+            content = choices[0].get("message", {}).get("content", "")
+            # Anthropic-shape `stop_reason` (or OpenAI-shape `finish_reason`)
+            # of "max_tokens" / "length" means the response was truncated
+            # mid-emit. Downstream JSON parsing will likely fail, but the
+            # log line tells the user WHY rather than just "JSON parse error".
+            finish = (choices[0].get("finish_reason")
+                       or choices[0].get("stop_reason"))
+            if finish in ("length", "max_tokens"):
+                log(f"WARN | {step_name or 'LLM'} response truncated "
+                    f"(finish_reason={finish}); raise max_tokens")
             usage = obj.get("usage", {}) or {}
             if step_name:
                 _record_cost(step_name, model,

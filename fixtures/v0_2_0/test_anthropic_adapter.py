@@ -165,6 +165,33 @@ class TestParseResponse:
             aa._parse_response(raw)
         assert "no text" in str(ei.value).lower()
 
+    def test_truncated_response_carries_flag(self):
+        """`stop_reason: max_tokens` means Anthropic ran out of
+        tokens mid-emit. The adapter surfaces this via a
+        `_truncated: True` flag on the usage dict — caller can
+        warn the user instead of letting the truncated body fail
+        downstream JSON parsing with a misleading 'bad JSON' error."""
+        raw = json.dumps({
+            "content": [{"type": "text", "text": '{"unterminated json'}],
+            "usage": {"input_tokens": 100, "output_tokens": 4000},
+            "stop_reason": "max_tokens",
+        })
+        text, usage = aa._parse_response(raw)
+        assert text.startswith("{")
+        assert usage.get("_truncated") is True
+        # Other fields preserved.
+        assert usage["prompt_tokens"] == 100
+        assert usage["completion_tokens"] == 4000
+
+    def test_normal_stop_reason_no_truncation_flag(self):
+        raw = json.dumps({
+            "content": [{"type": "text", "text": "complete output"}],
+            "usage": {"input_tokens": 100, "output_tokens": 50},
+            "stop_reason": "end_turn",
+        })
+        text, usage = aa._parse_response(raw)
+        assert "_truncated" not in usage
+
 
 # -----------------------------------------------------------------
 # call_messages

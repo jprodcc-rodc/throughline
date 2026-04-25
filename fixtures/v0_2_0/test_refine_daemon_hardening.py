@@ -221,3 +221,72 @@ class TestRecordCostTokenClamp:
         assert refiner["input_tokens"] == 1000
         assert refiner["output_tokens"] == 500
         assert refiner["cost"] > 0
+
+
+# ============================================================
+# call_llm_json — empty `choices` array no longer silently succeeds
+# ============================================================
+
+class TestCallLlmJsonEmptyChoices:
+    """Pre-fix: `obj.get("choices", [{}])[0].get("message", {}).get(
+    "content", "")` masked an empty-choices response (rate limit /
+    safety filter / quota) as a successful empty refine. Now it
+    raises so retry / log fires."""
+
+    def _setup(self, monkeypatch, tmp_path, body_dict):
+        for mod in list(sys.modules):
+            if mod.startswith("daemon.refine_daemon"):
+                del sys.modules[mod]
+        monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "state"))
+        monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        import daemon.refine_daemon as rd
+        # Force the LLM URL + key to non-empty for the test.
+        monkeypatch.setattr(rd, "_LLM_URL",
+                              "https://example.invalid/v1/chat/completions")
+        monkeypatch.setattr(rd, "_LLM_KEY", "test-key")
+        monkeypatch.setattr(rd, "_LLM_EXTRA_HEADERS", {})
+
+        class _FakeResp:
+            def __init__(self, b): self._b = b
+            def read(self): return self._b
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+
+        body_bytes = json.dumps(body_dict).encode("utf-8")
+        monkeypatch.setattr(
+            "urllib.request.urlopen",
+            lambda req, timeout=None: _FakeResp(body_bytes))
+        return rd
+
+    def test_empty_choices_raises_after_retries(self, tmp_path, monkeypatch):
+        rd = self._setup(monkeypatch, tmp_path, {"choices": []})
+        with pytest.raises(Exception) as ei:
+            rd.call_llm_json(
+                model="x/y", system_prompt="s", user_prompt="u",
+                temperature=0.0, max_tokens=100, retries=0)
+        assert "empty choices" in str(ei.value).lower()
+
+    def test_truncation_warning_logged(self, tmp_path, monkeypatch):
+        """`finish_reason: length` (or Anthropic's `stop_reason:
+        max_tokens`) means the response was truncated mid-emit. A WARN
+        line tells the user WHY downstream JSON parsing fails."""
+        rd = self._setup(monkeypatch, tmp_path, {
+            "choices": [{
+                "message": {"content": '{"unterminated": "json'},
+                "finish_reason": "length",
+            }],
+            "usage": {"prompt_tokens": 100, "completion_tokens": 4000},
+        })
+        captured: list = []
+        monkeypatch.setattr(rd, "log", lambda m: captured.append(m))
+        # Parse may raise on the unterminated JSON, but the WARN line
+        # should fire BEFORE that. Catch and inspect.
+        try:
+            rd.call_llm_json(
+                model="x/y", system_prompt="s", user_prompt="u",
+                temperature=0.0, max_tokens=100,
+                step_name="Refiner", retries=0)
+        except Exception:
+            pass
+        assert any("truncated" in m.lower() for m in captured), (
+            f"expected truncation warning, got logs: {captured}")

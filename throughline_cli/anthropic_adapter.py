@@ -107,6 +107,12 @@ def _parse_response(raw: str) -> Tuple[str, Dict[str, int]]:
     Returns usage renamed to OpenAI-shape field names
     (`prompt_tokens` / `completion_tokens`) so downstream cost
     trackers that already key off those names keep working.
+
+    `usage` carries an extra `_truncated: True` flag when the
+    response stopped on `max_tokens`. Caller can surface a
+    user-visible warning instead of letting the truncated body
+    fail downstream JSON parsing with a misleading "bad JSON"
+    error.
     """
     try:
         data = json.loads(raw)
@@ -134,6 +140,11 @@ def _parse_response(raw: str) -> Tuple[str, Dict[str, int]]:
         "prompt_tokens":     int(raw_usage.get("input_tokens") or 0),
         "completion_tokens": int(raw_usage.get("output_tokens") or 0),
     }
+    # Surface truncation as a sticky bit on the usage dict. We use an
+    # underscored key so existing cost-tracker code that walks the dict
+    # ignores it.
+    if data.get("stop_reason") == "max_tokens":
+        usage["_truncated"] = True
     return text, usage
 
 
