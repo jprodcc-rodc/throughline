@@ -30,8 +30,16 @@ pre-1.0 minor bumps can include breaking config shape changes.
   rowids back to string ids + JSON payloads). `_SqliteVecUnavailable`
   stub when missing. 7 tests using a sqlite3.connect proxy that
   emulates vec0's MATCH operator with Python-side L2 ranking.
-  `duckdb_vss` / `pgvector` remain alias-to-Qdrant stubs for v0.3
-  (good-first-issues #9/#10 still open).
+- **DuckDB-VSS** is a first-class `VECTOR_STORE` backend (closes #10)
+  — embedded analytical SQL + vector search in a single .duckdb
+  file. Best fit when DuckDB is already in the analytics stack.
+  Single-table schema per collection (id VARCHAR PK, vector
+  FLOAT[N], payload JSON); upsert via `INSERT ... ON CONFLICT (id)
+  DO UPDATE`; search via `array_distance()` ORDER BY dist LIMIT k.
+  VSS extension auto-installed/loaded on connect. `_DuckDBVSSUnavailable`
+  stub when `duckdb` is missing. 7 tests via fake `duckdb` module
+  with a minimal SQL parser. `pgvector` is the last remaining alias
+  stub (good-first-issue #9).
 - **`throughline_cli refine --dry-run <path.md>`** — zero-cost
   refiner-prompt preview. Parses a raw conversation, reports which
   slicer tier WOULD fire + which model, and prints the refiner

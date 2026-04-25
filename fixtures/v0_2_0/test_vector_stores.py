@@ -42,9 +42,9 @@ class TestCreateVectorStore:
     def test_alias_routing_to_qdrant(self):
         """v0.3 expansion points route to Qdrant for now. The wizard
         can list them; the user can pick them without crashing.
-        (lancedb + sqlite_vec moved out — shipped as real impls in
-        v0.2.x.)"""
-        for alias in ("duckdb_vss", "duckdb-vss", "pgvector", "none"):
+        (lancedb / sqlite_vec / duckdb_vss moved out — shipped as
+        real impls in v0.2.x.)"""
+        for alias in ("pgvector", "none"):
             s = vs.create_vector_store(alias)
             assert s.name == "qdrant", f"{alias} failed to resolve"
 
@@ -54,6 +54,11 @@ class TestCreateVectorStore:
         s = vs.create_vector_store("sqlite-vec")
         # Stub or real, the name field is the underscore form.
         assert s.name == "sqlite_vec"
+
+    def test_duckdb_vss_hyphen_alias_routes_to_underscore(self):
+        """`duckdb-vss` is an alias to `duckdb_vss`."""
+        s = vs.create_vector_store("duckdb-vss")
+        assert s.name == "duckdb_vss"
 
     def test_unknown_raises(self):
         with pytest.raises(ValueError) as ei:
@@ -81,9 +86,10 @@ class TestCreateVectorStore:
 
     def test_available_lists_primaries_and_aliases(self):
         names = set(vs.available_vector_stores())
-        # Primaries include LanceDB + sqlite_vec as of v0.2.x.
-        assert {"qdrant", "chroma", "lancedb", "sqlite_vec"}.issubset(names)
-        assert {"sqlite-vec", "duckdb_vss", "pgvector", "none"}.issubset(names)
+        # Primaries include LanceDB + sqlite_vec + duckdb_vss as of v0.2.x.
+        assert {"qdrant", "chroma", "lancedb",
+                 "sqlite_vec", "duckdb_vss"}.issubset(names)
+        assert {"sqlite-vec", "duckdb-vss", "pgvector", "none"}.issubset(names)
 
 
 # ------- QdrantStore wire-level tests -------
@@ -860,6 +866,211 @@ class TestSqliteVecStoreWithFakeSqliteVec:
     def test_empty_upsert_and_delete_shortcircuit(self, tmp_path, monkeypatch):
         self._inject_fake_sqlite_vec(monkeypatch)
         s = vs.SqliteVecStore(path=str(tmp_path / "vec.db"))
+        s.ensure_collection("obs", 3)
+        assert s.upsert("obs", []) == 0
+        assert s.delete("obs", []) == 0
+
+
+# ------- DuckDBVSSStore behaviour — stub path when unavailable -------
+
+class TestDuckDBVSSStoreWithoutDuckDB:
+    def test_stub_when_duckdb_missing(self, monkeypatch):
+        """If duckdb isn't importable, instantiation succeeds and
+        returns a stub; real calls raise RuntimeError with the
+        install hint."""
+        import builtins
+        real_import = builtins.__import__
+
+        def guard(name, *a, **kw):
+            if name == "duckdb" or name.startswith("duckdb."):
+                raise ImportError("duckdb not installed (simulated)")
+            return real_import(name, *a, **kw)
+
+        monkeypatch.setattr(builtins, "__import__", guard)
+        s = vs.DuckDBVSSStore()
+        assert s.name == "duckdb_vss"
+        with pytest.raises(RuntimeError) as ei:
+            s.ensure_collection("x", 1024)
+        assert "duckdb" in str(ei.value).lower()
+
+
+class TestDuckDBVSSStoreWithFakeDuckDB:
+    """Simulate `duckdb` via an in-memory fake — minimal SQL parser
+    plus a Python-side store of (id, vector, payload) tuples per
+    table. Just enough to exercise every code path in DuckDBVSSStore."""
+
+    def _inject_fake_duckdb(self, monkeypatch):
+        import types
+        import re as _re
+        import math as _math
+
+        fake = types.ModuleType("duckdb")
+
+        class _FakeCursor:
+            def __init__(self, rows):
+                self._rows = list(rows)
+
+            def fetchall(self):
+                return self._rows
+
+            def fetchone(self):
+                return self._rows[0] if self._rows else None
+
+        class _FakeConn:
+            def __init__(self, path):
+                self.path = path
+                self._tables = {}  # name -> {id: (vector, payload)}
+
+            def execute(self, sql, params=()):
+                stripped = sql.strip()
+                up = stripped.upper()
+                # No-ops we don't care about.
+                if up.startswith("INSTALL ") or up.startswith("LOAD "):
+                    return _FakeCursor([])
+                # CREATE TABLE IF NOT EXISTS <name>(...)
+                m = _re.match(
+                    r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s*\(",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    self._tables.setdefault(name, {})
+                    return _FakeCursor([])
+                # INSERT ... ON CONFLICT — params: [pid, vec, payload]
+                m = _re.match(
+                    r"INSERT\s+INTO\s+(\w+)\s*\(", stripped, _re.IGNORECASE)
+                if m and "ON CONFLICT" in up:
+                    name = m.group(1)
+                    pid, vec, payload = params
+                    self._tables.setdefault(name, {})
+                    self._tables[name][pid] = (list(vec), payload)
+                    return _FakeCursor([])
+                # SELECT id, array_distance(vector, ?::FLOAT[]) ...
+                m = _re.match(
+                    r"SELECT\s+id,\s+array_distance\(vector,\s+\?::FLOAT\[\]\)\s+AS\s+dist,\s+payload\s+FROM\s+(\w+)\s+ORDER\s+BY\s+dist\s+LIMIT\s+\?",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    qvec, limit = params
+                    rows = []
+                    for pid, (vec, payload) in self._tables.get(name, {}).items():
+                        if not vec:
+                            d = 1.0
+                        else:
+                            d = _math.sqrt(sum(
+                                (float(a) - float(b)) ** 2
+                                for a, b in zip(qvec, vec)))
+                        rows.append((pid, d, payload))
+                    rows.sort(key=lambda r: r[1])
+                    return _FakeCursor(rows[:int(limit)])
+                # DELETE FROM <name> WHERE id IN (?, ?, ...)
+                m = _re.match(
+                    r"DELETE\s+FROM\s+(\w+)\s+WHERE\s+id\s+IN\s+\(",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    for pid in params:
+                        self._tables.get(name, {}).pop(pid, None)
+                    return _FakeCursor([])
+                # SELECT COUNT(*) FROM <name>
+                m = _re.match(
+                    r"SELECT\s+COUNT\(\*\)\s+FROM\s+(\w+)$",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    return _FakeCursor([(len(self._tables.get(name, {})),)])
+                # SELECT payload FROM <name>
+                m = _re.match(
+                    r"SELECT\s+payload\s+FROM\s+(\w+)$",
+                    stripped, _re.IGNORECASE)
+                if m:
+                    name = m.group(1)
+                    return _FakeCursor(
+                        [(payload,) for (_, payload)
+                         in self._tables.get(name, {}).values()])
+                raise AssertionError(
+                    f"unrecognized SQL in fake duckdb: {sql!r}")
+
+        fake.connect = lambda path: _FakeConn(path)
+        monkeypatch.setitem(sys.modules, "duckdb", fake)
+
+    def test_upsert_and_search_roundtrip(self, tmp_path, monkeypatch):
+        self._inject_fake_duckdb(monkeypatch)
+        s = vs.DuckDBVSSStore(path=str(tmp_path / "x.duckdb"))
+        s.ensure_collection("obs", vector_size=3, distance="cosine")
+        n = s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"t": "one"}},
+            {"id": "b", "vector": [0.4, 0.5, 0.6], "payload": {"t": "two"}},
+        ])
+        assert n == 2
+        hits = s.search("obs", [0.1, 0.2, 0.3], limit=2)
+        assert len(hits) == 2
+        assert {h["id"] for h in hits} == {"a", "b"}
+        assert hits[0]["id"] == "a"
+        assert hits[0]["score"] > hits[1]["score"]
+        assert hits[0]["payload"] == {"t": "one"}
+
+    def test_upsert_updates_in_place(self, tmp_path, monkeypatch):
+        self._inject_fake_duckdb(monkeypatch)
+        s = vs.DuckDBVSSStore(path=str(tmp_path / "x.duckdb"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"v": 1}},
+        ])
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3], "payload": {"v": 2}},
+        ])
+        assert s.count("obs") == 1
+        hits = s.search("obs", [0.1, 0.2, 0.3], limit=5)
+        assert hits[0]["payload"] == {"v": 2}
+
+    def test_delete(self, tmp_path, monkeypatch):
+        self._inject_fake_duckdb(monkeypatch)
+        s = vs.DuckDBVSSStore(path=str(tmp_path / "x.duckdb"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3]},
+            {"id": "b", "vector": [0.4, 0.5, 0.6]},
+        ])
+        assert s.count("obs") == 2
+        assert s.delete("obs", ["a"]) == 1
+        assert s.count("obs") == 1
+
+    def test_search_filter_must_clause(self, tmp_path, monkeypatch):
+        self._inject_fake_duckdb(monkeypatch)
+        s = vs.DuckDBVSSStore(path=str(tmp_path / "x.duckdb"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3],
+             "payload": {"knowledge_identity": "universal"}},
+            {"id": "b", "vector": [0.2, 0.3, 0.4],
+             "payload": {"knowledge_identity": "personal"}},
+        ])
+        hits = s.search(
+            "obs", [0.1, 0.2, 0.3], limit=5,
+            filter_={"must": [{"key": "knowledge_identity",
+                                "match": {"value": "universal"}}]})
+        assert len(hits) == 1
+        assert hits[0]["id"] == "a"
+
+    def test_count_with_filter(self, tmp_path, monkeypatch):
+        self._inject_fake_duckdb(monkeypatch)
+        s = vs.DuckDBVSSStore(path=str(tmp_path / "x.duckdb"))
+        s.ensure_collection("obs", 3)
+        s.upsert("obs", [
+            {"id": "a", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p1"}},
+            {"id": "b", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p2"}},
+            {"id": "c", "vector": [0.1, 0.2, 0.3],
+             "payload": {"pack": "p1"}},
+        ])
+        assert s.count("obs") == 3
+        assert s.count("obs", filter_={
+            "must": [{"key": "pack", "match": {"value": "p1"}}]}) == 2
+
+    def test_empty_upsert_and_delete_shortcircuit(self, tmp_path, monkeypatch):
+        self._inject_fake_duckdb(monkeypatch)
+        s = vs.DuckDBVSSStore(path=str(tmp_path / "x.duckdb"))
         s.ensure_collection("obs", 3)
         assert s.upsert("obs", []) == 0
         assert s.delete("obs", []) == 0

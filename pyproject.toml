@@ -83,6 +83,11 @@ lancedb = [
 sqlite-vec = [
     "sqlite-vec>=0.1",
 ]
+# Alternate VECTOR_STORE backend (DuckDB + community VSS extension —
+# best fit when DuckDB is already in the analytics stack).
+duckdb-vss = [
+    "duckdb>=0.10",
+]
 # Convenience: install everything (full local-only path).
 all = [
     "torch>=2.0",
@@ -92,6 +97,7 @@ all = [
     "lancedb>=0.6",
     "pyarrow>=14",
     "sqlite-vec>=0.1",
+    "duckdb>=0.10",
     "uvicorn[standard]>=0.27",
 ]
 # Test + lint dev tooling.

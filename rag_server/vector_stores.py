@@ -748,6 +748,182 @@ class SqliteVecStore(BaseVectorStore):
 
 
 # =========================================================
+# DuckDBVSSStore — embedded analytical SQL + vector search
+# =========================================================
+
+class _DuckDBVSSUnavailable(BaseVectorStore):
+    """Stub returned when `duckdb` isn't installed."""
+
+    name = "duckdb_vss"
+    _HINT = (
+        "DuckDB-VSS backend selected but `duckdb` is not installed. "
+        "Run `pip install duckdb` (the VSS extension is auto-loaded "
+        "from duckdb's extension repo on first use). Alternatively, "
+        "`pip install throughline[duckdb-vss]` once published."
+    )
+
+    def ensure_collection(self, *a, **kw): raise RuntimeError(self._HINT)
+    def upsert(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def search(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def delete(self, *a, **kw):             raise RuntimeError(self._HINT)
+    def count(self, *a, **kw):              raise RuntimeError(self._HINT)
+
+
+class DuckDBVSSStore(BaseVectorStore):
+    """Embedded analytical SQL + vector search — single .duckdb file,
+    zero-server. Best fit when the user already runs DuckDB for
+    analytics and wants vectors in the same database.
+
+    Schema per collection: a single table.
+        id      VARCHAR PRIMARY KEY
+        vector  FLOAT[<dim>]
+        payload JSON
+
+    The VSS extension is loaded on connect via `INSTALL vss; LOAD vss;`
+    Distance computed via `array_distance()` (L2). Upsert uses
+    `INSERT ... ON CONFLICT (id) DO UPDATE` for proper update
+    semantics (DuckDB supports this since v0.10).
+    """
+
+    name = "duckdb_vss"
+
+    def __new__(cls, *a, **kw):
+        try:
+            import duckdb  # noqa: F401
+        except Exception:
+            return _DuckDBVSSUnavailable()
+        return super().__new__(cls)
+
+    def __init__(self, path: Optional[str] = None) -> None:
+        import duckdb
+        self.path = path or os.getenv(
+            "DUCKDB_VSS_PATH",
+            os.path.expanduser("~/throughline_runtime/throughline.duckdb"),
+        )
+        os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+        self._conn = duckdb.connect(self.path)
+        # VSS extension is community-maintained; INSTALL fetches if
+        # needed, LOAD activates it. Failures here are surfaced
+        # immediately rather than on first MATCH.
+        try:
+            self._conn.execute("INSTALL vss")
+        except Exception:
+            # Some sandboxed environments forbid network fetches;
+            # the user can pre-install the extension manually.
+            pass
+        self._conn.execute("LOAD vss")
+        self._vector_size: Dict[str, int] = {}
+
+    # --- ABC methods -----------------------------------------------
+    def ensure_collection(self, name: str, vector_size: int,
+                            distance: str = "cosine") -> None:
+        self._vector_size[name] = int(vector_size)
+        self._conn.execute(
+            f"CREATE TABLE IF NOT EXISTS {name} ("
+            f"  id      VARCHAR PRIMARY KEY,"
+            f"  vector  FLOAT[{int(vector_size)}],"
+            f"  payload JSON"
+            f")"
+        )
+
+    def upsert(self, collection: str,
+                points: List[Dict[str, Any]]) -> int:
+        if not points:
+            return 0
+        import json as _json
+        n = 0
+        for p in points:
+            pid = str(p["id"])
+            vec = list(p["vector"])
+            payload = _json.dumps(p.get("payload") or {},
+                                    ensure_ascii=False)
+            # ON CONFLICT works on PRIMARY KEY columns in DuckDB.
+            self._conn.execute(
+                f"INSERT INTO {collection}(id, vector, payload) "
+                f"VALUES (?, ?, ?) "
+                f"ON CONFLICT (id) DO UPDATE SET "
+                f"  vector = excluded.vector, "
+                f"  payload = excluded.payload",
+                [pid, vec, payload],
+            )
+            n += 1
+        return n
+
+    def search(self, collection: str, vector: List[float],
+                limit: int = 10,
+                filter_: Optional[Dict[str, Any]] = None
+                ) -> List[SearchHit]:
+        import json as _json
+        rows = self._conn.execute(
+            f"SELECT id, array_distance(vector, ?::FLOAT[]) AS dist, payload "
+            f"FROM {collection} "
+            f"ORDER BY dist LIMIT ?",
+            [list(vector), int(limit)],
+        ).fetchall()
+        hits: List[SearchHit] = []
+        for sid, dist, payload_raw in rows:
+            try:
+                payload = _json.loads(payload_raw or "{}")
+            except (_json.JSONDecodeError, TypeError):
+                payload = payload_raw if isinstance(payload_raw, dict) else {}
+            if filter_:
+                want = {}
+                for clause in (filter_.get("must") or []):
+                    k = clause.get("key")
+                    v = clause.get("match", {}).get("value")
+                    if k is not None:
+                        want[k] = v
+                skip = False
+                for k, v in want.items():
+                    if payload.get(k) != v:
+                        skip = True
+                        break
+                if skip:
+                    continue
+            score = 1.0 - float(dist)
+            hits.append({"id": sid, "score": score, "payload": payload})
+        return hits
+
+    def delete(self, collection: str, point_ids: List[Any]) -> int:
+        if not point_ids:
+            return 0
+        ids = [str(p) for p in point_ids]
+        # Use parameter list — DuckDB supports `id IN (?, ?, ...)`
+        # with positional params via UNNEST or the list shorthand.
+        placeholders = ",".join(["?"] * len(ids))
+        self._conn.execute(
+            f"DELETE FROM {collection} WHERE id IN ({placeholders})", ids)
+        return len(ids)
+
+    def count(self, collection: str,
+                filter_: Optional[Dict[str, Any]] = None) -> int:
+        if filter_ is None:
+            row = self._conn.execute(
+                f"SELECT COUNT(*) FROM {collection}").fetchone()
+            return int(row[0] if row else 0)
+        # Filtered count: client-side payload walk (same trade-off
+        # as LanceDB / sqlite-vec).
+        import json as _json
+        matched = 0
+        for (payload_raw,) in self._conn.execute(
+                f"SELECT payload FROM {collection}").fetchall():
+            try:
+                payload = _json.loads(payload_raw or "{}")
+            except (_json.JSONDecodeError, TypeError):
+                payload = payload_raw if isinstance(payload_raw, dict) else {}
+            ok = True
+            for clause in (filter_.get("must") or []):
+                k = clause.get("key")
+                v = clause.get("match", {}).get("value")
+                if k is not None and payload.get(k) != v:
+                    ok = False
+                    break
+            if ok:
+                matched += 1
+        return matched
+
+
+# =========================================================
 # Registry + factory
 # =========================================================
 
@@ -756,17 +932,17 @@ _REGISTRY: Dict[str, Callable[[], BaseVectorStore]] = {
     "chroma":     ChromaStore,
     "lancedb":    LanceDBStore,
     "sqlite_vec": SqliteVecStore,
+    "duckdb_vss": DuckDBVSSStore,
 }
 
 _ALIASES: Dict[str, str] = {
     # v0.3 expansion points — currently route to Qdrant so the wizard
     # can list them, the user can pick them, and nothing crashes.
-    # LanceDB + sqlite-vec shipped as real impls in v0.2.x (moved out
-    # of this map). The hyphen-spelling alias for sqlite-vec resolves
-    # to the underscore-spelled primary.
+    # LanceDB + sqlite-vec + DuckDB-VSS shipped as real impls in
+    # v0.2.x (moved out of this map). The hyphen-spelling aliases
+    # resolve to the underscore-spelled primaries.
     "sqlite-vec":  "sqlite_vec",
-    "duckdb_vss":  "qdrant",
-    "duckdb-vss":  "qdrant",
+    "duckdb-vss":  "duckdb_vss",
     "pgvector":    "qdrant",
     "none":        "qdrant",  # 'none' means "no vector store" — for
                                  # Notes-only mission. See rag_server

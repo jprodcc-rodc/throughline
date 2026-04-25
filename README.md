@@ -120,7 +120,7 @@ server + daemon, install the Filter.
 |---|---|---|---|
 | Embedder (`EMBEDDER`) | `bge-m3` (local) | `openai` | `nomic` / `minilm` natively |
 | Reranker (`RERANKER`) | `bge-reranker-v2-m3` (local) | `cohere`, `skip` | `voyage` / `jina` natively |
-| Vector store (`VECTOR_STORE`) | `qdrant` | `chroma`, `lancedb`, `sqlite_vec` (optional deps — embedded, zero-server) | `duckdb_vss` / `pgvector` |
+| Vector store (`VECTOR_STORE`) | `qdrant` | `chroma`, `lancedb`, `sqlite_vec`, `duckdb_vss` (optional deps — all embedded, zero-server) | `pgvector` |
 
 ### LLM providers (16 preset routes)
 
