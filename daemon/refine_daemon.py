@@ -279,6 +279,12 @@ def _record_cost(step_name: str, model: str, input_tokens: int, output_tokens: i
     """Append a cost entry to state/cost_stats.json keyed by date+step."""
     if not step_name or not model:
         return
+    # Clamp to non-negative — providers occasionally return missing /
+    # garbled usage values that decode as negative ints, and
+    # negative cost would underflow the daily-budget check, silently
+    # raising the cap.
+    input_tokens = max(0, int(input_tokens or 0))
+    output_tokens = max(0, int(output_tokens or 0))
     pricing = MODEL_PRICING.get(model, (3.0, 15.0))
     cost = (input_tokens * pricing[0] + output_tokens * pricing[1]) / 1_000_000.0
     today = datetime.now().strftime("%Y-%m-%d")
@@ -1309,6 +1315,29 @@ def _point_id_from_path(path_str: str) -> int:
     return int(h, 16)
 
 
+def _normalize_for_prefix_check(rel_path: str) -> str:
+    """Defense-in-depth path normalization for the forbidden-prefix
+    check. Collapses `..` / `./`, swaps `os.sep` to `/`, and lower-
+    cases on case-insensitive filesystems (Windows / case-insensitive
+    macOS) so a path like `00_Buffer/private/x.md` can't slip past a
+    `00_Buffer/Private` prefix.
+
+    Today `rel_path` always comes from validated route strings inside
+    the daemon, but `_upsert_note_to_qdrant` is a public-shaped
+    function — a future contributor or external script might call it
+    with arbitrary input. Normalize once, here, before the comparison."""
+    # os.path.normpath collapses `..`, `./`, and runs of separators;
+    # then convert any backslashes to forward slashes for stable
+    # cross-platform comparison.
+    cleaned = os.path.normpath(rel_path).replace(os.sep, "/").lstrip("/")
+    # NTFS + APFS-default are case-insensitive; lowercase the test
+    # path AND the prefixes (done at load time below) so the check
+    # behaves the same on every OS.
+    if os.name == "nt" or sys.platform == "darwin":
+        cleaned = cleaned.lower()
+    return cleaned
+
+
 def _upsert_note_to_qdrant(rel_path: str, title: str, body_full: str,
                              knowledge_identity: str, tags: List[str],
                              source_conversation_id: str,
@@ -1316,10 +1345,13 @@ def _upsert_note_to_qdrant(rel_path: str, title: str, body_full: str,
     if not QDRANT_UPSERT_ENABLED:
         return False
     col = collection or QDRANT_COLLECTION
-    norm_path = rel_path.replace(os.sep, "/")
+    norm_path = _normalize_for_prefix_check(rel_path)
     if col == QDRANT_COLLECTION:
         for bad in _QDRANT_DEFAULT_FORBIDDEN_PREFIXES:
-            if norm_path.startswith(bad):
+            bad_norm = (bad.lower()
+                         if (os.name == "nt" or sys.platform == "darwin")
+                         else bad)
+            if norm_path.startswith(bad_norm):
                 log(f"QDRANT_SKIP_FORBIDDEN | path={norm_path} | prefix={bad}")
                 return False
     vec = _embed_text(f"{title}\n{body_full[:2000]}")
