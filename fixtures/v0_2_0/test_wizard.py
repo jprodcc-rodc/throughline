@@ -159,22 +159,21 @@ class TestVectorDbBranch:
 class TestProviderAutoDerivesPromptFamily:
     """U28 — step 5 is SCOPED to whichever provider step 4 picked.
 
-    The OpenRouter preset's model list (verified 2026-04-26):
-      1=Sonnet 4.6  2=Opus 4.7  3=Haiku 4.5  4=GPT-5  5=GPT-5-mini
-      6=o4-mini  7=DeepSeek Chat  8=DeepSeek R1
-      9=Llama 3.3 70B Instruct  10=Qwen 2.5 72B Instruct
-      11=Other (free-form)
-    Test pins family-derivation behaviour against the LIVE list —
-    if the list shifts (e.g., you add Gemini back), update the
-    parametrize accordingly.
+    Step 5 has show_back=True, so position 1 is "← Back" — every
+    real model is shifted by +1 from its position in the preset's
+    `models` list. The OpenRouter preset's list (verified 2026-04-26):
+      1=Back   2=Sonnet 4.6   3=Opus 4.7   4=Haiku 4.5
+      5=GPT-5  6=GPT-5-mini   7=o4-mini    8=DeepSeek Chat
+      9=DeepSeek R1   10=Llama 3.3 70B   11=Qwen 2.5 72B
+      12=Other (free-form)
     """
     @pytest.mark.parametrize("choice,expected", [
-        ("1", "claude"),   # Anthropic Sonnet 4.6
-        ("3", "claude"),   # Anthropic Haiku 4.5
-        ("4", "gpt"),      # OpenAI GPT-5
-        ("6", "gpt"),      # OpenAI o4-mini (still GPT family)
-        ("7", "generic"),  # DeepSeek Chat — not Claude/GPT/Gemini
-        ("9", "generic"),  # Meta Llama 3.3
+        ("2", "claude"),    # Sonnet 4.6 (was pos 1 in models, +1 for back)
+        ("4", "claude"),    # Haiku 4.5 (was pos 3)
+        ("5", "gpt"),       # GPT-5 (was pos 4)
+        ("7", "gpt"),       # o4-mini (was pos 6)
+        ("8", "generic"),   # DeepSeek Chat (was pos 7)
+        ("10", "generic"),  # Meta Llama 3.3 (was pos 9)
     ])
     def test_family_derivation_openrouter(self, monkeypatch, choice, expected):
         cfg = WizardConfig()
@@ -184,17 +183,16 @@ class TestProviderAutoDerivesPromptFamily:
         assert cfg.prompt_family == expected
 
     def test_other_escape_hatch_routes_to_text_input(self, monkeypatch):
-        """The new __OTHER__ entry at the bottom of every preset's
-        model list lets users paste a model ID our verified list
-        doesn't include — including Gemini IDs (which we trimmed
-        from OpenRouter due to ID-prefix uncertainty as of 2026-04-26)."""
+        """The __OTHER__ entry at the bottom of every preset's model
+        list lets users paste a model ID our verified list doesn't
+        include. With show_back=True at step 5, OTHER is at position
+        12 (back + 10 models + Other = 12)."""
         cfg = WizardConfig()
         cfg.llm_provider = "openrouter"
-        # Pick __OTHER__ (the LAST entry, position 11) → wizard
-        # falls through to ask_text. Type a Gemini model ID.
+        # Position 12 = OTHER → wizard falls through to ask_text.
         monkeypatch.setattr(
             "builtins.input",
-            _stub_input(["11", "google/gemini-2.5-flash"]))
+            _stub_input(["12", "google/gemini-2.5-flash"]))
         step_05_llm_provider(cfg)
         assert cfg.llm_provider_id == "google/gemini-2.5-flash"
         assert cfg.prompt_family == "gemini"
@@ -203,28 +201,25 @@ class TestProviderAutoDerivesPromptFamily:
         """Direct Anthropic provider: model IDs don't carry the
         'anthropic/' namespace prefix, but prompt_family still
         resolves to 'claude' via the provider name + 'claude' in
-        model id."""
+        model id. Position 2 = first Claude model (back is pos 1)."""
         cfg = WizardConfig()
         cfg.llm_provider = "anthropic"
-        # First model in the direct-Anthropic list.
-        monkeypatch.setattr("builtins.input", _stub_input(["1"]))
+        monkeypatch.setattr("builtins.input", _stub_input(["2"]))
         step_05_llm_provider(cfg)
         assert cfg.prompt_family == "claude"
 
     def test_family_derivation_direct_openai(self, monkeypatch):
         cfg = WizardConfig()
         cfg.llm_provider = "openai"
-        monkeypatch.setattr("builtins.input", _stub_input(["1"]))
+        monkeypatch.setattr("builtins.input", _stub_input(["2"]))
         step_05_llm_provider(cfg)
         assert cfg.prompt_family == "gpt"
 
     def test_family_derivation_siliconflow(self, monkeypatch):
-        """Chinese-market provider: Qwen model IDs route to 'generic'
-        prompt family (no claude / gpt / gemini family exists for Qwen
-        yet)."""
+        """Position 2 = Qwen2.5 72B (back is pos 1)."""
         cfg = WizardConfig()
         cfg.llm_provider = "siliconflow"
-        monkeypatch.setattr("builtins.input", _stub_input(["1"]))  # Qwen2.5 72B
+        monkeypatch.setattr("builtins.input", _stub_input(["2"]))
         step_05_llm_provider(cfg)
         assert cfg.prompt_family == "generic"
 
@@ -239,11 +234,15 @@ class TestStep04ProviderPick:
                      "DEEPSEEK_API_KEY", "TOGETHER_API_KEY", "FIREWORKS_API_KEY",
                      "GROQ_API_KEY", "XAI_API_KEY", "SILICONFLOW_API_KEY",
                      "MOONSHOT_API_KEY", "DASHSCOPE_API_KEY", "ZHIPU_API_KEY",
-                     "ARK_API_KEY"):
+                     "ARK_API_KEY", "OLLAMA_API_KEY", "LM_STUDIO_API_KEY",
+                     "THROUGHLINE_LLM_API_KEY"):
             monkeypatch.delenv(var, raising=False)
         from throughline_cli.wizard import step_04_api_key
         cfg = WizardConfig()
-        monkeypatch.setattr("builtins.input", _stub_input([""]))  # Enter
+        # 1st input: provider pick (default Enter → openrouter).
+        # 2nd input: "Continue anyway?" prompt now fires when env
+        # var is unset; 'y' to keep going.
+        monkeypatch.setattr("builtins.input", _stub_input(["", "y"]))
         step_04_api_key(cfg)
         assert cfg.llm_provider == "openrouter"
 
@@ -258,25 +257,51 @@ class TestStep04ProviderPick:
         assert cfg.llm_provider == "siliconflow"
 
     def test_user_picks_deepseek_by_number(self, monkeypatch):
-        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY"):
+        for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY",
+                     "DEEPSEEK_API_KEY"):
             monkeypatch.delenv(var, raising=False)
         from throughline_cli.providers import list_presets
         ids = [p.id for p in list_presets()]
-        # Find deepseek's 1-indexed position.
-        pos = ids.index("deepseek") + 1
+        # 1-indexed position + 1 because step 4 has show_back=True
+        # (position 1 is the back arrow).
+        pos = ids.index("deepseek") + 2
         from throughline_cli.wizard import step_04_api_key
         cfg = WizardConfig()
+        # 1st: pick deepseek by number. 2nd: DEEPSEEK_API_KEY isn't
+        # set so the new "Continue anyway?" prompt fires; 'y' to
+        # acknowledge + continue.
+        monkeypatch.setattr("builtins.input",
+                              _stub_input([str(pos), "y"]))
+        step_04_api_key(cfg)
+        assert cfg.llm_provider == "deepseek"
+
+    def test_user_picks_deepseek_with_key_set_no_followup(self, monkeypatch):
+        """When the chosen provider's key IS set, the new
+        'Continue anyway?' prompt MUST NOT fire — only one input
+        consumed."""
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+        monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-deepseek-test")
+        from throughline_cli.providers import list_presets
+        ids = [p.id for p in list_presets()]
+        # +2 (1 for 1-indexed + 1 for show_back's prepended entry).
+        pos = ids.index("deepseek") + 2
+        from throughline_cli.wizard import step_04_api_key
+        cfg = WizardConfig()
+        # ONLY one input — proves the warning didn't fire.
         monkeypatch.setattr("builtins.input", _stub_input([str(pos)]))
         step_04_api_key(cfg)
         assert cfg.llm_provider == "deepseek"
 
 
 class TestImportSourceColdStartLoop:
+    """Step 9 has show_back=True. Position 1 = "← Back", so the
+    real options shift +1: 2=chatgpt, 3=claude, 4=gemini,
+    5=multiple, 6=none."""
     def test_fresh_requires_explicit_confirm(self, monkeypatch):
         cfg = WizardConfig()
         cfg.mission = "full"
-        # '5' = No, start fresh; 'y' = accept cold-start warning.
-        monkeypatch.setattr("builtins.input", _stub_input(["5", "y"]))
+        # '6' = No, start fresh (was 5 before show_back); 'y' = accept warning.
+        monkeypatch.setattr("builtins.input", _stub_input(["6", "y"]))
         step_09_import_source(cfg)
         assert cfg.import_source == "none"
         assert cfg.import_path is None
@@ -286,11 +311,12 @@ class TestImportSourceColdStartLoop:
         cfg.mission = "full"
         real = tmp_path / "export.zip"
         real.write_bytes(b"fake-zip-bytes")
-        # '5' -> fresh, 'n' -> loop back to source picker,
-        # '1' -> chatgpt, <real path> -> validated by step 9's new loop.
+        # '6' -> fresh, 'n' -> loop back to source picker,
+        # '2' -> chatgpt (was 1 before show_back),
+        # <real path> -> validated by step 9's new loop.
         monkeypatch.setattr(
             "builtins.input",
-            _stub_input(["5", "n", "1", str(real)]),
+            _stub_input(["6", "n", "2", str(real)]),
         )
         step_09_import_source(cfg)
         assert cfg.import_source == "chatgpt"
@@ -620,9 +646,9 @@ class TestStep9PathValidation:
         cfg.mission = "full"
         real_path = tmp_path / "export.zip"
         real_path.write_bytes(b"fake")
-        # '2' = Claude, then the path.
+        # '3' = Claude (was 2 before show_back); then the path.
         monkeypatch.setattr("builtins.input",
-                            _stub_input(["2", str(real_path)]))
+                            _stub_input(["3", str(real_path)]))
         step_09_import_source(cfg)
         assert cfg.import_source == "claude"
         assert cfg.import_path == str(real_path.expanduser())
@@ -635,11 +661,11 @@ class TestStep9PathValidation:
         from throughline_cli.wizard import step_09_import_source
         cfg = WizardConfig()
         cfg.mission = "full"
-        # '2' Claude, bad path, 'n' to retry, then cold-start warning
-        # confirm (default Y from empty input).
+        # '3' Claude (was 2 before show_back), bad path, 'n' to retry,
+        # then cold-start warning confirm (default Y from empty input).
         monkeypatch.setattr(
             "builtins.input",
-            _stub_input(["2", "/nonexistent/foo.zip", "n"]),
+            _stub_input(["3", "/nonexistent/foo.zip", "n"]),
         )
         step_09_import_source(cfg)
         assert cfg.import_source == "none"
@@ -652,10 +678,11 @@ class TestStep9PathValidation:
         from throughline_cli.wizard import step_09_import_source
         cfg = WizardConfig()
         cfg.mission = "full"
-        # '4' = Multiple, then cold-start confirm (default Y).
+        # '5' = Multiple (was 4 before show_back), then cold-start
+        # confirm (default Y).
         monkeypatch.setattr(
             "builtins.input",
-            _stub_input(["4"]),
+            _stub_input(["5"]),
         )
         step_09_import_source(cfg)
         assert cfg.import_source == "none"

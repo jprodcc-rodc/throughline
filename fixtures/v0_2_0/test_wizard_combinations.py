@@ -55,7 +55,12 @@ class _ScriptedUI:
                 return val
         return default
 
-    def pick_option(self, prompt, options, default_key=None):
+    def pick_option(self, prompt, options, default_key=None,
+                     show_back=False):
+        # show_back is ignored by the test harness — combinatorial
+        # tests never want to exercise the back-navigation flow;
+        # they go forward only. Real back-nav coverage lives in
+        # test_wizard_back_navigation.py.
         ans = self._resolve(prompt, default_key)
         # Validate the answer is a known option key.
         keys = [k for k, _, _ in options]
@@ -180,6 +185,12 @@ _BASE_ANSWERS: Dict[str, Any] = {
     "Confirm": True,
     "ready to save": True,
     "save and exit": True,
+    # step 4's hard-block on unset API key (added 2026-04-26): the
+    # wizard now warns + asks "Continue anyway?" when the chosen
+    # provider's env var isn't set. In tests we don't export real
+    # keys, so the warning ALWAYS fires — answer 'yes' to keep
+    # the wizard moving.
+    "Continue anyway": True,
 }
 
 

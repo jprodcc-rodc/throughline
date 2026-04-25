@@ -287,7 +287,7 @@ class TestFullWizardDryRun:
             def progress_ticker(self, *a, **kw): pass
             def print_blank(self, *a, **kw): pass
             def subrule(self, *a, **kw): pass
-            def pick_option(self, q, options, default_key):
+            def pick_option(self, q, options, default_key, show_back=False):
                 return default_key
             def ask_yes_no(self, q, default=True):
                 return default
@@ -344,7 +344,8 @@ class TestFullWizardDryRun:
             def progress_ticker(self, *a, **kw): pass
             def print_blank(self, *a, **kw): pass
             def subrule(self, *a, **kw): pass
-            def pick_option(self, q, options, default_key): return default_key
+            def pick_option(self, q, options, default_key, show_back=False):
+                return default_key
             def ask_yes_no(self, q, default=True): return default
             def ask_text(self, q, default=""): return default
 
@@ -390,7 +391,8 @@ class TestFullWizardDryRun:
             def progress_ticker(self, *a, **kw): pass
             def print_blank(self, *a, **kw): pass
             def subrule(self, *a, **kw): pass
-            def pick_option(self, q, options, default_key): return default_key
+            def pick_option(self, q, options, default_key, show_back=False):
+                return default_key
             def ask_yes_no(self, q, default=True): return default
             def ask_text(self, q, default=""): return default
 

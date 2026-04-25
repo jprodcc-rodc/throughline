@@ -107,8 +107,9 @@ class TestStep14Defaults:
         cfg = WizardConfig()
         cfg.import_source = "chatgpt"
         cfg.import_emitted = 5000  # would default to derive, but user picks minimal
-        # '1' = Minimal starter (now first in the list).
-        monkeypatch.setattr("builtins.input", _stub_input(["1"]))
+        # Position 2 = Minimal (was 1 before show_back; position 1
+        # is now the back arrow).
+        monkeypatch.setattr("builtins.input", _stub_input(["2"]))
         step_14_taxonomy(cfg)
         assert cfg.taxonomy_source == "minimal"
 
@@ -116,15 +117,17 @@ class TestStep14Defaults:
         cfg = WizardConfig()
         cfg.import_source = "none"
         cfg.import_emitted = 0  # cold start, would default to minimal
-        # '2' = Derive from vault.
-        monkeypatch.setattr("builtins.input", _stub_input(["2"]))
+        # Step 14 has show_back=True. Position 1 = back. The real
+        # options shift +1: 2=minimal, 3=derive_from_vault,
+        # 4=derive_from_imports, 5=jd, 6=para, 7=zettel.
+        monkeypatch.setattr("builtins.input", _stub_input(["3"]))
         step_14_taxonomy(cfg)
         assert cfg.taxonomy_source == "derive_from_vault"
 
     def test_fallback_template_choice(self, monkeypatch):
         cfg = WizardConfig()
-        # '4' = JD template (after minimal/derive_vault/derive_imports).
-        monkeypatch.setattr("builtins.input", _stub_input(["4"]))
+        # Position 5 = JD template (was 4 before show_back).
+        monkeypatch.setattr("builtins.input", _stub_input(["5"]))
         step_14_taxonomy(cfg)
         assert cfg.taxonomy_source == "jd"
 

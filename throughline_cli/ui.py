@@ -43,6 +43,24 @@ from rich.tree import Tree
 console = Console(highlight=False)
 
 
+class BackRequest(Exception):
+    """Raised by `pick_option` (and any other prompt that opts in)
+    when the user picks the "← Back to previous step" entry. The
+    wizard's orchestrator catches this and decrements the step
+    pointer by 1 — letting users walk back through earlier steps
+    mid-wizard without Ctrl+C-and-restart.
+
+    Step functions don't usually catch this themselves; the
+    orchestrator handles the rewind. If a step function calls
+    `pick_option(..., show_back=True)` and the user picks back,
+    the BackRequest bubbles up to the orchestrator.
+    """
+    pass
+
+
+_BACK_KEY = "__back__"
+
+
 def _is_real_tty() -> bool:
     """Best-effort 'are we in front of a real human at a TTY' check.
     Reused by `_use_questionary` and by the spinner — a non-TTY (CI,
@@ -363,7 +381,8 @@ def _pick_option_arrow(question: str,
 
 def pick_option(question: str,
                 options: list[tuple[str, str, str]],
-                default_key: str) -> str:
+                default_key: str,
+                show_back: bool = False) -> str:
     """Pick one of `options` (key, label, description tuples).
     Returns the chosen key. Auto-routes between the arrow-key
     questionary picker (real TTY) and the legacy numbered input
@@ -373,10 +392,24 @@ def pick_option(question: str,
     environments that pass the TTY check but trip the deeper
     `prompt_toolkit` console probe (mintty / git-bash / cygwin /
     weird PTY proxies on Windows). On any such failure we fall
-    back to the legacy picker rather than crashing the wizard."""
+    back to the legacy picker rather than crashing the wizard.
+
+    `show_back=True` prepends a "← Back to previous step" entry. If
+    the user picks it, raises `BackRequest` instead of returning a
+    key. The wizard's orchestrator catches the exception and
+    rewinds the step pointer by 1."""
+    if show_back:
+        # Prepend so it's visually first. The wizard step functions
+        # call this in steps 2+; step 1 doesn't show back because
+        # there's nothing before it.
+        options = [(_BACK_KEY,
+                    "← Back to previous step",
+                    "Discard this step's pick and re-enter the prior step.")
+                   ] + list(options)
+
     if _use_questionary():
         try:
-            return _pick_option_arrow(question, options, default_key)
+            chosen = _pick_option_arrow(question, options, default_key)
         except Exception as e:
             console.print(
                 f"  [yellow]Arrow-key picker unavailable in this terminal "
@@ -385,7 +418,13 @@ def pick_option(question: str,
             console.print(
                 "  [dim]Set THROUGHLINE_LEGACY_UI=1 to skip this probe.[/]"
             )
-    return _pick_option_legacy(question, options, default_key)
+            chosen = _pick_option_legacy(question, options, default_key)
+    else:
+        chosen = _pick_option_legacy(question, options, default_key)
+
+    if chosen == _BACK_KEY:
+        raise BackRequest()
+    return chosen
 
 
 def ask_text(question: str, default: str = "") -> str:

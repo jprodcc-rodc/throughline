@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import Callable, Optional
 
 from . import ui
+from .ui import BackRequest
 from .config import WizardConfig, load, save
 
 
@@ -150,6 +151,7 @@ def step_03_vector_db(cfg: WizardConfig) -> Optional[str]:
             ("pgvector",   "pgvector (requires Postgres)",   "If you already run Postgres."),
         ],
         default_key="qdrant" if cfg.privacy != "local_only" else "chroma",
+        show_back=True,
     )
     # --- proactive optional-dep check (catches the silent-stub trap)
     available, hint = _check_vector_db_available(cfg.vector_db)
@@ -222,6 +224,7 @@ def step_04_api_key(cfg: WizardConfig) -> Optional[str]:
         "Pick an LLM provider:",
         options,
         default_key=default_key,
+        show_back=True,
     )
 
     preset = _providers.get_preset(cfg.llm_provider)
@@ -229,20 +232,66 @@ def step_04_api_key(cfg: WizardConfig) -> Optional[str]:
     if key_set:
         ui.info_line(f"[green]{preset.env_var} is set.[/] "
                       f"The preview (step 13) will call {preset.name}.")
-    else:
-        if preset.signup_url:
-            ui.info_line(
-                f"[yellow]{preset.env_var} is NOT set.[/] Get a key at "
-                f"{preset.signup_url}, then export it in your shell "
-                f"(e.g. `export {preset.env_var}=sk-...`) and re-run "
-                f"`python install.py --step 4` to verify."
-            )
-        else:
-            ui.info_line(
-                f"[yellow]{preset.env_var} is NOT set.[/] Also set "
-                f"THROUGHLINE_LLM_URL to your custom endpoint, then "
-                f"re-run `python install.py --step 4`."
-            )
+        return None
+
+    # KEY UNSET — hard-block path. Previously this was just a warning
+    # and the wizard happily proceeded. Result: at step 13 the LLM
+    # call would 401 with a confusing error, then the wizard would
+    # AUTO-CONTINUE to step 14, leaving the user with a broken
+    # config they didn't know was broken. Now we explicitly ask the
+    # user how they want to handle it.
+    other_keys_set = []
+    for p_other in _providers.list_presets():
+        if p_other.id == cfg.llm_provider:
+            continue
+        if not p_other.env_var:
+            continue
+        if __import__("os").environ.get(p_other.env_var, "").strip():
+            other_keys_set.append(p_other)
+
+    ui.warn_box(
+        f"{preset.env_var} is NOT set",
+        f"You picked {preset.name}, but its API key env var is not "
+        f"exported in this shell.\n\n"
+        f"At step 13 (first-card preview) the wizard would try to "
+        f"call {preset.name}'s endpoint with whatever it falls back "
+        f"on — typically resulting in a 401 / 'Incorrect API key' "
+        f"error from a different provider's endpoint.\n\n"
+        + (
+            "Other keys ARE set: "
+            + ", ".join(f"{p.env_var} ({p.name})" for p in other_keys_set)
+            + "\n"
+            if other_keys_set
+            else ""
+        )
+        + (
+            f"Get a {preset.name} key at {preset.signup_url}\n"
+            if preset.signup_url
+            else "Set THROUGHLINE_LLM_URL + THROUGHLINE_LLM_API_KEY for the generic endpoint.\n"
+        )
+    )
+    if other_keys_set:
+        ui.info_line(
+            f"Tip: pick [bold cyan]{other_keys_set[0].id}[/] instead "
+            f"if you want to use {other_keys_set[0].name}'s key you "
+            f"already have."
+        )
+
+    if not ui.ask_yes_no(
+        f"Continue anyway? (preview will fail; you can re-run "
+        f"`python install.py --step 4` later after setting "
+        f"{preset.env_var})",
+        default=False,  # default NO — safer to make user re-pick
+    ):
+        ui.info_line(
+            "[bold cyan]Re-running step 4 so you can pick a "
+            "provider whose key is set.[/]"
+        )
+        # Recurse — clear the chosen provider and re-prompt. Bounded
+        # by the user's own pick; can't infinite-loop unless they
+        # repeatedly pick unset providers + repeatedly say "no".
+        cfg.llm_provider = ""
+        return step_04_api_key(cfg)
     return None
 
 
@@ -281,6 +330,7 @@ def step_05_llm_provider(cfg: WizardConfig) -> Optional[str]:
             f"Pick a model from {preset.name}:",
             options,
             default_key=preset.models[0][0],
+            show_back=True,
         )
         if chosen == "__OTHER__":
             # Fall-through: same UX as a generic-provider model entry.
@@ -325,6 +375,7 @@ def step_06_privacy(cfg: WizardConfig) -> Optional[str]:
             ("cloud_max",  "Cloud-max",  "Everything via API. Fastest, most exposed."),
         ],
         default_key="hybrid",
+        show_back=True,
     )
     # --- cross-step validation: local_only + cloud LLM provider is a
     # contradiction the user almost certainly didn't intend.
@@ -380,6 +431,11 @@ def step_07_retrieval(cfg: WizardConfig) -> Optional[str]:
              "Long-document retrieval. v0.2.x uses OpenAI-compat shape."),
         ],
         default_key="bge-m3",
+        # Only the FIRST pick of step 7 (embedder) gets a back arrow;
+        # the reranker pick stays bare so back doesn't ambiguously
+        # mean "back to embedder" vs "back to step 6". Going back
+        # from step 7 always means going back to step 6.
+        show_back=True,
     )
     cfg.reranker = ui.pick_option(
         "Reranker:",
@@ -435,6 +491,7 @@ def step_09_import_source(cfg: WizardConfig) -> Optional[str]:
             ("none",     "No, start fresh",                "Cold start: RAG silent for ~50 conversations."),
         ],
         default_key="none",
+        show_back=True,
     )
     if cfg.import_source == "none" and cfg.mission != "notes_only":
         ui.warn_box(
@@ -766,6 +823,7 @@ def step_11_refine_tier(cfg: WizardConfig) -> Optional[str]:
             ("deep",   "Deep   (~$0.20/conv, Opus multi-pass + critique)",  ""),
         ],
         default_key="normal",
+        show_back=True,
     )
     return None
 
@@ -852,11 +910,20 @@ def step_12_card_structure(cfg: WizardConfig) -> Optional[str]:
     cfg.card_structure = ui.pick_option(
         "Pick a card shape:",
         [
-            ("compact",  "Compact (title + 1 paragraph + tags)",  ""),
-            ("standard", "Standard (6-section skeleton)",         ""),
-            ("detailed", "Detailed (6 sections + sidebar)",       ""),
+            # Each description is single-line so it shows up in the
+            # picker even when questionary takes over the screen +
+            # clobbers the panel_example blocks above.
+            ("compact",  "Compact",
+             "1 paragraph + tags. Atomic. ~300 chars. Zettel-style."),
+            ("standard", "Standard",
+             "6 sections (scenario/core/exec/avoid/insight/summary). "
+             "Default. ~800 chars. Narrative-readable."),
+            ("detailed", "Detailed",
+             "Standard + sidebar (self-critique, cross-refs, open "
+             "threads). ~1500 chars. ~20% pricier per refine."),
         ],
         default_key="standard",
+        show_back=True,
     )
     return None
 
@@ -902,6 +969,31 @@ def step_13_preview(cfg: WizardConfig) -> Optional[str]:
     ui.step_header(13, TOTAL, "First-card preview")
     if cfg.import_source == "none" or not cfg.import_path:
         ui.info_line("No import source selected — nothing to preview. Skipped.")
+        return "SKIPPED"
+
+    # Defensive provider/key check (independent of step 4's own
+    # check). Catches the `--step 13` direct-invocation case where
+    # the user changed their env between sessions, or step 4's
+    # warning was bypassed earlier.
+    from . import providers as _providers_check
+    try:
+        preset_check = _providers_check.get_preset(cfg.llm_provider)
+        key_present = bool(__import__("os").environ.get(
+            preset_check.env_var, "").strip())
+    except Exception:
+        preset_check = None
+        key_present = False
+    if not key_present:
+        ui.warn_box(
+            "API key for the configured provider is not set",
+            f"cfg.llm_provider = {cfg.llm_provider!r}\n"
+            f"Expected env var = "
+            f"{preset_check.env_var if preset_check else '(unknown)'}\n"
+            f"Status = NOT set in this shell.\n\n"
+            f"Skipping the live preview to avoid a 401 / wrong-key "
+            f"call to the wrong endpoint. Set the env var, then re-run "
+            f"`python install.py --step 13` to actually preview a card."
+        )
         return "SKIPPED"
 
     from pathlib import Path as _P
@@ -1160,6 +1252,7 @@ def step_14_taxonomy(cfg: WizardConfig) -> Optional[str]:
              "Flat folder, linked atomic notes; almost no taxonomy."),
         ],
         default_key=default,
+        show_back=True,
     )
     return None
 
@@ -1507,19 +1600,46 @@ def run_wizard(cfg: Optional[WizardConfig] = None,
                     "run the import adapter."
                 )
                 ui.print_blank()
-        for n, fn in ALL_STEPS:
-            if only_step is not None and n != only_step:
-                continue
-            if step_filter is not None and n not in step_filter:
-                continue
+
+        # Build the active step list (1-indexed step numbers).
+        if only_step is not None:
+            active_steps = [(n, fn) for n, fn in ALL_STEPS if n == only_step]
+        elif step_filter is not None:
+            active_steps = [(n, fn) for n, fn in ALL_STEPS if n in step_filter]
+        else:
+            active_steps = list(ALL_STEPS)
+
+        # Index-driven loop instead of `for ... in`. Lets us rewind
+        # the cursor when a step raises ui.BackRequest (user picked
+        # the "← Back" entry in the picker).
+        i = 0
+        while i < len(active_steps):
+            n, fn = active_steps[i]
             # Progress ticker between steps (not before step 1 when doing a
             # full run; redundant with the banner).
             if full_run and n > 1:
                 ui.progress_ticker(n - 1, TOTAL)
-            result = fn(cfg)
+            try:
+                result = fn(cfg)
+            except BackRequest:
+                if i == 0:
+                    # Already at the first active step — nothing to
+                    # rewind to. Tell the user, then re-fire the
+                    # current step.
+                    ui.info_line(
+                        "[yellow]Already at the first step; can't go "
+                        "back further. Re-running this step.[/]"
+                    )
+                    continue
+                ui.info_line(
+                    f"[cyan]← Going back to step {active_steps[i-1][0]}[/]"
+                )
+                i -= 1
+                continue
             if result != "SKIPPED":
                 if n not in cfg.completed_steps:
                     cfg.completed_steps.append(n)
+            i += 1
         if full_run:
             ui.progress_ticker(TOTAL, TOTAL)
         if dry_run:
