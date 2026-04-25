@@ -249,19 +249,22 @@ in five years. The conversation it came from is one line in a daemon log.
 
 Short answer: **throughline produces durable, human-readable Markdown
 that lives in your file system.** The others produce vectors that live
-in their service. Different point on the privacy / portability axis.
+in their store. Different point on the privacy / portability axis,
+and a different target user — not a "better than" claim.
 
 | | throughline | mem0 | Letta | SuperMemory | OpenWebUI memory |
 |---|---|---|---|---|---|
-| **Markdown you can read** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Works fully local** | ✅ | partial | partial | ❌ | ✅ |
-| **Self-growing taxonomy** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Survives tool changes** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Target user** | Vault owners | App devs | Agent builders | Consumers | Casual users |
+| **Local-only mode** | yes (default) | yes (with self-host config) | yes (open-source server) | no (cloud service) | yes (built into OpenWebUI) |
+| **Source of truth** | Markdown files in your vault | own DB | own DB | cloud DB | sqlite next to OpenWebUI |
+| **Taxonomy mechanism** | LLM proposals + manual approval into 9-domain hierarchy | similarity-based recall (no taxonomy) | similarity-based recall | similarity-based recall | flat note list |
+| **If you migrate away** | vault is plain Markdown, grep-able with `rg` | DB export to JSON | DB export | depends on cloud export | sqlite dump |
+| **Designed for** | individuals with complex personal context | app developers integrating memory APIs | agent / multi-step builders | consumers wanting smart memory | casual OpenWebUI users |
 
 throughline is heavier to install (it's a daemon + RAG server + Filter,
-not a SaaS subscription) but the cards persist across tool changes and
-you can grep them with `rg` like any other text.
+not a SaaS subscription or a `pip install + one line`) — and that's a
+real cost. The trade-off you're paying it for: cards live in plain
+Markdown you can grep, edit, or read in five years independent of any
+tool decision you make today.
 
 ---
 
