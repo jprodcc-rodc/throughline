@@ -478,14 +478,17 @@ Output (truncated, happy-path):
   ✓ required_imports         all 6 runtime packages importable
   ✓ optional_imports         present: torch, transformers, openai
   ✓ config_file              /home/you/.throughline/config.toml (1824 bytes)
+  ✓ config_schema            12 keys, all recognized
   ✓ state_dir                /home/you/throughline_runtime/state
+  ✓ llm_provider             OpenAI (direct) · OPENAI_API_KEY set
   ✓ qdrant                   http://localhost:6333 responding 200
   ✓ rag_server               http://localhost:8000 health 200
   ✓ daemon_state             state file updated 3 min ago
   ✓ embedder_model_cache     BAAI/bge-m3 cached at ~/.cache/huggingface/...
   ✓ taxonomy_observations    47 observation(s) in taxonomy_observations.jsonl
+  ✓ taxonomy_pending         no growth candidates pending review
 
-  All 10 checks passed.
+  All 13 checks passed.
 ```
 
 Flags:

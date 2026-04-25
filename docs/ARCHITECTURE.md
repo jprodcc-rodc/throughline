@@ -663,11 +663,12 @@ is implicit via date keys in `state/cost_stats.json`.
 
 ### 13.5 Diagnostic surface (doctor)
 
-`python -m throughline_cli doctor` runs 10 checks in dependency
-order (Python → imports → config → state → services → caches). Each
-check returns a `CheckResult(name, status, detail, fix)` with a
-remediation line when not ok. `--quiet` mode for cron, `--json` for
-tooling, exit code 1 iff any failure (warnings don't block).
+`python -m throughline_cli doctor` runs 13 checks in dependency
+order (Python → imports → config → schema → state → services → caches
+→ taxonomy). Each check returns a `CheckResult(name, status, detail,
+fix)` with a remediation line when not ok. `--quiet` mode for cron,
+`--json` for tooling, exit code 1 iff any failure (warnings don't
+block).
 
 The wizard's end-of-flow next-steps panel cross-links to doctor so
 users discover it immediately rather than hunting through docs.

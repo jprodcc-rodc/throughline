@@ -94,7 +94,7 @@ that overlaps gets the relevant cards injected.
 
 ```bash
 python install.py --reconfigure              # change a few settings
-python -m throughline_cli doctor              # 12 checks with remediation
+python -m throughline_cli doctor              # 13 checks with remediation
 python -m throughline_cli import sample       # 10 synthetic conversations
 python -m throughline_cli taxonomy review     # approve self-growth signals
 python -m throughline_cli refine --dry-run <raw.md>   # preview refiner prompt, no LLM call
