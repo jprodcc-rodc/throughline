@@ -1,8 +1,10 @@
 # Self-growing taxonomy (U27) — design
 
-> **Status:** design, not implemented. v0.2.0 ships U27.1 + U27.2 +
-> U27.3 + U27.4 (the minimum closed loop). U27.5–U27.7 deferred to
-> v0.3+.
+> **Status (2026-04-27):** v0.2.0 shipped U27.1 + U27.2 + U27.3 + U27.4
+> (the minimum closed loop). v0.2.x then shipped U27.5 (doctor surfacing
+> of pending candidates, `5528434`) and U27.7 (zero-usage leaf
+> detection, `ec32dae`). Only **U27.6** (`taxonomy retag --since DATE
+> --domain X` batch re-refine) remains deferred to v0.3.
 >
 > **Why this exists:** U13 (`scripts/derive_taxonomy.py`) generates a
 > one-shot taxonomy from a user's existing content. That fits users
@@ -11,7 +13,9 @@
 > **skeletal starter** that grows as content arrives.
 >
 > This doc is the refined spec after two design passes. See
-> `docs/ROADMAP.md` for v0.2.0 vs v0.3+ split.
+> [`ROADMAP.md`](../ROADMAP.md) for the v0.3 plan and
+> [`fixtures/phase6/SESSION_STATE.md`](../fixtures/phase6/SESSION_STATE.md)
+> for shipped-in-v0.2.x deltas.
 
 ---
 
@@ -183,9 +187,9 @@ editing `taxonomy.py` + removing tags from `taxonomy_history.jsonl`.
 | **U27.2** | Refiner prompts (8 files) grow `proposed_x_ideal` field in output schema | S (cross-file) | v0.2.0 |
 | **U27.3** | Daemon writes `state/taxonomy_observations.jsonl` on every refine | S | v0.2.0 |
 | **U27.4** | CLI `taxonomy` + `taxonomy review` + `taxonomy reject` | M | v0.2.0 |
-| **U27.5** | Filter outlet "N candidates pending" hint (~weekly) | S | v0.3 |
+| **U27.5** | Doctor surfacing of "N candidates pending" + Filter outlet hint | S | **shipped v0.2.x** (`5528434`) |
 | **U27.6** | `taxonomy retag --since DATE --domain X` batch re-refine | M (costs $) | v0.3 |
-| **U27.7** | Deprecation ("no cards in domain X for 6 months") + merge proposal | L | v0.3+ |
+| **U27.7** | Zero-usage leaf detection ("no cards in domain X for N months") + deprecation hint | L | **shipped v0.2.x** (`ec32dae`) |
 
 MVP closed loop: U27.1 → U27.2 → U27.3 → U27.4. A user picking
 `taxonomy.minimal` at wizard install, running throughline for a week,
@@ -231,17 +235,19 @@ window. Daemon crashes / restarts do not double-count.
 
 ---
 
-## What this does NOT do (v0.2.0 scope cuts)
+## What this does NOT do (v0.2.x scope cuts)
 
 - **No auto-merge** (`AI/LLM` + `AI/Agent` into `AI/LLM-Agent`). Users
   have strong opinions; merges are manual.
-- **No auto-deprecate** (removing zero-usage leaves). Users get
-  attached to folders.
+- **No auto-deprecate.** U27.7 (shipped v0.2.x) *detects* zero-usage
+  leaves and surfaces them in `doctor`, but the `taxonomy.py` change
+  is still gated behind explicit user action. Users get attached to
+  folders; we surface, the user decides.
 - **No scheduled polling.** Detector only runs on `throughline_cli
-  taxonomy`. Filter outlet hint (U27.5) is the future push surface.
-- **No OpenWebUI integration.** A v0.3 item that uses
-  `__event_emitter__` to surface `🌱 taxonomy: 2 candidates pending`
-  in the outlet badge once a week.
+  taxonomy` and `throughline_cli doctor`. U27.5 (shipped v0.2.x)
+  surfaces "N candidates pending" inside doctor's output; integration
+  with OpenWebUI's `__event_emitter__` for an in-chat weekly hint
+  remains v0.3 work.
 - **No cross-language clustering.** If a user's refiner emits tags
   in multiple natural languages (`AI/Agent` + `AI/代理`), they
   don't cluster. v0.3+ with bge-m3 embedding similarity.

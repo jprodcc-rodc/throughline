@@ -684,8 +684,10 @@ arrive with <100 cards:
   `config/taxonomy.py`'s VALID_X_SET literal, bootstrapping from the
   minimal seed on first write so the shipped file stays read-only.
 
-See `docs/TAXONOMY_GROWTH_DESIGN.md` for the full spec + deferred
-U27.5/.6/.7 scope.
+See `docs/TAXONOMY_GROWTH_DESIGN.md` for the full spec; U27.5 +
+U27.7 shipped during v0.2.x (doctor surfacing of pending candidates
+and zero-usage leaf detection); U27.6 (`taxonomy retag` batch
+re-refine) is the only remaining deferred-to-v0.3 piece.
 
 ### 13.4 Budget enforcement (U3)
 

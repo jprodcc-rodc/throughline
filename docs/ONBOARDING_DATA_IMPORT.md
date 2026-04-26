@@ -97,6 +97,12 @@ lets the user revisit any step; state persists to
 - **Notes-only**: skip steps 3 (vector DB), 7 (retrieval backend).
   No RAG infrastructure installed. Effective ~9 steps.
 
+> **Skip the wizard entirely:** `python install.py --express` auto-
+> detects the LLM provider env var you have set, picks Full
+> mission + sane defaults, writes config in ~3 seconds, and exits
+> — no questions asked. Use it when you don't need to override
+> defaults; come back to the full wizard if/when you want to tune.
+
 The rest of this doc goes deeper on each non-trivial step.
 
 ---

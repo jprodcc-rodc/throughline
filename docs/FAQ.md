@@ -250,8 +250,8 @@ What that means for specific shapes of need:
   durable memory of you, not a UI to talk to it.
 
 If any of those shapes is your blocker, throughline is the wrong
-tool for you and we'd rather you find that out here than after a
-16-step install.
+tool for you and we'd rather you find that out here than after
+even the 1-command `--express` install.
 
 ## What's the roadmap?
 

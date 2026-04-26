@@ -132,8 +132,8 @@ Filter install in [§ Step 5](#step-5--openwebui-filter).
 ## Quick install (via wizard)
 
 For most users, the fastest path from zero to a working install is
-the `install.py` wizard. Two or three minutes of Enter-Enter-Enter
-covers what takes 15–20 minutes of manual config:
+`install.py --express` — one command, ~3 seconds, auto-detects
+whichever LLM provider env var you have set:
 
 ```bash
 git clone https://github.com/jprodcc-rodc/throughline
@@ -143,10 +143,29 @@ python3 -m venv .venv
 source .venv/bin/activate                      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-python install.py                              # 16-step wizard
+export ANTHROPIC_API_KEY=sk-...                # or OPENAI / OPENROUTER / etc.
+python install.py --express                    # ~3s, sane defaults
 ```
 
-The wizard:
+`--express` picks `bge-m3` local embedder + local reranker + Qdrant
++ hybrid privacy + $20 daily cap, prints per-conversation cost,
+writes `~/.throughline/config.toml`, and exits. Append `--dry-run`
+to preview without writing.
+
+### Full 16-step wizard (when you want full control)
+
+If you want to override defaults — different vector DB, different
+privacy tier, import an existing OpenWebUI / ChatGPT / Claude
+history, or tune any of the 16 wizard decisions — run the full
+wizard instead:
+
+```bash
+python install.py                              # 16 steps, all-Enter defaults work
+python install.py --reconfigure                # later: change a few without restarting
+python install.py --dry-run                    # preview the full wizard, no save
+```
+
+The full wizard:
 
 1. Asks 16 short questions with sensible Enter-defaults. Pressing
    Enter on every prompt lands a working Full-mission config.
