@@ -2,53 +2,64 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-27 (strategy pivot session) — Major
-reframing: throughline shifts from "待变现产品" stance to "OSS
-portfolio piece + content/credibility flywheel engine". Feature
-freeze deepens: no new feature work for 90 days unless real-user
-specific pain drives it. **Read `private/PLAN_90D.md` FIRST** before
-acting in this repo — it's the strategy source of truth.
+**Last updated:** 2026-04-27 (afternoon — strategy clarified) —
+Earlier today: morning re-read external dual-track strategy briefs
+(`throughline_dual_track_strategy_v2.md` + `throughline_mcp_differentiation.md`
+in user Downloads/). Afternoon: user clarified the framing — they
+do NOT commit to the docs' 9-13 week Reflection Layer sprint. Real
+ask is simpler: keep throughline as my first OSS project (portfolio
++ leverage, no PMF chase) AND add an MCP server entry point so
+people can reach throughline without migrating to OpenWebUI.
+**Read `private/PLAN_90D.md` FIRST** — it's been rewritten to match.
 
-## 🧭 Strategy pivot anchor (2026-04-27) — read FIRST
+## 🧭 Strategy clarified anchor (2026-04-27 afternoon) — read FIRST
 
-External Opus 4.7 review (yesterday's wave) + self-reflection led to
-a reframing of the project's role. Captured in full at
-`private/PLAN_90D.md` (gitignored — maintainer only).
+User-stated framing (verbatim, in their own words):
+> "我的诉求就是 throughline 接着做，做我的第一个开源项目，没人用
+> 无所谓，可以做杠杆，不追求热度。但同时开发个 MCP，能让人接触到。"
 
 **TL;DR for next-session resume:**
 
-- throughline = NOT a SaaS product to monetize directly. 3 paths
-  exist; the user picked paths 2 + 3 as primary:
-  - **Path 1** (direct user adoption): deprioritized. Late entrant +
-    heavy install + non-programmer target audience = low probability.
-    Don't actively chase users.
-  - **Path 2** (content + narrative platform): primary. throughline
-    is the source material library for YouTube + Chinese platforms
-    (即刻 / 少数派 / B 站). 4 hero topics + 5 engineering deep-dives
-    queued. AuDHD-friendly cadence: 1 piece/week month 1, 1/2 weeks
-    after.
+- throughline 定位：**「我的第一个开源项目」** — daily driver +
+  credibility leverage + 创作素材。三重收益。NOT a SaaS to monetize.
+- 3 paths from the morning analysis still hold, with Path 1 redefined:
+  - **Path 1** (throughline 持续演化): NOT frozen. Author iterates
+    on it as their daily driver. ALSO ships an MCP server entry
+    point (1-3 weeks scope) so people can reach it without
+    OpenWebUI. NOT actively chasing user growth.
+  - **Path 2** (content + narrative platform): primary. YouTube +
+    Chinese platforms (即刻 / 少数派 / B 站). 4 hero topics + 5
+    engineering deep-dives queued.
   - **Path 3** (credibility leverage): primary. throughline =
-    portfolio piece for AI Memory / RAG company DevRel roles
-    (Anthropic, Mem0, Letta, Pinecone, Weaviate, LangChain, etc.).
-    AuDHD adapts best to DevRel; alternates: solo contracting,
-    AI-app-layer founding eng.
-- Feature work on throughline is **paused for 90 days** (until
-  2026-07-26). Exit criteria documented in PLAN_90D.md § 5.
-- User has parallel work only the user can do: hero GIF, first
-  YouTube video, LinkedIn headline rewrite, first OSS PR to a
-  target company, 即刻 account.
+    portfolio piece for AI Memory / RAG DevRel roles.
+- **Reflection Layer (Open Threads / Contradiction / Drift Detection)
+  is a long-term direction, NOT a 90-day commitment.** Trigger
+  conditions documented in PLAN_90D.md § 3 — author dogfoods MCP
+  basic for 2-4 weeks first, then validates 4 criteria before
+  committing to Reflection Layer work.
+- The two external strategy briefs in Downloads/ are PARTIALLY
+  adopted: MCP entry point ✅, shared-core architecture concept ✅,
+  9-13 week Reflection Layer sprint ❌ (deferred to dogfood-gated
+  decision).
 
 **What this means for autonomous sessions:**
 
-If user kicks off auto mode in this repo going forward, *do not*
-ship more features unless directed to a specific item. Default
-auto-mode work is now: README / docs polish that supports paths
-2-3 (e.g. content-source-friendly anchors, screenshot drops, blog
-post drafts in `private/`), small bug fixes against real reported
-issues, **not** new architecture or new backends.
+Auto mode in this repo can include:
+- ✅ Sustainable throughline iteration (3-8 hrs/week budget) driven
+  by author's own daily-driver needs
+- ✅ MCP server scaffolding work (Phase 1 of dual-track docs:
+  basic save_conversation / recall_memory / list_topics tools)
+- ✅ Doc / README / FAQ polish supporting Path 2 + 3
+- ✅ Bug fixes for real reported issues
+- ❌ Reflection Layer engineering (topic clustering, contradiction
+  daemon, drift detection) — gated behind dogfood + 4 ✅ check
+- ❌ Any "feature" not driven by author's own use OR clearly
+  serving accessibility (MCP) OR clearly serving paths 2/3
+- ❌ Architectural rewrites or speculative big features
 
-If a feature ship feels right, **ask first** — the burden of proof
-is now on "why ship this" instead of "why not".
+If a feature ship feels right but doesn't fit the above whitelist,
+**ask first** — burden of proof is "does this serve daily-driver
+or accessibility or paths 2/3?".
 
 ---
 
