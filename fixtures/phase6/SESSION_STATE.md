@@ -2,12 +2,55 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-25 (external review response wave) — 9
-commits closing all 13 P0-P3 items from external Opus 4.7 review of
-public repo. Tests: 1304 → 1260 passed / 10 xfailed (count drop is
-because no new tests were added; existing ones all stay green —
-review wave was 100% docs + docstring + ROADMAP + README, zero
-behaviour change). Working tree clean.
+**Last updated:** 2026-04-27 (strategy pivot session) — Major
+reframing: throughline shifts from "待变现产品" stance to "OSS
+portfolio piece + content/credibility flywheel engine". Feature
+freeze deepens: no new feature work for 90 days unless real-user
+specific pain drives it. **Read `private/PLAN_90D.md` FIRST** before
+acting in this repo — it's the strategy source of truth.
+
+## 🧭 Strategy pivot anchor (2026-04-27) — read FIRST
+
+External Opus 4.7 review (yesterday's wave) + self-reflection led to
+a reframing of the project's role. Captured in full at
+`private/PLAN_90D.md` (gitignored — maintainer only).
+
+**TL;DR for next-session resume:**
+
+- throughline = NOT a SaaS product to monetize directly. 3 paths
+  exist; the user picked paths 2 + 3 as primary:
+  - **Path 1** (direct user adoption): deprioritized. Late entrant +
+    heavy install + non-programmer target audience = low probability.
+    Don't actively chase users.
+  - **Path 2** (content + narrative platform): primary. throughline
+    is the source material library for YouTube + Chinese platforms
+    (即刻 / 少数派 / B 站). 4 hero topics + 5 engineering deep-dives
+    queued. AuDHD-friendly cadence: 1 piece/week month 1, 1/2 weeks
+    after.
+  - **Path 3** (credibility leverage): primary. throughline =
+    portfolio piece for AI Memory / RAG company DevRel roles
+    (Anthropic, Mem0, Letta, Pinecone, Weaviate, LangChain, etc.).
+    AuDHD adapts best to DevRel; alternates: solo contracting,
+    AI-app-layer founding eng.
+- Feature work on throughline is **paused for 90 days** (until
+  2026-07-26). Exit criteria documented in PLAN_90D.md § 5.
+- User has parallel work only the user can do: hero GIF, first
+  YouTube video, LinkedIn headline rewrite, first OSS PR to a
+  target company, 即刻 account.
+
+**What this means for autonomous sessions:**
+
+If user kicks off auto mode in this repo going forward, *do not*
+ship more features unless directed to a specific item. Default
+auto-mode work is now: README / docs polish that supports paths
+2-3 (e.g. content-source-friendly anchors, screenshot drops, blog
+post drafts in `private/`), small bug fixes against real reported
+issues, **not** new architecture or new backends.
+
+If a feature ship feels right, **ask first** — the burden of proof
+is now on "why ship this" instead of "why not".
+
+---
 
 ## 🆕 External-review-response wave (2026-04-25, latest stretch)
 

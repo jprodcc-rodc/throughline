@@ -53,6 +53,11 @@ obsidian_vault/
 *__profile.md
 raw_material/
 
+# === Private / personal docs (strategy, plans, drafts) ===
+# Anything in private/ is maintainer-only and never published.
+# Stash 90-day plans, draft videos, outreach lists, etc. here.
+private/
+
 # === Local test artifacts ===
 tmp/
 tmp_*
