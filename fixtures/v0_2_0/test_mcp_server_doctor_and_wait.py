@@ -91,6 +91,36 @@ class TestDoctorChecks:
         assert ok is True
         assert "[ok]" in capsys.readouterr().out
 
+    def test_reflection_state_files_all_missing_warns(
+        self, monkeypatch, tmp_path, capsys,
+    ):
+        """No state files at all → emits 'no Reflection Pass state
+        files found' warn."""
+        from mcp_server.doctor import _check_reflection_state_files
+
+        monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "empty"))
+        ok = _check_reflection_state_files()
+        assert ok is False
+        out = capsys.readouterr().out
+        assert "[warn]" in out
+        assert "no Reflection Pass state files found" in out
+
+    def test_reflection_state_files_present_ok(
+        self, monkeypatch, tmp_path, capsys,
+    ):
+        from mcp_server.doctor import _check_reflection_state_files
+
+        # Write a valid positions.json so check finds at least one
+        # state file
+        (tmp_path / "reflection_positions.json").write_text(
+            '{"clusters": []}', encoding="utf-8"
+        )
+        monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path))
+        ok = _check_reflection_state_files()
+        assert ok is True
+        out = capsys.readouterr().out
+        assert "[ok] reflection.positions" in out
+
     def test_check_daemon_taxonomy_importable(self, capsys):
         from mcp_server.doctor import _check_daemon_taxonomy_import
 

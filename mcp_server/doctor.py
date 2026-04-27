@@ -187,6 +187,89 @@ def _check_daemon_recent_activity() -> bool:
         return True
 
 
+def _check_reflection_state_files() -> bool:
+    """Phase 2: are the Reflection Pass state files present + recent?
+
+    Reports per-file presence + last-modified age. Returns True
+    when at least the positions file is present (the minimum
+    needed for check_consistency / get_position_drift). Anything
+    missing surfaces as a warning rather than a fail because
+    Phase 2 is opt-in via flags.
+    """
+    try:
+        from daemon.state_paths import (
+            default_open_threads_file,
+            default_positions_file,
+            default_pass_state_file
+        )
+    except ImportError:
+        # Fall back to local resolution if daemon.state_paths
+        # isn't reachable (mcp_server-only install).
+        state_dir = os.environ.get(
+            "THROUGHLINE_STATE_DIR",
+            str(Path.home() / "throughline_runtime" / "state"),
+        )
+        sd = Path(state_dir).expanduser()
+        positions = sd / "reflection_positions.json"
+        open_threads = sd / "reflection_open_threads.json"
+        pass_state = sd / "reflection_pass_state.json"
+    else:
+        try:
+            from daemon.state_paths import default_state_file
+            pass_state = default_state_file()
+        except ImportError:
+            pass_state = None  # type: ignore[assignment]
+        positions = default_positions_file()
+        open_threads = default_open_threads_file()
+
+    files = [
+        ("positions", positions),
+        ("open_threads", open_threads),
+    ]
+    if pass_state:
+        files.insert(0, ("pass_state", pass_state))
+
+    any_present = any(p.exists() for _, p in files)
+    if not any_present:
+        _emit(
+            "[warn]", "reflection state files",
+            "no Reflection Pass state files found",
+            "Run `python -m daemon.reflection_pass --enable-llm-naming "
+            "--enable-llm-backfill` to populate. Phase 2 MCP tools "
+            "(find_open_threads / check_consistency / get_position_drift) "
+            "return error _status until this runs.",
+        )
+        return False
+
+    # At least one file present — log per-file status
+    now = time.time()
+    for name, p in files:
+        if not p.exists():
+            _emit(
+                "[warn]", f"reflection.{name}",
+                f"missing: {p}",
+                "Run reflection_pass to populate (only required for "
+                "the corresponding MCP tool).",
+            )
+            continue
+        try:
+            age = now - p.stat().st_mtime
+            if age < 3600:
+                age_label = f"{int(age)}s"
+            elif age < 86400:
+                age_label = f"{int(age / 3600)}h"
+            else:
+                age_label = f"{int(age / 86400)}d"
+            size_kb = p.stat().st_size / 1024
+            _emit(
+                "[ok]", f"reflection.{name}",
+                f"present, {size_kb:.1f}K, age {age_label}",
+            )
+        except OSError as exc:
+            _emit("[warn]", f"reflection.{name}", f"stat failed: {exc}")
+    return True
+
+
 def run_doctor() -> int:
     """Run all checks. Return 0 if everything green/warn, 1 if any
     red fail."""
@@ -201,6 +284,11 @@ def run_doctor() -> int:
     rag_ok = _check_rag_server()
     taxonomy_ok = _check_daemon_taxonomy_import()
     daemon_ok = _check_daemon_recent_activity()
+
+    print()
+    print("Phase 2 Reflection Layer state")
+    print("─" * 40)
+    _check_reflection_state_files()
 
     # Hard-fail criteria: fastmcp + RAW_ROOT + rag_server + taxonomy
     # are required for save / recall / list. Vault + daemon-activity
