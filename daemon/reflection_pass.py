@@ -946,24 +946,41 @@ def _stage_writeback(
     dry_run: bool,
     cluster_names: Optional[dict[str, str]] = None,
     preview_file: Optional[Path] = None,
+    commit_writeback: bool = False,
+    backup: bool = True,
 ) -> None:
-    """Stage 8 — writeback (preview-only in this commit).
+    """Stage 8 — writeback.
 
-    Computes what frontmatter additions would be written to each
-    card based on stages 3-5 in-memory results. Always produces a
-    preview JSON; **never mutates vault files in this commit**.
-    Real atomic frontmatter rewrite lands in a follow-up commit so
-    the highest-blast-radius operation in the daemon gets its own
-    smoke-test cycle.
+    Two modes:
+
+    1. **Preview-only (default)**: writes diff JSON; never
+       mutates vault files. ``commit_writeback=False`` enforces
+       this path regardless of any other flag.
+
+    2. **Real writeback** (``commit_writeback=True``): hybrid
+       surgical-frontmatter-append + sidecar JSON, per the
+       2026-04-28+1 architectural decision. ``position_signal``
+       and ``open_questions`` go into frontmatter via
+       surgical-append (no PyYAML round-trip on existing keys);
+       ``reflection.*`` lives in a sidecar
+       ``.<card>.reflection.json``. Backup file written before any
+       mutation. See ``daemon.writeback_commit`` for details.
+
+    Real writeback is the highest-blast-radius operation in the
+    daemon. ``commit_writeback`` defaults False everywhere
+    including the CLI; user opts in explicitly.
 
     Args:
         cards: reflectable cards (post stage-1.5 filter).
         result: pass result accumulator (mutated).
-        dry_run: passed through for stage-message labeling. Stage
-            output (preview JSON) is the same in both modes since
-            no vault writes happen.
+        dry_run: passed through for stage-message labeling.
+            Even in non-dry-run, real writeback only fires when
+            ``commit_writeback=True``.
         cluster_names: cluster_id -> name from stage 3.
         preview_file: where to write the preview JSON.
+        commit_writeback: when True, fire the real frontmatter
+            append + sidecar write. Default False (safe).
+        backup: passed through to ``commit_card_writeback``.
     """
     if not cards:
         result.stages_skipped.append("writeback (no cards)")
@@ -973,11 +990,38 @@ def _stage_writeback(
 
     diffs = build_writeback_preview(cards, cluster_names or {})
 
-    label = "preview, dry-run" if dry_run else "preview, no vault mutation"
-    result.cards_updated = 0  # zero until commit_writeback path lands
-    result.stages_completed.append(
-        f"writeback ({len(diffs)} cards would be modified, {label})"
-    )
+    if commit_writeback and not dry_run:
+        from daemon.writeback_commit import commit_card_writeback
+        commit_results = []
+        cards_modified = 0
+        errors_in_commit = 0
+        for diff in diffs:
+            cp = Path(diff["card_path"])
+            r = commit_card_writeback(
+                cp,
+                diff.get("additions", {}),
+                dry_run=False,
+                backup=backup,
+            )
+            commit_results.append(r)
+            if r.get("error"):
+                errors_in_commit += 1
+                result.errors.append(
+                    f"writeback failed for {cp}: {r['error']}"
+                )
+            elif r.get("frontmatter_keys_added") or r.get("sidecar_changed"):
+                cards_modified += 1
+        result.cards_updated = cards_modified
+        result.stages_completed.append(
+            f"writeback ({cards_modified} cards modified, "
+            f"{errors_in_commit} errors, COMMIT)"
+        )
+    else:
+        label = "preview, dry-run" if dry_run else "preview, no vault mutation"
+        result.cards_updated = 0
+        result.stages_completed.append(
+            f"writeback ({len(diffs)} cards would be modified, {label})"
+        )
 
     if preview_file is None:
         return
@@ -985,6 +1029,7 @@ def _stage_writeback(
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "dry_run": dry_run,
+        "commit_writeback": commit_writeback and not dry_run,
         "cards_would_be_modified": len(diffs),
         "diffs": diffs,
     }
@@ -1018,6 +1063,8 @@ def run_pass(
     contradictions_file: Optional[Path] = None,
     segmenter: Optional[DriftSegmenter] = None,
     drift_file: Optional[Path] = None,
+    commit_writeback: bool = False,
+    writeback_backup: bool = True,
     use_default_state_paths: bool = True,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
@@ -1220,6 +1267,8 @@ def run_pass(
         cards, result, dry_run=dry_run,
         cluster_names=cluster_names,
         preview_file=writeback_preview_file,
+        commit_writeback=commit_writeback,
+        backup=writeback_backup,
     )
 
     result.finished_at = datetime.now(timezone.utc).isoformat()
@@ -1558,6 +1607,25 @@ def main(argv: Optional[list[str]] = None) -> int:
              "--enable-llm-backfill hasn't run (stance=null).",
     )
     parser.add_argument(
+        "--commit-writeback", action="store_true",
+        help="Stage 8: ACTUALLY write the frontmatter + sidecar "
+             "additions to vault files. Default OFF — only the "
+             "preview JSON gets written. With this flag: "
+             "position_signal + open_questions surgical-appended "
+             "to frontmatter (existing keys never overwritten); "
+             "reflection.* written to sidecar JSON "
+             "<card_dir>/.<card>.reflection.json. Each card's "
+             "original gets a timestamped backup beforehand. "
+             "HIGH BLAST RADIUS — review preview file first.",
+    )
+    parser.add_argument(
+        "--no-writeback-backup", action="store_true",
+        help="Skip backup files when --commit-writeback is set. "
+             "Default: backup is enabled. Disable only if you have "
+             "git or another backup mechanism in place — daemon "
+             "intentionally never auto-deletes backups.",
+    )
+    parser.add_argument(
         "--writeback-preview-file", type=str, default=None,
         help="Path to persist stage 8 writeback preview "
              "(per-card frontmatter additions that WOULD be "
@@ -1697,6 +1765,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         contradictions_file=contradictions_path,
         segmenter=segmenter,
         drift_file=drift_path,
+        commit_writeback=args.commit_writeback,
+        writeback_backup=not args.no_writeback_backup,
     )
 
     print(_format_result(result))
