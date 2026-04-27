@@ -2,14 +2,23 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-28 EOD+1 — Phase 2 Reflection Layer
-**user-facing surface 100% complete**. 12 Phase 2 commits shipped
-through `638f3ec`; all 3 new MCP tools real (find_open_threads /
-check_consistency / get_position_drift), 8-stage Reflection Pass
-daemon implemented (stage 6 + 7 still LLM-stub). 1455 → ~1690
-tests pass. **0 vault file mutations** (writeback is preview-only;
-real write is gated commit). **0 real LLM API calls fired** (mock
-clients throughout; real validation deferred until working API key).
+**Last updated:** 2026-04-28 EOD+2 — Phase 2 Reflection Layer
+**code-complete with mock-tested LLM stages 6 + 7 + real writeback
+infrastructure**. 24 total Phase 2 commits shipped through
+`002f66b`. All 3 MCP tools real (find_open_threads /
+check_consistency / get_position_drift) reading state files;
+all 8 Reflection Pass stages have real implementations
+(stages 6/7 LLM-using, mock-tested, real validation deferred).
+Writeback offers preview-only by default; **real `--commit-writeback`
+gated path also implemented + tested** but not yet fired against
+real vault. 1455 → ~1860 tests pass. **0 real vault file mutations**
+in this batch. **0 real LLM API calls fired** (Windows env
+OPENAI_API_KEY rotated/expired earlier; all stages tested with
+mock clients).
+
+For Phase 2 implementation log + remaining work, scroll to the
+"🆕 Phase 2 implementation wave (2026-04-28)" section below or
+read `private/TODO.md`.
 
 For Phase 2 implementation log + remaining work, scroll to the
 "🆕 Phase 2 implementation wave (2026-04-28)" section below or
@@ -73,6 +82,98 @@ recalibration" wave below): 4-criteria → 2-criteria. Now: MCP
 basic stable + topic clustering accuracy ≥75% on author's vault.
 Clustering experiment harness shipped (`b54b9a3`); ready for user
 to run gate against real vault data.
+
+---
+
+## 🆕 Phase 2 overnight wave (2026-04-28+2)
+
+After the Phase 2 user-facing surface shipped at `638f3ec`, an
+extended autonomous session executed the full ABCDEF my-do list
+under "稳" (stability) directive. **12 additional commits** all
+pushed to origin/main:
+
+```
+7639a60  refactor: state_paths.py + card_timestamp hoist (D1+D2)
+e6091f8  --inspect CLI subcommand (A4)
+e2bdaeb  --explain CARD_PATH single-card diagnostic (A5)
+e03afde  RUNTIME_STATE_FILES.md + FAQ Reflection Layer section (B2+B5)
+c325b2f  example trigger conversations in tool docstrings (B4)
+1639828  edge case stress tests (C2)
+545a0bd  synthetic-vault end-to-end integration tests (C3)
+aaca4de  Stage 6 LLM contradiction judgment (A1)
+ee5e07f  Stage 7 LLM drift segmentation (A2)
+13bc812  REAL frontmatter writeback — surgical-append + sidecar JSON (A3)
+892c8cd  REFLECTION_LAYER_USER_GUIDE.md + README mermaid (B1+B3)
+002f66b  doctor extension for Phase 2 state files (E1)
+```
+
+**Architectural decisions locked during this wave:**
+
+- **Q1 (writeback architecture)**: hybrid surgical-append +
+  sidecar JSON. ``position_signal`` + ``open_questions`` go to
+  frontmatter (ADD-once, surgical text append, never re-serialize
+  existing keys → zero formatting drift). ``reflection.*`` lives
+  in sidecar `<card>.reflection.json` (daemon-refreshable, never
+  pollutes frontmatter).
+- **Q2 (stages 6/7 LLM strategy)**: ship as mock-tested
+  implementations. Real validation deferred until working API
+  key. All code paths covered by mocks; cost estimators show
+  ~$0.017 per full pass on author vault.
+
+**Skipped (deliberate):**
+
+- D3 (LLM client unify): would refactor working production code;
+  too risky without explicit need.
+- D4 (tokenizer dedup): violates earlier decision that mcp_server
+  doesn't import from daemon. Two near-identical tokenizers stay
+  duplicated by design.
+- C1 (Hypothesis property tests): would add new dep.
+- F1 (incremental mode) / F2 (embedding cache): performance
+  optimizations not yet justified by usage data.
+- E2 / E3 / E4 (small CLI / metrics polish): can be added when
+  there's specific pain.
+
+**State of every Phase 2 stage as of `002f66b`:**
+
+| Stage | Status | Cost (when enabled) |
+|-------|--------|--------------------|
+| 1: load + parse | real | 0 |
+| 1.5: reflectable filter | real | 0 |
+| 2: cluster (bge-m3) | real | 0 (uses local rag_server) |
+| 3: cluster naming (LLM) | **real, mock-tested** | ~$0.0004 / pass |
+| 4: Path A back-fill (LLM) | **real, mock-tested** | ~$0.01 / pass |
+| 5: open thread detection | real, no LLM | 0 |
+| 6: contradiction judgment (LLM) | **real, mock-tested** | ~$0.002 / pass |
+| 7: drift segmentation (LLM) | **real, mock-tested** | ~$0.005 / pass |
+| 8: writeback (preview) | real | 0 |
+| 8b: writeback (commit) | **real, gated --commit-writeback** | 0 (vault writes) |
+
+**State files** (10 total now):
+
+- ``reflection_pass_state.json``
+- ``reflection_cluster_names.json``
+- ``reflection_backfill_state.json``
+- ``reflection_open_threads.json``
+- ``reflection_positions.json``
+- ``reflection_writeback_preview.json``
+- ``reflection_contradictions.json`` (NEW — stage 6 output)
+- ``reflection_drift.json`` (NEW — stage 7 output)
+- Plus per-card sidecars: ``<card_dir>/.<card>.reflection.json``
+  when --commit-writeback runs
+
+**Public docs added in this wave:**
+
+- ``docs/RUNTIME_STATE_FILES.md`` — every state file documented
+- ``docs/REFLECTION_LAYER_USER_GUIDE.md`` — user-facing workflow
+
+**What's gated on user action (still):**
+
+1. Working OpenRouter / OpenAI-compat API key for the LLM stages
+   to fire for real
+2. ``--commit-writeback`` opt-in to actually mutate vault
+   frontmatter (preview JSON shipped)
+3. Manual smoke test: install fastmcp + configure Claude Desktop
+   + verify all 6 tools fire from a real conversation
 
 ---
 

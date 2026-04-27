@@ -15,6 +15,131 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — Phase 2 Reflection Layer overnight wave (2026-04-28+1)
+
+12 commits extending the Phase 2 Reflection Layer with:
+
+**Stages 6 + 7 LLM enrichment (mock-tested; real LLM gated on
+working API key):**
+
+- Stage 6 contradiction judgment (`aaca4de`):
+  ``mcp_server/llm_judge.py`` (judge_pair) + reflection_pass
+  ``_stage_detect_contradictions`` + reflection_contradictions.json
+  state file. Conservative system prompt — ``is_contradiction=true``
+  only for direct_reversal, NOT for evolution / scope_narrowing /
+  agreement / orthogonal. ``check_consistency`` MCP tool gracefully
+  filters to actually-contradicting cards when stage 6 has run;
+  falls back to all-cluster-positions otherwise.
+- Stage 7 drift segmentation (`ee5e07f`):
+  ``mcp_server/llm_drift_segmenter.py`` + reflection_pass
+  ``_stage_compute_drift`` + reflection_drift.json. Topic-level
+  ``drift_kind`` classification (healthy_evolution /
+  drift_without_reasoning / following_trends / mood_swings /
+  unsegmented). Per-cluster phase segmentation — each phase gets
+  phase_name, stance, started/ended dates, transition_reason,
+  card_paths. ``get_position_drift`` MCP tool returns per-phase
+  trajectory when stage 7 has run; per-card otherwise.
+
+**Real frontmatter writeback (`13bc812`):**
+
+``daemon/writeback_commit.py`` implementing the 2026-04-28+1
+architectural decision (hybrid):
+
+- ``position_signal`` + ``open_questions`` → surgical text append
+  to existing frontmatter. Existing keys NEVER overwritten. No
+  PyYAML round-trip = zero formatting drift on user customizations
+  (quotes, comments, trailing whitespace, key order).
+- ``reflection.*`` → sidecar JSON file
+  ``<card_dir>/.<card_name>.reflection.json``. Daemon-managed
+  metadata refreshed every pass without ever touching the
+  frontmatter block.
+- Atomic write: ``NamedTemporaryFile`` + ``os.replace`` in same
+  dir (Windows + cross-device safe).
+- Backup: ``<card_dir>/.<card_name>.backup-<unix_timestamp>``
+  before any mutation. Daemon never auto-deletes.
+- Idempotency: re-running with same data is a true no-op.
+
+CLI: ``--commit-writeback`` flag (default OFF). Without it, only
+preview JSON is written; real writeback gated.
+``--no-writeback-backup`` to skip backups when user has git tracking.
+
+**Diagnostic CLIs:**
+
+- ``--inspect`` subcommand (`e6091f8`):
+  ``daemon/reflection_inspect.py`` pretty-prints summaries of all
+  state files. Per-file: presence ✓/✗ inventory, file sizes, age
+  ("3h ago"), per-summarizer extraction of relevant fields
+  (cluster sizes / open thread samples / writeback diffs).
+- ``--explain CARD_PATH`` subcommand (`e2bdaeb`):
+  ``daemon/reflection_explain.py`` dumps everything the daemon
+  thinks about ONE card — cluster membership, sister cards,
+  back-fill cache, open-thread status, what writeback would add.
+  Useful when an MCP tool returns surprising results and operator
+  wants to see why.
+
+**Refactor — centralized state paths (`7639a60`):**
+
+``daemon/state_paths.py`` consolidates seven default_*_file()
+helpers + ``card_timestamp()`` chronology resolver. Reserves
+paths for stage 6/7 outputs (reflection_contradictions.json,
+reflection_drift.json) ahead of their implementation.
+``all_state_files()`` returns mapping for diagnostics tools.
+
+**Doctor extension (`002f66b`):**
+
+``mcp_server/doctor.py`` adds Phase 2 Reflection Layer state
+section. Reports per-file presence + size + age. When all state
+files are missing, single consolidated warn line with fix hint.
+
+**Documentation:**
+
+- NEW: ``docs/RUNTIME_STATE_FILES.md`` (~400 lines) — every state
+  file's writer, readers, refresh cadence, JSON schema, sample
+  payload. Plus architecture diagram showing daemon → state files
+  → MCP tools dataflow. (`e03afde`)
+- NEW: ``docs/REFLECTION_LAYER_USER_GUIDE.md`` (~400 lines) —
+  user-facing companion to design + schema docs. TL;DR table,
+  per-tool sections with sample conversations, three-step setup
+  walkthrough, cost expectations by vault size, "what NOT to
+  expect" calibration, when-to-call-which-tool matrix. (`892c8cd`)
+- UPDATED: ``docs/MCP_SETUP.md`` — tool table 3 → 6 with new
+  Phase 2 trio. (`e03afde`)
+- UPDATED: ``docs/FAQ.md`` — top section "What is the Reflection
+  Layer? How is it different from chat memory?" with side-by-side
+  comparison and one-line distinction. (`e03afde`)
+- UPDATED: ``README.md`` — Reflection Layer mermaid diagram
+  showing third pipeline. (`892c8cd`)
+- UPDATED: per-tool docstrings (`c325b2f`) — 4 example trigger
+  conversations + "what to do with the result" guidance per
+  tool, helping host LLMs fire at the right moment.
+
+**Test depth:**
+
+- 29 edge-case tests (`1639828`): enormous body / only-emoji
+  header / mixed-language / malformed YAML / state files with
+  invalid UTF-8 / Chinese statement matching Chinese cluster.
+- 7 end-to-end integration tests (`545a0bd`): synthetic vault
+  → full pipeline → MCP tools. Includes namer-cache-on-rerun
+  test confirming no double LLM calls.
+- ``run_pass(use_default_state_paths=True)`` — programmatic
+  callers now get same default-path behavior as CLI.
+
+**Test counts:** 1697 → ~1860 passes net across the wave (count
+varies ±30 by pytest collection).
+
+**LLM cost on author's vault (when all stages enabled):**
+- Stage 3 cluster naming: ~$0.0004
+- Stage 4 back-fill: ~$0.01
+- Stage 6 contradiction: ~$0.002 (~50 pairs)
+- Stage 7 drift: ~$0.005 (~6 multi-card clusters)
+- **Total full pass: ~$0.017 / ¥0.12.** Cache makes re-runs
+  near-zero.
+
+**0 vault file mutations** in this wave — real writeback
+infrastructure shipped but ``--commit-writeback`` flag is OFF
+by default. **0 real LLM calls fired** during development; all
+tests use mocked clients.
+
 ### Added — Phase 2 Reflection Layer (2026-04-28)
 
 The Reflection Layer ships in incremental commits behind opt-in
