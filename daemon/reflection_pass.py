@@ -51,7 +51,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 
 # Optional yaml dep — daemon already requires it; fall back to JSON
@@ -93,6 +93,30 @@ def default_state_file() -> Path:
     `THROUGHLINE_STATE_DIR` via `monkeypatch.setenv`.
     """
     return _default_state_dir() / "reflection_pass_state.json"
+
+
+def default_cluster_names_file() -> Path:
+    """Resolve the default `state/reflection_cluster_names.json` path.
+
+    This file persists ``cluster_signature -> canonical_name`` so
+    repeated passes don't re-call the LLM to re-name unchanged
+    clusters. Cluster signature includes the membership path list
+    so re-clustering with shifted membership invalidates the cache
+    naturally.
+    """
+    return _default_state_dir() / "reflection_cluster_names.json"
+
+
+def _load_cluster_names(path: Path) -> dict[str, str]:
+    """Read persisted cluster_signature -> name. Returns empty dict
+    when file is missing or unparseable (treat as cold start)."""
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 # ---------- pass result types ----------
@@ -328,21 +352,116 @@ def _stage_cluster(
     return {str(k): v for k, v in grouped.items()}
 
 
+ClusterNamer = Callable[[list[str]], str]
+
+
 def _stage_resolve_cluster_names(
     grouped: dict[str, list[dict[str, Any]]],
     result: PassResult,
     *,
     dry_run: bool,
-) -> None:
-    """Stage 3 — assign canonical cluster names (LLM call per cluster).
+    namer: Optional[ClusterNamer] = None,
+    cluster_names_state: Optional[dict[str, str]] = None,
+) -> dict[str, str]:
+    """Stage 3 — assign canonical cluster names.
 
-    STUB. See POSITION_METADATA_SCHEMA milestone 3.
+    For each cluster, call ``namer(titles)`` to get a snake_case
+    topic identifier (e.g. ``"pricing_strategy"``). Names persist
+    to ``cluster_names_state`` so the same cluster_id keeps the same
+    name across passes — repeated runs don't re-call the LLM unless
+    the cluster's membership has shifted enough to warrant it.
 
-    Real impl will call an LLM per cluster with concat of titles +
-    refiner-emitted topic_cluster strings (when present), get back
-    a snake_case canonical name, and stash on the cluster.
+    Args:
+        grouped: cluster_id -> list of card dicts.
+        result: pass result accumulator (mutated).
+        dry_run: when True, skip the actual call and report the
+            stage as deferred. Cluster names won't be written, but
+            the cluster_id list still tells you what *would* be
+            named.
+        namer: callable that takes card titles and returns a name.
+            ``mcp_server.llm_namer.name_cluster`` is the stock
+            implementation; tests pass a deterministic mock.
+            When None, the stage is skipped (back-compat with stub
+            CLI invocations that don't have an LLM configured).
+        cluster_names_state: optional dict from previous pass
+            (cluster_id -> name). When provided, clusters whose
+            membership signature matches the prior pass keep their
+            name without re-calling the namer.
+
+    Returns:
+        Dict mapping cluster_id -> canonical name. Empty when stage
+        was skipped or all calls failed.
     """
-    result.stages_skipped.append("resolve_cluster_names (stub)")
+    if not grouped:
+        result.stages_skipped.append("resolve_cluster_names (no clusters)")
+        return {}
+
+    if namer is None:
+        result.stages_skipped.append(
+            f"resolve_cluster_names ({len(grouped)} clusters; "
+            "no namer configured — pass --enable-llm-naming or "
+            "set OPENROUTER_API_KEY)"
+        )
+        return {}
+
+    if dry_run:
+        result.stages_skipped.append(
+            f"resolve_cluster_names ({len(grouped)} clusters; dry-run)"
+        )
+        return {}
+
+    # IMPORTANT: do not rebind to {} via `or {}`. The caller passes
+    # in a dict that we mutate in-place so subsequent passes see the
+    # cache. Using `or {}` would silently break that contract for
+    # cold-start runs (caller passes empty dict, we'd create a new
+    # local dict, and the caller's reference would never see updates).
+    if cluster_names_state is None:
+        cluster_names_state = {}
+    names: dict[str, str] = {}
+    cached_hits = 0
+    new_calls = 0
+    failures = 0
+
+    for cid, members in grouped.items():
+        # Build a stable signature from cluster membership so we can
+        # detect when a previously-named cluster's contents have
+        # changed enough to warrant re-naming.
+        member_paths = sorted(c.get("path", "") for c in members)
+        signature = f"{cid}|{','.join(member_paths)}"
+        prior = cluster_names_state.get(signature)
+        if prior:
+            names[cid] = prior
+            cached_hits += 1
+            continue
+
+        titles = [str(c.get("title", "")).strip() for c in members]
+        titles = [t for t in titles if t]
+        if not titles:
+            failures += 1
+            continue
+        try:
+            name = namer(titles)
+        except Exception as exc:  # noqa: BLE001 — namer can raise anything
+            result.errors.append(
+                f"cluster {cid} naming failed: {type(exc).__name__}: {exc}"
+            )
+            failures += 1
+            continue
+        if not name:
+            failures += 1
+            continue
+        names[cid] = name
+        cluster_names_state[signature] = name
+        new_calls += 1
+
+    result.cluster_names_resolved = len(names)
+    result.stages_completed.append(
+        f"resolve_cluster_names ({len(names)} named — "
+        f"{cached_hits} cached, {new_calls} new"
+        + (f", {failures} failed" if failures else "")
+        + ")"
+    )
+    return names
 
 
 def _stage_backfill_position_signal(
@@ -447,6 +566,8 @@ def run_pass(
     high_threshold: float = 0.70,
     low_threshold: float = 0.55,
     state_file: Optional[Path] = None,
+    namer: Optional[ClusterNamer] = None,
+    cluster_names_file: Optional[Path] = None,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
 
@@ -546,8 +667,17 @@ def run_pass(
         result.errors.append(f"cluster stage failed: {exc}")
         grouped = {}
 
-    # Stages 3-8 — stubs.
-    _stage_resolve_cluster_names(grouped, result, dry_run=dry_run)
+    # Stage 3 — real (when namer configured); skipped under dry_run
+    # or when no namer was passed (e.g., no API key in env).
+    cluster_names_state = _load_cluster_names(cluster_names_file) if cluster_names_file else {}
+    cluster_names = _stage_resolve_cluster_names(
+        grouped, result,
+        dry_run=dry_run,
+        namer=namer,
+        cluster_names_state=cluster_names_state,
+    )
+
+    # Stages 4-8 — stubs.
     _stage_backfill_position_signal(cards, result, dry_run=dry_run)
     _stage_detect_open_threads(grouped, result, dry_run=dry_run)
     _stage_detect_contradictions(grouped, result, dry_run=dry_run)
@@ -566,6 +696,17 @@ def run_pass(
             )
         except OSError as exc:
             result.errors.append(f"state file write failed: {exc}")
+
+    # Persist cluster names cache so the next pass reuses them.
+    if not dry_run and cluster_names_file and cluster_names_state:
+        try:
+            cluster_names_file.parent.mkdir(parents=True, exist_ok=True)
+            cluster_names_file.write_text(
+                json.dumps(cluster_names_state, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            result.errors.append(f"cluster names file write failed: {exc}")
 
     return result
 
@@ -642,12 +783,46 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="Path to pass watermark file. Defaults to "
              "$THROUGHLINE_STATE_DIR/reflection_pass_state.json.",
     )
+    parser.add_argument(
+        "--enable-llm-naming", action="store_true",
+        help="Stage 3: call LLM to assign canonical snake_case "
+             "names to each cluster. Requires OPENROUTER_API_KEY "
+             "(or compatible env). Without this flag, stage 3 is "
+             "skipped and clusters remain numeric ids.",
+    )
+    parser.add_argument(
+        "--cluster-names-file", type=str, default=None,
+        help="Path to persist cluster_signature -> name cache. "
+             "Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_cluster_names.json.",
+    )
     args = parser.parse_args(argv)
 
     vault = Path(args.vault).resolve() if args.vault else None
     state = Path(args.state_file).resolve() if args.state_file else None
+    cluster_names_path = (
+        Path(args.cluster_names_file).resolve() if args.cluster_names_file
+        else default_cluster_names_file()
+    )
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    namer: Optional[ClusterNamer] = None
+    if args.enable_llm_naming:
+        try:
+            from mcp_server.llm_namer import (
+                LLMNamerError,
+                LLMNamerUnavailable,
+                name_cluster,
+            )
+            namer = name_cluster
+        except ImportError as exc:
+            print(
+                f"--enable-llm-naming requires mcp_server.llm_namer "
+                f"({exc})",
+                file=sys.stderr,
+            )
+            return 2
 
     result = run_pass(
         vault_root=vault,
@@ -655,6 +830,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         high_threshold=args.high_threshold,
         low_threshold=args.low_threshold,
         state_file=state,
+        namer=namer,
+        cluster_names_file=cluster_names_path if args.enable_llm_naming else None,
     )
 
     print(_format_result(result))

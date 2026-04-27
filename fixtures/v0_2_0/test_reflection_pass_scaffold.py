@@ -497,10 +497,292 @@ class TestRunPassReflectableFilter:
 
 # ---------- Stage stubs return correct skip markers ----------
 
+# ---------- Stage 3 (resolve_cluster_names) — real impl ----------
+
+class TestResolveClusterNames:
+    """Stage 3 takes a Callable namer and produces canonical names
+    per cluster, with persistence cache to avoid re-naming on
+    subsequent passes when membership hasn't shifted."""
+
+    def _empty_result(self):
+        from daemon.reflection_pass import PassResult
+        return PassResult(
+            started_at="x", finished_at="y",
+            cards_scanned=0, cards_reflectable=0, cards_excluded=0,
+            cards_with_position_signal=0,
+            cards_clustered=0, clusters_count=0,
+            cluster_names_resolved=0, backfill_completed=0,
+            open_threads_detected=0, contradictions_detected=0,
+            drift_phases_computed=0, cards_updated=0, dry_run=False,
+        )
+
+    def test_no_clusters_skipped(self):
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+        names = _stage_resolve_cluster_names(
+            {}, result, dry_run=False, namer=lambda titles: "x",
+        )
+        assert names == {}
+        assert any("no clusters" in s for s in result.stages_skipped)
+
+    def test_no_namer_skipped(self):
+        """When namer is None (no API key configured), skip cleanly
+        and report so in stages_skipped — don't crash."""
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+        grouped = {"0": [{"path": "a.md", "title": "A"}]}
+        names = _stage_resolve_cluster_names(
+            grouped, result, dry_run=False, namer=None,
+        )
+        assert names == {}
+        assert any("no namer" in s.lower() for s in result.stages_skipped)
+
+    def test_dry_run_skipped_even_with_namer(self):
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+        called = []
+
+        def namer(titles):
+            called.append(titles)
+            return "should_not_run"
+
+        grouped = {"0": [{"path": "a.md", "title": "A"}]}
+        _stage_resolve_cluster_names(
+            grouped, result, dry_run=True, namer=namer,
+        )
+        # Namer must NOT be invoked under dry_run
+        assert called == []
+        assert any("dry-run" in s for s in result.stages_skipped)
+
+    def test_calls_namer_per_cluster(self):
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+        seen = []
+
+        def namer(titles):
+            seen.append(tuple(titles))
+            return f"cluster_of_{len(titles)}"
+
+        grouped = {
+            "0": [
+                {"path": "a.md", "title": "alpha"},
+                {"path": "b.md", "title": "beta"},
+            ],
+            "1": [
+                {"path": "c.md", "title": "gamma"},
+            ],
+        }
+        names = _stage_resolve_cluster_names(
+            grouped, result, dry_run=False, namer=namer,
+        )
+
+        assert names == {"0": "cluster_of_2", "1": "cluster_of_1"}
+        assert ("alpha", "beta") in seen
+        assert ("gamma",) in seen
+        assert result.cluster_names_resolved == 2
+
+    def test_caches_by_signature(self):
+        """When prior pass named cluster with same membership, reuse
+        the name without calling namer again."""
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+        called = []
+
+        def namer(titles):
+            called.append(titles)
+            return "fresh_name"
+
+        # Membership signature is "{cid}|{sorted_paths_csv}"
+        prior = {
+            "0|a.md,b.md": "cached_name",
+        }
+        grouped = {
+            "0": [
+                {"path": "a.md", "title": "alpha"},
+                {"path": "b.md", "title": "beta"},
+            ],
+        }
+        names = _stage_resolve_cluster_names(
+            grouped, result, dry_run=False, namer=namer,
+            cluster_names_state=prior,
+        )
+
+        assert names == {"0": "cached_name"}
+        # No call: cache hit
+        assert called == []
+
+    def test_cache_invalidated_when_membership_changes(self):
+        """If a prior cluster's signature shifts (path added/removed),
+        cache miss → namer called fresh."""
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+        called = []
+        def namer(titles):
+            called.append(titles)
+            return "fresh_name"
+
+        # Old signature was {0, [a.md]}; new cluster has more cards
+        prior = {"0|a.md": "stale_name"}
+        grouped = {
+            "0": [
+                {"path": "a.md", "title": "alpha"},
+                {"path": "new.md", "title": "new card"},  # membership changed
+            ],
+        }
+        names = _stage_resolve_cluster_names(
+            grouped, result, dry_run=False, namer=namer,
+            cluster_names_state=prior,
+        )
+        assert names["0"] == "fresh_name"
+        assert called  # namer was called
+
+    def test_namer_failure_logged_other_clusters_continue(self):
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+
+        def namer(titles):
+            if "broken" in titles[0]:
+                raise RuntimeError("LLM 500")
+            return "ok_name"
+
+        grouped = {
+            "0": [{"path": "a.md", "title": "broken card"}],
+            "1": [{"path": "b.md", "title": "good card"}],
+        }
+        names = _stage_resolve_cluster_names(
+            grouped, result, dry_run=False, namer=namer,
+        )
+        # Cluster 0 failed; cluster 1 succeeded
+        assert names == {"1": "ok_name"}
+        assert any("naming failed" in e for e in result.errors)
+        assert result.cluster_names_resolved == 1
+        # stage message is honest about counts
+        msg = next(s for s in result.stages_completed if "resolve_cluster_names" in s)
+        assert "1 named" in msg
+        assert "1 failed" in msg
+
+    def test_empty_titles_skipped(self):
+        """Cluster whose titles are all empty/whitespace can't be
+        named — skip gracefully without invoking namer."""
+        from daemon.reflection_pass import _stage_resolve_cluster_names
+
+        result = self._empty_result()
+        called = []
+        def namer(titles):
+            called.append(titles)
+            return "x"
+
+        grouped = {
+            "0": [{"path": "a.md", "title": ""}, {"path": "b.md", "title": "   "}],
+        }
+        names = _stage_resolve_cluster_names(
+            grouped, result, dry_run=False, namer=namer,
+        )
+        assert names == {}
+        assert called == []  # never invoked
+        assert "1 failed" in next(
+            s for s in result.stages_completed if "resolve_cluster_names" in s
+        )
+
+
+# ---------- run_pass passes namer through end-to-end ----------
+
+class TestRunPassNamerIntegration:
+    def test_namer_passed_through_to_stage_3(self, tmp_path):
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "card.md").write_text(
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
+        )
+
+        # Fake cluster + fake namer
+        def fake_cluster(cards, result, *, high_threshold, low_threshold):
+            for c in cards:
+                c["_cluster_id"] = 0
+            result.cards_clustered = len(cards)
+            result.clusters_count = 1
+            return {"0": cards}
+
+        called = []
+        def namer(titles):
+            called.append(titles)
+            return "real_name"
+
+        with patch("daemon.reflection_pass._stage_cluster", side_effect=fake_cluster):
+            result = run_pass(
+                vault_root=tmp_path, dry_run=False, namer=namer,
+                state_file=tmp_path / "state.json",
+            )
+
+        assert called  # namer was invoked
+        assert result.cluster_names_resolved == 1
+
+    def test_no_namer_means_stage_3_skipped(self, tmp_path):
+        """Default behavior (no namer) = stage 3 skipped, but
+        clustering still runs (so we know what would be named)."""
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "card.md").write_text(
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
+        )
+
+        def fake_cluster(cards, result, *, high_threshold, low_threshold):
+            result.cards_clustered = 1
+            result.clusters_count = 1
+            return {"0": cards}
+
+        with patch("daemon.reflection_pass._stage_cluster", side_effect=fake_cluster):
+            result = run_pass(vault_root=tmp_path, dry_run=True)
+
+        assert result.cluster_names_resolved == 0
+        assert any("no namer" in s.lower() for s in result.stages_skipped)
+
+    def test_cluster_names_persisted_when_file_given(self, tmp_path):
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "card.md").write_text(
+            "---\ntitle: T\nslice_id: abc\n---\nbody\n", encoding="utf-8"
+        )
+
+        def fake_cluster(cards, result, *, high_threshold, low_threshold):
+            for c in cards:
+                c["_cluster_id"] = 0
+            result.cards_clustered = 1
+            result.clusters_count = 1
+            return {"0": cards}
+
+        cluster_names_path = tmp_path / "cluster_names.json"
+
+        with patch("daemon.reflection_pass._stage_cluster", side_effect=fake_cluster):
+            run_pass(
+                vault_root=tmp_path, dry_run=False,
+                namer=lambda titles: "topic_xyz",
+                cluster_names_file=cluster_names_path,
+                state_file=tmp_path / "state.json",
+            )
+
+        assert cluster_names_path.exists()
+        persisted = json.loads(cluster_names_path.read_text(encoding="utf-8"))
+        # Key is signature "0|<sorted_paths>", value is name
+        assert any(v == "topic_xyz" for v in persisted.values())
+
+
 def test_stub_stages_record_skips():
-    """Stages 3-8 are stubs; verify they append the right messages
+    """Stages 4-8 are stubs; verify they append the right messages
     to result.stages_skipped so the CLI surface is honest about
-    what didn't run."""
+    what didn't run. Stage 3 became real in commit B (cluster
+    canonicalization with LLM); when called with no clusters it
+    still records a skip message."""
     from daemon.reflection_pass import (
         PassResult,
         _stage_resolve_cluster_names,
@@ -520,19 +802,23 @@ def test_stub_stages_record_skips():
         open_threads_detected=0, contradictions_detected=0,
         drift_phases_computed=0, cards_updated=0, dry_run=False,
     )
-    _stage_resolve_cluster_names({}, result, dry_run=False)
+    # Stage 3 with empty grouped is a clean skip ("no clusters")
+    _stage_resolve_cluster_names({}, result, dry_run=False, namer=lambda t: "x")
     _stage_backfill_position_signal([], result, dry_run=False)
     _stage_detect_open_threads({}, result, dry_run=False)
     _stage_detect_contradictions({}, result, dry_run=False)
     _stage_compute_drift({}, result, dry_run=False)
     _stage_writeback([], result, dry_run=False)
 
-    # All 6 stub stages should have recorded a skip message
+    # Stage 3 records "no clusters" skip; stages 4-8 still stubs.
     assert len(result.stages_skipped) == 6
-    # Each skip message should contain "stub" or "dry-run" so the
-    # CLI surface is unambiguous about what didn't run
     for msg in result.stages_skipped:
-        assert "stub" in msg.lower() or "dry-run" in msg.lower()
+        msg_lower = msg.lower()
+        assert (
+            "stub" in msg_lower
+            or "dry-run" in msg_lower
+            or "no clusters" in msg_lower
+        )
 
 
 def test_stub_writeback_dry_run_distinct_from_actual():
