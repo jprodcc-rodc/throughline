@@ -95,6 +95,28 @@ def default_state_file() -> Path:
     return _default_state_dir() / "reflection_pass_state.json"
 
 
+def default_backfill_state_file() -> Path:
+    """Resolve default ``state/reflection_backfill_state.json`` path.
+
+    Persists ``card_path|mtime -> {claim_summary, open_questions}``
+    so re-runs skip cards already extracted whose body hasn't
+    changed since.
+    """
+    return _default_state_dir() / "reflection_backfill_state.json"
+
+
+def _load_backfill_state(path: Path) -> dict[str, dict]:
+    """Read persisted card_signature -> essence dict. Returns empty
+    on missing/unparseable (treat as cold start)."""
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
 def default_cluster_names_file() -> Path:
     """Resolve the default `state/reflection_cluster_names.json` path.
 
@@ -464,28 +486,129 @@ def _stage_resolve_cluster_names(
     return names
 
 
+EssenceExtractor = Callable[[str, str], dict]
+
+
+def _file_signature(path_str: str) -> str:
+    """Build cache key for a card. Combines path + file mtime so
+    cache invalidates when the user edits the card. Falls back to
+    just the path if stat fails (treat as 'always re-extract')."""
+    p = Path(path_str)
+    try:
+        mtime = int(p.stat().st_mtime)
+        return f"{path_str}|{mtime}"
+    except OSError:
+        return path_str
+
+
 def _stage_backfill_position_signal(
     cards: list[dict[str, Any]],
     result: PassResult,
     *,
     dry_run: bool,
+    extractor: Optional[EssenceExtractor] = None,
+    backfill_state: Optional[dict[str, dict]] = None,
 ) -> None:
-    """Stage 4 — Path A back-fill for legacy cards (LLM call per card).
+    """Stage 4 — Path A back-fill for legacy cards.
 
-    STUB. See POSITION_METADATA_SCHEMA milestone 5 + § "Backward
-    compatibility" Path A.
+    For each card lacking ``position_signal`` in frontmatter, call
+    the extractor (Callable) to derive ``claim_summary`` and
+    ``open_questions``. Stores the result in
+    ``card["_backfill"]`` (in-memory) — actual frontmatter
+    writeback is stage 8's job.
 
-    Real impl: for each card with `position_signal == None`, call
-    LLM to extract stance + reasoning from card body. Cost ~$0.001
-    per card; one-time per vault.
+    Cache: ``backfill_state`` keyed by ``path|mtime`` so re-runs
+    skip cards already extracted whose mtime hasn't changed. The
+    state dict is mutated in place (caller persists to disk).
+
+    Args:
+        cards: reflectable cards from stage 1.5.
+        result: pass result accumulator (mutated).
+        dry_run: when True, skip the actual call. Stage reports
+            how many cards *would* be back-filled.
+        extractor: callable taking (title, body) -> dict
+            (``mcp_server.llm_extractor.extract_card_essence``).
+            None = skip stage with explicit message.
+        backfill_state: optional cache from prior pass.
     """
-    n_missing = sum(1 for c in cards if not c.get("position_signal"))
-    if n_missing:
+    eligible = [c for c in cards if not c.get("position_signal")]
+
+    if not eligible:
+        result.stages_skipped.append("backfill_position_signal (nothing eligible)")
+        return
+
+    if extractor is None:
         result.stages_skipped.append(
-            f"backfill_position_signal ({n_missing} cards eligible; stub)"
+            f"backfill_position_signal ({len(eligible)} cards eligible; "
+            "no extractor configured — pass --enable-llm-backfill or "
+            "set OPENROUTER_API_KEY)"
         )
-    else:
-        result.stages_skipped.append("backfill_position_signal (stub)")
+        return
+
+    if dry_run:
+        result.stages_skipped.append(
+            f"backfill_position_signal ({len(eligible)} cards eligible; dry-run)"
+        )
+        return
+
+    if backfill_state is None:
+        backfill_state = {}
+
+    cached_hits = 0
+    new_calls = 0
+    failures = 0
+
+    for card in eligible:
+        path = card.get("path", "")
+        if not path:
+            failures += 1
+            continue
+
+        sig = _file_signature(path)
+        prior = backfill_state.get(sig)
+        if prior:
+            card["_backfill"] = prior
+            cached_hits += 1
+            continue
+
+        title = str(card.get("title", "")).strip()
+        body = str(card.get("body", "")).strip()
+        if not title or not body:
+            failures += 1
+            continue
+
+        try:
+            essence = extractor(title, body)
+        except Exception as exc:  # noqa: BLE001 — extractor can raise anything
+            result.errors.append(
+                f"backfill failed for {path}: {type(exc).__name__}: {exc}"
+            )
+            failures += 1
+            continue
+
+        # Validate extractor return shape (defense-in-depth — the
+        # extractor itself validates, but mock extractors in tests
+        # can be lax)
+        if (not isinstance(essence, dict)
+                or not isinstance(essence.get("claim_summary"), str)
+                or not isinstance(essence.get("open_questions"), list)):
+            result.errors.append(
+                f"backfill returned malformed shape for {path}: {essence!r}"
+            )
+            failures += 1
+            continue
+
+        card["_backfill"] = essence
+        backfill_state[sig] = essence
+        new_calls += 1
+
+    result.backfill_completed = cached_hits + new_calls
+    result.stages_completed.append(
+        f"backfill_position_signal ({result.backfill_completed} done — "
+        f"{cached_hits} cached, {new_calls} new"
+        + (f", {failures} failed" if failures else "")
+        + ")"
+    )
 
 
 def _stage_detect_open_threads(
@@ -568,6 +691,8 @@ def run_pass(
     state_file: Optional[Path] = None,
     namer: Optional[ClusterNamer] = None,
     cluster_names_file: Optional[Path] = None,
+    extractor: Optional["EssenceExtractor"] = None,
+    backfill_state_file: Optional[Path] = None,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
 
@@ -677,8 +802,17 @@ def run_pass(
         cluster_names_state=cluster_names_state,
     )
 
-    # Stages 4-8 — stubs.
-    _stage_backfill_position_signal(cards, result, dry_run=dry_run)
+    # Stage 4 — Path A back-fill (real when extractor configured).
+    backfill_state = (
+        _load_backfill_state(backfill_state_file)
+        if backfill_state_file else {}
+    )
+    _stage_backfill_position_signal(
+        cards, result, dry_run=dry_run,
+        extractor=extractor, backfill_state=backfill_state,
+    )
+
+    # Stages 5-8 — stubs.
     _stage_detect_open_threads(grouped, result, dry_run=dry_run)
     _stage_detect_contradictions(grouped, result, dry_run=dry_run)
     _stage_compute_drift(grouped, result, dry_run=dry_run)
@@ -707,6 +841,17 @@ def run_pass(
             )
         except OSError as exc:
             result.errors.append(f"cluster names file write failed: {exc}")
+
+    # Persist back-fill cache so re-runs skip stable cards.
+    if not dry_run and backfill_state_file and backfill_state:
+        try:
+            backfill_state_file.parent.mkdir(parents=True, exist_ok=True)
+            backfill_state_file.write_text(
+                json.dumps(backfill_state, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            result.errors.append(f"backfill state file write failed: {exc}")
 
     return result
 
@@ -796,6 +941,20 @@ def main(argv: Optional[list[str]] = None) -> int:
              "Defaults to "
              "$THROUGHLINE_STATE_DIR/reflection_cluster_names.json.",
     )
+    parser.add_argument(
+        "--enable-llm-backfill", action="store_true",
+        help="Stage 4: Path A back-fill — call LLM to extract "
+             "claim_summary + open_questions for legacy cards "
+             "(those without position_signal in frontmatter). "
+             "Requires OPENROUTER_API_KEY (or OPENAI_API_KEY). "
+             "Cache file dedupes by mtime so re-runs are cheap.",
+    )
+    parser.add_argument(
+        "--backfill-state-file", type=str, default=None,
+        help="Path to persist card_path|mtime -> essence cache. "
+             "Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_backfill_state.json.",
+    )
     args = parser.parse_args(argv)
 
     vault = Path(args.vault).resolve() if args.vault else None
@@ -810,11 +969,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     namer: Optional[ClusterNamer] = None
     if args.enable_llm_naming:
         try:
-            from mcp_server.llm_namer import (
-                LLMNamerError,
-                LLMNamerUnavailable,
-                name_cluster,
-            )
+            from mcp_server.llm_namer import name_cluster
             namer = name_cluster
         except ImportError as exc:
             print(
@@ -824,6 +979,25 @@ def main(argv: Optional[list[str]] = None) -> int:
             )
             return 2
 
+    extractor: Optional[EssenceExtractor] = None
+    backfill_state_path: Optional[Path] = None
+    if args.enable_llm_backfill:
+        try:
+            from mcp_server.llm_extractor import extract_card_essence
+            extractor = extract_card_essence
+        except ImportError as exc:
+            print(
+                f"--enable-llm-backfill requires "
+                f"mcp_server.llm_extractor ({exc})",
+                file=sys.stderr,
+            )
+            return 2
+        backfill_state_path = (
+            Path(args.backfill_state_file).resolve()
+            if args.backfill_state_file
+            else default_backfill_state_file()
+        )
+
     result = run_pass(
         vault_root=vault,
         dry_run=args.dry_run,
@@ -832,6 +1006,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         state_file=state,
         namer=namer,
         cluster_names_file=cluster_names_path if args.enable_llm_naming else None,
+        extractor=extractor,
+        backfill_state_file=backfill_state_path,
     )
 
     print(_format_result(result))

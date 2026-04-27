@@ -777,12 +777,270 @@ class TestRunPassNamerIntegration:
         assert any(v == "topic_xyz" for v in persisted.values())
 
 
+# ---------- Stage 4 (back-fill) — real impl ----------
+
+class TestBackfillStage:
+    """Stage 4 takes a Callable extractor; fills card['_backfill']
+    in-memory. Cache file dedupes by path|mtime."""
+
+    def _empty_result(self):
+        from daemon.reflection_pass import PassResult
+        return PassResult(
+            started_at="x", finished_at="y",
+            cards_scanned=0, cards_reflectable=0, cards_excluded=0,
+            cards_with_position_signal=0,
+            cards_clustered=0, clusters_count=0,
+            cluster_names_resolved=0, backfill_completed=0,
+            open_threads_detected=0, contradictions_detected=0,
+            drift_phases_computed=0, cards_updated=0, dry_run=False,
+        )
+
+    def test_no_eligible_cards_skipped(self):
+        """All cards have position_signal already → nothing to do."""
+        from daemon.reflection_pass import _stage_backfill_position_signal
+
+        result = self._empty_result()
+        cards = [{"path": "a.md", "title": "A", "body": "...",
+                  "position_signal": {"stance": "x"}}]
+
+        _stage_backfill_position_signal(
+            cards, result, dry_run=False, extractor=lambda t, b: {}
+        )
+        assert any("nothing eligible" in s for s in result.stages_skipped)
+
+    def test_no_extractor_skipped(self):
+        from daemon.reflection_pass import _stage_backfill_position_signal
+
+        result = self._empty_result()
+        cards = [{"path": "a.md", "title": "A", "body": "...",
+                  "position_signal": None}]
+
+        _stage_backfill_position_signal(
+            cards, result, dry_run=False, extractor=None
+        )
+        assert any("no extractor" in s.lower() for s in result.stages_skipped)
+
+    def test_dry_run_does_not_invoke_extractor(self):
+        from daemon.reflection_pass import _stage_backfill_position_signal
+
+        result = self._empty_result()
+        called = []
+        def extractor(t, b):
+            called.append((t, b))
+            return {"claim_summary": "X", "open_questions": []}
+
+        cards = [{"path": "a.md", "title": "A", "body": "body",
+                  "position_signal": None}]
+        _stage_backfill_position_signal(
+            cards, result, dry_run=True, extractor=extractor,
+        )
+        assert called == []
+        assert any("dry-run" in s for s in result.stages_skipped)
+
+    def test_calls_extractor_per_eligible_card(self, tmp_path):
+        from daemon.reflection_pass import _stage_backfill_position_signal
+
+        # Real files so _file_signature can stat them
+        f1 = tmp_path / "a.md"
+        f1.write_text("body a", encoding="utf-8")
+        f2 = tmp_path / "b.md"
+        f2.write_text("body b", encoding="utf-8")
+
+        result = self._empty_result()
+        seen = []
+        def extractor(t, b):
+            seen.append((t, b))
+            return {
+                "claim_summary": f"summary of {t}",
+                "open_questions": [f"q? for {t}"],
+            }
+
+        cards = [
+            {"path": str(f1), "title": "A", "body": "body a",
+             "position_signal": None},
+            {"path": str(f2), "title": "B", "body": "body b",
+             "position_signal": None},
+        ]
+        _stage_backfill_position_signal(
+            cards, result, dry_run=False, extractor=extractor,
+        )
+
+        assert len(seen) == 2
+        # Each card now has a _backfill key with the extracted essence
+        assert cards[0]["_backfill"] == {
+            "claim_summary": "summary of A",
+            "open_questions": ["q? for A"],
+        }
+        assert cards[1]["_backfill"]["claim_summary"] == "summary of B"
+        assert result.backfill_completed == 2
+
+    def test_cache_hit_skips_extractor(self, tmp_path):
+        from daemon.reflection_pass import (
+            _stage_backfill_position_signal, _file_signature,
+        )
+
+        f1 = tmp_path / "a.md"
+        f1.write_text("body", encoding="utf-8")
+        sig = _file_signature(str(f1))
+        prior = {sig: {"claim_summary": "cached", "open_questions": []}}
+
+        result = self._empty_result()
+        called = []
+        def extractor(t, b):
+            called.append((t, b))
+            return {"claim_summary": "fresh", "open_questions": []}
+
+        cards = [{"path": str(f1), "title": "A", "body": "body",
+                  "position_signal": None}]
+        _stage_backfill_position_signal(
+            cards, result, dry_run=False, extractor=extractor,
+            backfill_state=prior,
+        )
+
+        # Cache hit: extractor not called
+        assert called == []
+        assert cards[0]["_backfill"]["claim_summary"] == "cached"
+
+    def test_cache_invalidated_when_mtime_changes(self, tmp_path):
+        """If file mtime shifted (user edited card), prior cache
+        signature won't match — extractor fires fresh."""
+        import time
+        from daemon.reflection_pass import _stage_backfill_position_signal
+
+        f1 = tmp_path / "a.md"
+        f1.write_text("body", encoding="utf-8")
+        # Cache key uses CURRENT mtime; bake an OLD mtime into prior
+        prior = {f"{f1}|0": {"claim_summary": "stale", "open_questions": []}}
+
+        result = self._empty_result()
+        called = []
+        def extractor(t, b):
+            called.append((t, b))
+            return {"claim_summary": "fresh", "open_questions": []}
+
+        cards = [{"path": str(f1), "title": "A", "body": "body",
+                  "position_signal": None}]
+        _stage_backfill_position_signal(
+            cards, result, dry_run=False, extractor=extractor,
+            backfill_state=prior,
+        )
+
+        assert called  # called fresh
+        assert cards[0]["_backfill"]["claim_summary"] == "fresh"
+
+    def test_extractor_failure_other_cards_continue(self, tmp_path):
+        from daemon.reflection_pass import _stage_backfill_position_signal
+
+        f1 = tmp_path / "a.md"
+        f2 = tmp_path / "b.md"
+        f1.write_text("x", encoding="utf-8")
+        f2.write_text("y", encoding="utf-8")
+
+        result = self._empty_result()
+        def extractor(t, b):
+            if "broken" in t:
+                raise RuntimeError("LLM 500")
+            return {"claim_summary": "ok", "open_questions": []}
+
+        cards = [
+            {"path": str(f1), "title": "broken card", "body": "x",
+             "position_signal": None},
+            {"path": str(f2), "title": "good card", "body": "y",
+             "position_signal": None},
+        ]
+        _stage_backfill_position_signal(
+            cards, result, dry_run=False, extractor=extractor,
+        )
+
+        assert "_backfill" not in cards[0]
+        assert cards[1]["_backfill"]["claim_summary"] == "ok"
+        assert any("backfill failed" in e for e in result.errors)
+        assert result.backfill_completed == 1
+
+    def test_malformed_extractor_return_recorded_as_failure(self, tmp_path):
+        """Defense: if extractor returns wrong shape, treat as
+        failure not crash."""
+        from daemon.reflection_pass import _stage_backfill_position_signal
+
+        f1 = tmp_path / "a.md"
+        f1.write_text("body", encoding="utf-8")
+
+        result = self._empty_result()
+        def extractor(t, b):
+            return "not a dict"  # malformed
+
+        cards = [{"path": str(f1), "title": "A", "body": "body",
+                  "position_signal": None}]
+        _stage_backfill_position_signal(
+            cards, result, dry_run=False, extractor=extractor,
+        )
+
+        assert "_backfill" not in cards[0]
+        assert any("malformed shape" in e for e in result.errors)
+        assert result.backfill_completed == 0
+
+
+# ---------- run_pass plumbing for back-fill ----------
+
+class TestRunPassBackfillIntegration:
+    def test_extractor_fires_when_passed(self, tmp_path):
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "card.md").write_text(
+            "---\ntitle: T\nslice_id: x\n---\nbody content\n",
+            encoding="utf-8",
+        )
+
+        called = []
+        def extractor(t, b):
+            called.append(t)
+            return {"claim_summary": "X", "open_questions": []}
+
+        with patch("daemon.reflection_pass._stage_cluster", return_value={}):
+            result = run_pass(
+                vault_root=tmp_path, dry_run=False,
+                extractor=extractor,
+                state_file=tmp_path / "state.json",
+            )
+
+        assert called == ["T"]
+        assert result.backfill_completed == 1
+
+    def test_backfill_state_persisted(self, tmp_path):
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "card.md").write_text(
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
+        )
+
+        backfill_path = tmp_path / "backfill.json"
+
+        with patch("daemon.reflection_pass._stage_cluster", return_value={}):
+            run_pass(
+                vault_root=tmp_path, dry_run=False,
+                extractor=lambda t, b: {
+                    "claim_summary": "X", "open_questions": []
+                },
+                backfill_state_file=backfill_path,
+                state_file=tmp_path / "state.json",
+            )
+
+        assert backfill_path.exists()
+        persisted = json.loads(backfill_path.read_text(encoding="utf-8"))
+        assert persisted  # non-empty
+        # Some key contains the card path
+        assert any("card.md" in k for k in persisted)
+
+
 def test_stub_stages_record_skips():
-    """Stages 4-8 are stubs; verify they append the right messages
-    to result.stages_skipped so the CLI surface is honest about
-    what didn't run. Stage 3 became real in commit B (cluster
-    canonicalization with LLM); when called with no clusters it
-    still records a skip message."""
+    """Stages 5-8 are stubs; verify skip messages.
+
+    Stages 3 and 4 became real in commits B and C respectively;
+    when called with no input data each still records an
+    appropriate skip message ("no clusters" / "nothing eligible").
+    """
     from daemon.reflection_pass import (
         PassResult,
         _stage_resolve_cluster_names,
@@ -802,15 +1060,13 @@ def test_stub_stages_record_skips():
         open_threads_detected=0, contradictions_detected=0,
         drift_phases_computed=0, cards_updated=0, dry_run=False,
     )
-    # Stage 3 with empty grouped is a clean skip ("no clusters")
     _stage_resolve_cluster_names({}, result, dry_run=False, namer=lambda t: "x")
-    _stage_backfill_position_signal([], result, dry_run=False)
+    _stage_backfill_position_signal([], result, dry_run=False, extractor=lambda t, b: {})
     _stage_detect_open_threads({}, result, dry_run=False)
     _stage_detect_contradictions({}, result, dry_run=False)
     _stage_compute_drift({}, result, dry_run=False)
     _stage_writeback([], result, dry_run=False)
 
-    # Stage 3 records "no clusters" skip; stages 4-8 still stubs.
     assert len(result.stages_skipped) == 6
     for msg in result.stages_skipped:
         msg_lower = msg.lower()
@@ -818,6 +1074,7 @@ def test_stub_stages_record_skips():
             "stub" in msg_lower
             or "dry-run" in msg_lower
             or "no clusters" in msg_lower
+            or "nothing eligible" in msg_lower
         )
 
 
