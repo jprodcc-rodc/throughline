@@ -461,6 +461,38 @@ out-of-band, produces knowledge cards from completed conversations, and
 never reads live chat sessions. Filter bugs cannot corrupt the vault;
 daemon bugs cannot pollute a live reply.
 
+### Reflection Layer (v0.3) data flow
+
+```mermaid
+flowchart LR
+    vault[Markdown vault<br/>cards from refine pipeline]
+    daemon[Reflection Pass daemon<br/>8-stage offline pipeline]
+    state[State files<br/>JSON under $THROUGHLINE_STATE_DIR]
+    mcp[MCP tools<br/>Claude / Cursor / Continue.dev]
+    host[Host LLM<br/>in conversation]
+
+    vault -->|walks + parses| daemon
+    daemon -->|stage 3-7 LLM calls| daemon
+    daemon -->|writes| state
+    daemon -.->|--commit-writeback| vault
+
+    mcp -->|reads| state
+    mcp -->|tool result| host
+
+    host -->|find_open_threads / check_consistency / get_position_drift| mcp
+```
+
+The Reflection Layer adds a third pipeline: an **offline daemon**
+that aggregates card-level signals into cross-card metadata
+(open threads, contradicting positions, drift trajectories). The
+daemon writes JSON state files that MCP tools read in real-time.
+LLM cost stays on the daemon's offline path; the MCP hot path
+is sub-millisecond JSON read. See
+[`docs/REFLECTION_LAYER_USER_GUIDE.md`](docs/REFLECTION_LAYER_USER_GUIDE.md)
+for the user-facing workflow,
+[`docs/RUNTIME_STATE_FILES.md`](docs/RUNTIME_STATE_FILES.md) for
+state file schemas.
+
 ### Beyond the diagram
 
 Several load-bearing safety + quality layers most "AI memory" tools
