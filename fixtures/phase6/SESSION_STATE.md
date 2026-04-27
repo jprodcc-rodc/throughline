@@ -40,6 +40,30 @@ total tests, zero shared core modifications, 4 new MCP commits +
 1 docs commit. MCP server is fully functional pending a real
 Claude Desktop session.
 
+**My-do follow-up wave (2026-04-28):**
+
+- ✅ H1/H2 adapter parser bug fix (`5f97005`) — render_markdown
+  emits H2 lowercase matching daemon's _MSG_SPLIT_RE. Was silently
+  producing zero-message refines for every chatgpt/claude/gemini
+  import. New fixtures/v0_2_0/test_adapter_to_daemon.py round-trips
+  through the actual `_parse_messages` to catch any future drift.
+- ✅ Phase 1.5 PyPI split (`ea7540b`) — `mcp_server/pyproject.toml`
+  defines independent `throughline-mcp` PyPI package built from
+  same git repo. Both wheels build clean (throughline 0 mcp files,
+  throughline-mcp 11). Console script `throughline-mcp` for cleaner
+  Claude Desktop config. `[mcp]` extras now routes through
+  throughline-mcp transitively.
+- ✅ docs/WIZARD_DESIGN.md (`2f6e7ab`) — 230-line essay + README
+  pointer. Last "深度工程化" depth signal documenting the 16-step
+  wizard's design rationale + UX wave + test coverage.
+
+**My-do that's STILL gated**: Phase 2 Reflection Layer (Open
+Threads / Contradiction Surfacing / Drift Detection) — needs 4
+criteria checks per PLAN_90D § 6 Phase 3 (MCP basic stable +
+author dogfood 2-4 weeks + author confirms "I want to be challenged
+30×/day" + topic clustering ≥75% on author's vault). None of
+those data points exist yet. Stays gated until they do.
+
 **Strategic re-tilt (2026-04-27 evening, separate from MCP work):**
 
 User flagged that the credibility-piece reframing means earlier
