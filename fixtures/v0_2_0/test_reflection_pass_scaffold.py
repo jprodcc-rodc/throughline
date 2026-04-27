@@ -52,6 +52,8 @@ def test_pass_result_shape():
         started_at="2026-04-28T00:00:00Z",
         finished_at="2026-04-28T00:01:00Z",
         cards_scanned=0,
+        cards_reflectable=0,
+        cards_excluded=0,
         cards_with_position_signal=0,
         cards_clustered=0,
         clusters_count=0,
@@ -67,6 +69,81 @@ def test_pass_result_shape():
     assert r.stages_completed == []
     assert r.stages_skipped == []
     assert r.errors == []
+    # Phase 2 stage 1.5 counters present
+    assert r.cards_reflectable == 0
+    assert r.cards_excluded == 0
+
+
+# ---------- Stage 1.5 reflectable filter ----------
+
+class TestIsReflectableCard:
+    """Per docs/POSITION_METADATA_SCHEMA.md § "Vault format addendum",
+    the reflectable subset is cards with slice_id (refiner output) or
+    non-empty managed_by (user-curated master profiles). Empty
+    managed_by + no slice_id = system files / drafts; excluded."""
+
+    def test_card_with_slice_id_is_reflectable(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        card = {"frontmatter": {"slice_id": "abc123", "title": "T"}}
+        assert is_reflectable_card(card) is True
+
+    def test_card_with_managed_by_is_reflectable(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        for mb in [
+            "manual_profile_interview",
+            "manual_master_dispensary",
+            "manual_master_backup",
+            "refine_thinker_daemon_v9",
+        ]:
+            card = {"frontmatter": {"managed_by": mb, "title": "T"}}
+            assert is_reflectable_card(card) is True, f"{mb} should be reflectable"
+
+    def test_card_with_empty_managed_by_and_no_slice_id_is_excluded(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        card = {"frontmatter": {"managed_by": "", "title": "Auto Refine Log"}}
+        assert is_reflectable_card(card) is False
+
+    def test_card_with_neither_field_is_excluded(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        # System file with title + tags but neither provenance marker
+        card = {"frontmatter": {"title": "OpenWebUI Saved Index", "tags": ["system"]}}
+        assert is_reflectable_card(card) is False
+
+    def test_card_with_no_frontmatter_is_excluded(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        card = {"frontmatter": {}}
+        assert is_reflectable_card(card) is False
+
+    def test_card_with_none_frontmatter_is_excluded(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        # Defensive: missing 'frontmatter' key
+        assert is_reflectable_card({}) is False
+
+    def test_card_with_non_dict_frontmatter_is_excluded(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        # Defensive: malformed YAML can produce non-dict
+        card = {"frontmatter": "not a dict"}
+        assert is_reflectable_card(card) is False
+
+    def test_managed_by_none_is_excluded(self):
+        """yaml.safe_load can produce explicit None for empty fields."""
+        from daemon.reflection_pass import is_reflectable_card
+
+        card = {"frontmatter": {"managed_by": None, "title": "T"}}
+        assert is_reflectable_card(card) is False
+
+    def test_slice_id_empty_string_is_excluded(self):
+        from daemon.reflection_pass import is_reflectable_card
+
+        card = {"frontmatter": {"slice_id": "", "title": "T"}}
+        assert is_reflectable_card(card) is False
 
 
 # ---------- Frontmatter parsing ----------
@@ -245,12 +322,13 @@ class TestRunPassDryRun:
 
     def test_dry_run_does_not_write_state(self, tmp_path):
         """dry_run skips state file persistence even if state path
-        is given."""
+        is given. Cards need slice_id to be reflectable per the
+        2026-04-28 schema addendum filter."""
         from daemon.reflection_pass import run_pass
 
         (tmp_path / "10_Tech").mkdir()
         (tmp_path / "10_Tech" / "card.md").write_text(
-            "---\ntitle: T\n---\nbody\n", encoding="utf-8"
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
         )
 
         state_file = tmp_path / "state.json"
@@ -264,6 +342,7 @@ class TestRunPassDryRun:
 
         assert result.dry_run is True
         assert result.cards_scanned == 1
+        assert result.cards_reflectable == 1
         # dry_run + state_file → state file should NOT be written
         assert not state_file.exists()
 
@@ -272,7 +351,7 @@ class TestRunPassDryRun:
 
         (tmp_path / "10_Tech").mkdir()
         (tmp_path / "10_Tech" / "card.md").write_text(
-            "---\ntitle: T\n---\nbody\n", encoding="utf-8"
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
         )
 
         state_file = tmp_path / "state.json"
@@ -286,17 +365,20 @@ class TestRunPassDryRun:
         assert state_file.exists()
         persisted = json.loads(state_file.read_text(encoding="utf-8"))
         assert persisted["cards_scanned"] == 1
+        assert persisted["cards_reflectable"] == 1
         assert persisted["dry_run"] is False
 
     def test_position_signal_count(self, tmp_path):
-        """cards_with_position_signal counts cards that actually
-        have the new schema field."""
+        """cards_with_position_signal counts reflectable cards that
+        actually have the new schema field. Cards in this test all
+        have slice_id (so they're reflectable)."""
         from daemon.reflection_pass import run_pass
 
         (tmp_path / "10_Tech").mkdir()
         (tmp_path / "10_Tech" / "with_ps.md").write_text(
             "---\n"
             "title: T\n"
+            "slice_id: aaa\n"
             "position_signal:\n"
             "  topic_cluster: foo\n"
             "  stance: yes\n"
@@ -305,14 +387,112 @@ class TestRunPassDryRun:
             encoding="utf-8",
         )
         (tmp_path / "10_Tech" / "no_ps.md").write_text(
-            "---\ntitle: U\n---\nbody\n", encoding="utf-8"
+            "---\ntitle: U\nslice_id: bbb\n---\nbody\n", encoding="utf-8"
         )
 
         with patch("daemon.reflection_pass._stage_cluster", return_value={}):
             result = run_pass(vault_root=tmp_path, dry_run=True)
 
         assert result.cards_scanned == 2
+        assert result.cards_reflectable == 2
+        assert result.cards_excluded == 0
         assert result.cards_with_position_signal == 1
+
+
+class TestRunPassReflectableFilter:
+    """End-to-end: stage 1.5 filter excludes system / draft cards
+    from downstream stages."""
+
+    def test_excluded_cards_dont_enter_clustering(self, tmp_path):
+        """Cards with neither slice_id nor managed_by are filtered
+        before stage 2; clustering should see only reflectable cards."""
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        # Reflectable: has slice_id
+        (tmp_path / "10_Tech" / "refined.md").write_text(
+            "---\ntitle: Refined\nslice_id: abc\n---\nbody\n",
+            encoding="utf-8",
+        )
+        # Reflectable: has managed_by
+        (tmp_path / "10_Tech" / "profile.md").write_text(
+            "---\ntitle: Profile\nmanaged_by: manual_profile_interview\n---\nbody\n",
+            encoding="utf-8",
+        )
+        # Excluded: system index file
+        (tmp_path / "10_Tech" / "log.md").write_text(
+            "---\ntitle: Auto Refine Log\nmanaged_by: ''\n---\nlog content\n",
+            encoding="utf-8",
+        )
+        # Excluded: no provenance fields
+        (tmp_path / "10_Tech" / "draft.md").write_text(
+            "---\ntitle: Draft\n---\ndraft body\n",
+            encoding="utf-8",
+        )
+
+        captured = []
+
+        def fake_cluster(cards, result, *, high_threshold, low_threshold):
+            for c in cards:
+                captured.append(c["title"])
+            return {}
+
+        with patch("daemon.reflection_pass._stage_cluster", side_effect=fake_cluster):
+            result = run_pass(vault_root=tmp_path, dry_run=True)
+
+        # Stats: 4 scanned, 2 reflectable, 2 excluded
+        assert result.cards_scanned == 4
+        assert result.cards_reflectable == 2
+        assert result.cards_excluded == 2
+
+        # Clustering only saw the 2 reflectable cards
+        assert sorted(captured) == ["Profile", "Refined"]
+
+    def test_all_excluded_returns_error(self, tmp_path):
+        """If every card is filtered out, run_pass reports an error
+        explaining why (vault has frontmatter but no provenance)."""
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "log1.md").write_text(
+            "---\ntitle: System Log 1\n---\nbody\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "10_Tech" / "log2.md").write_text(
+            "---\ntitle: System Log 2\nmanaged_by: ''\n---\nbody\n",
+            encoding="utf-8",
+        )
+
+        result = run_pass(vault_root=tmp_path, dry_run=True)
+
+        assert result.cards_scanned == 2
+        assert result.cards_reflectable == 0
+        assert result.cards_excluded == 2
+        # Error message is honest about why
+        assert any("reflectable" in err.lower() for err in result.errors)
+
+    def test_filter_message_appears_in_stages_completed(self, tmp_path):
+        """The CLI surface should explicitly show the filter ran +
+        how many it kept vs excluded — not silently drop cards."""
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "good.md").write_text(
+            "---\ntitle: G\nslice_id: a\n---\nbody\n", encoding="utf-8"
+        )
+        (tmp_path / "10_Tech" / "skip.md").write_text(
+            "---\ntitle: S\n---\nbody\n", encoding="utf-8"
+        )
+
+        with patch("daemon.reflection_pass._stage_cluster", return_value={}):
+            result = run_pass(vault_root=tmp_path, dry_run=True)
+
+        # stages_completed should mention filter_reflectable
+        filter_msgs = [s for s in result.stages_completed if "filter_reflectable" in s]
+        assert len(filter_msgs) == 1
+        # Message should include both kept + excluded counts
+        assert "1 kept" in filter_msgs[0]
+        assert "1 excluded" in filter_msgs[0]
 
 
 # ---------- Stage stubs return correct skip markers ----------
@@ -333,7 +513,8 @@ def test_stub_stages_record_skips():
 
     result = PassResult(
         started_at="x", finished_at="y",
-        cards_scanned=0, cards_with_position_signal=0,
+        cards_scanned=0, cards_reflectable=0, cards_excluded=0,
+        cards_with_position_signal=0,
         cards_clustered=0, clusters_count=0,
         cluster_names_resolved=0, backfill_completed=0,
         open_threads_detected=0, contradictions_detected=0,
@@ -359,25 +540,22 @@ def test_stub_writeback_dry_run_distinct_from_actual():
     but the messages differ so the CLI is honest."""
     from daemon.reflection_pass import PassResult, _stage_writeback
 
-    r1 = PassResult(
-        started_at="", finished_at="",
-        cards_scanned=0, cards_with_position_signal=0,
-        cards_clustered=0, clusters_count=0,
-        cluster_names_resolved=0, backfill_completed=0,
-        open_threads_detected=0, contradictions_detected=0,
-        drift_phases_computed=0, cards_updated=0, dry_run=True,
-    )
+    def _empty(dry):
+        return PassResult(
+            started_at="", finished_at="",
+            cards_scanned=0, cards_reflectable=0, cards_excluded=0,
+            cards_with_position_signal=0,
+            cards_clustered=0, clusters_count=0,
+            cluster_names_resolved=0, backfill_completed=0,
+            open_threads_detected=0, contradictions_detected=0,
+            drift_phases_computed=0, cards_updated=0, dry_run=dry,
+        )
+
+    r1 = _empty(dry=True)
     _stage_writeback([], r1, dry_run=True)
     assert "dry-run" in r1.stages_skipped[0].lower()
 
-    r2 = PassResult(
-        started_at="", finished_at="",
-        cards_scanned=0, cards_with_position_signal=0,
-        cards_clustered=0, clusters_count=0,
-        cluster_names_resolved=0, backfill_completed=0,
-        open_threads_detected=0, contradictions_detected=0,
-        drift_phases_computed=0, cards_updated=0, dry_run=False,
-    )
+    r2 = _empty(dry=False)
     _stage_writeback([], r2, dry_run=False)
     assert "stub" in r2.stages_skipped[0].lower()
 
@@ -399,12 +577,13 @@ class TestCLI:
     def test_main_with_dry_run_synthetic_vault(self, tmp_path, capsys):
         """--dry-run path produces a result without crashing on a
         small synthetic vault. Patches cluster stage to skip the
-        rag_server network call."""
+        rag_server network call. Card has slice_id so it survives
+        the stage 1.5 reflectable filter."""
         from daemon.reflection_pass import main
 
         (tmp_path / "10_Tech").mkdir()
         (tmp_path / "10_Tech" / "c.md").write_text(
-            "---\ntitle: T\n---\nbody\n", encoding="utf-8"
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
         )
         with patch("daemon.reflection_pass._stage_cluster", return_value={}):
             rc = main(["--dry-run", "--vault", str(tmp_path)])
@@ -412,6 +591,8 @@ class TestCLI:
         assert rc == 0
         assert "dry_run:  True" in out
         assert "cards scanned:                1" in out
+        assert "cards reflectable:            1" in out
+        assert "cards excluded (logs/drafts): 0" in out
 
     def test_main_threshold_args_parse(self, tmp_path):
         """--high-threshold + --low-threshold parse and propagate."""
@@ -419,7 +600,7 @@ class TestCLI:
 
         (tmp_path / "10_Tech").mkdir()
         (tmp_path / "10_Tech" / "c.md").write_text(
-            "---\ntitle: T\n---\nbody\n", encoding="utf-8"
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
         )
         captured = {}
 

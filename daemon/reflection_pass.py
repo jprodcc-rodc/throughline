@@ -108,6 +108,8 @@ class PassResult:
     started_at: str
     finished_at: str
     cards_scanned: int
+    cards_reflectable: int        # stage 1.5: slice_id or managed_by set
+    cards_excluded: int           # stage 1.5: filtered out (logs, indexes, drafts)
     cards_with_position_signal: int
     cards_clustered: int
     clusters_count: int
@@ -184,6 +186,51 @@ def _read_card(path: Path) -> Optional[dict[str, Any]]:
         "position_signal": fm.get("position_signal"),
         "frontmatter": fm,
     }
+
+
+def is_reflectable_card(card: dict) -> bool:
+    """Decide whether a parsed card belongs in the Reflection Pass.
+
+    Calibrated 2026-04-28 against the author's real vault (2,477
+    files; 163 with frontmatter). Of the 163 frontmatter-having
+    cards, the reflectable subset is:
+
+    - 63 cards with ``slice_id`` set — these came through the
+      daemon's slicer/refiner pipeline (refiner output)
+    - 9 cards with non-empty ``managed_by`` (e.g.
+      ``manual_profile_interview``) — user-curated master profiles
+      following the structured template
+
+    The remaining 91 frontmatter cards have empty ``managed_by``
+    AND no ``slice_id``: system index files (Auto Refine Log,
+    OpenWebUI Saved Index, Refine Processing Index), profile
+    drafts (RODC_Profile_Draft, IFS Parts maps), backup ops
+    references, etc. They're not reasoning artifacts; the
+    Reflection Layer's three sub-functions (Open Threads,
+    Contradiction Surfacing, Drift Detection) don't apply.
+
+    See ``docs/POSITION_METADATA_SCHEMA.md`` § "Vault format
+    addendum" for the full vault calibration.
+
+    Args:
+        card: Parsed card dict from ``_read_card`` — must contain
+            a ``frontmatter`` key (the raw YAML frontmatter dict).
+
+    Returns:
+        True if this card should enter Reflection Pass stages 2-8.
+        False if it should be skipped (logs / indexes / drafts).
+    """
+    fm = card.get("frontmatter") or {}
+    if not isinstance(fm, dict):
+        return False
+    if fm.get("slice_id"):
+        return True
+    # `managed_by` truthy check: empty string is filtered out, but
+    # "manual_profile_interview" / "manual_master_dispensary" /
+    # "manual_master_backup" / "refine_thinker_daemon_v9" all pass.
+    if fm.get("managed_by"):
+        return True
+    return False
 
 
 def _walk_vault_for_cards(vault_root: Path) -> list[Path]:
@@ -425,16 +472,27 @@ def run_pass(
     started = datetime.now(timezone.utc).isoformat()
 
     paths = _walk_vault_for_cards(vault_root)
-    cards = []
+    all_cards = []
     for p in paths:
         c = _read_card(p)
         if c is not None:
-            cards.append(c)
+            all_cards.append(c)
+
+    # Stage 1.5 — filter to reflectable cards (slice_id or
+    # managed_by set). Excluded cards are logs / indexes / drafts
+    # that aren't reasoning artifacts; processing them would
+    # pollute Open Threads / Contradiction Surfacing / Drift
+    # Detection with non-reasoning content. See
+    # docs/POSITION_METADATA_SCHEMA.md § "Vault format addendum".
+    cards = [c for c in all_cards if is_reflectable_card(c)]
+    excluded_count = len(all_cards) - len(cards)
 
     result = PassResult(
         started_at=started,
         finished_at="",
-        cards_scanned=len(cards),
+        cards_scanned=len(all_cards),
+        cards_reflectable=len(cards),
+        cards_excluded=excluded_count,
         cards_with_position_signal=sum(
             1 for c in cards if c.get("position_signal")
         ),
@@ -449,7 +507,7 @@ def run_pass(
         dry_run=dry_run,
     )
 
-    if not cards:
+    if not all_cards:
         result.errors.append(
             f"No cards found under {vault_root}. Set "
             "THROUGHLINE_VAULT_ROOT or pass --vault."
@@ -457,11 +515,25 @@ def run_pass(
         result.finished_at = datetime.now(timezone.utc).isoformat()
         return result
 
-    # Stage 1 — already done above (load + parse).
+    # Stage 1 — load + parse complete.
     result.stages_completed.append(
-        f"load ({len(cards)} cards / "
+        f"load ({len(all_cards)} cards / "
         f"{result.cards_with_position_signal} with position_signal)"
     )
+    # Stage 1.5 — reflectable filter applied.
+    result.stages_completed.append(
+        f"filter_reflectable ({len(cards)} kept / "
+        f"{excluded_count} excluded — logs/indexes/drafts)"
+    )
+
+    if not cards:
+        result.errors.append(
+            f"No reflectable cards under {vault_root}. Vault has "
+            f"{len(all_cards)} frontmatter cards but none have "
+            "slice_id or managed_by set."
+        )
+        result.finished_at = datetime.now(timezone.utc).isoformat()
+        return result
 
     # Stage 2 — real clustering.
     try:
@@ -509,6 +581,8 @@ def _format_result(result: PassResult) -> str:
         f"  dry_run:  {result.dry_run}",
         "",
         f"  cards scanned:                {result.cards_scanned}",
+        f"  cards reflectable:            {result.cards_reflectable}",
+        f"  cards excluded (logs/drafts): {result.cards_excluded}",
         f"  cards with position_signal:   {result.cards_with_position_signal}",
         f"  cards clustered:              {result.cards_clustered}",
         f"  clusters formed:              {result.clusters_count}",
