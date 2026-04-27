@@ -428,17 +428,37 @@ was made: [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md).
 ## 📁 Repository layout
 
 ```
-throughline/
-  filter/           OpenWebUI Filter Function (single-file paste into Admin → Functions)
-  daemon/           Refine daemon (watches raw conversations, writes cards)
-  rag_server/       FastAPI service: embedding, reranking, RAG endpoint, refine-status
-  throughline_cli/  Install wizard, import adapters, taxonomy CLI, doctor
-  packs/            Pluggable domain packs (slicer/refiner/routing overrides)
-  scripts/          One-off tooling: vault ingest, context sync, uninstall
-  samples/          Bundled demo data + recording recipe
-  prompts/en/       Verbatim mirror of the runtime prompt strings
-  config/           .env.example, taxonomy template, service templates
-  docs/             Architecture, deployment, design decisions, badge reference
+throughline/                  ~33,700 LOC Python, ~5,400 LOC tests (1,300+ cases)
+├── daemon/        3.3K LOC   Refine daemon (slice → refine → route → vault writer);
+│                             watchdog ingest, claim_provenance + de-individualization
+│                             rules, dial vocabulary renderer, taxonomy growth observer
+├── rag_server/    2.3K LOC   FastAPI: /v1/embeddings, /v1/rerank, /v1/rag,
+│                             /refine_status. BaseEmbedder/Reranker/VectorStore ABCs
+│                             + 13 concrete impls (2+5+6).
+├── throughline_cli/ 8.5K LOC Install wizard (16 steps + --express + --reconfigure +
+│                             --dry-run), 4 import adapters (chatgpt/claude/gemini/
+│                             openwebui-sqlite), doctor (13 checks), taxonomy CLI,
+│                             cost & stats dashboards, config validation
+├── filter/        2.2K LOC   Single-file OpenWebUI Filter (paste-into-Admin install):
+│                             3-tier recall gate, badge UI, /recall + /forget +
+│                             @pte slash commands, valves config schema
+├── mcp_server/    0.8K LOC   MCP server entry (Phase 1: save/recall/list tools);
+│                             stdio transport via fastmcp, talks to existing
+│                             daemon + rag_server (no shared-core changes)
+├── packs/         0.4K LOC   Pack runtime (per-domain slicer/refiner/routing override)
+├── scripts/       0.7K LOC   ingest_qdrant.py, derive_taxonomy.py, uninstall scripts
+├── prompts/en/               Verbatim runtime prompt strings (8 refiner variants
+│                             across 3 tiers + slicer + 4 graders)
+├── config/                   .env.example, taxonomy template (5-domain minimal +
+│                             9-domain example), forbidden_prefixes denylist,
+│                             launchd / systemd service templates
+├── samples/                  10 synthetic conversations + recording recipe
+├── docs/                     ARCHITECTURE (700 lines), DEPLOYMENT, DESIGN_DECISIONS,
+│                             FAQ, THREAT_MODEL, TAXONOMY_GROWTH_DESIGN, TESTING,
+│                             FILTER_BADGE_REFERENCE, ONBOARDING_DATA_IMPORT,
+│                             ALPHA_USER_NOTES, CHINESE_STRIP_LOG, PHASE_6_CHECKLIST
+└── fixtures/      15.7K LOC  Regression suite (`pytest fixtures/`); zero real
+                              network calls in CI, every LLM/HTTP call mocked
 ```
 
 Each top-level directory has its own `README.md` for local detail.
