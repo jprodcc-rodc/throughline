@@ -425,6 +425,46 @@ was made: [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md).
 
 ---
 
+## 🧭 Key engineering decisions
+
+Five non-obvious calls a reviewer might want to see reasoning
+behind. Full `Alternatives considered → Call → Reason` writeups
+for all 13 decisions live in
+[`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md).
+
+- **Haiku RecallJudge instead of regex or Sonnet** (#1) — the
+  per-turn recall gate calls a calibrated Haiku 4.5 judge at 93.8%
+  accuracy, ~5ms latency, ~$0.0003 per turn. Regex-only would
+  over-recall and pollute every prompt; Sonnet would 30× the cost
+  + latency without measurable accuracy gain on the ground-truth
+  set.
+- **Dual-write — buffer stub + formal note** (#3) — every refined
+  conversation produces both a formal vault card AND a triage stub
+  in `00_Buffer/`. The stub path lets the user defer routing
+  decisions without losing data; formal-only would force premature
+  taxonomy commitments on conversations that don't yet have a
+  clear domain.
+- **Forward-slash path normalisation as a load-bearing contract**
+  (#4) — `_norm_path()` is called on every Qdrant `point_id`
+  derivation; Windows back-slash leaks would silently corrupt the
+  vector index and produce zero-recall on cross-platform vaults.
+  Most projects treat this as a Day-2 concern; throughline tests
+  it from Day 1.
+- **Separate Qdrant collections for sensitive packs** (#7) — the
+  pack runtime supports per-pack collection override so a medical
+  pack's cards never share a collection with public-domain cards.
+  A collection-drop wipes just that pack's data; a collection leak
+  exposes just that pack. Limits blast radius of any single index
+  compromise.
+- **Prompts hardcoded in Python, not YAML** (#8) — controversial
+  but deliberate. Hot-reload feels nice in theory; in practice
+  prompt-format mistakes surface as malformed JSON outputs that
+  are nearly impossible to debug without source-control history.
+  Hardcoded prompts get the same PR review + CI test pass as the
+  code that calls them.
+
+---
+
 ## 📁 Repository layout
 
 ```
