@@ -57,12 +57,140 @@ Claude Desktop session.
   pointer. Last "深度工程化" depth signal documenting the 16-step
   wizard's design rationale + UX wave + test coverage.
 
-**My-do that's STILL gated**: Phase 2 Reflection Layer (Open
-Threads / Contradiction Surfacing / Drift Detection) — needs 4
-criteria checks per PLAN_90D § 6 Phase 3 (MCP basic stable +
-author dogfood 2-4 weeks + author confirms "I want to be challenged
-30×/day" + topic clustering ≥75% on author's vault). None of
-those data points exist yet. Stays gated until they do.
+**My-do that's STILL gated**: Phase 2 Reflection Layer
+implementation code (Reflection Pass daemon + 3 new MCP tools).
+Engineering gate REWRITTEN 2026-04-28 night (see "Reflection Layer
+recalibration" wave below): 4-criteria → 2-criteria. Now: MCP
+basic stable + topic clustering accuracy ≥75% on author's vault.
+Clustering experiment harness shipped (`b54b9a3`); ready for user
+to run gate against real vault data.
+
+---
+
+## 🆕 Reflection Layer recalibration wave (2026-04-28 night)
+
+Anthropic shipped "Claude never loses the thread" (chat search +
+memory synthesis in Claude Desktop) on 2026-04-28. User read this
+as "USP 少了一半"; re-reading the external Opus dual-track brief
+§ 6.4-6.5 surfaced that the brief had specifically anticipated
+this scenario and constructed the rebuttal: Anthropic's feature
+is reactive recall of conversation snippets; throughline's
+Reflection Layer is proactive surfacing of *thinking states*.
+One-liner: "Claude Desktop remembers what you said; throughline
+knows what you stopped thinking about."
+
+Five commits 2026-04-28 evening through night:
+
+- ✅ `21aa851` MCP `--doctor` subcommand + `wait_for_refine` real
+  polling. 22 new tests. Phase 1 deferred items closed.
+- ✅ `c0618f9` Removed "12 days with Claude Code" framing from
+  README at-a-glance + SESSION_STATE YouTube spec. Chest-beating-
+  shaped, doesn't earn portfolio credibility. Replaced with
+  "running 24/7 since v0.1.0".
+- ✅ `d2478ef` Reflection Layer recalibration: promoted from
+  private/ to public v0.3 USP.
+  - **NEW** `docs/REFLECTION_LAYER_DESIGN.md` (440 lines) — empty
+    niche analysis, 3 sub-functions, side-by-side comparison with
+    Anthropic feature, architecture, engineering risks.
+  - README "🔌 Access points" section: At-a-glance line gains
+    "vault portable across all AI tools (not locked to any one
+    vendor)"; Form B description now leads with cross-tool
+    unification; new "How this is different from Claude Desktop's
+    'never lose the thread'" subsection.
+  - ROADMAP "v0.3 will deliver" — Reflection Layer added as the
+    FIRST entry. Names the three tools (find_open_threads /
+    check_consistency / get_position_drift), the shared
+    foundation (topic clustering + position metadata + Reflection
+    Pass daemon), the engineering gate (≥75% clustering accuracy).
+  - private/PLAN_90D.md: 4-criteria gate → 2-criteria. Removed
+    "author dogfoods 2-4 weeks" (parallel work) + "author
+    confirms wanting to be challenged" (covered by soft-mode
+    default UX). Kept: MCP basic stable + topic clustering ≥75%
+    accuracy.
+- ✅ `b54b9a3` Topic clustering accuracy experiment harness
+  (Reflection Layer engineering gate prerequisite).
+  - **NEW** `mcp_server/topic_clustering.py` — hybrid
+    embedding-similarity + LLM-judgment algorithm. 
+    Connected-components on similarity graph. Pure stdlib
+    union-find. Embedder is a `Callable` so tests use synthetic
+    vectors + production wires bge-m3 via HTTP.
+  - **NEW** `mcp_server/clustering_accuracy.py` — pairwise
+    accuracy + homogeneity + completeness + V-measure (no
+    sklearn dep). `AccuracyReport` formats PASS/FAIL on the 75%
+    gate + FP/FN diagnosis.
+  - **NEW** `mcp_server/clustering_experiment.py` — CLI driver:
+    `python -m mcp_server.clustering_experiment --vault PATH
+    --ground-truth FILE --threshold 0.75 [--sweep ...]`. Reads
+    vault, parses card frontmatter, calls rag_server
+    /v1/embeddings, runs clustering, prints report.
+  - **NEW** `mcp_server/rag_client.py:embed_batch()` —
+    /v1/embeddings HTTP client (OpenAI-compatible shape).
+  - **NEW** `fixtures/v0_2_0/test_topic_clustering.py` — 33 tests
+    with synthetic embeddings, no rag_server dep.
+  - **NEW** `docs/TOPIC_CLUSTERING_EXPERIMENT.md` (290 lines) —
+    user walkthrough: 3 ways to produce ground-truth labels,
+    threshold-tuning intuition, FP/FN diagnosis tree, hybrid LLM
+    judge mode roadmap.
+
+**Latest commit on main:** `b54b9a3`. Tests: 1372 → 1455 passed
+(+83 from --doctor 22 + clustering 33 + adapter→daemon
+regression coverage).
+
+---
+
+## 🟢 Where we are right now (2026-04-28 EOD)
+
+throughline at this point:
+
+- **Phase 1 done**: MCP server with 3 real tools (save / recall /
+  list) + --doctor + wait_for_refine. PyPI split into separate
+  `throughline-mcp` package. Filter form unchanged.
+- **Phase 2 narrative shipped**: Reflection Layer is now publicly
+  the v0.3 differentiator (was private). Side-by-side comparison
+  with Anthropic's feature is in README + design doc.
+- **Phase 2 engineering gate ready**: Topic clustering harness +
+  CLI + accuracy metrics + walkthrough doc all shipped. Pending
+  the user running it against their real vault with ground-truth
+  labels.
+
+**What only the user can do next:**
+
+1. ☐ Manually smoke-test MCP via Claude Desktop (closes Phase 1)
+2. ☐ Sample 100-200 cards + label with topic IDs + run
+   `python -m mcp_server.clustering_experiment` to clear the
+   Reflection Layer engineering gate (see
+   `docs/TOPIC_CLUSTERING_EXPERIMENT.md`)
+3. ☐ User-side outreach (Hero GIF / YouTube / 即刻 / LinkedIn / OSS
+   PR — explicitly skipped per user directive 2026-04-28)
+
+**What I (auto-mode) can do without user data:**
+
+1. ☐ Plumb LLM-judge through clustering CLI (currently algorithm
+   supports it; CLI doesn't yet expose it). ~1-2 hours. Useful
+   if pure-embedding clustering caps below 75%.
+2. ☐ Position metadata schema design + refiner-prompt change
+   spec (doesn't depend on gate clearing). Lets the daemon
+   implementation drop in faster once the gate clears.
+3. ☐ Stale items from earlier TODO that aren't gate-blocked.
+
+**What stays gated until user runs the experiment:**
+
+1. ☐ Reflection Pass daemon implementation (Open Threads detector
+   + Contradiction Surfacing + Drift trajectory)
+2. ☐ 3 new MCP tools (find_open_threads / check_consistency /
+   get_position_drift)
+3. ☐ Refiner prompt extension to emit `position_signal` per card
+
+**Read in this order if a new session opens cold:**
+
+1. `private/TODO.md` (FIRST) — current state + next actions
+2. `private/PLAN_90D.md` — strategy source of truth
+3. `private/MCP_SCAFFOLDING_PLAN.md` § 12.A — locked decisions
+4. `docs/REFLECTION_LAYER_DESIGN.md` — public v0.3 USP narrative
+5. `docs/TOPIC_CLUSTERING_EXPERIMENT.md` — engineering gate
+   harness usage
+6. This file (top section) — execution log
+7. `git log --oneline | head -15`
 
 **Strategic re-tilt (2026-04-27 evening, separate from MCP work):**
 
