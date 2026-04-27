@@ -744,6 +744,7 @@ def run_pass(
     open_threads_file: Optional[Path] = None,
     writeback_preview_file: Optional[Path] = None,
     positions_file: Optional[Path] = None,
+    use_default_state_paths: bool = True,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
 
@@ -765,8 +766,25 @@ def run_pass(
         PassResult — summary of what was scanned + what stages ran.
     """
     vault_root = vault_root or _default_vault_root()
-    state_file = state_file or default_state_file()
     started = datetime.now(timezone.utc).isoformat()
+
+    # When use_default_state_paths is True (the default), unset state
+    # file kwargs resolve to $THROUGHLINE_STATE_DIR/<file>. This way
+    # programmatic callers (e2e tests, scripts) get the same
+    # behavior as the CLI without having to enumerate every path.
+    # Pass use_default_state_paths=False (or pass each path as None
+    # explicitly) to keep the legacy "no path = no write" behavior.
+    if use_default_state_paths:
+        state_file = state_file or default_state_file()
+        cluster_names_file = cluster_names_file or default_cluster_names_file()
+        backfill_state_file = backfill_state_file or default_backfill_state_file()
+        open_threads_file = open_threads_file or default_open_threads_file()
+        positions_file = positions_file or default_positions_file()
+        writeback_preview_file = (
+            writeback_preview_file or default_writeback_preview_file()
+        )
+    else:
+        state_file = state_file or default_state_file()
 
     paths = _walk_vault_for_cards(vault_root)
     all_cards = []
