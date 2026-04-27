@@ -1,0 +1,591 @@
+"""Reflection Pass daemon — Phase 2 v0.3 scaffolding.
+
+Periodic offline pass that aggregates card-level position_signal
+emissions (refiner output) into the cross-card metadata that the
+Reflection Layer's MCP tools query: `find_open_threads`,
+`check_consistency`, `get_position_drift`.
+
+Per `docs/POSITION_METADATA_SCHEMA.md` § "Reflection Pass daemon —
+schema interaction", the pass has 8 stages:
+
+    1. load cards
+    2. cluster via mcp_server.topic_clustering
+    3. resolve canonical cluster names (LLM)
+    4. fill missing position_signal (Path A back-fill, LLM)
+    5. detect open threads (no LLM, structural)
+    6. detect contradictions (LLM-judged on pairs)
+    7. compute drift trajectories (LLM-summarized phases)
+    8. write back to vault frontmatter
+
+This module's current state: **scaffolding stub**.
+
+What's real now:
+- The pass orchestration shape (`run_pass()`, dry-run mode)
+- Card discovery + frontmatter parsing (uses existing helpers)
+- Stage-2 clustering via `mcp_server.topic_clustering.cluster_cards`
+  (real, since the engineering gate cleared 2026-04-28 at 0.975
+  pairwise accuracy)
+- Pass watermark / state file (`reflection_pass_state.json`)
+- CLI entry point: `python -m daemon.reflection_pass`
+
+What's stub:
+- Stages 3-8 are placeholder no-ops with TODO comments
+- Each subsequent commit fills in one stage at a time
+  (per POSITION_METADATA_SCHEMA milestone order)
+
+Why scaffold first: lets the user run `--dry-run` immediately to
+verify schema-compatibility on their vault before any real writes.
+Mirrors the MCP Phase 1 stub-first pattern (`5776f3d`).
+
+Engineering gate cleared 2026-04-28 at 0.975 pairwise accuracy
+(best threshold 0.70). Phase 2 implementation is unblocked.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import os
+import sys
+import time
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Optional
+
+
+# Optional yaml dep — daemon already requires it; fall back to JSON
+# at module load if missing so the scaffold-import test can run in
+# minimal environments.
+try:
+    import yaml  # type: ignore[import-untyped]
+except ImportError:  # pragma: no cover — daemon install always has yaml
+    yaml = None  # type: ignore[assignment]
+
+
+_log = logging.getLogger(__name__)
+
+
+# ---------- defaults ----------
+
+def _default_state_dir() -> Path:
+    return Path(
+        os.getenv(
+            "THROUGHLINE_STATE_DIR",
+            str(Path.home() / "throughline_runtime" / "state"),
+        )
+    ).expanduser()
+
+
+def _default_vault_root() -> Path:
+    return Path(
+        os.getenv(
+            "THROUGHLINE_VAULT_ROOT",
+            str(Path.home() / "ObsidianVault"),
+        )
+    ).expanduser()
+
+
+def default_state_file() -> Path:
+    """Resolve the default `state/reflection_pass_state.json` path.
+
+    Resolved lazily (not import-time) so tests can set
+    `THROUGHLINE_STATE_DIR` via `monkeypatch.setenv`.
+    """
+    return _default_state_dir() / "reflection_pass_state.json"
+
+
+# ---------- pass result types ----------
+
+@dataclass
+class PassResult:
+    """Summary of a single Reflection Pass run.
+
+    Returned to the CLI for human-readable reporting and persisted
+    to `reflection_pass_state.json` so subsequent passes can be
+    incremental.
+    """
+    started_at: str
+    finished_at: str
+    cards_scanned: int
+    cards_with_position_signal: int
+    cards_clustered: int
+    clusters_count: int
+    cluster_names_resolved: int   # stage 3 (currently 0; stub)
+    backfill_completed: int       # stage 4 (currently 0; stub)
+    open_threads_detected: int    # stage 5 (currently 0; stub)
+    contradictions_detected: int  # stage 6 (currently 0; stub)
+    drift_phases_computed: int    # stage 7 (currently 0; stub)
+    cards_updated: int            # stage 8 (currently 0; stub if dry_run)
+    dry_run: bool
+    stages_completed: list[str] = field(default_factory=list)
+    stages_skipped: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+
+# ---------- frontmatter helpers ----------
+
+_FRONTMATTER_FENCE = "---"
+
+
+def _parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
+    """Split a markdown card into (frontmatter dict, body markdown).
+
+    Returns ({}, full_text) when no frontmatter is present. Returns
+    ({}, full_text) when YAML parse fails — better to skip that card
+    on this pass than crash the whole run.
+    """
+    if not text.startswith(_FRONTMATTER_FENCE + "\n"):
+        return {}, text
+
+    end_marker = "\n" + _FRONTMATTER_FENCE + "\n"
+    end_idx = text.find(end_marker, len(_FRONTMATTER_FENCE) + 1)
+    if end_idx == -1:
+        return {}, text
+
+    fm_text = text[len(_FRONTMATTER_FENCE) + 1 : end_idx]
+    body = text[end_idx + len(end_marker) :]
+
+    if yaml is None:
+        return {}, text
+
+    try:
+        fm = yaml.safe_load(fm_text) or {}
+    except Exception as exc:  # pragma: no cover — depends on user vault
+        _log.warning("frontmatter parse failed: %s", exc)
+        return {}, text
+
+    if not isinstance(fm, dict):
+        return {}, text
+    return fm, body
+
+
+def _read_card(path: Path) -> Optional[dict[str, Any]]:
+    """Read a single card. Returns None if read fails (file deleted,
+    permissions, etc.).
+
+    Returned shape: ``{path, title, body, tags, position_signal,
+    frontmatter}``. ``frontmatter`` is the raw dict for downstream
+    stages that need fields beyond the convenience accessors.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.warning("could not read %s: %s", path, exc)
+        return None
+
+    fm, body = _parse_frontmatter(text)
+
+    return {
+        "path": str(path),
+        "title": fm.get("title", path.stem),
+        "body": body,
+        "tags": fm.get("tags", []) or [],
+        "position_signal": fm.get("position_signal"),
+        "frontmatter": fm,
+    }
+
+
+def _walk_vault_for_cards(vault_root: Path) -> list[Path]:
+    """Find all `.md` files under vault_root that look like refined
+    cards.
+
+    Refined cards live under domain-prefixed directories (10_*, 20_*,
+    ..., 90_*) per the Johnny-Decimal vault layout. We exclude
+    template / readme / inbox files by checking that the immediate
+    grandparent matches the JD prefix pattern. Conservative — better
+    to skip a card than to flag a non-card.
+    """
+    if not vault_root.exists():
+        return []
+
+    out: list[Path] = []
+    for md in vault_root.rglob("*.md"):
+        if md.name.lower() in {"readme.md", "index.md"}:
+            continue
+        # Check that some ancestor directory is a JD-prefixed domain
+        # (10_*, 20_*, etc). Daemon's actual write path uses this
+        # invariant so we mirror it.
+        if any(
+            part[:2].isdigit() and part[2:3] == "_"
+            for part in md.relative_to(vault_root).parts[:-1]
+        ):
+            out.append(md)
+    return sorted(out)
+
+
+# ---------- stage stubs ----------
+# Each stage is a function taking (cards, result, dry_run, **opts)
+# and mutating cards in-place + appending to result.stages_*.
+# Currently all stages 3-8 are stubs with explicit TODO + the
+# milestone reference from POSITION_METADATA_SCHEMA.md.
+
+
+def _stage_cluster(
+    cards: list[dict[str, Any]],
+    result: PassResult,
+    *,
+    high_threshold: float = 0.70,
+    low_threshold: float = 0.55,
+) -> dict[str, list[dict[str, Any]]]:
+    """Stage 2 — cluster cards by topic via embedding similarity.
+
+    REAL (not stub). Wraps `mcp_server.topic_clustering.cluster_cards`
+    which is the same pipeline used by the engineering gate
+    experiment. Returns a dict mapping cluster_id -> list of cards.
+    """
+    from mcp_server.rag_client import embed_batch
+    from mcp_server.topic_clustering import (
+        CardForClustering,
+        cluster_cards,
+        cluster_index,
+    )
+
+    if not cards:
+        result.stages_completed.append("cluster (empty)")
+        return {}
+
+    cluster_inputs = [
+        CardForClustering(
+            path=c["path"],
+            title=c["title"],
+            body=c["body"],
+            existing_tags=tuple(c["tags"]) if isinstance(c["tags"], list) else (),
+        )
+        for c in cards
+    ]
+
+    clusters = cluster_cards(
+        cluster_inputs,
+        embed_fn=embed_batch,
+        high_threshold=high_threshold,
+        low_threshold=low_threshold,
+        body_chars=300,
+    )
+
+    cidx = cluster_index(clusters)
+    result.cards_clustered = len(cidx)
+    grouped: dict[int, list[dict[str, Any]]] = {}
+    for c in cards:
+        cid = cidx.get(c["path"])
+        if cid is None:
+            continue
+        grouped.setdefault(cid, []).append(c)
+        c["_cluster_id"] = cid
+
+    result.clusters_count = len(grouped)
+    result.stages_completed.append(
+        f"cluster ({result.cards_clustered} cards / "
+        f"{result.clusters_count} clusters @ thr={high_threshold:.2f})"
+    )
+    return {str(k): v for k, v in grouped.items()}
+
+
+def _stage_resolve_cluster_names(
+    grouped: dict[str, list[dict[str, Any]]],
+    result: PassResult,
+    *,
+    dry_run: bool,
+) -> None:
+    """Stage 3 — assign canonical cluster names (LLM call per cluster).
+
+    STUB. See POSITION_METADATA_SCHEMA milestone 3.
+
+    Real impl will call an LLM per cluster with concat of titles +
+    refiner-emitted topic_cluster strings (when present), get back
+    a snake_case canonical name, and stash on the cluster.
+    """
+    result.stages_skipped.append("resolve_cluster_names (stub)")
+
+
+def _stage_backfill_position_signal(
+    cards: list[dict[str, Any]],
+    result: PassResult,
+    *,
+    dry_run: bool,
+) -> None:
+    """Stage 4 — Path A back-fill for legacy cards (LLM call per card).
+
+    STUB. See POSITION_METADATA_SCHEMA milestone 5 + § "Backward
+    compatibility" Path A.
+
+    Real impl: for each card with `position_signal == None`, call
+    LLM to extract stance + reasoning from card body. Cost ~$0.001
+    per card; one-time per vault.
+    """
+    n_missing = sum(1 for c in cards if not c.get("position_signal"))
+    if n_missing:
+        result.stages_skipped.append(
+            f"backfill_position_signal ({n_missing} cards eligible; stub)"
+        )
+    else:
+        result.stages_skipped.append("backfill_position_signal (stub)")
+
+
+def _stage_detect_open_threads(
+    grouped: dict[str, list[dict[str, Any]]],
+    result: PassResult,
+    *,
+    dry_run: bool,
+) -> None:
+    """Stage 5 — detect cards with unresolved open_questions.
+
+    STUB. See POSITION_METADATA_SCHEMA milestone 4.
+
+    Real impl: structural (no LLM). For each card with non-empty
+    `open_questions` array, scan later cards in the same cluster.
+    If no later card resolves the question, set
+    `reflection.status: open_thread`.
+    """
+    result.stages_skipped.append("detect_open_threads (stub)")
+
+
+def _stage_detect_contradictions(
+    grouped: dict[str, list[dict[str, Any]]],
+    result: PassResult,
+    *,
+    dry_run: bool,
+) -> None:
+    """Stage 6 — detect contradicting position_signals across cards.
+
+    STUB. See POSITION_METADATA_SCHEMA milestone 7.
+
+    Real impl: for each cluster with ≥2 cards having confidence:
+    asserted, LLM-judge stance + reasoning pairs for contradiction.
+    Write paths into `reflection.contradicts` array.
+    """
+    result.stages_skipped.append("detect_contradictions (stub)")
+
+
+def _stage_compute_drift(
+    grouped: dict[str, list[dict[str, Any]]],
+    result: PassResult,
+    *,
+    dry_run: bool,
+) -> None:
+    """Stage 7 — segment each topic_cluster into drift phases.
+
+    STUB. See POSITION_METADATA_SCHEMA milestone 8.
+
+    Real impl: for each cluster with ≥3 cards, sort by
+    conversation_date, LLM-segment into stance phases, write
+    `reflection.drift_phase` per card.
+    """
+    result.stages_skipped.append("compute_drift (stub)")
+
+
+def _stage_writeback(
+    cards: list[dict[str, Any]],
+    result: PassResult,
+    *,
+    dry_run: bool,
+) -> None:
+    """Stage 8 — atomic write-back of computed metadata to vault.
+
+    STUB. Will be wired up once any of stages 3-7 produce metadata
+    worth writing. Until then, dry_run + actual_run are equivalent.
+    """
+    if dry_run:
+        result.stages_skipped.append("writeback (dry-run)")
+    else:
+        result.stages_skipped.append("writeback (stub — no real outputs yet)")
+
+
+# ---------- orchestration ----------
+
+def run_pass(
+    vault_root: Optional[Path] = None,
+    *,
+    dry_run: bool = False,
+    high_threshold: float = 0.70,
+    low_threshold: float = 0.55,
+    state_file: Optional[Path] = None,
+) -> PassResult:
+    """Run one Reflection Pass over the vault.
+
+    Args:
+        vault_root: Path to vault root. Defaults to
+            `$THROUGHLINE_VAULT_ROOT` or `~/ObsidianVault`.
+        dry_run: If True, do not write back to cards. Stages 1-7
+            still run; stage 8 (writeback) is skipped. Useful for
+            schema validation against an existing vault before
+            committing to actual edits.
+        high_threshold: Cosine similarity above which two cards are
+            same topic. Default 0.70 per gate experiment best score.
+        low_threshold: Pairs in (low, high) need LLM judge once
+            wired. Default 0.55.
+        state_file: Path to persist pass watermark. Defaults to
+            `~/throughline_runtime/state/reflection_pass_state.json`.
+
+    Returns:
+        PassResult — summary of what was scanned + what stages ran.
+    """
+    vault_root = vault_root or _default_vault_root()
+    state_file = state_file or default_state_file()
+    started = datetime.now(timezone.utc).isoformat()
+
+    paths = _walk_vault_for_cards(vault_root)
+    cards = []
+    for p in paths:
+        c = _read_card(p)
+        if c is not None:
+            cards.append(c)
+
+    result = PassResult(
+        started_at=started,
+        finished_at="",
+        cards_scanned=len(cards),
+        cards_with_position_signal=sum(
+            1 for c in cards if c.get("position_signal")
+        ),
+        cards_clustered=0,
+        clusters_count=0,
+        cluster_names_resolved=0,
+        backfill_completed=0,
+        open_threads_detected=0,
+        contradictions_detected=0,
+        drift_phases_computed=0,
+        cards_updated=0,
+        dry_run=dry_run,
+    )
+
+    if not cards:
+        result.errors.append(
+            f"No cards found under {vault_root}. Set "
+            "THROUGHLINE_VAULT_ROOT or pass --vault."
+        )
+        result.finished_at = datetime.now(timezone.utc).isoformat()
+        return result
+
+    # Stage 1 — already done above (load + parse).
+    result.stages_completed.append(
+        f"load ({len(cards)} cards / "
+        f"{result.cards_with_position_signal} with position_signal)"
+    )
+
+    # Stage 2 — real clustering.
+    try:
+        grouped = _stage_cluster(
+            cards, result,
+            high_threshold=high_threshold,
+            low_threshold=low_threshold,
+        )
+    except Exception as exc:
+        result.errors.append(f"cluster stage failed: {exc}")
+        grouped = {}
+
+    # Stages 3-8 — stubs.
+    _stage_resolve_cluster_names(grouped, result, dry_run=dry_run)
+    _stage_backfill_position_signal(cards, result, dry_run=dry_run)
+    _stage_detect_open_threads(grouped, result, dry_run=dry_run)
+    _stage_detect_contradictions(grouped, result, dry_run=dry_run)
+    _stage_compute_drift(grouped, result, dry_run=dry_run)
+    _stage_writeback(cards, result, dry_run=dry_run)
+
+    result.finished_at = datetime.now(timezone.utc).isoformat()
+
+    # Persist watermark (idempotent; small).
+    if not dry_run and state_file:
+        try:
+            state_file.parent.mkdir(parents=True, exist_ok=True)
+            state_file.write_text(
+                json.dumps(asdict(result), indent=2),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            result.errors.append(f"state file write failed: {exc}")
+
+    return result
+
+
+# ---------- CLI ----------
+
+def _format_result(result: PassResult) -> str:
+    """Pretty-print PassResult for the CLI."""
+    lines = [
+        "Reflection Pass result",
+        f"  started:  {result.started_at}",
+        f"  finished: {result.finished_at}",
+        f"  dry_run:  {result.dry_run}",
+        "",
+        f"  cards scanned:                {result.cards_scanned}",
+        f"  cards with position_signal:   {result.cards_with_position_signal}",
+        f"  cards clustered:              {result.cards_clustered}",
+        f"  clusters formed:              {result.clusters_count}",
+        f"  cluster names resolved:       {result.cluster_names_resolved}",
+        f"  back-fills completed:         {result.backfill_completed}",
+        f"  open threads detected:        {result.open_threads_detected}",
+        f"  contradictions detected:      {result.contradictions_detected}",
+        f"  drift phases computed:        {result.drift_phases_computed}",
+        f"  cards updated:                {result.cards_updated}",
+        "",
+        "  stages completed:",
+    ]
+    for stage in result.stages_completed:
+        lines.append(f"    - {stage}")
+    if result.stages_skipped:
+        lines.append("  stages skipped (stubs):")
+        for stage in result.stages_skipped:
+            lines.append(f"    - {stage}")
+    if result.errors:
+        lines.append("  errors:")
+        for err in result.errors:
+            lines.append(f"    ! {err}")
+    return "\n".join(lines)
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="python -m daemon.reflection_pass",
+        description=(
+            "Run one Reflection Pass over the vault. Aggregates "
+            "card-level position signals into the cross-card metadata "
+            "the Reflection Layer's MCP tools query. See "
+            "docs/POSITION_METADATA_SCHEMA.md for full design."
+        ),
+    )
+    parser.add_argument(
+        "--vault", type=str, default=None,
+        help="Vault root path (defaults to $THROUGHLINE_VAULT_ROOT "
+             "or ~/ObsidianVault).",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Do not write back to cards. Stages 1-7 run; "
+             "stage 8 is skipped. Use to validate schema "
+             "compatibility before committing to real edits.",
+    )
+    parser.add_argument(
+        "--high-threshold", type=float, default=0.70,
+        help="Cosine similarity threshold for same-topic decisions "
+             "(default 0.70 per gate experiment best score).",
+    )
+    parser.add_argument(
+        "--low-threshold", type=float, default=0.55,
+    )
+    parser.add_argument(
+        "--state-file", type=str, default=None,
+        help="Path to pass watermark file. Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_pass_state.json.",
+    )
+    args = parser.parse_args(argv)
+
+    vault = Path(args.vault).resolve() if args.vault else None
+    state = Path(args.state_file).resolve() if args.state_file else None
+
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    result = run_pass(
+        vault_root=vault,
+        dry_run=args.dry_run,
+        high_threshold=args.high_threshold,
+        low_threshold=args.low_threshold,
+        state_file=state,
+    )
+
+    print(_format_result(result))
+    return 0 if not result.errors else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
