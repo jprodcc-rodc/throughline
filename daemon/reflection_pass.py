@@ -1056,6 +1056,13 @@ def main(argv: Optional[list[str]] = None) -> int:
              "or ~/ObsidianVault).",
     )
     parser.add_argument(
+        "--inspect", action="store_true",
+        help="Pretty-print summaries of all Reflection Pass state "
+             "files (no pass run, no LLM, no vault read). Useful "
+             "for verifying what's been computed and how stale it "
+             "is. Exits without running the pass.",
+    )
+    parser.add_argument(
         "--dry-run", action="store_true",
         help="Do not write back to cards. Stages 1-7 run; "
              "stage 8 is skipped. Use to validate schema "
@@ -1130,6 +1137,13 @@ def main(argv: Optional[list[str]] = None) -> int:
              "commit; review the JSON before authorizing real write.",
     )
     args = parser.parse_args(argv)
+
+    # --inspect short-circuits everything else: pure read of state
+    # files. No pass run, no vault scan, no LLM.
+    if args.inspect:
+        from daemon.reflection_inspect import render_inspect_report
+        print(render_inspect_report())
+        return 0
 
     vault = Path(args.vault).resolve() if args.vault else None
     state = Path(args.state_file).resolve() if args.state_file else None
