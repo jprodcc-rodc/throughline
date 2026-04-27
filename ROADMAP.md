@@ -33,6 +33,37 @@ hygiene.
 
 ### v0.3 will deliver
 
+- **Reflection Layer (the throughline differentiator)** — three
+  MCP tools that turn the existing card store into a thinking-state
+  tracker, not just a memory tracker:
+  - `find_open_threads` — surfaces unfinished reasoning when the
+    user starts a related conversation. Detects cards with open
+    questions / hypotheses without conclusion / branches that
+    didn't converge.
+  - `check_consistency` — when the user states a position, surfaces
+    historical positions that contradict it AND the original
+    reasoning, so the user can reaffirm, recognize drift, or
+    update the current take. Not "you're wrong" — *"here's your
+    past reasoning, please engage with it."*
+  - `get_position_drift` — shows how the user's framework on a
+    topic has evolved across conversations, with the reasoning at
+    each transition. Metacognitive infrastructure.
+
+  Built on a shared foundation: topic clustering + position
+  metadata in card frontmatter + a periodic Reflection Pass daemon.
+  Engineering gate: clustering accuracy ≥75% on the maintainer's
+  vault (≥2,300 cards) before shipping the daemon — false-positive
+  contradictions kill user trust on first occurrence.
+
+  **Why this is the headline:** April 2026 Anthropic shipped
+  past-chat referencing in Claude Desktop. Basic AI memory is
+  commodity. Throughline's empty niche is *thinking-state
+  tracking*: proactive surfacing of unfinished thinking,
+  contradictions, drift — across all AI tools, on the user's own
+  vault. Full design rationale + side-by-side with Anthropic's
+  feature in
+  [`docs/REFLECTION_LAYER_DESIGN.md`](docs/REFLECTION_LAYER_DESIGN.md).
+
 - **OpenAI-compatible proxy adapter** — a small FastAPI proxy that
   exposes `/v1/chat/completions` and injects throughline RAG before
   forwarding to the user's actual LLM provider. Lets any OpenAI-SDK

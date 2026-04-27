@@ -9,7 +9,8 @@
 > **At a glance:** ~33,700 LOC Python · 7 runtime modules · 1,300+
 > tests, zero external network calls in CI · 6 first-class vector
 > store backends · 5 native rerankers · 16 LLM-provider presets ·
-> full threat model documented · MCP server entry point ·
+> full threat model documented · MCP server entry point · vault
+> portable across all AI tools (not locked to any one vendor) ·
 > running 24/7 against the maintainer's vault since v0.1.0.
 
 <!--
@@ -237,8 +238,9 @@ Setup is the wizard flow above.
 
 A separate `throughline-mcp` PyPI package exposing three tools
 (`save_conversation` / `recall_memory` / `list_topics`) over stdio.
-Best for: users who already work in Claude Desktop / Cursor /
-Continue.dev and don't want to migrate to OpenWebUI. Setup:
+Best for: users who work across multiple AI tools and want **one
+vault** that all of them can write into and recall from — not
+locked to any single vendor's backend. Setup:
 
 ```bash
 # Once on PyPI (planned for v0.3 release):
@@ -263,6 +265,25 @@ rag_server, share the same Qdrant collection. Running both at once
 is a supported configuration; conversations saved through MCP get
 refined by the daemon and become recallable from the Filter, and
 vice versa.
+
+### How this is different from Claude Desktop's "never lose the thread"
+
+April 2026 Anthropic shipped past-chat referencing in Claude
+Desktop. Honest framing of the difference:
+
+- Anthropic's feature: **reactive recall** of past conversation
+  snippets, locked to Claude, on Anthropic's servers. Trigger:
+  user asks. Object: text snippets. *"Where did I leave off?"*
+- throughline (and especially the Reflection Layer landing in
+  v0.3): **proactive surfacing** of *thinking states* — open
+  questions without follow-up, contradictions with past reasoning,
+  position drift over time. Daemon scans, surfaces in any
+  MCP-aware host, vault stays on user's machine.
+
+In one line: *Claude Desktop remembers what you said; throughline
+knows what you stopped thinking about.* Both useful; different
+products. Reflection Layer design at
+[`docs/REFLECTION_LAYER_DESIGN.md`](docs/REFLECTION_LAYER_DESIGN.md).
 
 ---
 
