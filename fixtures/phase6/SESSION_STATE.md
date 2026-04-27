@@ -21,11 +21,31 @@ clarification still load-bearing — read `private/PLAN_90D.md` FIRST.
 
 **Phase 1 progress:**
 - ✅ Week 1 commit 1: scaffolding stubs (`5776f3d` 2026-04-27)
-- ☐ Week 1 commit 2: save_conversation real logic (writes raw .md
-  to `$THROUGHLINE_RAW_ROOT/`, daemon picks up via watchdog)
+- ✅ Week 1 commit 2: save_conversation real logic (`ea62907`
+  2026-04-27) — writes timestamped .md to `$THROUGHLINE_RAW_ROOT`
+  in daemon's expected H2 lowercase format, with defensive coercion
+  for 4 input shapes (H2 / H1 / prefix / prose). 25 new tests.
 - ☐ Week 2: recall_memory HTTP roundtrip + list_topics taxonomy walk
 - ☐ Week 3: docs/MCP_SETUP.md + README access-points subsection +
   ROADMAP move + manual smoke test with Claude Desktop
+
+**🐛 Pre-existing bug discovered during Week 1 commit 2 (not fixed
+— out of MCP scope):**
+- `throughline_cli/adapters/common.py:render_markdown` writes message
+  turns as `# User` / `# Assistant` (H1, capitalized).
+- `daemon/refine_daemon.py:_MSG_SPLIT_RE` parses `^## (user|assistant)\s*$`
+  (H2, case-insensitive but H2 only).
+- These don't match. Adapter-imported chats (chatgpt_export /
+  claude_export / gemini_takeout) likely produce raw .md files that
+  daemon parses as zero messages → file gets silently skipped.
+- Why no test caught it: existing tests construct H2 format directly
+  rather than running the adapter → daemon path end-to-end.
+- Why MCP isn't affected: `mcp_server/daemon_writer.py` writes H2
+  directly, matching the parser. (Phase 1 dodge confirmed.)
+- **Not fixing now**: PLAN_90D § 6 constrains auto-mode work to
+  not touch shared core unless real-user-driven. Filed mentally
+  for a separate session — fix is one-line in `render_markdown`
+  changing `f"# {display}"` to `f"## {display.lower()}"`.
 
 ## 🧭 Strategy clarified anchor (2026-04-27 afternoon) — read FIRST
 
