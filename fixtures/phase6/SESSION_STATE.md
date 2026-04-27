@@ -25,9 +25,27 @@ clarification still load-bearing — read `private/PLAN_90D.md` FIRST.
   2026-04-27) — writes timestamped .md to `$THROUGHLINE_RAW_ROOT`
   in daemon's expected H2 lowercase format, with defensive coercion
   for 4 input shapes (H2 / H1 / prefix / prose). 25 new tests.
-- ☐ Week 2: recall_memory HTTP roundtrip + list_topics taxonomy walk
+- ☐ Week 2 commit 3: recall_memory (HTTP → rag_server `/v1/rag`)
+- ☐ Week 2 commit 4: list_topics (taxonomy + vault scan)
 - ☐ Week 3: docs/MCP_SETUP.md + README access-points subsection +
   ROADMAP move + manual smoke test with Claude Desktop
+
+**Strategic re-tilt (2026-04-27 evening, separate from MCP work):**
+
+User flagged that the credibility-piece reframing means earlier
+"simplify for casual visitor" polish should be re-evaluated —
+audiences for portfolio + credibility are different from audiences
+for direct user adoption. First concrete revert: README mermaid
+diagram restored (`c433550`). Other simplifications worth
+re-evaluating under the same lens (long-card-example `<details>`
+collapse, 16-provider table `<details>` collapse) noted in
+`private/TODO.md` as candidates for future review — NOT reverted
+in this session.
+
+**Detailed execution state lives in `private/TODO.md`.** Read
+that FIRST in the next session — it documents Week 2 commit 3
+spec, week 2 commit 4 spec, week 3 deliverables, plus the H1/H2
+adapter parser bug + slicer-prompt followup.
 
 **🐛 Pre-existing bug discovered during Week 1 commit 2 (not fixed
 — out of MCP scope):**
