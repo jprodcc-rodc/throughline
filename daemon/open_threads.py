@@ -106,25 +106,11 @@ def _question_addressed_by(
 
 
 # ---------- card chronology ----------
+# Hoisted to daemon.state_paths so reflection_pass + future stages
+# share one definition. _card_timestamp kept as a module-local
+# alias for back-compat with the test surface.
 
-def _card_timestamp(card: dict[str, Any]) -> str:
-    """Return a sortable ISO-style string for chronological ordering.
-
-    Priority: frontmatter.date > frontmatter.updated > file mtime.
-    Falls back to "0" so cards with no signal sort earliest.
-    """
-    fm = card.get("frontmatter") or {}
-    if isinstance(fm, dict):
-        date = fm.get("date") or fm.get("updated")
-        if date:
-            return str(date)
-    path = card.get("path", "")
-    if path:
-        try:
-            return f"mtime-{int(Path(path).stat().st_mtime)}"
-        except OSError:
-            pass
-    return "0"
+from daemon.state_paths import card_timestamp as _card_timestamp  # noqa: E402
 
 
 # ---------- main entry ----------

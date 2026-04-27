@@ -67,83 +67,26 @@ _log = logging.getLogger(__name__)
 
 
 # ---------- defaults ----------
+# State-file path helpers and shared chronology helper live in
+# daemon.state_paths so other daemon modules + tests can reuse
+# them without circular-import risk. Re-exported here for
+# back-compat with existing callers.
 
-def _default_state_dir() -> Path:
-    return Path(
-        os.getenv(
-            "THROUGHLINE_STATE_DIR",
-            str(Path.home() / "throughline_runtime" / "state"),
-        )
-    ).expanduser()
-
-
-def _default_vault_root() -> Path:
-    return Path(
-        os.getenv(
-            "THROUGHLINE_VAULT_ROOT",
-            str(Path.home() / "ObsidianVault"),
-        )
-    ).expanduser()
+from daemon.state_paths import (
+    default_state_dir as _default_state_dir,
+    default_vault_root as _default_vault_root,
+    default_state_file,
+    default_cluster_names_file,
+    default_backfill_state_file,
+    default_open_threads_file,
+    default_positions_file,
+    default_writeback_preview_file,
+)
 
 
-def default_state_file() -> Path:
-    """Resolve the default `state/reflection_pass_state.json` path.
-
-    Resolved lazily (not import-time) so tests can set
-    `THROUGHLINE_STATE_DIR` via `monkeypatch.setenv`.
-    """
-    return _default_state_dir() / "reflection_pass_state.json"
-
-
-def default_positions_file() -> Path:
-    """Resolve default ``state/reflection_positions.json`` path.
-
-    This is the comprehensive position database — every reflectable
-    card's stance/reasoning/date keyed by cluster. Both
-    ``check_consistency`` and ``get_position_drift`` MCP tools
-    read this file. Written on every pass (preview-mode included)
-    so MCP tools always have a fresh reference even before
-    --enable-llm-backfill runs (cards without back-filled stance
-    show up with stance=null and the tool degrades gracefully).
-    """
-    return _default_state_dir() / "reflection_positions.json"
-
-
-def default_writeback_preview_file() -> Path:
-    """Resolve default ``state/reflection_writeback_preview.json``.
-
-    Stage 8 writes this on every pass with the diff of what would
-    be added to each card's frontmatter. The actual vault write
-    is gated behind a separate (later) commit; this preview lets
-    the user inspect changes before authorizing.
-    """
-    return _default_state_dir() / "reflection_writeback_preview.json"
-
-
-def default_open_threads_file() -> Path:
-    """Resolve default ``state/reflection_open_threads.json`` path.
-
-    Persists the stage-5 output: the list of cards with unresolved
-    open questions, plus their cluster name and last-touched date.
-    The ``find_open_threads`` MCP tool reads this file rather than
-    rescanning the vault on every call.
-    """
-    return _default_state_dir() / "reflection_open_threads.json"
-
-
-def default_backfill_state_file() -> Path:
-    """Resolve default ``state/reflection_backfill_state.json`` path.
-
-    Persists ``card_path|mtime -> {claim_summary, open_questions}``
-    so re-runs skip cards already extracted whose body hasn't
-    changed since.
-    """
-    return _default_state_dir() / "reflection_backfill_state.json"
-
-
-def _load_backfill_state(path: Path) -> dict[str, dict]:
-    """Read persisted card_signature -> essence dict. Returns empty
-    on missing/unparseable (treat as cold start)."""
+def _load_cluster_names(path: Path) -> dict[str, str]:
+    """Read persisted cluster_signature -> name. Returns empty dict
+    when file is missing or unparseable (treat as cold start)."""
     if not path.exists():
         return {}
     try:
@@ -153,21 +96,9 @@ def _load_backfill_state(path: Path) -> dict[str, dict]:
         return {}
 
 
-def default_cluster_names_file() -> Path:
-    """Resolve the default `state/reflection_cluster_names.json` path.
-
-    This file persists ``cluster_signature -> canonical_name`` so
-    repeated passes don't re-call the LLM to re-name unchanged
-    clusters. Cluster signature includes the membership path list
-    so re-clustering with shifted membership invalidates the cache
-    naturally.
-    """
-    return _default_state_dir() / "reflection_cluster_names.json"
-
-
-def _load_cluster_names(path: Path) -> dict[str, str]:
-    """Read persisted cluster_signature -> name. Returns empty dict
-    when file is missing or unparseable (treat as cold start)."""
+def _load_backfill_state(path: Path) -> dict[str, dict]:
+    """Read persisted card_signature -> essence dict. Returns empty
+    on missing/unparseable (treat as cold start)."""
     if not path.exists():
         return {}
     try:
@@ -983,7 +914,7 @@ def run_pass(
     # cluster + back-fill data — no I/O risk.
     if positions_file:
         try:
-            from daemon.open_threads import _card_timestamp
+            from daemon.state_paths import card_timestamp as _card_timestamp
             from daemon.writeback import _extract_reasoning_from_body
 
             clusters_payload = []
@@ -1033,7 +964,7 @@ def run_pass(
     # equals real output.
     if open_threads_file:
         try:
-            from daemon.open_threads import _card_timestamp
+            from daemon.state_paths import card_timestamp as _card_timestamp
             entries: list[dict] = []
             for cid, members in grouped.items():
                 cluster_name = cluster_names.get(cid) if cluster_names else None
