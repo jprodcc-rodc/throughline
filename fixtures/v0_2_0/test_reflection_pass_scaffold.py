@@ -1378,7 +1378,7 @@ def test_stub_stages_record_skips():
     _stage_backfill_position_signal([], result, dry_run=False, extractor=lambda t, b: {})
     _stage_detect_open_threads({}, result, dry_run=False)
     _stage_detect_contradictions({}, result, dry_run=False, judge=lambda e, l, t: {})
-    _stage_compute_drift({}, result, dry_run=False)
+    _stage_compute_drift({}, result, dry_run=False, segmenter=lambda c, t: {})
     _stage_writeback([], result, dry_run=False)
 
     assert len(result.stages_skipped) == 6

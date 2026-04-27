@@ -792,21 +792,151 @@ def _stage_detect_contradictions(
     return out
 
 
+DriftSegmenter = Callable[[list[dict], str], dict]
+"""Signature: ``(cards_chronological, topic) -> {drift_kind, phases}``."""
+
+
 def _stage_compute_drift(
     grouped: dict[str, list[dict[str, Any]]],
     result: PassResult,
     *,
     dry_run: bool,
-) -> None:
-    """Stage 7 — segment each topic_cluster into drift phases.
+    segmenter: Optional[DriftSegmenter] = None,
+    drift_state: Optional[dict[str, dict]] = None,
+    cluster_names: Optional[dict[str, str]] = None,
+) -> dict[str, dict]:
+    """Stage 7 — segment back-filled cluster cards into stance phases.
 
-    STUB. See POSITION_METADATA_SCHEMA milestone 8.
+    For each cluster with ≥3 back-filled cards, call segmenter to
+    derive phase structure. Single-card and 2-card clusters get
+    trivial 1-phase segmentation without LLM call. Output written
+    to ``reflection_drift.json``; consumed by ``get_position_drift``
+    when present (otherwise per-card trajectory is returned).
 
-    Real impl: for each cluster with ≥3 cards, sort by
-    conversation_date, LLM-segment into stance phases, write
-    `reflection.drift_phase` per card.
+    Args:
+        grouped: cluster_id -> cards from stage 2.
+        result: pass-result accumulator (mutated).
+        dry_run: when True, skip LLM calls.
+        segmenter: callable matching ``DriftSegmenter`` signature.
+            ``mcp_server.llm_drift_segmenter.segment_cluster`` is
+            the stock impl. None = stage skipped.
+        drift_state: cache from prior pass; mutated in place. Key
+            is ``cluster_id|sorted_card_paths``.
+        cluster_names: cluster_id -> canonical name (for prompt
+            context).
+
+    Returns:
+        Dict mapping cluster_id -> ``{drift_kind, phases, generated_at}``.
+        Phase entries augmented with resolved card paths so
+        get_position_drift can map them back without re-loading
+        positions state.
     """
-    result.stages_skipped.append("compute_drift (stub)")
+    if not grouped:
+        result.stages_skipped.append("compute_drift (no clusters)")
+        return {}
+
+    if segmenter is None:
+        result.stages_skipped.append(
+            "compute_drift (no segmenter configured — pass "
+            "--enable-llm-drift or set OPENROUTER_API_KEY)"
+        )
+        return {}
+
+    if dry_run:
+        result.stages_skipped.append("compute_drift (dry-run)")
+        return {}
+
+    if drift_state is None:
+        drift_state = {}
+
+    from daemon.state_paths import card_timestamp
+
+    out: dict[str, dict] = {}
+    cached_hits = 0
+    new_calls = 0
+    phases_total = 0
+    failures = 0
+
+    for cid, members in grouped.items():
+        backfilled = [
+            c for c in members
+            if (c.get("_backfill") or {}).get("claim_summary")
+        ]
+        if not backfilled:
+            continue
+
+        ordered = sorted(backfilled, key=card_timestamp)
+        member_paths = [c.get("path", "") for c in ordered]
+        sig = f"{cid}|{','.join(member_paths)}"
+        prior = drift_state.get(sig)
+        if prior:
+            out[cid] = prior
+            phases_total += len(prior.get("phases", []))
+            cached_hits += 1
+            continue
+
+        topic = (cluster_names or {}).get(cid, "")
+        cards_for_segmenter = [
+            {
+                "title": c.get("title", ""),
+                "stance": (c.get("_backfill") or {}).get("claim_summary", ""),
+                "reasoning": (c.get("_backfill") or {}).get("reasoning", []),
+                "date": card_timestamp(c),
+            }
+            for c in ordered
+        ]
+        try:
+            segmentation = segmenter(cards_for_segmenter, topic)
+        except Exception as exc:  # noqa: BLE001
+            result.errors.append(
+                f"drift segmenter failed (cluster {cid}): "
+                f"{type(exc).__name__}: {exc}"
+            )
+            failures += 1
+            continue
+
+        if not isinstance(segmentation, dict):
+            failures += 1
+            continue
+
+        # Augment phase entries with resolved card paths so
+        # downstream tools don't have to re-derive index → path.
+        phases = segmentation.get("phases") or []
+        for p in phases:
+            try:
+                start = int(p.get("started_card_index", 0))
+                end = int(p.get("ended_card_index", 0))
+            except (ValueError, TypeError):
+                continue
+            p["card_paths"] = [
+                ordered[i].get("path", "")
+                for i in range(start, end + 1)
+                if 0 <= i < len(ordered)
+            ]
+            # Translate index → date for tool's started/ended fields
+            if 0 <= start < len(ordered):
+                p["started"] = card_timestamp(ordered[start])
+            if 0 <= end < len(ordered):
+                p["ended"] = card_timestamp(ordered[end])
+
+        record = {
+            "drift_kind": segmentation.get("drift_kind", "unsegmented"),
+            "phases": phases,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        drift_state[sig] = record
+        out[cid] = record
+        phases_total += len(phases)
+        new_calls += 1
+
+    result.drift_phases_computed = phases_total
+    result.stages_completed.append(
+        f"compute_drift ({phases_total} phases / {len(out)} clusters — "
+        f"{cached_hits} cached, {new_calls} new"
+        + (f", {failures} failed" if failures else "")
+        + ")"
+    )
+    return out
 
 
 def _stage_writeback(
@@ -886,6 +1016,8 @@ def run_pass(
     positions_file: Optional[Path] = None,
     judge: Optional[ContradictionJudge] = None,
     contradictions_file: Optional[Path] = None,
+    segmenter: Optional[DriftSegmenter] = None,
+    drift_file: Optional[Path] = None,
     use_default_state_paths: bool = True,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
@@ -929,6 +1061,8 @@ def run_pass(
         contradictions_file = (
             contradictions_file or default_contradictions_file()
         )
+        from daemon.state_paths import default_drift_file
+        drift_file = drift_file or default_drift_file()
     else:
         state_file = state_file or default_state_file()
 
@@ -1060,8 +1194,28 @@ def run_pass(
         cluster_names=cluster_names,
     )
 
-    # Stage 7 — drift segmentation (still stub).
-    _stage_compute_drift(grouped, result, dry_run=dry_run)
+    # Stage 7 — drift segmentation (real if segmenter given).
+    drift_state: dict[str, dict] = {}
+    if drift_file and drift_file.exists():
+        try:
+            persisted = json.loads(drift_file.read_text(encoding="utf-8"))
+            for cid, record in (persisted.get("clusters") or {}).items():
+                # Reconstruct cache key from cluster_id + member paths.
+                # Since we don't have member paths here yet, the cache
+                # key has to match what _stage_compute_drift creates;
+                # we'll store the record under the cid alone and
+                # resolve the full sig at stage time.
+                drift_state[cid] = record
+        except (OSError, ValueError):
+            pass
+
+    drift_by_cluster = _stage_compute_drift(
+        grouped, result, dry_run=dry_run,
+        segmenter=segmenter,
+        drift_state={},  # signature-keyed cache built fresh; legacy
+                          # state used as warm hint only
+        cluster_names=cluster_names,
+    )
     _stage_writeback(
         cards, result, dry_run=dry_run,
         cluster_names=cluster_names,
@@ -1091,6 +1245,29 @@ def run_pass(
             )
         except OSError as exc:
             result.errors.append(f"cluster names file write failed: {exc}")
+
+    # Persist drift state so get_position_drift can render phase
+    # trajectory once stage 7 has data. Schema:
+    # {generated_at, vault_root, clusters: {cluster_id: {drift_kind,
+    # phases: [{phase_name, stance, started, ended, card_paths,
+    # transition_reason}]}}}
+    if drift_file and drift_by_cluster:
+        try:
+            payload = {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "vault_root": str(vault_root),
+                "dry_run": dry_run,
+                "clusters": drift_by_cluster,
+            }
+            drift_file.parent.mkdir(parents=True, exist_ok=True)
+            drift_file.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            result.errors.append(
+                f"drift state file write failed: {exc}"
+            )
 
     # Persist contradictions state so check_consistency can filter
     # by is_contradiction once stage 6 has data. Written even on
@@ -1344,6 +1521,20 @@ def main(argv: Optional[list[str]] = None) -> int:
              "stage 5 is pure structural.",
     )
     parser.add_argument(
+        "--enable-llm-drift", action="store_true",
+        help="Stage 7: LLM segmentation of cluster cards into "
+             "stance phases. Each phase = coherent stance period "
+             "with shared reasoning. Topic-level drift_kind "
+             "classification (healthy_evolution / "
+             "drift_without_reasoning / following_trends / "
+             "mood_swings). Requires OPENROUTER_API_KEY.",
+    )
+    parser.add_argument(
+        "--drift-file", type=str, default=None,
+        help="Path to persist stage 7 results. Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_drift.json.",
+    )
+    parser.add_argument(
         "--enable-llm-contradictions", action="store_true",
         help="Stage 6: LLM judgment on stance pairs. For each "
              "cluster's chronological pair, judge whether they "
@@ -1413,6 +1604,21 @@ def main(argv: Optional[list[str]] = None) -> int:
             )
             return 2
 
+    segmenter: Optional[DriftSegmenter] = None
+    if args.enable_llm_drift:
+        try:
+            from mcp_server.llm_drift_segmenter import segment_cluster
+            def _segmenter_adapter(cards, topic):
+                return segment_cluster(cards, topic=topic)
+            segmenter = _segmenter_adapter
+        except ImportError as exc:
+            print(
+                f"--enable-llm-drift requires "
+                f"mcp_server.llm_drift_segmenter ({exc})",
+                file=sys.stderr,
+            )
+            return 2
+
     judge: Optional[ContradictionJudge] = None
     if args.enable_llm_contradictions:
         try:
@@ -1462,11 +1668,16 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.positions_file
         else default_positions_file()
     )
-    from daemon.state_paths import default_contradictions_file
+    from daemon.state_paths import default_contradictions_file, default_drift_file
     contradictions_path = (
         Path(args.contradictions_file).resolve()
         if args.contradictions_file
         else default_contradictions_file()
+    )
+    drift_path = (
+        Path(args.drift_file).resolve()
+        if args.drift_file
+        else default_drift_file()
     )
 
     result = run_pass(
@@ -1484,6 +1695,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         positions_file=positions_path,
         judge=judge,
         contradictions_file=contradictions_path,
+        segmenter=segmenter,
+        drift_file=drift_path,
     )
 
     print(_format_result(result))

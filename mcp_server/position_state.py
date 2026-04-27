@@ -85,6 +85,24 @@ def resolve_contradictions_file() -> Path:
     return _state_dir() / "reflection_contradictions.json"
 
 
+def resolve_drift_file() -> Path:
+    return _state_dir() / "reflection_drift.json"
+
+
+def load_drift(path: Optional[Path] = None) -> Optional[dict[str, Any]]:
+    """Load reflection_drift.json. Returns None on missing /
+    unreadable. Stage 7 output: per-cluster phase segmentation."""
+    if path is None:
+        path = resolve_drift_file()
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except (OSError, ValueError):
+        return None
+
+
 def load_contradictions(path: Optional[Path] = None) -> Optional[dict[str, Any]]:
     """Load reflection_contradictions.json — same shape and
     error-handling as ``load_positions``. Returns None when missing /

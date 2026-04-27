@@ -23,6 +23,7 @@ from typing import Any
 
 from mcp_server.position_state import (
     find_cluster_by_topic,
+    load_drift,
     load_positions,
     resolve_positions_file,
 )
@@ -156,6 +157,12 @@ def get_position_drift(
             ),
         }
 
+    # Stage 7 enrichment: when reflection_drift.json is present and
+    # has segmented this cluster into phases, return per-phase
+    # trajectory instead of per-card. Tool surface stays identical;
+    # phase entries have phase_name + transition_reason filled.
+    drift_state = load_drift()
+
     cluster = find_cluster_by_topic(topic_clean, state)
     if cluster is None:
         return {
@@ -200,16 +207,65 @@ def get_position_drift(
             ),
         }
 
-    # State file already sorted cards chronologically per cluster.
-    # Build trajectory entries.
-    trajectory: list[dict[str, Any]] = []
+    # If drift state has phases for this cluster, render per-phase.
+    cluster_id = cluster.get("cluster_id")
+    drift_kind = "unsegmented"
+    if (
+        drift_state
+        and isinstance(drift_state, dict)
+        and isinstance(drift_state.get("clusters"), dict)
+        and cluster_id in drift_state["clusters"]
+    ):
+        phase_record = drift_state["clusters"][cluster_id]
+        drift_kind = phase_record.get("drift_kind", "unsegmented")
+        phases_raw = phase_record.get("phases") or []
+
+        # For each phase, find the cards in this cluster matching
+        # phase.card_paths and assemble reasoning union.
+        path_to_card = {
+            c.get("card_path", ""): c for c in cluster.get("cards", [])
+        }
+        trajectory: list[dict[str, Any]] = []
+        for p in phases_raw:
+            paths = p.get("card_paths") or []
+            phase_cards = [
+                path_to_card[pp] for pp in paths if pp in path_to_card
+            ]
+            reasoning_union: list[str] = []
+            for c in phase_cards:
+                for r in (c.get("reasoning") or []):
+                    if r and r not in reasoning_union:
+                        reasoning_union.append(r)
+            trajectory.append({
+                "phase_name": p.get("phase_name", ""),
+                "stance": p.get("stance", ""),
+                "reasoning": reasoning_union,
+                "started": p.get("started", ""),
+                "ended": p.get("ended"),
+                "transition_reason": p.get("transition_reason", ""),
+                "card_count": len(phase_cards),
+                "card_paths": paths,
+            })
+        return {
+            "topic": (
+                cluster.get("topic_cluster")
+                or f"cluster_{cluster_id}"
+            ),
+            "trajectory": trajectory,
+            "drift_kind": drift_kind,
+            "current_phase": len(trajectory) - 1 if trajectory else 0,
+            "_status": "ok",
+        }
+
+    # Fall through: V1 per-card trajectory.
+    trajectory_v1: list[dict[str, Any]] = []
     for i, card in enumerate(eligible):
         ended = (
             eligible[i + 1].get("date")
             if i + 1 < len(eligible)
             else None
         )
-        trajectory.append({
+        trajectory_v1.append({
             "phase_name": card.get("title", ""),
             "stance": card.get("stance") or "",
             "reasoning": card.get("reasoning", []) or [],
@@ -222,10 +278,10 @@ def get_position_drift(
     return {
         "topic": (
             cluster.get("topic_cluster")
-            or f"cluster_{cluster.get('cluster_id', '?')}"
+            or f"cluster_{cluster_id}"
         ),
-        "trajectory": trajectory,
+        "trajectory": trajectory_v1,
         "drift_kind": "unsegmented",
-        "current_phase": len(trajectory) - 1 if trajectory else 0,
+        "current_phase": len(trajectory_v1) - 1 if trajectory_v1 else 0,
         "_status": "ok",
     }
