@@ -226,19 +226,28 @@ Setup is the wizard flow above.
 
 ### Form B — MCP server (Claude Desktop / Code / Cursor / Continue.dev)
 
-A `mcp_server/` package exposing three tools (`save_conversation` /
-`recall_memory` / `list_topics`) over stdio. Best for: users who
-already work in Claude Desktop / Cursor / Continue.dev and don't
-want to migrate to OpenWebUI. Setup:
+A separate `throughline-mcp` PyPI package exposing three tools
+(`save_conversation` / `recall_memory` / `list_topics`) over stdio.
+Best for: users who already work in Claude Desktop / Cursor /
+Continue.dev and don't want to migrate to OpenWebUI. Setup:
 
 ```bash
-pip install -e .[mcp]              # adds fastmcp dep on top of base install
-# Then add 5 lines to ~/Library/Application Support/Claude/claude_desktop_config.json
+# Once on PyPI (planned for v0.3 release):
+pip install throughline-mcp        # auto-pulls throughline + fastmcp
+
+# Today, from a fresh clone:
+git clone https://github.com/jprodcc-rodc/throughline
+cd throughline
+pip install -e .                   # base
+pip install -e mcp_server          # adds throughline-mcp + fastmcp
+
+# Then add 4 lines to ~/Library/Application Support/Claude/claude_desktop_config.json
 # (or the Windows / Linux / Cursor / Continue equivalent)
 ```
 
 Full per-client config + troubleshoot in
-[`docs/MCP_SETUP.md`](docs/MCP_SETUP.md).
+[`docs/MCP_SETUP.md`](docs/MCP_SETUP.md). The `pip install throughline[mcp]`
+extras flag still works as a transitive shortcut (`mcp = ["throughline-mcp>=0.1"]`).
 
 **Both forms write to the same vault**, share the same daemon and
 rag_server, share the same Qdrant collection. Running both at once

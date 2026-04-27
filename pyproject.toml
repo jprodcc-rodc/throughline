@@ -102,14 +102,20 @@ pgvector = [
 # MCP server form — exposes throughline as Model Context Protocol
 # tools, so any MCP-aware client (Claude Desktop, Claude Code, Cursor,
 # Continue.dev) can save/recall conversations against the same vault
-# without OpenWebUI in the loop. See `mcp_server/` for the server,
-# `docs/MCP_SETUP.md` (TODO) for client config.
+# without OpenWebUI in the loop. See `mcp_server/` for the server
+# code + `mcp_server/pyproject.toml` for the independent
+# `throughline-mcp` PyPI package metadata, and `docs/MCP_SETUP.md`
+# for client config.
 #
-# Phase 1.5 (post-dogfood) plan: split `mcp_server/` into an
-# independent `throughline-mcp` PyPI package depending on this one.
-# See private/MCP_SCAFFOLDING_PLAN.md § 1.2 for the cutover plan.
+# `pip install throughline[mcp]` is now a thin transitive install:
+# it pulls in `throughline-mcp` which carries the actual mcp_server
+# code + fastmcp dep. Phase 1.5 (2026-04-28) split deprecates the
+# old "mcp_server bundled inside throughline + extras flag for
+# fastmcp" path; the new shape lets users do `pip install
+# throughline-mcp` directly and signals more clearly that MCP is
+# its own access surface.
 mcp = [
-    "fastmcp>=0.4",
+    "throughline-mcp>=0.1",
 ]
 # Convenience: install everything (full local-only path).
 all = [
@@ -123,7 +129,7 @@ all = [
     "duckdb>=0.10",
     "psycopg[binary]>=3.1",
     "uvicorn[standard]>=0.27",
-    "fastmcp>=0.4",
+    "throughline-mcp>=0.1",
 ]
 # Test + lint dev tooling.
 dev = [
@@ -157,11 +163,17 @@ throughline-stats     = "throughline_cli.stats:main"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-# Top-level Python packages that ship with the install.
-include = ["throughline_cli*", "daemon*", "rag_server*", "packs*", "mcp_server*"]
+# Top-level Python packages that ship with the throughline install.
+# `mcp_server*` is excluded here — it ships in the separate
+# `throughline-mcp` PyPI package built from `mcp_server/pyproject.toml`.
+# A user who runs `pip install throughline[mcp]` gets `throughline-mcp`
+# as a transitive dep, so the mcp_server code lands on disk via
+# that path; `pip install throughline` alone gets the OpenWebUI
+# Filter form's runtime + the wizard, but no MCP server.
+include = ["throughline_cli*", "daemon*", "rag_server*", "packs*"]
 # Things that are NOT packages: tests, fixtures, scripts, samples,
-# the standalone Filter file, the docs.
-exclude = ["fixtures*", "tests*", "docs*"]
+# the standalone Filter file, the docs, the separate mcp_server pkg.
+exclude = ["fixtures*", "tests*", "docs*", "mcp_server*"]
 
 [tool.setuptools.package-data]
 # Prompt files + bundled samples ship inside the wheel.

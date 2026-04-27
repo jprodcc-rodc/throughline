@@ -1,0 +1,92 @@
+# throughline-mcp — MCP server form of throughline.
+#
+# Phase 1.5 packaging split (per private/MCP_SCAFFOLDING_PLAN.md
+# § 1.2). Builds an independent `throughline-mcp` PyPI wheel from
+# the same git repo as `throughline`. Same source tree; just a
+# second metadata declaration so users can:
+#
+#     pip install throughline-mcp
+#
+# in one line and have throughline + fastmcp pulled as dependencies
+# automatically. Replaces the Phase 1 `pip install throughline[mcp]`
+# extras path, which is kept for backward compat for one minor cycle
+# (see root pyproject.toml).
+#
+# Build:
+#     python -m build mcp_server/
+# Produces dist/throughline_mcp-X.Y.Z-py3-none-any.whl plus an sdist.
+#
+# Layout note: the actual Python package code lives at
+# `<repo-root>/mcp_server/{__init__,__main__,server,config,...}.py`.
+# Setuptools' `packages.find` is told `where=[".."]` so the build
+# process picks up the mcp_server package by walking up from this
+# pyproject.toml's directory to the repo root.
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "throughline-mcp"
+version = "0.1.0"
+description = "MCP server for throughline — save_conversation / recall_memory / list_topics tools for Claude Desktop, Claude Code, Cursor, Continue.dev, and any other MCP-aware client."
+readme = "README.md"
+requires-python = ">=3.11"
+# License is MIT (same as parent throughline). Setuptools refuses
+# `file = "../LICENSE"` cross-directory references for security
+# reasons; the MIT classifier below carries the legal signal and
+# `LICENSE` is in the parent throughline package's wheel.
+authors = [
+    { name = "jprodcc-rodc" },
+]
+keywords = [
+    "mcp", "model-context-protocol", "claude-desktop", "ai-memory",
+    "obsidian", "rag", "personal-knowledge-management",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+# Hard deps:
+#   - throughline: shared core (daemon paths, taxonomy, config). The
+#     mcp_server package imports from `mcp_server.config` which
+#     mirrors daemon paths — no actual `daemon.*` imports happen
+#     during MCP runtime, BUT taxonomy_reader DOES import
+#     `daemon.taxonomy.VALID_X_SET` at list_topics call time, so
+#     `throughline` must be installed for list_topics to work.
+#   - fastmcp: the MCP SDK we picked (locked decision Q12.A).
+dependencies = [
+    "throughline >= 0.2.0",
+    "fastmcp >= 0.4",
+]
+
+[project.urls]
+Homepage      = "https://github.com/jprodcc-rodc/throughline"
+Repository    = "https://github.com/jprodcc-rodc/throughline"
+Documentation = "https://github.com/jprodcc-rodc/throughline/blob/main/docs/MCP_SETUP.md"
+Issues        = "https://github.com/jprodcc-rodc/throughline/issues"
+Changelog     = "https://github.com/jprodcc-rodc/throughline/blob/main/CHANGELOG.md"
+
+[project.scripts]
+# Convenience entry point so users can run the MCP server without
+# remembering `python -m mcp_server`.
+throughline-mcp = "mcp_server.__main__:main"
+
+# =========================================================
+# setuptools — package discovery
+# =========================================================
+[tool.setuptools.packages.find]
+# Walk up from this pyproject.toml's directory (mcp_server/) to the
+# repo root, then include the mcp_server package tree from there.
+where = [".."]
+include = ["mcp_server*"]
+exclude = []

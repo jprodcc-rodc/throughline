@@ -37,14 +37,22 @@ to prompt-engineer.
 Before configuring your MCP client, throughline must be installed
 and the supporting daemons running:
 
-1. **Install throughline + the MCP extras**:
+1. **Install throughline + throughline-mcp**:
 
    ```bash
    git clone https://github.com/jprodcc-rodc/throughline.git
    cd throughline
    python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-   pip install -e .[mcp]
+   pip install -e .                                     # base: daemon + RAG server + wizard
+   pip install -e mcp_server                            # MCP server: throughline-mcp + fastmcp
    ```
+
+   Once `throughline-mcp` is on PyPI (planned for v0.3): a single
+   `pip install throughline-mcp` will pull both packages plus
+   `fastmcp` automatically. The `[mcp]` extras flag on the parent
+   `throughline` package routes through the same dependency for
+   backward compat (`pip install throughline[mcp]`
+   ⇒ throughline-mcp installed transitively).
 
 2. **Run the wizard once** (sets up `~/.throughline/config.toml`,
    creates `~/throughline_runtime/sources/openwebui_raw/` and
@@ -201,8 +209,10 @@ per-domain counts (cached for 60s).
 
 ### `python -m mcp_server requires fastmcp`
 
-You missed `pip install -e .[mcp]`. Run it; fastmcp is the only
-new dep MCP form adds on top of the regular install.
+You missed `pip install -e mcp_server` (or `pip install throughline-mcp`
+once PyPI publish lands). fastmcp comes as a transitive dep of the
+throughline-mcp package; you should never need to install it
+yourself.
 
 ### Tool calls return `{"_status": "error", "_message": "rag_server unreachable..."}`
 

@@ -15,6 +15,47 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Changed — Phase 1.5 PyPI split (2026-04-28)
+- **`throughline-mcp` is now its own PyPI package.** New
+  `mcp_server/pyproject.toml` defines an independent
+  `throughline-mcp` package built from the same git repo. Install
+  becomes a single line once published: `pip install throughline-mcp`
+  (auto-pulls `throughline >= 0.2.0` + `fastmcp >= 0.4`).
+- The parent `throughline` package no longer bundles the
+  `mcp_server` Python package directly — it's excluded from
+  `setuptools.packages.find` to prevent two wheels claiming the
+  same files. Verified via build inspection: the throughline-0.2.0
+  wheel contains 0 mcp_server files; the throughline_mcp-0.1.0
+  wheel contains all 11 of them.
+- The `pip install throughline[mcp]` extras flag still works for
+  backward compat — its dependency rewires to `throughline-mcp >= 0.1`
+  (was `fastmcp >= 0.4`), so users running the extras command get
+  the new package transitively.
+- New `throughline-mcp` console script: `throughline-mcp` invokes
+  `mcp_server.__main__:main` directly. Claude Desktop /
+  Continue.dev configs can use just `"command": "throughline-mcp"`
+  instead of `"command": "python", "args": ["-m", "mcp_server"]`.
+- Same git repo, same source tree, no file moves. Phase 1.5 is
+  pure packaging metadata.
+
+### Fixed — adapter→daemon H1/H2 role-marker contract (2026-04-28)
+- `throughline_cli/adapters/common.py:render_markdown` was emitting
+  H1 capitalised (`# User` / `# Assistant`); the daemon's
+  `_MSG_SPLIT_RE` parser at `daemon/refine_daemon.py:853` only
+  matches H2 lowercase (`^## (user|assistant)\s*$`). Result: every
+  ChatGPT / Claude / Gemini export imported through the adapter
+  path silently produced raw .md files the daemon couldn't parse —
+  slicer saw zero messages, conversations refined to nothing.
+- Fix: `render_markdown` now writes `## user` / `## assistant`,
+  matching the daemon's actual parser. Existing test that asserted
+  the H1 format (locking in the bug) updated to assert H2.
+- Regression suite: new `fixtures/v0_2_0/test_adapter_to_daemon.py`
+  with 7 tests that round-trip through the actual `render_markdown`
+  → `_parse_messages` path. Catches future drift immediately.
+- User-facing impact: any raw .md files written by the broken
+  adapter (if any) need re-import to parse correctly. The simplest
+  path is rerunning `python -m throughline_cli import <source>`.
+
 ### Added — MCP server (Phase 1, 2026-04-27)
 - **`mcp_server/` package — Phase 1 complete.** New top-level Python
   package alongside `daemon/` / `rag_server/` / `throughline_cli/`,
