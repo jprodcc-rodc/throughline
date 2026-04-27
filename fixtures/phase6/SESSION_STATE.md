@@ -2,11 +2,20 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-27 (evening — MCP Phase 1 Week 1 commit
-1 shipped) — `5776f3d` lands `mcp_server/` package scaffolding
-stubs. 1260 → 1301 tests passing. Pure additive: zero shared core
-touched per private/MIGRATION_AUDIT.md sweep. Afternoon strategy
-clarification still load-bearing — read `private/PLAN_90D.md` FIRST.
+**Last updated:** 2026-04-28 EOD+1 — Phase 2 Reflection Layer
+**user-facing surface 100% complete**. 12 Phase 2 commits shipped
+through `638f3ec`; all 3 new MCP tools real (find_open_threads /
+check_consistency / get_position_drift), 8-stage Reflection Pass
+daemon implemented (stage 6 + 7 still LLM-stub). 1455 → ~1690
+tests pass. **0 vault file mutations** (writeback is preview-only;
+real write is gated commit). **0 real LLM API calls fired** (mock
+clients throughout; real validation deferred until working API key).
+
+For Phase 2 implementation log + remaining work, scroll to the
+"🆕 Phase 2 implementation wave (2026-04-28)" section below or
+read `private/TODO.md`.
+
+Earlier session anchors retained for archival continuity.
 
 **Today's arc (2026-04-27):**
 1. Morning — re-read external dual-track briefs in user Downloads/
@@ -64,6 +73,113 @@ recalibration" wave below): 4-criteria → 2-criteria. Now: MCP
 basic stable + topic clustering accuracy ≥75% on author's vault.
 Clustering experiment harness shipped (`b54b9a3`); ready for user
 to run gate against real vault data.
+
+---
+
+## 🆕 Phase 2 implementation wave (2026-04-28 → 2026-04-28+1)
+
+**12 commits in one extended session, all pushed to origin/main.**
+
+After the engineering gate cleared 2026-04-28 at 0.975 pairwise
+accuracy (best threshold 0.70 against the maintainer's translated
+450-card sample of `S:/obsidian/Rodc/Rodc`), Phase 2 implementation
+proceeded incrementally. Each commit independently testable;
+state-file-mediated architecture lets MCP tools work end-to-end
+even before LLM-using stages fire.
+
+```
+06da259  Phase 2 commit 1: 3 MCP tool stubs (find_open_threads /
+                            check_consistency / get_position_drift)
+e4548e6  Phase 2 commit 2: docs/POSITION_METADATA_SCHEMA.md (~600 lines)
+f99cf59  Phase 2 commit 3: daemon/reflection_pass.py scaffolding
+411a01a  schema addendum: real-vault calibration (3 deltas surfaced)
+d972c4b  Phase 2 commit 4: daemon/card_body_parser.py (bilingual)
+3be15bd  Phase 2 commit 5: stage 1.5 reflectable filter (slice_id /
+                            managed_by → 72/2477 cards on real vault)
+97920d1  Phase 2 commit 6 (B): stage 3 cluster canonicalization +
+                                mcp_server/llm_namer.py
+ab2ae3f  Phase 2 commit 7 (C): stage 4 Path A back-fill +
+                                mcp_server/llm_extractor.py
+d7f007d  Phase 2 commit 8 (D): stage 5 open thread detection +
+                                find_open_threads MCP tool 真实现
+69b7326  Phase 2 commit 9 (E): stage 8 writeback PREVIEW (no
+                                vault mutation)
+dbd2bde  Phase 2 commit 10 (F): check_consistency + get_position_drift
+                                MCP tools 真实现 +
+                                reflection_positions.json
+638f3ec  Phase 2 commit 11: ROADMAP / CHANGELOG / README sync
+```
+
+**Reflection Pass 8-stage architecture (production):**
+
+```
+Stage 1   load + frontmatter parse                     real
+Stage 1.5 reflectable filter (slice_id || managed_by)  real
+Stage 2   cluster via bge-m3 (rag_server)              real
+Stage 3   cluster name canonicalization                real (LLM, opt-in)
+Stage 4   Path A back-fill (claim_summary + open Qs)   real (LLM, opt-in)
+Stage 5   open-thread detection (token-overlap)        real (no LLM)
+Stage 6   contradiction detection                      stub
+Stage 7   drift segmentation                           stub
+Stage 8   frontmatter writeback                        preview only
+```
+
+**State files** (under `$THROUGHLINE_STATE_DIR/`):
+- `reflection_pass_state.json` — per-pass watermark
+- `reflection_cluster_names.json` — cluster_signature → name cache
+- `reflection_backfill_state.json` — `path|mtime` → essence cache
+- `reflection_open_threads.json` — feeds find_open_threads MCP tool
+- `reflection_positions.json` — feeds check_consistency + get_position_drift
+- `reflection_writeback_preview.json` — what would be written to vault
+
+**Code modules added:**
+- `daemon/reflection_pass.py` (orchestration + stages)
+- `daemon/card_body_parser.py` (bilingual section parser)
+- `daemon/open_threads.py` (CJK bigram tokenizer + matcher)
+- `daemon/writeback.py` (frontmatter assembly, preview-only)
+- `mcp_server/llm_namer.py` (cluster naming HTTP client)
+- `mcp_server/llm_extractor.py` (back-fill HTTP client)
+- `mcp_server/position_state.py` (shared state-file readers + matcher)
+
+**Public docs added/updated:**
+- NEW: `docs/POSITION_METADATA_SCHEMA.md` (~700 lines, includes
+  vault-format addendum calibrated against author vault)
+- NEW: `docs/REFLECTION_LAYER_DESIGN.md` (440 lines; created
+  in earlier wave but lives load-bearing now)
+- `ROADMAP.md` Reflection Layer marked ✅ shipped under v0.3
+- `CHANGELOG.md` [Unreleased] gets full Phase 2 entry
+- `README.md` at-a-glance: 6 MCP tools enumerated; LOC + test
+  count refreshed
+
+**Real-vault dry-run output (no LLM enabled):**
+
+```
+cards scanned:                2477
+cards reflectable:            72   ← 63 slice_id + 9 managed_by
+cards excluded (logs/drafts): 2405
+cards clustered:              72
+clusters formed:              24
+cards with position_signal:   0    ← back-fill not run
+open threads detected:        0    ← needs back-fill data first
+cards updated:                0    ← preview only
+```
+
+**Real-vault total LLM cost (when user authorizes):**
+- Stage 3 cluster naming: $0.000353 (24 clusters × gemini-2.5-flash)
+- Stage 4 back-fill: $0.0097 (72 cards, one-time, mtime-cached)
+- **Total: ~$0.01 / ¥0.07 per full pass**
+
+**Currently blocked on:** working OpenRouter / OpenAI-compatible
+API key. The Windows env's OPENAI_API_KEY returned 401
+"User not found" against OpenRouter — key rotated/expired. Real
+LLM validation deferred until a working key is provisioned.
+The Mac's `refine_thinker_daemon_v9.py` continues running with
+its own OPENROUTER_API_KEY (valid, but in launchd env, not
+SSH-reachable due to TCC scope).
+
+**Test coverage:** 1455 → ~1690 (drift ±30 from pytest
+parametrize collection variance). 1 skipped (fastmcp install
+gate), 10 xfailed (intentional pre-existing).
 
 ---
 

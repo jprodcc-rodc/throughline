@@ -1,7 +1,19 @@
 # Reflection Layer — design
 
-**Status:** v0.3 will deliver (engineering gated by topic-clustering
-accuracy on author's vault ≥75%).
+**Status (2026-04-28):** v0.3 in progress. **Engineering gate
+cleared at 0.975 pairwise clustering accuracy on author's vault**
+(target was ≥75%). All three MCP tools real implementations
+(`find_open_threads` / `check_consistency` / `get_position_drift`)
+reading state files written by `daemon/reflection_pass.py`.
+Reflection Pass orchestrates an 8-stage pipeline; stages 6
+(LLM contradiction judgment) and 7 (LLM drift segmentation) remain
+stubs — tool surfaces work without them, the host LLM does the
+last-mile semantic judgment in conversation.
+
+For implementation details see
+[`docs/POSITION_METADATA_SCHEMA.md`](POSITION_METADATA_SCHEMA.md)
+§ "Implementation milestones".
+
 **Why this doc exists:** the Reflection Layer is throughline's core
 differentiator post-v0.2.x. This doc explains what it is, what it
 isn't, and why it's a different category of product than the

@@ -456,23 +456,56 @@ Each milestone is a separate commit; this doc gates none of them
 individually but should be reviewed when any milestone touches
 schema-shape decisions.
 
-1. **Schema doc (this commit).** Locks shape. No code change.
-2. **Reflection Pass daemon scaffolding.** Empty pass; reads
-   schema; writes nothing. Subsequent commit.
-3. **Topic cluster canonicalization.** Daemon labels clusters via
-   LLM; writes `topic_cluster` to cards. Builds on commit 2.
-4. **Open thread detection.** Daemon writes
-   `reflection.status: open_thread`. Wires `find_open_threads`
-   tool to query.
-5. **Path A back-fill.** Daemon infers `position_signal` for
-   legacy cards.
-6. **Refiner prompt updates** (8 variants, separate per-variant
-   commits with fixtures).
-7. **Contradiction detection.** Daemon writes
-   `reflection.contradicts`. Wires `check_consistency`.
-8. **Drift trajectory.** Daemon writes `reflection.drift_phase`.
-   Wires `get_position_drift`.
-9. **End-to-end smoke test** on author's vault. Pass.
+1. ✅ **Schema doc.** Locks shape. (`e4548e6`)
+2. ✅ **Reflection Pass daemon scaffolding.** Empty pass + frontmatter
+   parse + vault walk + state-file plumbing. (`f99cf59`)
+3. ✅ **Topic cluster canonicalization.** Daemon labels clusters via
+   LLM (opt-in); persists cluster_signature → name cache.
+   (`97920d1`, commit B)
+4. ✅ **Open thread detection.** Daemon writes
+   `_open_thread` + `_open_thread_questions` in-memory; serializes
+   to `reflection_open_threads.json`. `find_open_threads` MCP tool
+   reads the state file. (`d7f007d`, commit D)
+5. ✅ **Path A back-fill.** Daemon LLM-extracts claim_summary +
+   open_questions per legacy card (opt-in); persists `path|mtime`
+   → essence cache. (`ab2ae3f`, commit C)
+6. ☐ **Refiner prompt updates** (8 variants × 13 fixtures = 104
+   test cases). Spec captured in this doc § "Refiner prompt
+   modification spec"; not yet implemented.
+7. ☐ **Contradiction detection.** LLM judgment on stance pairs
+   in same cluster. Tool surface for `check_consistency` is
+   ALREADY shipped reading `reflection_positions.json`; stage 7
+   when implemented enriches that file. (`dbd2bde` shipped the
+   tool, `_stage_detect_contradictions` remains stub.)
+8. ☐ **Drift trajectory.** LLM segmentation of stance phases.
+   Tool surface for `get_position_drift` is ALREADY shipped;
+   stage 7 when implemented enriches the state file. (`dbd2bde`
+   shipped the tool, `_stage_compute_drift` remains stub.)
+9. ☐ **End-to-end smoke test** on author's vault with real LLM.
+   Currently blocked on a working OPENROUTER_API_KEY; mock-test
+   coverage stands in. The 12-commit Phase 2 series ships
+   without firing a single real LLM call.
+
+**Bonus milestones not in original plan but landed:**
+
+- ✅ **Reflectable filter (stage 1.5).** Excludes 2,405 / 2,477
+  vault files (system logs, profile drafts, no-frontmatter notes)
+  from Reflection Pass. Only cards with `slice_id` or
+  non-empty `managed_by` participate. (`3be15bd`)
+- ✅ **Card body section parser.** Bilingual headers (English-only
+  + Chinese-emoji-English + Chinese-only). 80.4% real-vault
+  coverage on frontmatter cards / 100% on slicer-output cards.
+  (`d972c4b`)
+- ✅ **Vault-format addendum.** Real-vault calibration; see
+  § "Vault format addendum" below. (`411a01a`)
+- ✅ **Stage 8 writeback preview.** Computes diff per card; writes
+  preview JSON; **never mutates vault files**. Real atomic
+  frontmatter rewrite is gated to a future commit. (`69b7326`)
+- ✅ **All 3 MCP tools real impl.** check_consistency +
+  get_position_drift wired to `reflection_positions.json`.
+  Phase 2 user-facing surface complete. (`dbd2bde`)
+- ✅ **Public-docs sync.** ROADMAP, CHANGELOG, README reflect
+  Phase 2 ship state. (`638f3ec`)
 
 Order is deliberate: schema → daemon foundation → cluster names →
 open threads (smallest end-to-end loop) → back-fill → contradiction

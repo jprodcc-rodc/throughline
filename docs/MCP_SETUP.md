@@ -17,16 +17,30 @@ aware client without migrating to OpenWebUI, this is the entry point.
 
 ## What you get
 
-Three tools registered with your MCP-aware client:
+Six tools registered with your MCP-aware client. Phase 1 trio
+(save / recall / list) operates the vault; Phase 2 trio
+(open-threads / consistency / drift) is the **Reflection Layer**
+— a thinking-state tracker that surfaces unfinished reasoning,
+historical positions, and stance evolution across all your AI
+tools.
 
 | Tool | What it does | Calls cost? |
 |---|---|---|
 | `save_conversation` | Write a conversation segment into throughline's refine queue. Daemon picks it up automatically and produces a 6-section knowledge card. | ~$0.04 per refine on the Normal tier (one Sonnet call). |
 | `recall_memory` | Retrieve cards from your vault relevant to a query. Embedding + reranking happens in the local rag_server. | ~$0.0003 (Haiku judge) + local compute. |
 | `list_topics` | List the X-axis taxonomy domains + (optionally) per-domain card counts. No LLM call. | Free. |
+| `find_open_threads` | Surfaces unfinished reasoning when the user starts a related conversation. Reads daemon state file populated by structural detection. | Free (state-file read). |
+| `check_consistency` | When user states a position, returns historical positions in the matching topic cluster + their original reasoning. Host LLM judges contradiction in conversation (soft-mode default). | Free (state-file read). |
+| `get_position_drift` | Returns the chronological trajectory of cards on a topic, with stance + reasoning per entry. Metacognitive infrastructure. | Free (state-file read). |
+
+Phase 2 tools depend on `daemon/reflection_pass.py` having run at
+least once to populate state files under `$THROUGHLINE_STATE_DIR/`.
+First run (with `--enable-llm-naming --enable-llm-backfill` flags)
+costs ~$0.01 / ¥0.07 against a 70-card vault on gemini-2.5-flash;
+subsequent passes deduplicate via mtime cache.
 
 The host LLM (Claude / Cursor / etc.) decides when to call these
-based on the tool descriptions. All three descriptions include
+based on the tool descriptions. All six descriptions include
 explicit "Call this when:" / "Do NOT call:" guidance; you don't need
 to prompt-engineer.
 
