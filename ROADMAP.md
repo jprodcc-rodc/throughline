@@ -33,11 +33,6 @@ hygiene.
 
 ### v0.3 will deliver
 
-- **MCP server adapter** — expose retrieval (and optionally refine
-  status) over the Model Context Protocol so any MCP-aware client
-  (Claude Desktop, Cursor, etc.) can pull from the same vault
-  without OpenWebUI in the loop. Closes the "tightly coupled to
-  OpenWebUI" feedback in external review.
 - **OpenAI-compatible proxy adapter** — a small FastAPI proxy that
   exposes `/v1/chat/completions` and injects throughline RAG before
   forwarding to the user's actual LLM provider. Lets any OpenAI-SDK
@@ -150,6 +145,24 @@ the deltas:
 - **Wizard UX wave** — questionary arrow-key picker, rich spinner,
   hierarchical step-16 summary tree, back navigation, provider/key
   hard-block, universal "Other" model escape hatch.
+- **MCP server (Phase 1)** — `mcp_server/` package exposing three
+  tools (`save_conversation` / `recall_memory` / `list_topics`) over
+  stdio so any MCP-aware client (Claude Desktop / Claude Code /
+  Cursor / Continue.dev) can reach the throughline vault without
+  migrating to OpenWebUI. `pip install -e .[mcp]`; setup at
+  [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md). Shipped in:
+  - `5776f3d` — scaffolding + 3 tool stubs + 14 tests
+  - `ea62907` — `save_conversation` real impl (writes raw .md
+    into daemon queue with defensive turn-shape coercion)
+  - `b306312` — `recall_memory` real impl (HTTP client to localhost
+    rag_server `/v1/rag` with typed errors + domain filter +
+    personal context surfacing)
+  - `2bd9051` — `list_topics` real impl (taxonomy + vault scanner
+    with 60s cache)
+
+  Phase 2 reflection-layer tools (Open Threads / Contradiction
+  Surfacing / Drift Detection) remain dogfood-gated; design sketch
+  in `private/` strategy docs, NOT in the public ROADMAP yet.
 
 ---
 

@@ -211,6 +211,43 @@ above the reply.
 
 ---
 
+## 🔌 Access points — Filter form vs MCP server form
+
+The same vault + daemon + RAG server can be reached two different
+ways. Pick whichever matches the chat client you actually use.
+
+### Form A — OpenWebUI Filter (the original delivery surface)
+
+A single `filter/openwebui_filter.py` paste-into-Admin install. Runs
+in-band with every chat turn, surfaces a status badge above each
+reply, supports `/recall` / `/forget` / `@pte` slash commands. Best
+for: heavy OpenWebUI users who want context injected automatically.
+Setup is the wizard flow above.
+
+### Form B — MCP server (Claude Desktop / Code / Cursor / Continue.dev)
+
+A `mcp_server/` package exposing three tools (`save_conversation` /
+`recall_memory` / `list_topics`) over stdio. Best for: users who
+already work in Claude Desktop / Cursor / Continue.dev and don't
+want to migrate to OpenWebUI. Setup:
+
+```bash
+pip install -e .[mcp]              # adds fastmcp dep on top of base install
+# Then add 5 lines to ~/Library/Application Support/Claude/claude_desktop_config.json
+# (or the Windows / Linux / Cursor / Continue equivalent)
+```
+
+Full per-client config + troubleshoot in
+[`docs/MCP_SETUP.md`](docs/MCP_SETUP.md).
+
+**Both forms write to the same vault**, share the same daemon and
+rag_server, share the same Qdrant collection. Running both at once
+is a supported configuration; conversations saved through MCP get
+refined by the daemon and become recallable from the Filter, and
+vice versa.
+
+---
+
 ## 💰 Cost expectations
 
 throughline costs whatever your chosen LLM / embedder / reranker

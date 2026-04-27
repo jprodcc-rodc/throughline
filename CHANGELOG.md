@@ -15,31 +15,50 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
-### Added — MCP server scaffolding (2026-04-27)
-- **`mcp_server/` package, Phase 1 scaffolding stubs.** New top-level
-  Python package alongside `daemon/` / `rag_server/` / `throughline_cli/`.
-  Three tools registered with the verbose call-when / do-NOT-call
-  guidance the host LLM uses to decide when to fire: `save_conversation`
-  (writes raw .md into the daemon's refine queue),
-  `recall_memory` (HTTP client of localhost rag_server `/v1/rag`),
-  `list_topics` (taxonomy domain listing). All three return placeholder
-  shapes for now — real logic lands in subsequent commits per the
-  Week 1-3 plan in `private/MCP_SCAFFOLDING_PLAN.md`.
-  - `pyproject.toml` adds `[mcp]` extras: `pip install -e .[mcp]`.
-  - `python -m mcp_server` is the stdio entry point; absent `fastmcp`
-    install it prints a clear hint and exits 1 (locked decision Q2:
-    fail-with-message, never auto-install).
-  - 14 new scaffolding smoke tests + 1 fastmcp-gated test verify
-    structure: imports work without fastmcp, all 3 tool signatures
-    match the schema in MCP_SCAFFOLDING_PLAN § 3, every docstring
-    contains both "Call this when:" and "Do NOT call:" guidance per
-    locked decision Q3.
-  - **No existing code modified** — scaffolding is purely additive.
-    1260 → 1301 tests, all passing.
-  - Architectural rationale + locked design decisions live in
-    `private/MCP_SCAFFOLDING_PLAN.md`; MIGRATION_AUDIT classifies
-    every existing module's relationship to MCP work in
-    `private/MIGRATION_AUDIT.md`. Both files are gitignored.
+### Added — MCP server (Phase 1, 2026-04-27)
+- **`mcp_server/` package — Phase 1 complete.** New top-level Python
+  package alongside `daemon/` / `rag_server/` / `throughline_cli/`,
+  exposing three tools over MCP stdio so any MCP-aware host
+  (Claude Desktop / Claude Code / Cursor / Continue.dev / etc.)
+  can reach the throughline vault without OpenWebUI in the loop.
+  Setup at [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md).
+  - `save_conversation(text, title?, source, wait_for_refine?)` —
+    writes a timestamped .md to `$THROUGHLINE_RAW_ROOT/YYYY-MM/`
+    in the daemon's expected `## user` / `## assistant` H2
+    format, with defensive turn-shape coercion handling 4 input
+    shapes (H2 canonical / H1 capitalised / `User:` prefix /
+    free prose). Daemon's existing watchdog picks up automatically.
+    25 tests.
+  - `recall_memory(query, limit?, include_personal_context?, domain_filter?)`
+    — HTTP client to localhost rag_server `/v1/rag` (or
+    `THROUGHLINE_RAG_URL` override). Three typed exceptions for
+    clear error UX: server unreachable (most common: rag_server
+    not running), server-side error, malformed response. Maps
+    rag_server's response to the documented MCP shape. Honors
+    `include_personal_context=True` by setting `pp_boost=1.0` and
+    surfacing personal_persistent cards as a concatenated string.
+    Domain filter applied client-side via X-axis tag prefix match.
+    27 tests.
+  - `list_topics(prefix?, include_card_counts?)` — reads active
+    `daemon.taxonomy.VALID_X_SET` (33 default domains; user override
+    at `config/taxonomy.py` honoured via the daemon's existing
+    resolution chain) + optionally walks vault for per-domain
+    counts. 60s in-process cache to avoid re-walking on every call.
+    23 tests.
+  - `pyproject.toml` adds `[mcp]` extras (`fastmcp >= 0.4`):
+    `pip install -e .[mcp]`.
+  - `python -m mcp_server` is the stdio entry point; absent
+    `fastmcp` install it prints a clear hint and exits 1 (locked
+    decision Q2: fail-with-message, never auto-install).
+  - **No existing code modified** — Phase 1 is purely additive
+    (~770 LOC code + ~1,000 LOC tests). 1260 → 1372 tests.
+  - Architectural decisions + 6 locked design choices in
+    `private/MCP_SCAFFOLDING_PLAN.md` (gitignored). Pre-implementation
+    audit at `private/MIGRATION_AUDIT.md` confirmed 99% of existing
+    33,700 LOC is shared core that needs zero changes for MCP form.
+    Phase 1.5 (post-dogfood, ~½ day) splits `mcp_server/` into an
+    independent `throughline-mcp` PyPI package from the same git
+    repo for cleaner one-line install (`pip install throughline-mcp`).
 
 ### Added — post-v0.2.0 ship-and-iterate wave (2026-04-26)
 - **LanceDB** is now a first-class `VECTOR_STORE` backend alongside
