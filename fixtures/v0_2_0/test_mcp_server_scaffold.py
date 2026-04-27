@@ -158,15 +158,20 @@ def test_save_conversation_returns_dict_with_status():
     assert result["_status"] in {"ok", "error"}  # not "stub" anymore
 
 
-def test_recall_memory_stub_returns_dict():
-    """recall_memory is still a stub as of Week 1; flips when
-    Week 2 commit lands."""
+def test_recall_memory_returns_dict_with_status():
+    """recall_memory has its real implementation as of Phase 1 Week
+    2 commit 3 (rag_client + tool wired). This smoke check just
+    ensures the tool surface returns a dict with the contractual
+    fields. Comprehensive behaviour tests in
+    test_mcp_server_recall_memory.py.
+    """
     from mcp_server.tools import recall_memory
 
-    result = recall_memory(query="test")
+    # Empty query → predictable error path, no network side effects
+    result = recall_memory(query="")
     assert isinstance(result, dict)
     assert "cards" in result
-    assert result["_status"] == "stub"
+    assert result["_status"] in {"ok", "error"}  # not "stub" anymore
 
 
 def test_list_topics_stub_returns_dict():
