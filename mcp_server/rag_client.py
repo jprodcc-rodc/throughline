@@ -65,6 +65,77 @@ def get_base_url() -> str:
     return os.environ.get("THROUGHLINE_RAG_URL", DEFAULT_BASE_URL).rstrip("/")
 
 
+def embed_batch(
+    texts: list[str],
+    base_url: Optional[str] = None,
+    timeout: int = DEFAULT_TIMEOUT_SECONDS,
+) -> list[list[float]]:
+    """Call rag_server `/v1/embeddings` for a batch of strings.
+    Returns one embedding vector per input string in the same order.
+
+    Used by the topic-clustering experiment harness — not on the
+    MCP request hot path (recall_memory delegates the embed step
+    server-side via /v1/rag).
+
+    Raises:
+        RAGServerUnreachable: rag_server isn't running.
+        RAGServerError: rag_server returned a non-200.
+        RAGResponseMalformed: response shape unexpected.
+    """
+    if not texts:
+        return []
+
+    url = (base_url or get_base_url()) + "/v1/embeddings"
+    payload = {"input": texts, "model": "bge-m3"}
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            status = resp.status
+            raw = resp.read()
+    except urllib.error.URLError as exc:
+        raise RAGServerUnreachable(
+            f"rag_server unreachable at {url}: {exc.reason}"
+        ) from exc
+    except (TimeoutError, OSError) as exc:
+        raise RAGServerUnreachable(
+            f"rag_server timeout at {url}: {exc}"
+        ) from exc
+    if status != 200:
+        raise RAGServerError(f"rag_server returned HTTP {status}")
+    try:
+        data = json.loads(raw.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise RAGResponseMalformed(
+            f"embeddings response not JSON: {exc}"
+        ) from exc
+    # OpenAI-compatible shape: {"data": [{"embedding": [...]}, ...]}
+    items = data.get("data") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        raise RAGResponseMalformed(
+            "embeddings response missing `data` list"
+        )
+    out: list[list[float]] = []
+    for item in items:
+        vec = item.get("embedding") if isinstance(item, dict) else None
+        if not isinstance(vec, list):
+            raise RAGResponseMalformed(
+                "embeddings response missing `embedding` per item"
+            )
+        out.append([float(x) for x in vec])
+    if len(out) != len(texts):
+        raise RAGResponseMalformed(
+            f"embeddings response length mismatch: "
+            f"got {len(out)}, expected {len(texts)}"
+        )
+    return out
+
+
 def search(
     query: str,
     limit: int = 5,
