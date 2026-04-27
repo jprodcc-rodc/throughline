@@ -150,6 +150,15 @@ card structure → live-LLM preview of your first card with optional
 5-dial tuning → taxonomy strategy → daily USD cap → summary + run
 import.
 
+> Why 16 steps and not 5: each one is a decision the user actually
+> needs to control (vector DB / provider / privacy / refine tier /
+> card structure / taxonomy / budget). A 5-step wizard would have
+> to lump these into "everything else" buckets — and lose every
+> reviewer who picks `chroma` for the vector store but then can't
+> change which prompt family their refiner uses. Full reasoning +
+> the back-nav / `--reconfigure` / `--dry-run` / pairwise-coverage
+> design in [`docs/WIZARD_DESIGN.md`](docs/WIZARD_DESIGN.md).
+
 ### Re-run, health-check, sample
 
 ```bash
