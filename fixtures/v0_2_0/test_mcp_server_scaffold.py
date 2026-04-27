@@ -134,19 +134,33 @@ def test_tool_docstring_has_do_not_call_guidance(tool_name):
     )
 
 
-# ---------- Stub return shape (Phase 1) ----------
+# ---------- Tool return shape (Phase 1) ----------
+#
+# Each tool returns a dict with a `_status` field. Implemented tools
+# return "ok" / "error" depending on outcome; tools still scaffolded
+# return "stub". As Phase 1 commits land, more of these flip from
+# "stub" to "ok"|"error". Comprehensive per-tool behaviour tests
+# live in their own file (e.g. test_mcp_server_save_conversation.py).
 
-def test_save_conversation_stub_returns_dict():
+
+def test_save_conversation_returns_dict_with_status():
+    """save_conversation has its real implementation as of Phase 1
+    Week 1 commit 2. This smoke check just ensures the tool surface
+    is reachable and returns a dict with the contractual fields.
+    """
     from mcp_server.tools import save_conversation
 
-    result = save_conversation(text="hello world")
+    # Empty text → predictable error path, no env / fs side effects
+    result = save_conversation(text="")
     assert isinstance(result, dict)
     assert "queued" in result
     assert "_status" in result
-    assert result["_status"] == "stub"
+    assert result["_status"] in {"ok", "error"}  # not "stub" anymore
 
 
 def test_recall_memory_stub_returns_dict():
+    """recall_memory is still a stub as of Week 1; flips when
+    Week 2 commit lands."""
     from mcp_server.tools import recall_memory
 
     result = recall_memory(query="test")
@@ -156,6 +170,8 @@ def test_recall_memory_stub_returns_dict():
 
 
 def test_list_topics_stub_returns_dict():
+    """list_topics is still a stub as of Week 1; flips when
+    Week 2 commit lands."""
     from mcp_server.tools import list_topics
 
     result = list_topics()

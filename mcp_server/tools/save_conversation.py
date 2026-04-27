@@ -1,11 +1,25 @@
-"""save_conversation — Phase 1 stub.
+"""save_conversation — Phase 1 Week 1 commit 2 implementation.
 
-Real implementation lands in Week 1 commit 2: writes a timestamped
-.md to `$THROUGHLINE_RAW_ROOT/`, daemon watchdog picks up
-automatically. See `private/MCP_SCAFFOLDING_PLAN.md` § 3.1 for
-the schema and § 7.2 for the defensive turn-shape coercion.
+Writes the conversation as a timestamped .md to `$THROUGHLINE_RAW_ROOT`;
+the daemon's watchdog (`daemon/refine_daemon.py:1955`) picks it up
+automatically and refines it into a 6-section card.
+
+Failure modes handled:
+- RAW_ROOT doesn't exist (daemon never initialized) → return
+  status='error' with a doctor pointer
+- Empty text → return status='error'
+- Filesystem errors (permission, disk full) → return status='error'
+  with the OS error chained
+
+`wait_for_refine` is a Phase 2 polish: would require polling the
+daemon's `state/refine_state.json` (or rag_server `/refine_status`)
+to detect when the card lands. Phase 1 always returns immediately
+with `card_path=None`.
 """
 from __future__ import annotations
+
+from mcp_server.config import get_raw_root
+from mcp_server.daemon_writer import estimate_cost_usd, write_conversation
 
 
 def save_conversation(
@@ -35,29 +49,91 @@ def save_conversation(
 
     Args:
         text: The conversation segment to save. Markdown is
-            preserved. If this is a multi-turn excerpt, format as
-            User: ... / Assistant: ... blocks.
-        title: Optional human-readable title. If omitted, the daemon
-            derives one from the content.
+            preserved. Multi-turn excerpts can be passed as-is in
+            any of these shapes — the writer will normalise:
+            (1) `## user` / `## assistant` H2 headers (canonical),
+            (2) `# User` / `# Assistant` H1 headers,
+            (3) `User:` / `Assistant:` line prefixes,
+            (4) free prose (will be wrapped as a single user turn).
+        title: Optional human-readable title. If omitted, the
+            daemon derives one from the content.
         source: Source label (default 'claude_desktop'). Stored in
             frontmatter for provenance.
         wait_for_refine: If True, block until the daemon has
-            refined and indexed the card (~10-30s). If False
-            (default), return as soon as the raw .md is queued.
+            refined and indexed the card. **Not implemented in
+            Phase 1** — always returns immediately. Reserved for
+            Phase 2.
 
     Returns:
-        dict with keys: queued (bool), raw_path (str),
-        card_path (str | None — only if wait_for_refine=True),
-        estimated_cost_usd (float).
+        On success::
+
+            {
+                "queued": True,
+                "raw_path": "<absolute path of queued .md>",
+                "card_path": None,  # Phase 2: real path when
+                                    # wait_for_refine=True succeeds
+                "estimated_cost_usd": 0.04,
+                "_status": "ok",
+            }
+
+        On error::
+
+            {
+                "queued": False,
+                "raw_path": "",
+                "card_path": None,
+                "estimated_cost_usd": 0.0,
+                "_status": "error",
+                "_message": "...",
+            }
     """
+    if not text or not text.strip():
+        return {
+            "queued": False,
+            "raw_path": "",
+            "card_path": None,
+            "estimated_cost_usd": 0.0,
+            "_status": "error",
+            "_message": "text must be non-empty",
+        }
+
+    raw_root = get_raw_root()
+
+    try:
+        path, conv_id = write_conversation(
+            text=text,
+            raw_root=raw_root,
+            title=title,
+            source=source,
+        )
+    except FileNotFoundError as exc:
+        return {
+            "queued": False,
+            "raw_path": "",
+            "card_path": None,
+            "estimated_cost_usd": 0.0,
+            "_status": "error",
+            "_message": (
+                f"{exc} "
+                "Has throughline been installed? Run "
+                "`python -m throughline_cli doctor` to verify."
+            ),
+        }
+    except OSError as exc:
+        return {
+            "queued": False,
+            "raw_path": "",
+            "card_path": None,
+            "estimated_cost_usd": 0.0,
+            "_status": "error",
+            "_message": f"filesystem error writing to RAW_ROOT: {exc}",
+        }
+
     return {
-        "queued": False,
-        "raw_path": "",
+        "queued": True,
+        "raw_path": str(path),
         "card_path": None,
-        "estimated_cost_usd": 0.0,
-        "_status": "stub",
-        "_message": (
-            "save_conversation is scaffolded but not yet implemented. "
-            "Real logic lands in the next MCP commit (Week 1 commit 2)."
-        ),
+        "estimated_cost_usd": estimate_cost_usd(text),
+        "_status": "ok",
+        "_conv_id": conv_id,
     }
