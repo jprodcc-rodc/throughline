@@ -1111,6 +1111,243 @@ class TestStageWriteback:
         assert card_path.read_text(encoding="utf-8") == original_contents
 
 
+# ---------- Stage 6 (contradictions) — real impl ----------
+
+class TestContradictionStage:
+    """Stage 6 takes a Callable judge; produces per-cluster pair
+    judgments. Cache by (path-pair + stance hash)."""
+
+    def _empty_result(self):
+        from daemon.reflection_pass import PassResult
+        return PassResult(
+            started_at="x", finished_at="y",
+            cards_scanned=0, cards_reflectable=0, cards_excluded=0,
+            cards_with_position_signal=0,
+            cards_clustered=0, clusters_count=0,
+            cluster_names_resolved=0, backfill_completed=0,
+            open_threads_detected=0, contradictions_detected=0,
+            drift_phases_computed=0, cards_updated=0, dry_run=False,
+        )
+
+    def test_no_clusters_skipped(self):
+        from daemon.reflection_pass import _stage_detect_contradictions
+
+        result = self._empty_result()
+        out = _stage_detect_contradictions(
+            {}, result, dry_run=False, judge=lambda e, l, t: {},
+        )
+        assert out == {}
+        assert any("no clusters" in s for s in result.stages_skipped)
+
+    def test_no_judge_skipped(self):
+        from daemon.reflection_pass import _stage_detect_contradictions
+
+        result = self._empty_result()
+        grouped = {"0": [{"path": "a.md", "_backfill": {"claim_summary": "X"}}]}
+        out = _stage_detect_contradictions(
+            grouped, result, dry_run=False, judge=None,
+        )
+        assert out == {}
+        assert any("no judge" in s.lower() for s in result.stages_skipped)
+
+    def test_dry_run_skipped(self):
+        from daemon.reflection_pass import _stage_detect_contradictions
+
+        result = self._empty_result()
+        called = []
+        def judge(e, l, t):
+            called.append(True)
+            return {"is_contradiction": True, "kind": "direct_reversal", "reasoning_diff": ""}
+
+        grouped = {
+            "0": [
+                {"path": "a.md", "frontmatter": {"date": "2026-01-01"},
+                 "_backfill": {"claim_summary": "S1", "reasoning": []}},
+                {"path": "b.md", "frontmatter": {"date": "2026-02-01"},
+                 "_backfill": {"claim_summary": "S2", "reasoning": []}},
+            ]
+        }
+        _stage_detect_contradictions(
+            grouped, result, dry_run=True, judge=judge,
+        )
+        assert called == []
+        assert any("dry-run" in s for s in result.stages_skipped)
+
+    def test_judges_pairs_in_chronological_order(self):
+        from daemon.reflection_pass import _stage_detect_contradictions
+
+        result = self._empty_result()
+        seen = []
+        def judge(early, late, topic):
+            seen.append((early["stance"], late["stance"]))
+            return {
+                "is_contradiction": True,
+                "kind": "direct_reversal",
+                "reasoning_diff": f"{early['stance']} vs {late['stance']}",
+            }
+
+        grouped = {
+            "0": [
+                {"path": "late.md", "frontmatter": {"date": "2026-03-01"},
+                 "_backfill": {"claim_summary": "later", "reasoning": []}},
+                {"path": "early.md", "frontmatter": {"date": "2026-01-01"},
+                 "_backfill": {"claim_summary": "earlier", "reasoning": []}},
+            ],
+        }
+        out = _stage_detect_contradictions(
+            grouped, result, dry_run=False, judge=judge,
+            cluster_names={"0": "topic_x"},
+        )
+        # Pair is (earlier, later), regardless of input order
+        assert seen == [("earlier", "later")]
+        assert "0" in out
+        assert out["0"][0]["card_a"] == "early.md"
+        assert out["0"][0]["card_b"] == "late.md"
+        assert result.contradictions_detected == 1
+
+    def test_cluster_with_only_one_backfilled_skipped(self):
+        from daemon.reflection_pass import _stage_detect_contradictions
+
+        result = self._empty_result()
+        called = []
+        def judge(e, l, t):
+            called.append(True)
+            return {"is_contradiction": False, "kind": "agreement", "reasoning_diff": ""}
+
+        grouped = {
+            "0": [
+                {"path": "a.md", "frontmatter": {"date": "2026-01-01"},
+                 "_backfill": {"claim_summary": "S", "reasoning": []}},
+                {"path": "b.md", "frontmatter": {"date": "2026-02-01"},
+                 "_backfill": {"claim_summary": None, "reasoning": []}},  # no stance
+            ],
+        }
+        _stage_detect_contradictions(
+            grouped, result, dry_run=False, judge=judge,
+        )
+        # Only 1 backfilled → no pairs → judge never called
+        assert called == []
+
+    def test_cache_hit_skips_judge(self):
+        from daemon.reflection_pass import _stage_detect_contradictions
+
+        result = self._empty_result()
+        called = []
+        def judge(e, l, t):
+            called.append(True)
+            return {"is_contradiction": False, "kind": "agreement", "reasoning_diff": "x"}
+
+        # Pre-populate cache so the pair is already judged
+        early_stance = "earlier"
+        sig = f"a.md|b.md|{str(hash(early_stance))[:8]}"
+        prior = {sig: {"is_contradiction": True, "kind": "direct_reversal",
+                       "reasoning_diff": "cached"}}
+
+        grouped = {
+            "0": [
+                {"path": "a.md", "frontmatter": {"date": "2026-01-01"},
+                 "_backfill": {"claim_summary": "earlier", "reasoning": []}},
+                {"path": "b.md", "frontmatter": {"date": "2026-02-01"},
+                 "_backfill": {"claim_summary": "later", "reasoning": []}},
+            ],
+        }
+        out = _stage_detect_contradictions(
+            grouped, result, dry_run=False, judge=judge,
+            judge_state=prior,
+        )
+        # Cache hit
+        assert called == []
+        # Judgment came from cache
+        assert out["0"][0]["is_contradiction"] is True
+        assert out["0"][0]["reasoning_diff"] == "cached"
+
+    def test_judge_failure_isolated(self):
+        from daemon.reflection_pass import _stage_detect_contradictions
+
+        result = self._empty_result()
+        def judge(e, l, t):
+            if "broken" in e["stance"]:
+                raise RuntimeError("LLM 500")
+            return {"is_contradiction": False, "kind": "agreement", "reasoning_diff": "x"}
+
+        grouped = {
+            "0": [
+                {"path": "broken.md", "frontmatter": {"date": "2026-01-01"},
+                 "_backfill": {"claim_summary": "broken stance", "reasoning": []}},
+                {"path": "ok1.md", "frontmatter": {"date": "2026-02-01"},
+                 "_backfill": {"claim_summary": "ok stance 1", "reasoning": []}},
+                {"path": "ok2.md", "frontmatter": {"date": "2026-03-01"},
+                 "_backfill": {"claim_summary": "ok stance 2", "reasoning": []}},
+            ],
+        }
+        out = _stage_detect_contradictions(
+            grouped, result, dry_run=False, judge=judge,
+        )
+        # 3 cards = 3 pairs (broken-ok1, broken-ok2, ok1-ok2)
+        # First two fail; third succeeds
+        assert any("naming failed" in e or "judge failed" in e
+                   for e in result.errors)
+        # Output has the 1 successful judgment
+        assert "0" in out
+        assert len(out["0"]) == 1
+
+
+# ---------- run_pass plumbing for stage 6 ----------
+
+class TestRunPassJudgeIntegration:
+    def test_judge_passed_through(self, tmp_path):
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        # Two cards in same domain
+        (tmp_path / "10_Tech" / "a.md").write_text(
+            "---\ntitle: A\nslice_id: aa\ndate: 2026-01-01\n---\nbody\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "10_Tech" / "b.md").write_text(
+            "---\ntitle: B\nslice_id: bb\ndate: 2026-02-01\n---\nbody\n",
+            encoding="utf-8",
+        )
+
+        called = []
+        def judge(early, late, topic):
+            called.append((early["stance"], late["stance"]))
+            return {
+                "is_contradiction": True,
+                "kind": "direct_reversal",
+                "reasoning_diff": "differ",
+            }
+
+        def fake_extractor(t, b):
+            return {
+                "claim_summary": f"stance from {t}",
+                "open_questions": [],
+            }
+
+        def fake_cluster(cards, result, *, high_threshold, low_threshold):
+            for c in cards:
+                c["_cluster_id"] = "0"
+            result.cards_clustered = len(cards)
+            result.clusters_count = 1
+            return {"0": cards}
+
+        with patch("daemon.reflection_pass._stage_cluster", side_effect=fake_cluster):
+            result = run_pass(
+                vault_root=tmp_path, dry_run=False,
+                extractor=fake_extractor,
+                judge=judge,
+                state_file=tmp_path / "state.json",
+                contradictions_file=tmp_path / "contra.json",
+            )
+
+        # 2 cards → 1 pair → judge called once
+        assert len(called) == 1
+        assert result.contradictions_detected == 1
+
+        # Contradictions state file written
+        assert (tmp_path / "contra.json").exists()
+
+
 def test_stub_stages_record_skips():
     """Stages 6-7 are stubs; verify skip messages.
 
@@ -1140,7 +1377,7 @@ def test_stub_stages_record_skips():
     _stage_resolve_cluster_names({}, result, dry_run=False, namer=lambda t: "x")
     _stage_backfill_position_signal([], result, dry_run=False, extractor=lambda t, b: {})
     _stage_detect_open_threads({}, result, dry_run=False)
-    _stage_detect_contradictions({}, result, dry_run=False)
+    _stage_detect_contradictions({}, result, dry_run=False, judge=lambda e, l, t: {})
     _stage_compute_drift({}, result, dry_run=False)
     _stage_writeback([], result, dry_run=False)
 

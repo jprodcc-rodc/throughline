@@ -65,13 +65,40 @@ def tokenize(text: str) -> set[str]:
 
 # ---------- state file resolver ----------
 
+def _state_dir() -> Path:
+    return Path(
+        os.environ.get(
+            "THROUGHLINE_STATE_DIR",
+            str(Path.home() / "throughline_runtime" / "state"),
+        )
+    ).expanduser()
+
+
 def resolve_positions_file() -> Path:
-    """Match ``daemon.reflection_pass.default_positions_file()``."""
-    state_dir = os.environ.get(
-        "THROUGHLINE_STATE_DIR",
-        str(Path.home() / "throughline_runtime" / "state"),
-    )
-    return Path(state_dir).expanduser() / "reflection_positions.json"
+    """Match ``daemon.state_paths.default_positions_file()``."""
+    return _state_dir() / "reflection_positions.json"
+
+
+def resolve_contradictions_file() -> Path:
+    """Match ``daemon.state_paths.default_contradictions_file()``.
+    Stage 6 output; consumed by ``check_consistency`` when present."""
+    return _state_dir() / "reflection_contradictions.json"
+
+
+def load_contradictions(path: Optional[Path] = None) -> Optional[dict[str, Any]]:
+    """Load reflection_contradictions.json — same shape and
+    error-handling as ``load_positions``. Returns None when missing /
+    unreadable. Callers can then fall back to "return all cluster
+    positions, host LLM judges contradiction"."""
+    if path is None:
+        path = resolve_contradictions_file()
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except (OSError, ValueError):
+        return None
 
 
 def load_positions(path: Optional[Path] = None) -> Optional[dict[str, Any]]:

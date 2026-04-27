@@ -28,6 +28,7 @@ from typing import Any
 
 from mcp_server.position_state import (
     find_best_cluster,
+    load_contradictions,
     load_positions,
     resolve_positions_file,
 )
@@ -177,6 +178,22 @@ def check_consistency(
         or f"cluster_{cluster.get('cluster_id', '?')}"
     )
 
+    # If stage 6 has run, use its contradictions/* judgments to
+    # filter the cluster's cards down to actually-contradicting
+    # ones. Otherwise fall back to "return all cluster positions
+    # and let the host LLM judge".
+    contradictions_state = load_contradictions()
+    flagged_contradicting_paths: set[str] = set()
+    if contradictions_state and isinstance(contradictions_state, dict):
+        cluster_judgments = (
+            contradictions_state.get("clusters", {})
+            .get(cluster.get("cluster_id", ""), [])
+        )
+        for j in cluster_judgments:
+            if j.get("is_contradiction"):
+                flagged_contradicting_paths.add(j.get("card_a", ""))
+                flagged_contradicting_paths.add(j.get("card_b", ""))
+
     contradictions: list[dict[str, Any]] = []
     for card in cluster.get("cards", []):
         # Only surface cards that actually have a back-filled stance.
@@ -184,8 +201,13 @@ def check_consistency(
         stance = card.get("stance")
         if not stance:
             continue
+        # If stage 6 is available, surface only cards flagged as
+        # contradicting. Otherwise surface all (host LLM judges).
+        cp = card.get("card_path", "")
+        if flagged_contradicting_paths and cp not in flagged_contradicting_paths:
+            continue
         contradictions.append({
-            "card_path": card.get("card_path", ""),
+            "card_path": cp,
             "topic_cluster": cluster_label,
             "prior_stance": stance,
             "prior_reasoning": card.get("reasoning", []) or [],

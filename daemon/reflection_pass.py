@@ -635,21 +635,161 @@ def _stage_detect_open_threads(
     )
 
 
+ContradictionJudge = Callable[[dict, dict, str], dict]
+"""Signature: ``(earlier, later, topic) -> {is_contradiction, kind, reasoning_diff}``."""
+
+
 def _stage_detect_contradictions(
     grouped: dict[str, list[dict[str, Any]]],
     result: PassResult,
     *,
     dry_run: bool,
-) -> None:
-    """Stage 6 — detect contradicting position_signals across cards.
+    judge: Optional[ContradictionJudge] = None,
+    judge_state: Optional[dict[str, dict]] = None,
+    cluster_names: Optional[dict[str, str]] = None,
+) -> dict[str, list[dict]]:
+    """Stage 6 — detect contradicting stance pairs in same cluster.
 
-    STUB. See POSITION_METADATA_SCHEMA milestone 7.
+    For each cluster with ≥2 back-filled cards, generate stance
+    pairs (earlier × later, chronologically). For each pair, call
+    the judge — LLM decides if it's a real contradiction or an
+    evolution / scope-narrowing / orthogonal / agreement.
 
-    Real impl: for each cluster with ≥2 cards having confidence:
-    asserted, LLM-judge stance + reasoning pairs for contradiction.
-    Write paths into `reflection.contradicts` array.
+    Args:
+        grouped: cluster_id -> cards from stage 2.
+        result: pass-result accumulator (mutated).
+        dry_run: when True, skip the calls.
+        judge: callable matching ``ContradictionJudge`` signature.
+            ``mcp_server.llm_judge.judge_pair`` is the stock impl;
+            tests pass a deterministic mock. None = stage skipped.
+        judge_state: cache from prior pass; mutated in place.
+            Keys are ``"<early_path>|<late_path>|<early_stance_hash>"``.
+        cluster_names: cluster_id -> canonical name (for context
+            in the LLM prompt).
+
+    Returns:
+        Dict mapping cluster_id -> list of judgment dicts. Each
+        judgment includes ``card_a``, ``card_b``, ``is_contradiction``,
+        ``kind``, ``reasoning_diff``. Caller persists to
+        ``reflection_contradictions.json``.
     """
-    result.stages_skipped.append("detect_contradictions (stub)")
+    if not grouped:
+        result.stages_skipped.append("detect_contradictions (no clusters)")
+        return {}
+
+    if judge is None:
+        result.stages_skipped.append(
+            "detect_contradictions (no judge configured — pass "
+            "--enable-llm-contradictions or set OPENROUTER_API_KEY)"
+        )
+        return {}
+
+    if dry_run:
+        result.stages_skipped.append("detect_contradictions (dry-run)")
+        return {}
+
+    if judge_state is None:
+        judge_state = {}
+
+    from daemon.state_paths import card_timestamp
+
+    out: dict[str, list[dict]] = {}
+    cached_hits = 0
+    new_calls = 0
+    contra_count = 0
+    failures = 0
+
+    for cid, members in grouped.items():
+        backfilled = [
+            c for c in members
+            if (c.get("_backfill") or {}).get("claim_summary")
+        ]
+        if len(backfilled) < 2:
+            continue
+
+        ordered = sorted(backfilled, key=card_timestamp)
+        topic = (cluster_names or {}).get(cid, "")
+        cluster_judgments: list[dict] = []
+
+        for i, early in enumerate(ordered):
+            for late in ordered[i + 1:]:
+                early_path = early.get("path", "")
+                late_path = late.get("path", "")
+                early_stance = (early.get("_backfill") or {}).get(
+                    "claim_summary", ""
+                )
+                # Cache key includes a short hash of stance so re-edits
+                # to a card invalidate stale judgments naturally.
+                stance_sig = (
+                    str(hash(early_stance))[:8]
+                    if early_stance else "0"
+                )
+                sig = f"{early_path}|{late_path}|{stance_sig}"
+                prior = judge_state.get(sig)
+                if prior:
+                    cluster_judgments.append({
+                        "card_a": early_path,
+                        "card_b": late_path,
+                        **prior,
+                    })
+                    if prior.get("is_contradiction"):
+                        contra_count += 1
+                    cached_hits += 1
+                    continue
+
+                early_payload = {
+                    "stance": early_stance,
+                    "reasoning": (early.get("_backfill") or {}).get(
+                        "reasoning", []
+                    ),
+                    "date": card_timestamp(early),
+                }
+                late_payload = {
+                    "stance": (late.get("_backfill") or {}).get(
+                        "claim_summary", ""
+                    ),
+                    "reasoning": (late.get("_backfill") or {}).get(
+                        "reasoning", []
+                    ),
+                    "date": card_timestamp(late),
+                }
+                try:
+                    judgment = judge(early_payload, late_payload, topic)
+                except Exception as exc:  # noqa: BLE001
+                    result.errors.append(
+                        f"contradiction judge failed "
+                        f"({early_path} vs {late_path}): "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+                    failures += 1
+                    continue
+
+                if not isinstance(judgment, dict):
+                    failures += 1
+                    continue
+
+                judge_state[sig] = judgment
+                cluster_judgments.append({
+                    "card_a": early_path,
+                    "card_b": late_path,
+                    **judgment,
+                })
+                if judgment.get("is_contradiction"):
+                    contra_count += 1
+                new_calls += 1
+
+        if cluster_judgments:
+            out[cid] = cluster_judgments
+
+    result.contradictions_detected = contra_count
+    result.stages_completed.append(
+        f"detect_contradictions ({contra_count} contradictions / "
+        f"{cached_hits + new_calls} pairs judged — "
+        f"{cached_hits} cached, {new_calls} new"
+        + (f", {failures} failed" if failures else "")
+        + ")"
+    )
+    return out
 
 
 def _stage_compute_drift(
@@ -744,6 +884,8 @@ def run_pass(
     open_threads_file: Optional[Path] = None,
     writeback_preview_file: Optional[Path] = None,
     positions_file: Optional[Path] = None,
+    judge: Optional[ContradictionJudge] = None,
+    contradictions_file: Optional[Path] = None,
     use_default_state_paths: bool = True,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
@@ -775,6 +917,7 @@ def run_pass(
     # Pass use_default_state_paths=False (or pass each path as None
     # explicitly) to keep the legacy "no path = no write" behavior.
     if use_default_state_paths:
+        from daemon.state_paths import default_contradictions_file
         state_file = state_file or default_state_file()
         cluster_names_file = cluster_names_file or default_cluster_names_file()
         backfill_state_file = backfill_state_file or default_backfill_state_file()
@@ -782,6 +925,9 @@ def run_pass(
         positions_file = positions_file or default_positions_file()
         writeback_preview_file = (
             writeback_preview_file or default_writeback_preview_file()
+        )
+        contradictions_file = (
+            contradictions_file or default_contradictions_file()
         )
     else:
         state_file = state_file or default_state_file()
@@ -881,9 +1027,40 @@ def run_pass(
         extractor=extractor, backfill_state=backfill_state,
     )
 
-    # Stages 5-8 — stubs.
+    # Stage 5 — open thread detection (pure structural).
     _stage_detect_open_threads(grouped, result, dry_run=dry_run)
-    _stage_detect_contradictions(grouped, result, dry_run=dry_run)
+
+    # Stage 6 — contradiction LLM judgment (real if judge given).
+    judge_state: dict[str, dict] = {}
+    if contradictions_file and contradictions_file.exists():
+        # Persisted format keyed by cluster_id; rebuild flat
+        # signature-keyed dict for the cache.
+        try:
+            persisted = json.loads(
+                contradictions_file.read_text(encoding="utf-8")
+            )
+            for cluster_judgments in (persisted.get("clusters") or {}).values():
+                for j in cluster_judgments:
+                    sig = (
+                        f"{j.get('card_a', '')}|{j.get('card_b', '')}"
+                        f"|{j.get('_stance_sig', '0')}"
+                    )
+                    judge_state[sig] = {
+                        "is_contradiction": j.get("is_contradiction", False),
+                        "kind": j.get("kind", ""),
+                        "reasoning_diff": j.get("reasoning_diff", ""),
+                    }
+        except (OSError, ValueError):
+            pass
+
+    contradictions_by_cluster = _stage_detect_contradictions(
+        grouped, result, dry_run=dry_run,
+        judge=judge,
+        judge_state=judge_state,
+        cluster_names=cluster_names,
+    )
+
+    # Stage 7 — drift segmentation (still stub).
     _stage_compute_drift(grouped, result, dry_run=dry_run)
     _stage_writeback(
         cards, result, dry_run=dry_run,
@@ -914,6 +1091,28 @@ def run_pass(
             )
         except OSError as exc:
             result.errors.append(f"cluster names file write failed: {exc}")
+
+    # Persist contradictions state so check_consistency can filter
+    # by is_contradiction once stage 6 has data. Written even on
+    # dry_run because the judge could have been invoked (we just
+    # didn't write to vault).
+    if contradictions_file and contradictions_by_cluster:
+        try:
+            payload = {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "vault_root": str(vault_root),
+                "dry_run": dry_run,
+                "clusters": contradictions_by_cluster,
+            }
+            contradictions_file.parent.mkdir(parents=True, exist_ok=True)
+            contradictions_file.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            result.errors.append(
+                f"contradictions state file write failed: {exc}"
+            )
 
     # Persist back-fill cache so re-runs skip stable cards.
     if not dry_run and backfill_state_file and backfill_state:
@@ -1145,6 +1344,20 @@ def main(argv: Optional[list[str]] = None) -> int:
              "stage 5 is pure structural.",
     )
     parser.add_argument(
+        "--enable-llm-contradictions", action="store_true",
+        help="Stage 6: LLM judgment on stance pairs. For each "
+             "cluster's chronological pair, judge whether they "
+             "contradict (vs evolve / scope-narrow / agree). "
+             "Requires OPENROUTER_API_KEY (or OPENAI_API_KEY). "
+             "Cache file dedupes by (path-pair + stance hash); "
+             "stable pairs don't re-fire the LLM.",
+    )
+    parser.add_argument(
+        "--contradictions-file", type=str, default=None,
+        help="Path to persist stage 6 results. Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_contradictions.json.",
+    )
+    parser.add_argument(
         "--positions-file", type=str, default=None,
         help="Path to persist the per-cluster position database "
              "that feeds the check_consistency + get_position_drift "
@@ -1200,6 +1413,21 @@ def main(argv: Optional[list[str]] = None) -> int:
             )
             return 2
 
+    judge: Optional[ContradictionJudge] = None
+    if args.enable_llm_contradictions:
+        try:
+            from mcp_server.llm_judge import judge_pair
+            def _judge_adapter(early, late, topic):
+                return judge_pair(early, late, topic=topic)
+            judge = _judge_adapter
+        except ImportError as exc:
+            print(
+                f"--enable-llm-contradictions requires "
+                f"mcp_server.llm_judge ({exc})",
+                file=sys.stderr,
+            )
+            return 2
+
     extractor: Optional[EssenceExtractor] = None
     backfill_state_path: Optional[Path] = None
     if args.enable_llm_backfill:
@@ -1234,6 +1462,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.positions_file
         else default_positions_file()
     )
+    from daemon.state_paths import default_contradictions_file
+    contradictions_path = (
+        Path(args.contradictions_file).resolve()
+        if args.contradictions_file
+        else default_contradictions_file()
+    )
 
     result = run_pass(
         vault_root=vault,
@@ -1248,6 +1482,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         open_threads_file=open_threads_path,
         writeback_preview_file=writeback_preview_path,
         positions_file=positions_path,
+        judge=judge,
+        contradictions_file=contradictions_path,
     )
 
     print(_format_result(result))
