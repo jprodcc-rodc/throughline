@@ -1,13 +1,18 @@
-"""list_topics — Phase 1 stub.
+"""list_topics — Phase 1 Week 2 commit 4 implementation.
 
-Real implementation lands in Week 2: reads `config/taxonomy.py`
-VALID_X_SET (or active user taxonomy from `~/.throughline/`) and
-optionally counts cards per domain by walking the vault. No LLM
-calls, no API hits — cheap.
+Reads the active VALID_X_SET from `daemon.taxonomy` + optionally
+walks the vault to count cards per domain. No LLM calls, no API
+hits. Vault scan cached for 60s.
 
-See `private/MCP_SCAFFOLDING_PLAN.md` § 3.3.
+Per locked decision Q3: tool description has explicit "Call this
+when:" / "Do NOT call:" guidance.
 """
 from __future__ import annotations
+
+from mcp_server.taxonomy_reader import (
+    count_cards_per_domain,
+    list_domains,
+)
 
 
 def list_topics(
@@ -32,22 +37,73 @@ def list_topics(
       recall_memory directly instead.
 
     Args:
-        prefix: Optional filter, e.g. 'Health/' returns just health
-            sub-domains.
-        include_card_counts: If True, includes card counts per
-            domain. Default True.
+        prefix: Optional domain prefix filter. `'Health'` returns
+            `Health/Medicine`, `Health/Biohack`, etc. Exact-match
+            also works.
+        include_card_counts: If True (default), walks the vault to
+            count cards per domain. Adds ~1-3s on first call,
+            cached for 60s after. Set False if you only need the
+            domain list.
 
     Returns:
-        dict with keys: domains (list of {path, card_count}),
-        total_cards (int).
+        On success::
+
+            {
+                "domains": [{"path": "Health/Biohack",
+                             "card_count": 47}, ...],
+                "total_cards": 312,
+                "_status": "ok",
+            }
+
+        When the daemon's taxonomy module can't be imported (rare
+        — install issue)::
+
+            {
+                "domains": [],
+                "total_cards": 0,
+                "_status": "error",
+                "_message": "throughline daemon taxonomy not "
+                            "loadable; run `python -m throughline_cli "
+                            "doctor`",
+            }
     """
+    domains = list_domains(prefix=prefix)
+
+    if not domains:
+        # Either the user passed a prefix that matched nothing,
+        # OR the daemon import failed entirely. Distinguish.
+        all_domains = list_domains(prefix=None)
+        if not all_domains:
+            return {
+                "domains": [],
+                "total_cards": 0,
+                "_status": "error",
+                "_message": (
+                    "throughline daemon taxonomy not loadable; "
+                    "run `python -m throughline_cli doctor` to "
+                    "verify install."
+                ),
+            }
+        # Prefix matched no domains — return empty list with ok status
+        return {
+            "domains": [],
+            "total_cards": 0,
+            "_status": "ok",
+        }
+
+    if include_card_counts:
+        counts = count_cards_per_domain()
+        result_domains = [
+            {"path": d, "card_count": counts.get(d, 0)}
+            for d in domains
+        ]
+        total_cards = sum(counts.get(d, 0) for d in domains)
+    else:
+        result_domains = [{"path": d, "card_count": None} for d in domains]
+        total_cards = 0
+
     return {
-        "domains": [],
-        "total_cards": 0,
-        "_status": "stub",
-        "_message": (
-            "list_topics is scaffolded but not yet implemented. "
-            "Real logic lands in Week 2 (reads config/taxonomy.py + "
-            "walks vault for card counts)."
-        ),
+        "domains": result_domains,
+        "total_cards": total_cards,
+        "_status": "ok",
     }

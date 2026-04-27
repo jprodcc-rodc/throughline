@@ -174,15 +174,18 @@ def test_recall_memory_returns_dict_with_status():
     assert result["_status"] in {"ok", "error"}  # not "stub" anymore
 
 
-def test_list_topics_stub_returns_dict():
-    """list_topics is still a stub as of Week 1; flips when
-    Week 2 commit lands."""
+def test_list_topics_returns_dict_with_status():
+    """list_topics has its real implementation as of Phase 1 Week 2
+    commit 4 (taxonomy_reader + tool wired). Smoke check the tool
+    surface — real behaviour tests in test_mcp_server_list_topics.py.
+    """
     from mcp_server.tools import list_topics
 
-    result = list_topics()
+    # Default call — taxonomy loads; vault may or may not exist
+    result = list_topics(include_card_counts=False)
     assert isinstance(result, dict)
     assert "domains" in result
-    assert result["_status"] == "stub"
+    assert result["_status"] in {"ok", "error"}  # not "stub" anymore
 
 
 # ---------- FastMCP app build (gated on fastmcp install) ----------
