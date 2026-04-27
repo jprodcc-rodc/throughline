@@ -77,6 +77,30 @@ def check_consistency(
     - When the user has flagged uncertainty ("I'm not sure but...")
       — that's a reasoning state, not a position.
 
+    Example trigger conversations:
+
+    - User: "I'm going with usage-based pricing for the SaaS" —
+      call ``check_consistency(statement="usage-based pricing for SaaS")``.
+    - User: "I've decided we should go full Postgres, no MongoDB" —
+      call ``check_consistency(statement="full Postgres no MongoDB")``.
+    - User: "My take is that we don't need a microservice for auth" —
+      call ``check_consistency(statement="auth doesn't need a
+      microservice")``.
+    - User: "We should switch to TypeScript" — call
+      ``check_consistency(statement="switch to TypeScript")``.
+
+    What you (the host LLM) do with the returned `contradictions`
+    list:
+
+    - If list is non-empty: present the prior position(s) gently as
+      a question. e.g.: "Three months ago you held the opposite
+      view: <prior_stance>. The reasoning then was: <prior_reasoning>.
+      Has something changed that makes those reasons no longer apply,
+      or worth re-examining?" The framing_question field provides
+      a default phrasing.
+    - If list is empty: don't mention check_consistency was called.
+      Just proceed with the user's current request.
+
     Args:
         statement: The position statement to check (typically the
             user's most recent assertion).

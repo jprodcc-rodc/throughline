@@ -57,6 +57,32 @@ def get_position_drift(
     - For checking a specific assertion against past — call
       `check_consistency` instead.
 
+    Example trigger conversations:
+
+    - User: "What's my current framework for evaluating product
+      ideas?" — call ``get_position_drift(topic="product evaluation")``.
+    - User: "Show me how my thinking on pricing has evolved" —
+      call ``get_position_drift(topic="pricing")``.
+    - User: "I think I used to feel differently about this — what
+      was my view on freemium?" — call
+      ``get_position_drift(topic="freemium")``.
+    - User: "Walk me through the arc on auth architecture" — call
+      ``get_position_drift(topic="auth architecture")``.
+
+    What you (the host LLM) do with the returned `trajectory`:
+
+    - Present each phase chronologically with its stance and
+      reasoning. The user wants to SEE the evolution, not just the
+      conclusion.
+    - When phases differ in reasoning, name the inflection point.
+      e.g.: "12 months ago you led with technical feasibility; 6
+      months ago that shifted to market size; most recently you
+      anchor on founder-market-fit. The transition from market-size
+      to FMF was around <date>."
+    - If `drift_kind` is "unsegmented" (V1 default until stage 7
+      ships), each card is its own entry — synthesize the phases
+      yourself by grouping consecutive cards with similar stance.
+
     Args:
         topic: Topic name to trace. Substring-matched against
             cluster names; falls back to token-overlap on titles

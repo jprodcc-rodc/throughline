@@ -94,6 +94,19 @@ def find_open_threads(
     - When the user has just expressed a clear position — call
       `check_consistency` instead.
 
+    Example trigger conversations:
+
+    - User: "Let's revisit pricing again" — call
+      ``find_open_threads(topic="pricing")``.
+    - User: "Where did I leave off on the database migration?" —
+      call ``find_open_threads(topic="database migration")``.
+    - User: "What was I thinking about freemium conversion?" —
+      call ``find_open_threads(topic="freemium")``.
+    - User: "I need to think through the auth layer" — if the
+      user has reasoned about auth before (you can check via
+      list_topics first if unsure), call
+      ``find_open_threads(topic="auth")``.
+
     Args:
         topic: Optional topic filter. Case-insensitive substring
             match against ``topic_cluster``. ``"pricing"`` matches
