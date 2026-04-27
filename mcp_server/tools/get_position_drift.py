@@ -1,19 +1,31 @@
-"""get_position_drift — Phase 2 v0.3 scaffolding stub.
+"""get_position_drift — Phase 2 v0.3 real implementation.
 
-Real implementation lands in a subsequent commit alongside the
-Reflection Pass daemon and the `position_signal` frontmatter schema.
-Stub returns the documented shape with `_status: "stub"`.
+Reads the position database written by Reflection Pass
+(``reflection_positions.json``) and returns the chronological
+trajectory of cards on the requested topic.
 
-Reflection Layer design rationale: see `docs/REFLECTION_LAYER_DESIGN.md`
-§ "Drift Detection". This is the metacognitive infrastructure piece —
-particularly load-bearing for ND users who experience their own
-cognition as inconsistent ("I keep changing my mind") and benefit
-from external evidence that the change has reasoning behind it.
+V1 (this commit): each back-filled card on the topic shows up as
+its own trajectory entry. Each entry has stance, reasoning, date,
+plus next-card-date as ``ended``. Phase segmentation (when stage
+7 lands) will reduce this from "one entry per card" to "one entry
+per coherent stance phase" — but the tool surface and field
+shape don't change. The host LLM does the heavy presentation work.
 
-Per locked decision Q3: tool description has explicit "Call this
-when:" / "Do NOT call:" guidance.
+This is the metacognitive infrastructure piece. For ND users who
+experience their own cognition as inconsistent, an external
+record of how thinking has evolved — with the reasoning behind
+each shift — turns "I'm flaky" into "my framework went through
+three reasoned phases".
 """
 from __future__ import annotations
+
+from typing import Any
+
+from mcp_server.position_state import (
+    find_cluster_by_topic,
+    load_positions,
+    resolve_positions_file,
+)
 
 
 def get_position_drift(
@@ -21,14 +33,11 @@ def get_position_drift(
     granularity: str = "transitions",
 ) -> dict:
     """Show how the user's thinking on a specific topic has evolved
-    over time — each major stance shift, when it happened, and what
-    reasoning supported each transition.
+    over time — each card's stance, when it happened, and what
+    reasoning supported it.
 
     Returns the **full trajectory**, not just the current position.
-    The point is to make intellectual evolution visible. For ND
-    users, this externalizes a record of thinking-as-process rather
-    than thinking-as-static-belief — turning "I'm flaky" into "my
-    framework has gone through three reasoned phases".
+    The point is to make intellectual evolution visible.
 
     Call this when:
     - User asks about their "current framework" or "current view"
@@ -49,82 +58,148 @@ def get_position_drift(
       `check_consistency` instead.
 
     Args:
-        topic: Topic name to trace. Should match a topic_cluster
-            value the daemon has assigned. Use `list_topics` first
-            if unsure of available topics.
+        topic: Topic name to trace. Substring-matched against
+            cluster names; falls back to token-overlap on titles
+            when no name match. Use `list_topics` first to see
+            available topic clusters.
         granularity: Either "transitions" (default — only major
-            stance shifts) or "all_cards" (every card on this
-            topic in chronological order, even if no shift).
+            stance shifts; V1 returns per-card entries until
+            stage 7 segmentation lands) or "all_cards" (every card
+            on this topic in chronological order).
 
     Returns:
         On success::
 
             {
-                "topic": "product_evaluation_framework",
+                "topic": "...",
                 "trajectory": [
                     {
-                        "phase_name": "technical feasibility first",
-                        "stance": "no technical moat = no product",
-                        "reasoning": ["..."],
+                        "phase_name": "...",
+                        "stance": "...",
+                        "reasoning": [...],
                         "started": "2025-04-15",
-                        "ended": "2025-10-20",
-                        "card_count": 14,
+                        "ended": "2025-10-20",  # or null for current
+                        "card_count": 1,        # V1; stage 7 will increase
+                        "card_path": "vault/.../card.md",
                     },
-                    {
-                        "phase_name": "market size first",
-                        "stance": "small market however deep can't "
-                                  "sustain a team",
-                        "reasoning": ["..."],
-                        "started": "2025-10-20",
-                        "ended": "2026-01-30",
-                        "card_count": 9,
-                        "transition_trigger": "card vault/.../...md "
-                                              "where reasoning shifted",
-                    },
-                    {
-                        "phase_name": "founder-market-fit first",
-                        "stance": "only people who actually care can "
-                                  "survive pre-PMF",
-                        "reasoning": ["..."],
-                        "started": "2026-01-30",
-                        "ended": null,  # current
-                        "card_count": 7,
-                    },
+                    ...
                 ],
-                "drift_kind": "healthy_evolution",
-                "current_phase": 2,
+                "drift_kind": "unsegmented",  # stage 7 will refine
+                "current_phase": <last index>,
                 "_status": "ok",
             }
 
-        When no cards are clustered to this topic::
+        When no cluster matches the topic::
 
             {
                 "topic": "...",
                 "trajectory": [],
                 "_status": "ok",
-                "_message": "No cards clustered to this topic. "
-                            "Try `list_topics` to see available "
-                            "topic clusters.",
+                "_message": "No cards clustered to this topic. ..."
             }
 
-        Phase 2 stub (current behavior)::
+        When Reflection Pass hasn't run yet::
 
             {
                 "topic": "...",
                 "trajectory": [],
-                "_status": "stub",
-                "_message": "get_position_drift will be implemented "
-                            "in v0.3. See docs/REFLECTION_LAYER_DESIGN.md.",
+                "_status": "error",
+                "_message": "Reflection Pass has not run yet ...",
             }
     """
+    topic_clean = (topic or "").strip()
+    if not topic_clean:
+        return {
+            "topic": topic,
+            "trajectory": [],
+            "_status": "error",
+            "_message": "get_position_drift: topic is empty.",
+        }
+
+    state_path = resolve_positions_file()
+    state = load_positions(state_path)
+    if state is None:
+        return {
+            "topic": topic,
+            "trajectory": [],
+            "_status": "error",
+            "_message": (
+                f"Reflection Pass has not run yet (no state file at "
+                f"{state_path}). Run `python -m daemon.reflection_pass "
+                "--enable-llm-backfill` to populate."
+            ),
+        }
+
+    cluster = find_cluster_by_topic(topic_clean, state)
+    if cluster is None:
+        return {
+            "topic": topic,
+            "trajectory": [],
+            "_status": "ok",
+            "_message": (
+                "No cards clustered to this topic. Try `list_topics` "
+                "to see available topic clusters."
+            ),
+        }
+
+    cards = cluster.get("cards", [])
+
+    # Apply granularity. With current data we don't have phase
+    # segmentation; both granularities return per-card entries
+    # until stage 7 lands.
+    if granularity not in ("transitions", "all_cards"):
+        granularity = "transitions"
+
+    eligible = cards
+    if granularity == "transitions":
+        # Without segmentation, "transitions" filters to cards that
+        # have a back-filled stance (so each entry is a meaningful
+        # data point). all_cards includes everything.
+        eligible = [c for c in cards if c.get("stance")]
+
+    if not eligible:
+        cluster_label = (
+            cluster.get("topic_cluster")
+            or f"cluster_{cluster.get('cluster_id', '?')}"
+        )
+        return {
+            "topic": topic,
+            "trajectory": [],
+            "_status": "ok",
+            "_message": (
+                f"Topic '{cluster_label}' has cards but no back-filled "
+                "stance data. Run "
+                "`python -m daemon.reflection_pass --enable-llm-backfill` "
+                "to populate stances."
+            ),
+        }
+
+    # State file already sorted cards chronologically per cluster.
+    # Build trajectory entries.
+    trajectory: list[dict[str, Any]] = []
+    for i, card in enumerate(eligible):
+        ended = (
+            eligible[i + 1].get("date")
+            if i + 1 < len(eligible)
+            else None
+        )
+        trajectory.append({
+            "phase_name": card.get("title", ""),
+            "stance": card.get("stance") or "",
+            "reasoning": card.get("reasoning", []) or [],
+            "started": card.get("date", ""),
+            "ended": ended,
+            "card_count": 1,
+            "card_path": card.get("card_path", ""),
+        })
+
     return {
-        "topic": topic,
-        "trajectory": [],
-        "_status": "stub",
-        "_message": (
-            "get_position_drift will be implemented in v0.3 "
-            "alongside the Reflection Pass daemon and the "
-            "position_signal frontmatter schema. "
-            "See docs/REFLECTION_LAYER_DESIGN.md."
+        "topic": (
+            cluster.get("topic_cluster")
+            or f"cluster_{cluster.get('cluster_id', '?')}"
         ),
+        "trajectory": trajectory,
+        "drift_kind": "unsegmented",
+        "current_phase": len(trajectory) - 1 if trajectory else 0,
+        "_status": "ok",
     }

@@ -95,6 +95,20 @@ def default_state_file() -> Path:
     return _default_state_dir() / "reflection_pass_state.json"
 
 
+def default_positions_file() -> Path:
+    """Resolve default ``state/reflection_positions.json`` path.
+
+    This is the comprehensive position database — every reflectable
+    card's stance/reasoning/date keyed by cluster. Both
+    ``check_consistency`` and ``get_position_drift`` MCP tools
+    read this file. Written on every pass (preview-mode included)
+    so MCP tools always have a fresh reference even before
+    --enable-llm-backfill runs (cards without back-filled stance
+    show up with stance=null and the tool degrades gracefully).
+    """
+    return _default_state_dir() / "reflection_positions.json"
+
+
 def default_writeback_preview_file() -> Path:
     """Resolve default ``state/reflection_writeback_preview.json``.
 
@@ -798,6 +812,7 @@ def run_pass(
     backfill_state_file: Optional[Path] = None,
     open_threads_file: Optional[Path] = None,
     writeback_preview_file: Optional[Path] = None,
+    positions_file: Optional[Path] = None,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
 
@@ -962,6 +977,56 @@ def run_pass(
         except OSError as exc:
             result.errors.append(f"backfill state file write failed: {exc}")
 
+    # Persist comprehensive positions state so check_consistency and
+    # get_position_drift MCP tools can read it. Written on every pass
+    # (including dry_run) since it's a derived view of in-memory
+    # cluster + back-fill data — no I/O risk.
+    if positions_file:
+        try:
+            from daemon.open_threads import _card_timestamp
+            from daemon.writeback import _extract_reasoning_from_body
+
+            clusters_payload = []
+            for cid, members in grouped.items():
+                cluster_name = cluster_names.get(cid) if cluster_names else None
+                cards_payload = []
+                # Sort cards within cluster chronologically so
+                # downstream tools can do trivial trajectory traversal.
+                ordered = sorted(members, key=_card_timestamp)
+                for c in ordered:
+                    bf = c.get("_backfill") or {}
+                    body = str(c.get("body", ""))
+                    reasoning_bullets = _extract_reasoning_from_body(body)
+                    cards_payload.append({
+                        "card_path": c.get("path", ""),
+                        "title": c.get("title", ""),
+                        "stance": bf.get("claim_summary"),
+                        "reasoning": reasoning_bullets,
+                        "open_questions": bf.get("open_questions", []),
+                        "date": _card_timestamp(c),
+                        "is_open_thread": bool(c.get("_open_thread")),
+                        "is_backfilled": bool(bf.get("claim_summary")),
+                    })
+                clusters_payload.append({
+                    "cluster_id": str(cid),
+                    "topic_cluster": cluster_name,
+                    "size": len(members),
+                    "cards": cards_payload,
+                })
+            payload = {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "vault_root": str(vault_root),
+                "dry_run": dry_run,
+                "clusters": clusters_payload,
+            }
+            positions_file.parent.mkdir(parents=True, exist_ok=True)
+            positions_file.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            result.errors.append(f"positions state file write failed: {exc}")
+
     # Persist open-threads state so find_open_threads MCP tool can
     # read it without rescanning the vault on every call. Written
     # even on dry_run because stage 5 is pure structural — preview
@@ -1115,6 +1180,15 @@ def main(argv: Optional[list[str]] = None) -> int:
              "stage 5 is pure structural.",
     )
     parser.add_argument(
+        "--positions-file", type=str, default=None,
+        help="Path to persist the per-cluster position database "
+             "that feeds the check_consistency + get_position_drift "
+             "MCP tools. Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_positions.json. "
+             "Written on every pass; gracefully degraded when "
+             "--enable-llm-backfill hasn't run (stance=null).",
+    )
+    parser.add_argument(
         "--writeback-preview-file", type=str, default=None,
         help="Path to persist stage 8 writeback preview "
              "(per-card frontmatter additions that WOULD be "
@@ -1177,6 +1251,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.writeback_preview_file
         else default_writeback_preview_file()
     )
+    positions_path = (
+        Path(args.positions_file).resolve()
+        if args.positions_file
+        else default_positions_file()
+    )
 
     result = run_pass(
         vault_root=vault,
@@ -1190,6 +1269,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         backfill_state_file=backfill_state_path,
         open_threads_file=open_threads_path,
         writeback_preview_file=writeback_preview_path,
+        positions_file=positions_path,
     )
 
     print(_format_result(result))

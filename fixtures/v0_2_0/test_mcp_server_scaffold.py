@@ -281,29 +281,35 @@ def test_find_open_threads_returns_real_shape(monkeypatch, tmp_path):
     assert "has not run yet" in result["_message"]
 
 
-def test_check_consistency_returns_stub_shape():
-    """check_consistency is currently a stub. Verify shape contract."""
+def test_check_consistency_returns_real_shape(monkeypatch, tmp_path):
+    """check_consistency is now a real implementation reading the
+    positions state file. With no state file present, returns
+    _status: error with clear message — never crashes."""
     from mcp_server.tools import check_consistency
 
+    monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "no_state"))
     result = check_consistency(statement="I think we should use Postgres")
     assert isinstance(result, dict)
     assert "contradictions" in result
     assert isinstance(result["contradictions"], list)
-    assert result["_status"] == "stub"
+    assert result["_status"] == "error"
     assert "_message" in result
+    assert "has not run yet" in result["_message"]
 
 
-def test_get_position_drift_returns_stub_shape():
-    """get_position_drift is currently a stub. Verify shape contract."""
+def test_get_position_drift_returns_real_shape(monkeypatch, tmp_path):
+    """get_position_drift is now a real implementation reading the
+    positions state file. With no state file, error with hint."""
     from mcp_server.tools import get_position_drift
 
+    monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "no_state"))
     result = get_position_drift(topic="pricing_strategy")
     assert isinstance(result, dict)
     assert "topic" in result
     assert result["topic"] == "pricing_strategy"
     assert "trajectory" in result
     assert isinstance(result["trajectory"], list)
-    assert result["_status"] == "stub"
+    assert result["_status"] == "error"
     assert "_message" in result
 
 
