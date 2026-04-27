@@ -10,7 +10,7 @@
 > tests, zero external network calls in CI · 6 first-class vector
 > store backends · 5 native rerankers · 16 LLM-provider presets ·
 > full threat model documented · MCP server entry point ·
-> from blank repo to v0.2.0 public OSS in 12 days with Claude Code.
+> running 24/7 against the maintainer's vault since v0.1.0.
 
 <!--
   ╭─────────────────────────────────────────────────────────────╮

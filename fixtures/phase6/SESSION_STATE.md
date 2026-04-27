@@ -451,13 +451,13 @@ Target: 4-6 minutes. First-episode structure:
   "It doesn't just know my drug list. It remembers WHY I chose
   this combination. It's not memory of facts — it's memory of
   my thinking."
-- **3:30-4:30 · Who you are + open source** — "I built this in
-  12 days with Claude Code. I'm not a startup, I'm one person
-  with AuDHD who couldn't find this tool. It's open source."
+- **3:30-4:30 · Who you are + open source** — "I'm not a startup,
+  I'm one person with AuDHD who couldn't find a tool that respected
+  how I actually think. So I built one. It's open source."
 - **4:30-5:00 · CTA + next-episode teaser** — "If you felt this
   same frustration, try it. If you're building for neurodivergent
-  users, contribute. Next: how I handle the refine pipeline with
-  317 tests in 12 days."
+  users, contribute. Next: how the refine pipeline keeps your
+  thinking instead of summarising it away."
 
 Recording principles: real face (build trust), real screen recording
 (no AI-generated visuals, no stock footage, no HeyGen), lav mic for
