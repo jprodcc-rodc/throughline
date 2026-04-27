@@ -19,16 +19,26 @@ clarification still load-bearing — read `private/PLAN_90D.md` FIRST.
 4. Evening late — first concrete code commit: `mcp_server/`
    scaffolding stubs (10 files, +527 lines, 14 new tests)
 
-**Phase 1 progress:**
-- ✅ Week 1 commit 1: scaffolding stubs (`5776f3d` 2026-04-27)
-- ✅ Week 1 commit 2: save_conversation real logic (`ea62907`
-  2026-04-27) — writes timestamped .md to `$THROUGHLINE_RAW_ROOT`
-  in daemon's expected H2 lowercase format, with defensive coercion
-  for 4 input shapes (H2 / H1 / prefix / prose). 25 new tests.
-- ☐ Week 2 commit 3: recall_memory (HTTP → rag_server `/v1/rag`)
-- ☐ Week 2 commit 4: list_topics (taxonomy + vault scan)
-- ☐ Week 3: docs/MCP_SETUP.md + README access-points subsection +
-  ROADMAP move + manual smoke test with Claude Desktop
+**Phase 1 progress: COMPLETE (2026-04-27 night)**
+
+- ✅ Week 1 commit 1: scaffolding stubs (`5776f3d`)
+- ✅ Week 1 commit 2: save_conversation real logic (`ea62907`)
+  — H2 lowercase format, 4-shape defensive coercion, 25 tests
+- ✅ Week 2 commit 3: recall_memory (`b306312`) — HTTP →
+  rag_server `/v1/rag`, 3 typed exceptions, domain filter,
+  personal_context surfacing, 27 tests
+- ✅ Week 2 commit 4: list_topics (`2bd9051`) — daemon.taxonomy
+  + vault scan with 60s cache, 23 tests
+- ✅ Week 3 commit 5: docs/MCP_SETUP.md + README "🔌 Access
+  points" + ROADMAP shift (MCP from v0.3 to Shipped) + CHANGELOG
+  (`2f0b37b`)
+- ☐ Manual smoke test with Claude Desktop — user-side; setup
+  walkthrough in docs/MCP_SETUP.md
+
+**Phase 1 totals:** ~770 LOC code + ~1,000 LOC tests, 1260 → 1372
+total tests, zero shared core modifications, 4 new MCP commits +
+1 docs commit. MCP server is fully functional pending a real
+Claude Desktop session.
 
 **Strategic re-tilt (2026-04-27 evening, separate from MCP work):**
 
