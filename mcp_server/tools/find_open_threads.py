@@ -1,31 +1,76 @@
-"""find_open_threads — Phase 2 v0.3 scaffolding stub.
+"""find_open_threads — Phase 2 v0.3 real implementation.
 
-Real implementation in subsequent commit. The stub returns the
-documented shape with `_status: "stub"` so MCP clients can wire up
-and test the tool surface end-to-end before the Reflection Pass
-daemon lands the actual `status: open_thread` metadata it queries.
+Reads the state file written by ``daemon.reflection_pass`` stage 5
+(``reflection_open_threads.json``) and surfaces cards with
+unresolved open questions to the host LLM.
 
-Reflection Layer design rationale: see `docs/REFLECTION_LAYER_DESIGN.md`.
-Engineering gate (≥75% topic-clustering pairwise accuracy on author's
-vault): cleared 2026-04-28 at 0.975 (best threshold 0.70). With the
-gate cleared, Phase 2 implementation is unblocked.
+The Reflection Pass daemon does the expensive work offline:
+- back-fill open_questions per card via LLM (stage 4)
+- detect resolution by token-overlap structural scan (stage 5)
+- write the result file
 
-Per locked decision Q3 (`private/MCP_SCAFFOLDING_PLAN.md` § 12.A):
+This tool is a thin reader. No LLM calls, no vault scan, just JSON
+read + optional topic filter + result shaping. Sub-millisecond.
+
+Per locked decision Q3 (private/MCP_SCAFFOLDING_PLAN.md § 12.A):
 tool description has explicit "Call this when:" / "Do NOT call:"
-guidance. Phase-2 tools follow the same convention.
+guidance. Q4: tool name is NOT namespaced.
 """
 from __future__ import annotations
 
+import json
+import os
+from pathlib import Path
+from typing import Any, Optional
+
+
+def _resolve_state_file() -> Path:
+    """Match ``daemon.reflection_pass.default_open_threads_file()``
+    without importing daemon (mcp_server stays decoupled)."""
+    state_dir = os.environ.get(
+        "THROUGHLINE_STATE_DIR",
+        str(Path.home() / "throughline_runtime" / "state"),
+    )
+    return Path(state_dir).expanduser() / "reflection_open_threads.json"
+
+
+def _load_state(path: Path) -> Optional[dict[str, Any]]:
+    """Load state file. Returns None when missing / unreadable /
+    not-a-dict; caller surfaces the absence as an error result."""
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except (OSError, ValueError):
+        return None
+
+
+def _filter_by_topic(
+    entries: list[dict[str, Any]],
+    topic: str,
+) -> list[dict[str, Any]]:
+    """Case-insensitive substring match on topic_cluster. Lets users
+    type 'pricing' and match 'pricing_strategy', 'b1' and match
+    'b1_thiamine_therapy', etc."""
+    needle = topic.lower().strip()
+    if not needle:
+        return entries
+    return [
+        e for e in entries
+        if needle in str(e.get("topic_cluster", "")).lower()
+    ]
+
 
 def find_open_threads(
-    topic: str | None = None,
+    topic: Optional[str] = None,
     limit: int = 5,
 ) -> dict:
     """Find unfinished thinking the user may want to resume — open
     questions without a follow-up answer, hypotheses left without
     a conclusion, branches the user started exploring but never
-    closed. throughline's daemon tags these as `status: open_thread`
-    in card metadata; this tool surfaces them.
+    closed. throughline's Reflection Pass daemon (stage 5) tags
+    these structurally; this tool surfaces them.
 
     Call this when:
     - User starts a new conversation on a familiar topic
@@ -50,12 +95,11 @@ def find_open_threads(
       `check_consistency` instead.
 
     Args:
-        topic: Optional topic filter. If given, only returns open
-            threads in cards clustered to that topic. If None,
-            returns the most recent open threads across all topics
-            (capped by `limit`).
-        limit: Max open threads to return (default 5). Open threads
-            with most-recent activity surface first.
+        topic: Optional topic filter. Case-insensitive substring
+            match against ``topic_cluster``. ``"pricing"`` matches
+            ``"pricing_strategy"`` etc.
+        limit: Max open threads to return (default 5). Most-recently
+            touched surface first.
 
     Returns:
         On success::
@@ -63,14 +107,13 @@ def find_open_threads(
             {
                 "open_threads": [
                     {
-                        "card_path": "vault/30_Biz_Ops/...md",
+                        "card_path": "vault/.../card.md",
                         "topic_cluster": "pricing_strategy",
-                        "open_question": "how to handle freemium "
-                                         "conversion?",
+                        "open_questions": ["how to handle freemium...?"],
                         "last_touched": "2026-02-12",
-                        "context_summary": "Analyzed LTV math and "
-                                           "competitor data; stopped "
-                                           "before resolving freemium.",
+                        "context_summary": "Analyzed LTV math; "
+                                           "stopped before resolving "
+                                           "freemium.",
                     },
                     ...
                 ],
@@ -78,36 +121,83 @@ def find_open_threads(
                 "_status": "ok",
             }
 
-        Phase 2 stub (current behavior, no real detection yet)::
-
-            {
-                "open_threads": [],
-                "total_open_threads": 0,
-                "_status": "stub",
-                "_message": "find_open_threads will be implemented "
-                            "in v0.3 alongside the Reflection Pass "
-                            "daemon. See docs/REFLECTION_LAYER_DESIGN.md.",
-            }
-
-        When the Reflection Pass daemon hasn't run yet on the user's
-        vault::
+        When the Reflection Pass hasn't run yet (no state file)::
 
             {
                 "open_threads": [],
                 "total_open_threads": 0,
                 "_status": "error",
                 "_message": "Reflection Pass has not run yet. Run "
-                            "`python -m throughline_cli reflect` "
-                            "or wait for the next scheduled pass.",
+                            "`python -m daemon.reflection_pass "
+                            "--enable-llm-backfill` to populate.",
+            }
+
+        When the topic filter matches no threads::
+
+            {
+                "open_threads": [],
+                "total_open_threads": 0,
+                "_status": "ok",
+                "_message": "No open threads match topic 'xyz'.",
             }
     """
+    state_path = _resolve_state_file()
+    state = _load_state(state_path)
+
+    if state is None:
+        return {
+            "open_threads": [],
+            "total_open_threads": 0,
+            "_status": "error",
+            "_message": (
+                f"Reflection Pass has not run yet (no state file at "
+                f"{state_path}). Run `python -m daemon.reflection_pass "
+                "--enable-llm-backfill` to populate."
+            ),
+        }
+
+    entries = state.get("open_threads", [])
+    if not isinstance(entries, list):
+        return {
+            "open_threads": [],
+            "total_open_threads": 0,
+            "_status": "error",
+            "_message": (
+                f"State file at {state_path} is malformed (open_threads "
+                "is not a list). Re-run the Reflection Pass."
+            ),
+        }
+
+    total = len(entries)
+
+    if topic:
+        filtered = _filter_by_topic(entries, topic)
+    else:
+        filtered = list(entries)
+
+    # Sort by last_touched descending (most recent first).
+    # Strings sort lexicographically; ISO date strings already sort
+    # correctly. Cards using "mtime-NNN" fallback also sort consistently
+    # (mtime-9999 > mtime-100 lexically? No — but those would be edge
+    # cases; for ISO dates this works.).
+    filtered.sort(
+        key=lambda e: str(e.get("last_touched", "")),
+        reverse=True,
+    )
+
+    if limit and limit > 0:
+        filtered = filtered[: limit]
+
+    if topic and not filtered:
+        return {
+            "open_threads": [],
+            "total_open_threads": 0,
+            "_status": "ok",
+            "_message": f"No open threads match topic {topic!r}.",
+        }
+
     return {
-        "open_threads": [],
-        "total_open_threads": 0,
-        "_status": "stub",
-        "_message": (
-            "find_open_threads will be implemented in v0.3 "
-            "alongside the Reflection Pass daemon. "
-            "See docs/REFLECTION_LAYER_DESIGN.md."
-        ),
+        "open_threads": filtered,
+        "total_open_threads": total,
+        "_status": "ok",
     }

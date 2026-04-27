@@ -95,6 +95,17 @@ def default_state_file() -> Path:
     return _default_state_dir() / "reflection_pass_state.json"
 
 
+def default_open_threads_file() -> Path:
+    """Resolve default ``state/reflection_open_threads.json`` path.
+
+    Persists the stage-5 output: the list of cards with unresolved
+    open questions, plus their cluster name and last-touched date.
+    The ``find_open_threads`` MCP tool reads this file rather than
+    rescanning the vault on every call.
+    """
+    return _default_state_dir() / "reflection_open_threads.json"
+
+
 def default_backfill_state_file() -> Path:
     """Resolve default ``state/reflection_backfill_state.json`` path.
 
@@ -616,17 +627,56 @@ def _stage_detect_open_threads(
     result: PassResult,
     *,
     dry_run: bool,
+    threshold: float = 0.75,
 ) -> None:
     """Stage 5 — detect cards with unresolved open_questions.
 
-    STUB. See POSITION_METADATA_SCHEMA milestone 4.
+    Pure structural (no LLM). For each card with back-filled
+    open_questions, scan later cards in the same cluster for
+    token-overlap evidence the question got addressed. Cards
+    with at least one still-unresolved question are flagged
+    in-memory as ``_open_thread: True`` with the unresolved
+    list at ``_open_thread_questions``.
 
-    Real impl: structural (no LLM). For each card with non-empty
-    `open_questions` array, scan later cards in the same cluster.
-    If no later card resolves the question, set
-    `reflection.status: open_thread`.
+    Stage 8 (writeback) translates these to frontmatter.
+
+    Args:
+        grouped: cluster_id -> list of card dicts (from stage 2).
+        result: pass result accumulator.
+        dry_run: when True, computation still runs (it's free —
+            no LLM, no I/O) but ``stages_completed`` notes "preview".
+            Card mutations happen either way; stage 8 decides
+            whether to persist them.
+        threshold: token-overlap fraction required for a question
+            to count as addressed (default 0.75 — conservative).
     """
-    result.stages_skipped.append("detect_open_threads (stub)")
+    if not grouped:
+        result.stages_skipped.append("detect_open_threads (no clusters)")
+        return
+
+    from daemon.open_threads import detect_open_threads
+
+    unresolved_by_path = detect_open_threads(grouped, threshold=threshold)
+
+    # Mutate cards in-place so stage 8 can pick up.
+    flagged = 0
+    for members in grouped.values():
+        for card in members:
+            still_open = unresolved_by_path.get(card.get("path", ""))
+            if still_open:
+                card["_open_thread"] = True
+                card["_open_thread_questions"] = still_open
+                flagged += 1
+            else:
+                card["_open_thread"] = False
+                card["_open_thread_questions"] = []
+
+    result.open_threads_detected = flagged
+    label = "preview" if dry_run else "complete"
+    result.stages_completed.append(
+        f"detect_open_threads ({flagged} cards with unresolved questions, "
+        f"{label})"
+    )
 
 
 def _stage_detect_contradictions(
@@ -693,6 +743,7 @@ def run_pass(
     cluster_names_file: Optional[Path] = None,
     extractor: Optional["EssenceExtractor"] = None,
     backfill_state_file: Optional[Path] = None,
+    open_threads_file: Optional[Path] = None,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
 
@@ -853,6 +904,47 @@ def run_pass(
         except OSError as exc:
             result.errors.append(f"backfill state file write failed: {exc}")
 
+    # Persist open-threads state so find_open_threads MCP tool can
+    # read it without rescanning the vault on every call. Written
+    # even on dry_run because stage 5 is pure structural — preview
+    # equals real output.
+    if open_threads_file:
+        try:
+            from daemon.open_threads import _card_timestamp
+            entries: list[dict] = []
+            for cid, members in grouped.items():
+                cluster_name = cluster_names.get(cid) if cluster_names else None
+                for card in members:
+                    if not card.get("_open_thread"):
+                        continue
+                    questions = card.get("_open_thread_questions") or []
+                    if not questions:
+                        continue
+                    backfill = card.get("_backfill") or {}
+                    entries.append({
+                        "card_path": card.get("path", ""),
+                        "topic_cluster": cluster_name or f"cluster_{cid}",
+                        "open_questions": questions,
+                        "last_touched": _card_timestamp(card),
+                        "context_summary": (
+                            backfill.get("claim_summary") or ""
+                        ),
+                    })
+
+            payload = {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "vault_root": str(vault_root),
+                "dry_run": dry_run,
+                "open_threads": entries,
+            }
+            open_threads_file.parent.mkdir(parents=True, exist_ok=True)
+            open_threads_file.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            result.errors.append(f"open_threads state file write failed: {exc}")
+
     return result
 
 
@@ -955,6 +1047,15 @@ def main(argv: Optional[list[str]] = None) -> int:
              "Defaults to "
              "$THROUGHLINE_STATE_DIR/reflection_backfill_state.json.",
     )
+    parser.add_argument(
+        "--open-threads-file", type=str, default=None,
+        help="Path to persist stage 5 results (cards with "
+             "unresolved open questions) for the find_open_threads "
+             "MCP tool to read. Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_open_threads.json. "
+             "Written on every pass (including --dry-run) since "
+             "stage 5 is pure structural.",
+    )
     args = parser.parse_args(argv)
 
     vault = Path(args.vault).resolve() if args.vault else None
@@ -998,6 +1099,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             else default_backfill_state_file()
         )
 
+    open_threads_path = (
+        Path(args.open_threads_file).resolve()
+        if args.open_threads_file
+        else default_open_threads_file()
+    )
+
     result = run_pass(
         vault_root=vault,
         dry_run=args.dry_run,
@@ -1008,6 +1115,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         cluster_names_file=cluster_names_path if args.enable_llm_naming else None,
         extractor=extractor,
         backfill_state_file=backfill_state_path,
+        open_threads_file=open_threads_path,
     )
 
     print(_format_result(result))

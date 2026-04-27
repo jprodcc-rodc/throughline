@@ -263,20 +263,22 @@ def test_list_topics_returns_dict_with_status():
 # doesn't break the surface.
 
 
-def test_find_open_threads_returns_stub_shape():
-    """find_open_threads is currently a stub. Verify it returns the
-    documented shape with `_status: "stub"`. Real impl in subsequent
-    commit; this test will then need updating to allow `_status: "ok"`.
-    """
+def test_find_open_threads_returns_real_shape(monkeypatch, tmp_path):
+    """find_open_threads is now a real implementation reading the
+    state file written by Reflection Pass stage 5. With no state
+    file present (point at empty dir), it returns _status: "error"
+    with a clear message — never crashes."""
     from mcp_server.tools import find_open_threads
 
+    monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "no_state"))
     result = find_open_threads()
     assert isinstance(result, dict)
     assert "open_threads" in result
     assert isinstance(result["open_threads"], list)
     assert "total_open_threads" in result
-    assert result["_status"] == "stub"
+    assert result["_status"] == "error"  # state file missing → error
     assert "_message" in result
+    assert "has not run yet" in result["_message"]
 
 
 def test_check_consistency_returns_stub_shape():
