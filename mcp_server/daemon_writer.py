@@ -183,3 +183,76 @@ def estimate_cost_usd(text: str, tier: str = "normal") -> float:
     if tokens > 10_000:
         tier_cost *= tokens / 5_000
     return round(tier_cost, 4)
+
+
+# =========================================================
+# wait_for_refine — poll daemon's refine_state.json
+# =========================================================
+
+import json as _json  # noqa: E402  (intentional: cheap top-level guard)
+import time as _time   # noqa: E402
+
+# Statuses the daemon writes to refine_state.json at the END of
+# processing a raw file. See `daemon/refine_daemon.py` lines around
+# 1781 / 1792 / 1800 / 1824 / 1831 / 1847 / 1853.
+_TERMINAL_STATUSES: frozenset[str] = frozenset({
+    "ok",                     # cards written
+    "no_cards_written",       # daemon ran but no slice survived
+    "permanent_reject",       # daemon explicitly rejected
+    "source_model_skipped",   # pack_source_model_guard opt-out
+    "ephemeral_skipped",      # ephemeral-short heuristic
+    "echo_blocked",           # Echo Guard caught a redundant refine
+    "slice_failed",           # slicer LLM call failed
+    "no_keep_slices",         # all slices marked keep=false
+})
+
+
+def wait_for_terminal_status(
+    raw_path: Path,
+    state_dir: Path,
+    timeout_s: float = 60.0,
+    poll_interval_s: float = 1.0,
+) -> tuple[str, dict | None]:
+    """Poll `<state_dir>/refine_state.json` until the daemon writes a
+    terminal status for `raw_path`, or until `timeout_s` expires.
+
+    Args:
+        raw_path: Absolute path of the raw .md file we just wrote.
+            Daemon's state file keys are forward-slash-normalised
+            absolute paths; we normalise the same way.
+        state_dir: Directory containing `refine_state.json` (matches
+            daemon's `STATE_DIR`, normally
+            `~/throughline_runtime/state/`).
+        timeout_s: Max wait. Default 60s — covers ~95% of refines on
+            cloud LLMs at normal tier.
+        poll_interval_s: Sleep between polls. Default 1s.
+
+    Returns:
+        (status, entry) tuple.
+        - `status`: one of the terminal status strings from the
+          daemon, or the string ``"timeout"`` if the wait expired
+          before any terminal status was written.
+        - `entry`: the per-file dict from refine_state.json (with
+          `raw_hash`, `status`, optional `cards`, optional `updated`)
+          on terminal success; `None` on timeout.
+    """
+    state_file = state_dir / "refine_state.json"
+    key = str(raw_path).replace(os.sep, "/")
+    deadline = _time.time() + timeout_s
+
+    while _time.time() < deadline:
+        if state_file.exists():
+            try:
+                data = _json.loads(state_file.read_text(encoding="utf-8"))
+            except (OSError, _json.JSONDecodeError):
+                # Daemon may be mid-write (atomic but tiny windows
+                # exist). Sleep + retry.
+                _time.sleep(poll_interval_s)
+                continue
+            files_state = data.get("files", {})
+            entry = files_state.get(key)
+            if entry and entry.get("status") in _TERMINAL_STATUSES:
+                return (entry["status"], entry)
+        _time.sleep(poll_interval_s)
+
+    return ("timeout", None)

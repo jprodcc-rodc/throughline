@@ -1,4 +1,5 @@
-"""save_conversation — Phase 1 Week 1 commit 2 implementation.
+"""save_conversation — Phase 1 implementation (Week 1 commit 2 +
+Phase 1.5 wait_for_refine completion).
 
 Writes the conversation as a timestamped .md to `$THROUGHLINE_RAW_ROOT`;
 the daemon's watchdog (`daemon/refine_daemon.py:1955`) picks it up
@@ -11,15 +12,28 @@ Failure modes handled:
 - Filesystem errors (permission, disk full) → return status='error'
   with the OS error chained
 
-`wait_for_refine` is a Phase 2 polish: would require polling the
-daemon's `state/refine_state.json` (or rag_server `/refine_status`)
-to detect when the card lands. Phase 1 always returns immediately
-with `card_path=None`.
+`wait_for_refine=True` polls the daemon's `refine_state.json` for
+up to 60s, returning early once the daemon writes a terminal
+status for the file. Useful when the host LLM wants to confirm the
+card landed before continuing the conversation. False (default)
+returns immediately after queueing.
 """
 from __future__ import annotations
 
-from mcp_server.config import get_raw_root
-from mcp_server.daemon_writer import estimate_cost_usd, write_conversation
+from mcp_server.config import get_raw_root, get_state_dir
+from mcp_server.daemon_writer import (
+    estimate_cost_usd,
+    wait_for_terminal_status,
+    write_conversation,
+)
+
+
+# How long save_conversation(wait_for_refine=True) is willing to
+# block. 60s covers ~95% of refines on cloud LLMs at normal tier;
+# beyond that the LLM call probably failed (rate-limit, API outage,
+# etc.) and the user is better off knowing the daemon didn't
+# complete than waiting forever.
+_WAIT_TIMEOUT_SECONDS = 60.0
 
 
 def save_conversation(
@@ -59,10 +73,14 @@ def save_conversation(
             daemon derives one from the content.
         source: Source label (default 'claude_desktop'). Stored in
             frontmatter for provenance.
-        wait_for_refine: If True, block until the daemon has
-            refined and indexed the card. **Not implemented in
-            Phase 1** — always returns immediately. Reserved for
-            Phase 2.
+        wait_for_refine: If True, block (up to 60s) waiting for
+            the daemon to finish refining the queued conversation.
+            On terminal success the return includes the daemon's
+            status (`ok` / `no_cards_written` / `ephemeral_skipped`
+            / etc.) so the host LLM can confirm the card landed
+            before continuing. False (default) returns as soon as
+            the raw .md is queued — daemon picks up async via
+            watchdog.
 
     Returns:
         On success::
@@ -129,7 +147,7 @@ def save_conversation(
             "_message": f"filesystem error writing to RAW_ROOT: {exc}",
         }
 
-    return {
+    result = {
         "queued": True,
         "raw_path": str(path),
         "card_path": None,
@@ -137,3 +155,16 @@ def save_conversation(
         "_status": "ok",
         "_conv_id": conv_id,
     }
+
+    if wait_for_refine:
+        daemon_status, _entry = wait_for_terminal_status(
+            raw_path=path,
+            state_dir=get_state_dir(),
+            timeout_s=_WAIT_TIMEOUT_SECONDS,
+        )
+        result["daemon_status"] = daemon_status
+        # Card_path discovery (vault scan) is deferred Phase 2 polish;
+        # for now we surface daemon_status so the host LLM can tell
+        # the user "your card landed" vs "refine timed out".
+
+    return result
