@@ -99,6 +99,18 @@ duckdb-vss = [
 pgvector = [
     "psycopg[binary]>=3.1",
 ]
+# MCP server form — exposes throughline as Model Context Protocol
+# tools, so any MCP-aware client (Claude Desktop, Claude Code, Cursor,
+# Continue.dev) can save/recall conversations against the same vault
+# without OpenWebUI in the loop. See `mcp_server/` for the server,
+# `docs/MCP_SETUP.md` (TODO) for client config.
+#
+# Phase 1.5 (post-dogfood) plan: split `mcp_server/` into an
+# independent `throughline-mcp` PyPI package depending on this one.
+# See private/MCP_SCAFFOLDING_PLAN.md § 1.2 for the cutover plan.
+mcp = [
+    "fastmcp>=0.4",
+]
 # Convenience: install everything (full local-only path).
 all = [
     "torch>=2.0",
@@ -111,6 +123,7 @@ all = [
     "duckdb>=0.10",
     "psycopg[binary]>=3.1",
     "uvicorn[standard]>=0.27",
+    "fastmcp>=0.4",
 ]
 # Test + lint dev tooling.
 dev = [
@@ -145,7 +158,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 # Top-level Python packages that ship with the install.
-include = ["throughline_cli*", "daemon*", "rag_server*", "packs*"]
+include = ["throughline_cli*", "daemon*", "rag_server*", "packs*", "mcp_server*"]
 # Things that are NOT packages: tests, fixtures, scripts, samples,
 # the standalone Filter file, the docs.
 exclude = ["fixtures*", "tests*", "docs*"]

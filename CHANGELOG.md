@@ -15,6 +15,32 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — MCP server scaffolding (2026-04-27)
+- **`mcp_server/` package, Phase 1 scaffolding stubs.** New top-level
+  Python package alongside `daemon/` / `rag_server/` / `throughline_cli/`.
+  Three tools registered with the verbose call-when / do-NOT-call
+  guidance the host LLM uses to decide when to fire: `save_conversation`
+  (writes raw .md into the daemon's refine queue),
+  `recall_memory` (HTTP client of localhost rag_server `/v1/rag`),
+  `list_topics` (taxonomy domain listing). All three return placeholder
+  shapes for now — real logic lands in subsequent commits per the
+  Week 1-3 plan in `private/MCP_SCAFFOLDING_PLAN.md`.
+  - `pyproject.toml` adds `[mcp]` extras: `pip install -e .[mcp]`.
+  - `python -m mcp_server` is the stdio entry point; absent `fastmcp`
+    install it prints a clear hint and exits 1 (locked decision Q2:
+    fail-with-message, never auto-install).
+  - 14 new scaffolding smoke tests + 1 fastmcp-gated test verify
+    structure: imports work without fastmcp, all 3 tool signatures
+    match the schema in MCP_SCAFFOLDING_PLAN § 3, every docstring
+    contains both "Call this when:" and "Do NOT call:" guidance per
+    locked decision Q3.
+  - **No existing code modified** — scaffolding is purely additive.
+    1260 → 1301 tests, all passing.
+  - Architectural rationale + locked design decisions live in
+    `private/MCP_SCAFFOLDING_PLAN.md`; MIGRATION_AUDIT classifies
+    every existing module's relationship to MCP work in
+    `private/MIGRATION_AUDIT.md`. Both files are gitignored.
+
 ### Added — post-v0.2.0 ship-and-iterate wave (2026-04-26)
 - **LanceDB** is now a first-class `VECTOR_STORE` backend alongside
   Qdrant + Chroma — embedded, file-based, zero-server (closes #6).
