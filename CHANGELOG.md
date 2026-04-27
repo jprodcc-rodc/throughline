@@ -15,6 +15,88 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — Phase 2 Reflection Layer (2026-04-28)
+
+The Reflection Layer ships in incremental commits behind opt-in
+flags. All three MCP tool surfaces are real implementations
+reading state files written by the Reflection Pass daemon. **No
+vault file mutations** — frontmatter writeback is preview-only
+in this batch and lands in a follow-up commit with explicit
+`--commit-writeback` gating.
+
+**Engineering gate:** clustering accuracy ≥75% pairwise on the
+maintainer's vault (≥2,300 cards) — **cleared 2026-04-28 at
+0.975** (best threshold 0.70).
+
+**New daemon module:** `daemon/reflection_pass.py` orchestrates
+an 8-stage pass — load + frontmatter parse → reflectable filter
+(slice_id or managed_by) → bge-m3 clustering → cluster name
+canonicalization (LLM, opt-in `--enable-llm-naming`) → Path A
+back-fill (LLM, opt-in `--enable-llm-backfill`, claim_summary +
+open_questions) → open-thread detection (structural,
+token-overlap, conservative threshold) → contradiction detection
+(stub) → drift segmentation (stub) → writeback preview (no
+vault mutation).
+
+**New MCP tools (real impls replacing stubs):**
+
+- `find_open_threads(topic?, limit=5)` — surfaces unfinished
+  reasoning. Reads `reflection_open_threads.json`.
+- `check_consistency(statement, soft_mode=True)` — finds
+  best-overlap cluster, returns historical positions as
+  candidate contradictions. Host LLM does the soft-mode framing
+  in conversation. Reads `reflection_positions.json`.
+- `get_position_drift(topic, granularity='transitions')` —
+  chronological trajectory of cards on the topic. Reads
+  `reflection_positions.json`.
+
+**State files** under `$THROUGHLINE_STATE_DIR/`:
+
+- `reflection_pass_state.json` — per-pass watermark
+- `reflection_cluster_names.json` — cluster_signature → name cache
+- `reflection_backfill_state.json` — `path|mtime` → essence cache
+- `reflection_open_threads.json` — surfaced open threads
+- `reflection_positions.json` — comprehensive position database
+- `reflection_writeback_preview.json` — what would be written
+
+**New supporting modules:**
+
+- `daemon/card_body_parser.py` — bilingual section parser
+  (English + Chinese-emoji-English + Chinese-only headers).
+  Real-vault smoke: 80.4% of frontmatter cards / 100% of
+  slicer-output cards have at least 1 known section.
+- `daemon/open_threads.py` — CJK bigram + English unigram
+  tokenizer, token-overlap question-resolution heuristic.
+- `daemon/writeback.py` — frontmatter-addition assembler;
+  preview-only.
+- `mcp_server/llm_namer.py` — stdlib HTTP client for cluster
+  naming. `OPENROUTER_API_KEY` → `OPENAI_API_KEY` env-var
+  fallback.
+- `mcp_server/llm_extractor.py` — stdlib HTTP client for Path A
+  back-fill, same env-var conventions.
+- `mcp_server/position_state.py` — shared state-file readers +
+  cluster-matching helpers used by `check_consistency` and
+  `get_position_drift`.
+
+**Public docs:**
+
+- `docs/POSITION_METADATA_SCHEMA.md` — schema reference + the
+  2026-04-28 vault-format addendum calibrated against the
+  maintainer's real vault.
+- `docs/REFLECTION_LAYER_DESIGN.md` — public-facing rationale +
+  side-by-side comparison with Anthropic's chat-memory feature.
+
+**LLM cost on the maintainer's 72-card reflectable subset:**
+
+- Stage 3 cluster naming: ~$0.0004 per pass
+  (~24 clusters × gemini-2.5-flash)
+- Stage 4 back-fill: ~$0.01 per pass (one-time; cache dedupes)
+- **Total: ~$0.01 per full pass.** Re-runs essentially free.
+
+**Test coverage:** 1,455 → 1,697 tests pass (net +242 across the
+Phase 2 commit series). Mock LLM clients throughout — zero real
+API calls fired during tests.
+
 ### Changed — Phase 1.5 PyPI split (2026-04-28)
 - **`throughline-mcp` is now its own PyPI package.** New
   `mcp_server/pyproject.toml` defines an independent

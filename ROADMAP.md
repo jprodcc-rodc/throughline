@@ -31,29 +31,44 @@ remaining two areas reviewers consistently flag: frontend coupling
 to OpenWebUI, and engineering hygiene around long-running install
 hygiene.
 
-### v0.3 will deliver
+### v0.3 in progress
 
 - **Reflection Layer (the throughline differentiator)** — three
   MCP tools that turn the existing card store into a thinking-state
   tracker, not just a memory tracker:
-  - `find_open_threads` — surfaces unfinished reasoning when the
-    user starts a related conversation. Detects cards with open
-    questions / hypotheses without conclusion / branches that
-    didn't converge.
-  - `check_consistency` — when the user states a position, surfaces
-    historical positions that contradict it AND the original
-    reasoning, so the user can reaffirm, recognize drift, or
-    update the current take. Not "you're wrong" — *"here's your
-    past reasoning, please engage with it."*
-  - `get_position_drift` — shows how the user's framework on a
-    topic has evolved across conversations, with the reasoning at
-    each transition. Metacognitive infrastructure.
+  - `find_open_threads` ✅ shipped — surfaces unfinished reasoning
+    when the user starts a related conversation. Reads daemon
+    state file populated by structural detection (token-overlap
+    on cluster chronology, no LLM on hot path).
+  - `check_consistency` ✅ shipped — when the user states a position,
+    surfaces historical positions in the matching topic cluster
+    AND the original reasoning, so the user can reaffirm, recognize
+    drift, or update the current take. Not "you're wrong" — *"here's
+    your past reasoning, please engage with it."*
+  - `get_position_drift` ✅ shipped — returns the chronological
+    trajectory of cards on a topic, with stance + reasoning per
+    entry. Metacognitive infrastructure.
 
-  Built on a shared foundation: topic clustering + position
-  metadata in card frontmatter + a periodic Reflection Pass daemon.
-  Engineering gate: clustering accuracy ≥75% on the maintainer's
-  vault (≥2,300 cards) before shipping the daemon — false-positive
-  contradictions kill user trust on first occurrence.
+  **Engineering gate:** clustering accuracy ≥75% pairwise on the
+  maintainer's vault (≥2,300 cards) — **cleared 2026-04-28 at
+  0.975** (best threshold 0.70). Phase 2 implementation unblocked
+  and shipped through 11 incremental commits.
+
+  **Built on:** topic clustering (`mcp_server/topic_clustering.py`)
+  + a Reflection Pass daemon (`daemon/reflection_pass.py`) that
+  runs through 8 stages on every pass (load → reflectable filter →
+  cluster → name canonicalization → back-fill → open-thread
+  detection → contradiction detection (stub) → drift segmentation
+  (stub) → writeback preview). State files mediate between the
+  daemon's offline computation and the MCP tools' real-time reads;
+  no LLM on the MCP hot path.
+
+  **What's gated on user opt-in:** stage 3 cluster naming +
+  stage 4 back-fill require `--enable-llm-naming` /
+  `--enable-llm-backfill` flags + an OpenRouter / OpenAI-compatible
+  API key. Total cost on the maintainer's 72-card reflectable
+  subset: ~$0.01 per full pass (gemini-2.5-flash). Cache files
+  dedupe so re-runs are essentially free until cards change.
 
   **Why this is the headline:** April 2026 Anthropic shipped
   past-chat referencing in Claude Desktop. Basic AI memory is
@@ -63,6 +78,15 @@ hygiene.
   vault. Full design rationale + side-by-side with Anthropic's
   feature in
   [`docs/REFLECTION_LAYER_DESIGN.md`](docs/REFLECTION_LAYER_DESIGN.md).
+  Position-metadata schema in
+  [`docs/POSITION_METADATA_SCHEMA.md`](docs/POSITION_METADATA_SCHEMA.md).
+
+  **Remaining for v0.3 final:** atomic vault frontmatter writeback
+  (currently preview-only; high-blast-radius commit gated on its
+  own smoke-test cycle), stage 6 LLM contradiction judgment
+  (enriches `check_consistency` output), stage 7 LLM drift
+  segmentation (refines `get_position_drift` from per-card to
+  per-phase trajectory).
 
 - **OpenAI-compatible proxy adapter** — a small FastAPI proxy that
   exposes `/v1/chat/completions` and injects throughline RAG before
