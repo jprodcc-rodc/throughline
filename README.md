@@ -349,54 +349,43 @@ tool decision you make today.
 
 ## 🏗️ Architecture
 
-**Two independent pipelines, one shared substrate.** They meet only
-on append-only storage (Markdown vault + vector store).
+```mermaid
+flowchart TD
+    user[User in OpenWebUI]
+    filter[Filter inlet<br/>3-tier gate]
+    rag[RAG server<br/>embed + rerank]
+    qdrant[(Vector store)]
+    llm[LLM]
+    exporter[Exporter]
+    raw[Raw Markdown]
+    daemon[Refine daemon]
+    vault[Markdown vault]
+    buffer[Buffer stub]
 
-### Pipeline 1 — per-turn, in-band (every chat message)
+    user -->|turn| filter
+    filter -->|cheap / judge / slash| rag
+    rag --> qdrant
+    rag -->|context cards| filter
+    filter -->|injected system prompt| llm
+    llm -->|reply + status badge| user
 
-```text
-   ┌──────────────┐    query    ┌──────────────┐   vec    ┌──────────┐
-   │  OpenWebUI   │ ───────────► │  RAG server  │ ───────► │  Vector  │
-   │   Filter     │              │ embed+rerank │ ◄─────── │  store   │
-   │  (auto-      │ ◄─────────── │              │   cards  └──────────┘
-   │   recall)    │   context    └──────────────┘
-   └──────┬───────┘
-          │
-          │ injected system prompt
-          ▼
-   ┌──────────────┐  reply +
-   │     LLM      │  status     ┌──────────────┐
-   │              │ ──────────► │   You see    │
-   └──────────────┘  badge      └──────────────┘
+    user -. conversation .-> exporter
+    exporter --> raw
+    raw --> daemon
+    daemon -->|formal note| vault
+    daemon -->|stub| buffer
+    daemon -->|upsert embeddings| qdrant
+    buffer -. human triage .-> vault
 ```
 
-Reads from the vector store. **Never writes to the vault.**
+Two independent pipelines meet at the vector store and the Markdown
+vault on disk. The Filter pipeline runs per-turn, in-band with the
+conversation, and never writes to the vault. The daemon pipeline runs
+out-of-band, produces knowledge cards from completed conversations, and
+never reads live chat sessions. Filter bugs cannot corrupt the vault;
+daemon bugs cannot pollute a live reply.
 
-### Pipeline 2 — per-conversation, out-of-band (after each chat)
-
-```text
-                                        ┌────────────────────┐
-                                        │  Markdown vault    │
-                                ┌─────► │  (formal card)     │
-                                │       └────────────────────┘
-   ┌──────────┐    ┌──────────┐ │       ┌────────────────────┐
-   │  raw     │ ── │  Refine  │ ├─────► │  Buffer stub       │
-   │  .md     │ ──►│  daemon  │ │       │  (00_Buffer/, needs│
-   │ (export) │    │          │ │       │   human triage)    │
-   └──────────┘    └──────────┘ │       └────────────────────┘
-                                │       ┌────────────────────┐
-                                └─────► │  Vector store      │
-                                        │  (embeddings)      │
-                                        └────────────────────┘
-```
-
-Writes to the vault + buffer + vector store. **Never reads live chat.**
-
----
-
-Filter bugs **cannot corrupt the vault**. Daemon bugs **cannot
-pollute a live reply**. Full breakdown:
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full story.
 
 ---
 
