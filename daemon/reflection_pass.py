@@ -1063,6 +1063,15 @@ def main(argv: Optional[list[str]] = None) -> int:
              "is. Exits without running the pass.",
     )
     parser.add_argument(
+        "--explain", type=str, default=None, metavar="CARD_PATH",
+        help="Print everything the daemon thinks about ONE specific "
+             "card — cluster membership, sister cards, back-fill "
+             "data, open-thread status, what writeback would add. "
+             "Pure read of state files; no pass run, no LLM. Useful "
+             "when an MCP tool returns an unexpected result and "
+             "you want to see exactly why.",
+    )
+    parser.add_argument(
         "--dry-run", action="store_true",
         help="Do not write back to cards. Stages 1-7 run; "
              "stage 8 is skipped. Use to validate schema "
@@ -1143,6 +1152,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.inspect:
         from daemon.reflection_inspect import render_inspect_report
         print(render_inspect_report())
+        return 0
+
+    # --explain CARD_PATH: same short-circuit; per-card diagnostic.
+    if args.explain:
+        from daemon.reflection_explain import explain
+        print(explain(args.explain))
         return 0
 
     vault = Path(args.vault).resolve() if args.vault else None
