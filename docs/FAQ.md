@@ -6,6 +6,7 @@ If your question isn't here,
 
 ## Table of contents
 
+- [What is the Reflection Layer? How is it different from chat memory?](#what-is-the-reflection-layer-how-is-it-different-from-chat-memory)
 - [How is this different from ChatGPT's built-in memory?](#how-is-this-different-from-chatgpts-built-in-memory)
 - [How is this different from Claude Projects?](#how-is-this-different-from-claude-projects)
 - [How is this different from `mem0`?](#how-is-this-different-from-mem0)
@@ -22,6 +23,54 @@ If your question isn't here,
 - [What throughline is *not*](#what-throughline-is-not)
 - [What's the roadmap?](#whats-the-roadmap)
 - [I hit a bug. What do you want from me?](#i-hit-a-bug-what-do-you-want-from-me)
+
+---
+
+## What is the Reflection Layer? How is it different from chat memory?
+
+The **Reflection Layer** is throughline's v0.3 differentiator. It
+exposes three MCP tools that turn the existing card store into a
+*thinking-state tracker*, not just a memory tracker:
+
+| Tool | Surfaces | Use case |
+|------|----------|----------|
+| `find_open_threads` | Cards with unresolved questions where no later card on the same topic answered them | "I want to think about X again" → Claude shows you what you stopped thinking about |
+| `check_consistency` | Historical positions (with their original reasoning) on the topic of the user's current statement | "I'm going with X" → Claude surfaces the case you made AGAINST X two months ago, asks if anything changed |
+| `get_position_drift` | Chronological trajectory of cards on a topic, with stance + reasoning per entry | "What's my current framework for X?" → Claude shows you the three reasoned phases your thinking went through |
+
+**How this differs from chat memory** (Claude Desktop, ChatGPT,
+mem0, Letta, OpenMemory MCP, etc.):
+
+| | Chat memory | Reflection Layer |
+|---|-------------|------------------|
+| Trigger | Reactive (you ask) | Proactive (daemon scans + flags) |
+| Object | Conversation snippets / facts | Thinking states (reasoning posture) |
+| Capability | "Find related conversations" | "Find unfinished thinking" |
+| Data ownership | Vendor servers | Local vault |
+| Cross-tool | Locked to one vendor | Vault works across all AI tools |
+
+**One-line distinction:**
+- Claude Desktop / ChatGPT memory remembers **what you said**
+- throughline's Reflection Layer knows **what you stopped
+  thinking about**
+
+These are different needs in a user's head. The market currently
+blurs them — that's throughline's empty niche. The framing is
+**memory loyal to your past thinking, not your present comfort**.
+
+For implementation details:
+[`docs/REFLECTION_LAYER_DESIGN.md`](REFLECTION_LAYER_DESIGN.md);
+schema in [`docs/POSITION_METADATA_SCHEMA.md`](POSITION_METADATA_SCHEMA.md);
+runtime state files in
+[`docs/RUNTIME_STATE_FILES.md`](RUNTIME_STATE_FILES.md).
+
+**Engineering gate:** clustering accuracy ≥75% pairwise on
+the maintainer's vault — cleared 2026-04-28 at 0.975.
+
+**Real-vault one-time cost** (when the user opts into LLM-using
+stages 3 + 4): ~$0.01 / ¥0.07 on `gemini-2.5-flash` against a
+72-card reflectable subset. Cache files dedupe so re-runs are
+essentially free.
 
 ---
 
