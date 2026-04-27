@@ -79,11 +79,24 @@ def target_path(out_dir: Path, conv_date: date, conv_id: str) -> Path:
 def render_markdown(title: str,
                     messages: list[tuple[str, str]],
                     metadata: dict) -> str:
-    """Emit raw MD in the OpenWebUI exporter shape the daemon consumes.
+    """Emit raw MD in the shape the daemon's slicer consumes.
 
     messages = [(role, text), ...] where role is 'user' or 'assistant'.
-    Roles render as H1 headers ('# User' / '# Assistant') separating
-    turns.
+
+    **Format contract** (matches daemon's `_MSG_SPLIT_RE` parser at
+    `daemon/refine_daemon.py`): turn markers are `## user` /
+    `## assistant` (H2, lowercase). Title is H1 (`# Title`) — but
+    title and role-marker share the same body region, so the daemon
+    splits on `^## ` only, and the H1 title naturally falls into the
+    pre-first-marker region (the slicer ignores anything before the
+    first turn).
+
+    Prior to 2026-04-28 this function emitted H1 capitalised
+    (`# User` / `# Assistant`); the daemon's parser silently rejected
+    those and produced zero-message conversations that refined to
+    empty cards. The bug went undetected because adapter→daemon
+    end-to-end tests didn't exercise the parser; see
+    `fixtures/v0_2_0/test_adapter_to_daemon.py` for the regression.
     """
     fm_lines = ["---"]
     for k in ("title", "date", "updated", "source_platform",
@@ -102,8 +115,9 @@ def render_markdown(title: str,
         out.append(f"# {title}")
         out.append("")
     for role, text in messages:
-        display = role.capitalize()
-        out.append(f"# {display}")
+        # H2 lowercase — must match daemon's _MSG_SPLIT_RE
+        # `^## (user|assistant)\s*$` regex.
+        out.append(f"## {role.lower()}")
         out.append("")
         out.append(text.rstrip())
         out.append("")

@@ -118,8 +118,12 @@ class TestCommonHelpers:
         assert 'title: "Test Convo"' in body
         assert "source_platform: \"claude\"" in body
         assert "import_source: \"claude-2026-04-23\"" in body
-        assert "# User" in body
-        assert "# Assistant" in body
+        # Role markers must be H2 lowercase to match daemon's
+        # `_MSG_SPLIT_RE = ^## (user|assistant)\s*$` parser.
+        # Pre-2026-04-28 this asserted H1 capitalised, which masked
+        # the silent zero-message bug.
+        assert "## user" in body
+        assert "## assistant" in body
         assert "hello" in body
         assert "hi back" in body
 
@@ -422,8 +426,9 @@ class TestRun:
         txt = md_files[0].read_text(encoding="utf-8")
         assert "import_source: \"claude-unit-test\"" in txt
         assert "source_platform: \"claude\"" in txt
-        assert '# User' in txt
-        assert '# Assistant' in txt
+        # H2 lowercase role markers — see daemon's _MSG_SPLIT_RE.
+        assert '## user' in txt
+        assert '## assistant' in txt
 
     def test_dry_run_writes_nothing_but_counts(self, tmp_path):
         src = _write_jsonl(tmp_path, _sample_jsonl())
