@@ -2,15 +2,30 @@
 
 **Purpose:** Cross-session continuity anchor. If the conversation is summarized or a new session opens, read this file FIRST to pick up exactly where the last session left off. This is the single source of truth for Phase 6 progress.
 
-**Last updated:** 2026-04-27 (afternoon — strategy clarified) —
-Earlier today: morning re-read external dual-track strategy briefs
-(`throughline_dual_track_strategy_v2.md` + `throughline_mcp_differentiation.md`
-in user Downloads/). Afternoon: user clarified the framing — they
-do NOT commit to the docs' 9-13 week Reflection Layer sprint. Real
-ask is simpler: keep throughline as my first OSS project (portfolio
-+ leverage, no PMF chase) AND add an MCP server entry point so
-people can reach throughline without migrating to OpenWebUI.
-**Read `private/PLAN_90D.md` FIRST** — it's been rewritten to match.
+**Last updated:** 2026-04-27 (evening — MCP Phase 1 Week 1 commit
+1 shipped) — `5776f3d` lands `mcp_server/` package scaffolding
+stubs. 1260 → 1301 tests passing. Pure additive: zero shared core
+touched per private/MIGRATION_AUDIT.md sweep. Afternoon strategy
+clarification still load-bearing — read `private/PLAN_90D.md` FIRST.
+
+**Today's arc (2026-04-27):**
+1. Morning — re-read external dual-track briefs in user Downloads/
+2. Afternoon — strategy clarified: throughline = "我的第一个开源
+   项目", paths 2+3 primary, MCP entry point committed (1-3 week
+   scope), Reflection Layer dogfood-gated
+3. Evening — wrote 3 private docs (PLAN_90D rewrite +
+   MCP_SCAFFOLDING_PLAN + MIGRATION_AUDIT) totaling 1470 lines;
+   locked all 6 design Qs to defaults
+4. Evening late — first concrete code commit: `mcp_server/`
+   scaffolding stubs (10 files, +527 lines, 14 new tests)
+
+**Phase 1 progress:**
+- ✅ Week 1 commit 1: scaffolding stubs (`5776f3d` 2026-04-27)
+- ☐ Week 1 commit 2: save_conversation real logic (writes raw .md
+  to `$THROUGHLINE_RAW_ROOT/`, daemon picks up via watchdog)
+- ☐ Week 2: recall_memory HTTP roundtrip + list_topics taxonomy walk
+- ☐ Week 3: docs/MCP_SETUP.md + README access-points subsection +
+  ROADMAP move + manual smoke test with Claude Desktop
 
 ## 🧭 Strategy clarified anchor (2026-04-27 afternoon) — read FIRST
 
