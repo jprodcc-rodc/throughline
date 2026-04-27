@@ -95,6 +95,17 @@ def default_state_file() -> Path:
     return _default_state_dir() / "reflection_pass_state.json"
 
 
+def default_writeback_preview_file() -> Path:
+    """Resolve default ``state/reflection_writeback_preview.json``.
+
+    Stage 8 writes this on every pass with the diff of what would
+    be added to each card's frontmatter. The actual vault write
+    is gated behind a separate (later) commit; this preview lets
+    the user inspect changes before authorizing.
+    """
+    return _default_state_dir() / "reflection_writeback_preview.json"
+
+
 def default_open_threads_file() -> Path:
     """Resolve default ``state/reflection_open_threads.json`` path.
 
@@ -718,16 +729,58 @@ def _stage_writeback(
     result: PassResult,
     *,
     dry_run: bool,
+    cluster_names: Optional[dict[str, str]] = None,
+    preview_file: Optional[Path] = None,
 ) -> None:
-    """Stage 8 — atomic write-back of computed metadata to vault.
+    """Stage 8 — writeback (preview-only in this commit).
 
-    STUB. Will be wired up once any of stages 3-7 produce metadata
-    worth writing. Until then, dry_run + actual_run are equivalent.
+    Computes what frontmatter additions would be written to each
+    card based on stages 3-5 in-memory results. Always produces a
+    preview JSON; **never mutates vault files in this commit**.
+    Real atomic frontmatter rewrite lands in a follow-up commit so
+    the highest-blast-radius operation in the daemon gets its own
+    smoke-test cycle.
+
+    Args:
+        cards: reflectable cards (post stage-1.5 filter).
+        result: pass result accumulator (mutated).
+        dry_run: passed through for stage-message labeling. Stage
+            output (preview JSON) is the same in both modes since
+            no vault writes happen.
+        cluster_names: cluster_id -> name from stage 3.
+        preview_file: where to write the preview JSON.
     """
-    if dry_run:
-        result.stages_skipped.append("writeback (dry-run)")
-    else:
-        result.stages_skipped.append("writeback (stub — no real outputs yet)")
+    if not cards:
+        result.stages_skipped.append("writeback (no cards)")
+        return
+
+    from daemon.writeback import build_writeback_preview
+
+    diffs = build_writeback_preview(cards, cluster_names or {})
+
+    label = "preview, dry-run" if dry_run else "preview, no vault mutation"
+    result.cards_updated = 0  # zero until commit_writeback path lands
+    result.stages_completed.append(
+        f"writeback ({len(diffs)} cards would be modified, {label})"
+    )
+
+    if preview_file is None:
+        return
+
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "dry_run": dry_run,
+        "cards_would_be_modified": len(diffs),
+        "diffs": diffs,
+    }
+    try:
+        preview_file.parent.mkdir(parents=True, exist_ok=True)
+        preview_file.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        result.errors.append(f"writeback preview file write failed: {exc}")
 
 
 # ---------- orchestration ----------
@@ -744,6 +797,7 @@ def run_pass(
     extractor: Optional["EssenceExtractor"] = None,
     backfill_state_file: Optional[Path] = None,
     open_threads_file: Optional[Path] = None,
+    writeback_preview_file: Optional[Path] = None,
 ) -> PassResult:
     """Run one Reflection Pass over the vault.
 
@@ -867,7 +921,11 @@ def run_pass(
     _stage_detect_open_threads(grouped, result, dry_run=dry_run)
     _stage_detect_contradictions(grouped, result, dry_run=dry_run)
     _stage_compute_drift(grouped, result, dry_run=dry_run)
-    _stage_writeback(cards, result, dry_run=dry_run)
+    _stage_writeback(
+        cards, result, dry_run=dry_run,
+        cluster_names=cluster_names,
+        preview_file=writeback_preview_file,
+    )
 
     result.finished_at = datetime.now(timezone.utc).isoformat()
 
@@ -1056,6 +1114,16 @@ def main(argv: Optional[list[str]] = None) -> int:
              "Written on every pass (including --dry-run) since "
              "stage 5 is pure structural.",
     )
+    parser.add_argument(
+        "--writeback-preview-file", type=str, default=None,
+        help="Path to persist stage 8 writeback preview "
+             "(per-card frontmatter additions that WOULD be "
+             "written if --commit-writeback were enabled). "
+             "Defaults to "
+             "$THROUGHLINE_STATE_DIR/reflection_writeback_preview.json. "
+             "Pure preview — never mutates vault files in this "
+             "commit; review the JSON before authorizing real write.",
+    )
     args = parser.parse_args(argv)
 
     vault = Path(args.vault).resolve() if args.vault else None
@@ -1104,6 +1172,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         if args.open_threads_file
         else default_open_threads_file()
     )
+    writeback_preview_path = (
+        Path(args.writeback_preview_file).resolve()
+        if args.writeback_preview_file
+        else default_writeback_preview_file()
+    )
 
     result = run_pass(
         vault_root=vault,
@@ -1116,6 +1189,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         extractor=extractor,
         backfill_state_file=backfill_state_path,
         open_threads_file=open_threads_path,
+        writeback_preview_file=writeback_preview_path,
     )
 
     print(_format_result(result))

@@ -1034,12 +1034,89 @@ class TestRunPassBackfillIntegration:
         assert any("card.md" in k for k in persisted)
 
 
-def test_stub_stages_record_skips():
-    """Stages 5-8 are stubs; verify skip messages.
+# ---------- Stage 8 (writeback preview) ----------
 
-    Stages 3 and 4 became real in commits B and C respectively;
-    when called with no input data each still records an
-    appropriate skip message ("no clusters" / "nothing eligible").
+class TestStageWriteback:
+    """Stage 8 is preview-only in this commit — never mutates vault
+    files. The actual atomic frontmatter rewrite lands in a
+    follow-up commit with --commit-writeback flag."""
+
+    def test_preview_file_written_when_path_given(self, tmp_path):
+        from daemon.reflection_pass import run_pass
+
+        (tmp_path / "10_Tech").mkdir()
+        (tmp_path / "10_Tech" / "card.md").write_text(
+            "---\ntitle: T\nslice_id: x\n---\nbody\n", encoding="utf-8"
+        )
+
+        preview = tmp_path / "preview.json"
+
+        # Simulate stage 4 producing a back-fill so stage 8 has
+        # something to write into the preview.
+        def fake_cluster(cards, result, *, high_threshold, low_threshold):
+            for c in cards:
+                c["_cluster_id"] = 0
+                c["_backfill"] = {
+                    "claim_summary": "X stance",
+                    "open_questions": ["q?"],
+                }
+            result.cards_clustered = len(cards)
+            result.clusters_count = 1
+            return {"0": cards}
+
+        with patch("daemon.reflection_pass._stage_cluster", side_effect=fake_cluster):
+            run_pass(
+                vault_root=tmp_path, dry_run=False,
+                writeback_preview_file=preview,
+                state_file=tmp_path / "state.json",
+            )
+
+        assert preview.exists()
+        payload = json.loads(preview.read_text(encoding="utf-8"))
+        assert "diffs" in payload
+        # 1 card eligible, modified
+        assert payload["cards_would_be_modified"] == 1
+        diff = payload["diffs"][0]
+        assert diff["card_path"].endswith("card.md")
+        assert "position_signal" in diff["additions"]
+
+    def test_no_vault_file_mutation(self, tmp_path):
+        """Sanity: stage 8 does NOT touch the actual card file's
+        contents in this commit, even when stages 3-5 produced
+        in-memory mutations."""
+        from daemon.reflection_pass import run_pass
+
+        card_path = tmp_path / "10_Tech" / "card.md"
+        card_path.parent.mkdir()
+        original_contents = "---\ntitle: T\nslice_id: x\n---\nbody\n"
+        card_path.write_text(original_contents, encoding="utf-8")
+
+        def fake_cluster(cards, result, *, high_threshold, low_threshold):
+            for c in cards:
+                c["_cluster_id"] = 0
+                c["_backfill"] = {
+                    "claim_summary": "X",
+                    "open_questions": ["q?"],
+                }
+            return {"0": cards}
+
+        with patch("daemon.reflection_pass._stage_cluster", side_effect=fake_cluster):
+            run_pass(
+                vault_root=tmp_path, dry_run=False,
+                writeback_preview_file=tmp_path / "preview.json",
+                state_file=tmp_path / "state.json",
+            )
+
+        # Card file content unchanged — preview-only commit
+        assert card_path.read_text(encoding="utf-8") == original_contents
+
+
+def test_stub_stages_record_skips():
+    """Stages 6-7 are stubs; verify skip messages.
+
+    Stages 3, 4, 5, 8 became real progressively (commits B, C, D, E);
+    when called with no input data each records an appropriate
+    skip message ("no clusters" / "nothing eligible" / "no cards").
     """
     from daemon.reflection_pass import (
         PassResult,
@@ -1075,12 +1152,15 @@ def test_stub_stages_record_skips():
             or "dry-run" in msg_lower
             or "no clusters" in msg_lower
             or "nothing eligible" in msg_lower
+            or "no cards" in msg_lower
         )
 
 
-def test_stub_writeback_dry_run_distinct_from_actual():
-    """Stage 8 distinguishes dry-run from actual; both currently no-op
-    but the messages differ so the CLI is honest."""
+def test_writeback_message_dry_run_label_distinct():
+    """Stage 8 is now real (preview-only). With cards in input, the
+    stage_completed message labels dry-run vs no-mutation modes
+    differently so the CLI is honest about which path ran. With no
+    cards, both modes report 'no cards' skip uniformly."""
     from daemon.reflection_pass import PassResult, _stage_writeback
 
     def _empty(dry):
@@ -1094,13 +1174,26 @@ def test_stub_writeback_dry_run_distinct_from_actual():
             drift_phases_computed=0, cards_updated=0, dry_run=dry,
         )
 
+    # No-cards path: same skip message regardless of dry_run
     r1 = _empty(dry=True)
     _stage_writeback([], r1, dry_run=True)
-    assert "dry-run" in r1.stages_skipped[0].lower()
+    assert "no cards" in r1.stages_skipped[0].lower()
 
-    r2 = _empty(dry=False)
-    _stage_writeback([], r2, dry_run=False)
-    assert "stub" in r2.stages_skipped[0].lower()
+    # Cards-present path: stage_completed message differs by dry_run
+    cards = [
+        {"path": "a.md", "title": "A", "body": "x", "frontmatter": {},
+         "_backfill": {"claim_summary": "S", "open_questions": []},
+         "_cluster_id": 0},
+    ]
+    r2 = _empty(dry=True)
+    _stage_writeback(cards, r2, dry_run=True)
+    msg2 = r2.stages_completed[-1].lower()
+    assert "preview, dry-run" in msg2
+
+    r3 = _empty(dry=False)
+    _stage_writeback(cards, r3, dry_run=False)
+    msg3 = r3.stages_completed[-1].lower()
+    assert "preview, no vault mutation" in msg3
 
 
 # ---------- CLI ----------
