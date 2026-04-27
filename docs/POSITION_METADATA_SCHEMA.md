@@ -481,6 +481,91 @@ out) → drift (most complex aggregation; last).
 
 ---
 
+## Vault format addendum (calibrated 2026-04-28 against author vault)
+
+Smoke-checking this schema against the author's actual production
+vault (2,477 cards, 163 with frontmatter) revealed three deltas
+from the design assumptions above:
+
+**1. Frontmatter is sparser than the public refiner prompts emit.**
+
+Real per-card frontmatter set:
+
+```yaml
+title:              # 157/163 cards
+date:               # 136
+tags:               # 133
+knowledge_identity: # 120
+managed_by:         # 72
+source_platform:    # 63
+source_conversation_id: # 63
+slice_id:           # 63
+route_to:           # 63
+# plus low-frequency: triage_status, formal_path, source_md5,
+# trigger_tags, last_auto_rebuild, sources, type, etc.
+```
+
+Specifically **absent**:
+
+- `primary_x`, `proposed_x_ideal` (taxonomy emit)
+- `open_questions` (the array Open Threads detection was designed
+  to scan)
+- `claim_provenance` (the per-claim provenance list)
+
+The author's running daemon (`refine_thinker_daemon_v9.py`,
+private) does not emit these fields — it pre-dates the public
+refiner prompt schema. Path A back-fill therefore needs to fill
+**all three** of: `position_signal`, `open_questions`, and
+(optionally) the taxonomy fields, not just `position_signal`.
+
+**2. Body structure uses Chinese section headers, not the
+prompt-doc English ones.**
+
+Public refiner prompt documents these section headers:
+
+```
+# Scene & Pain Point
+# Core Knowledge & First Principles
+# Detailed Execution Plan
+# Pitfalls & Boundaries
+# Insights & Mental Models
+# Length Summary
+```
+
+Author's actual vault uses Chinese-prefixed equivalents:
+
+```
+# 🎯 场景与痛点 (Context & Anchor)
+# 🧠 核心知识与底层原理 (First Principles)
+# 🛠️ 详细执行方案 (Execution & Code)
+# 🚧 避坑与边界 (Pitfalls & Gotchas)
+# 💡 心智模型 (Mental Models)
+# 📏 篇幅总结
+```
+
+These are bilingual: emoji + Chinese name + English in parens. The
+Reflection Pass daemon's body parsers must match the bilingual
+form, not the English-only form documented in
+`prompts/en/refiner.deep.generic.md`. Specifically:
+
+- Open question extraction during Path A back-fill: parse the
+  `# 🚧 避坑与边界` section *or* call LLM on the full body — both
+  fine; structural is cheaper if accurate
+- Reasoning extraction: parse `# 🧠 核心知识与底层原理` section
+
+This is not a schema change; it's a parser-target change. Updates
+land in stage-4 (back-fill) implementation.
+
+**3. Existing recall-callout block is already attached to cards.**
+
+163 cards already have a `> [!info] 🧠 神经突触连结` callout
+appended to body — this is the existing recall result block from
+the running daemon. Phase 2 must not collide with it; the
+Reflection Pass daemon writes only to *frontmatter*
+(`position_signal` + `reflection.*`), never appends to body.
+
+---
+
 ## Cross-references
 
 - `docs/REFLECTION_LAYER_DESIGN.md` — public-facing rationale for
