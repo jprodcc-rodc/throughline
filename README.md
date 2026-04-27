@@ -6,6 +6,12 @@
 [![license](https://img.shields.io/github/license/jprodcc-rodc/throughline)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 
+> **At a glance:** ~33,700 LOC Python · 7 runtime modules · 1,300+
+> tests, zero external network calls in CI · 6 first-class vector
+> store backends · 5 native rerankers · 16 LLM-provider presets ·
+> full threat model documented · MCP server entry point ·
+> from blank repo to v0.2.0 public OSS in 12 days with Claude Code.
+
 <!--
   ╭─────────────────────────────────────────────────────────────╮
   │  HERO GIF GOES HERE — 10-15 seconds, three scenes:           │
@@ -178,30 +184,21 @@ server + daemon, install the Filter.
 
 ### LLM providers
 
-**16 preset routes** — wizard auto-detects whichever env var you've
-exported. Direct (OpenAI / Anthropic / DeepSeek / xAI), hosted
-open-weights (Together / Fireworks / Groq), 5 China-market routes,
-OpenRouter proxy, Ollama / LM Studio for fully local, plus a
-generic OpenAI-compatible escape hatch.
+**16 preset routes.** Wizard step 4 auto-detects whichever env var
+you've already exported and pre-selects the matching preset.
+Existing users with `OPENROUTER_API_KEY` set keep working with zero
+config change. Every preset speaks the OpenAI-compatible
+`/v1/chat/completions` shape; `throughline_cli/providers.py` is the
+canonical registry with verified-as-of-date model lists.
 
-<details>
-<summary><b>Click for the full provider grid + env vars</b></summary>
-
-| Region | Providers |
-|---|---|
-| **Direct (anywhere)** | OpenAI · Anthropic · DeepSeek · xAI |
-| **Hosted open-weights** | Together.ai · Fireworks.ai · Groq |
-| **China (大陆 access)** | SiliconFlow (硅基流动) · Moonshot (Kimi) · DashScope (Alibaba Qwen) · Zhipu (智谱 GLM) · Doubao (字节豆包) |
-| **Multi-vendor proxy** | OpenRouter (one key → 300+ models) |
-| **Local / self-hosted** | Ollama · LM Studio |
-| **Escape hatch** | Generic OpenAI-compatible endpoint (`THROUGHLINE_LLM_URL` + `THROUGHLINE_LLM_API_KEY`) |
-
-Each provider reads its own env var (`OPENAI_API_KEY`,
-`ANTHROPIC_API_KEY`, `SILICONFLOW_API_KEY`, …). Existing users with
-`OPENROUTER_API_KEY` already set keep working with zero config
-change.
-
-</details>
+| Region | Providers | Env var pattern |
+|---|---|---|
+| **Direct (anywhere)** | OpenAI · Anthropic · DeepSeek · xAI | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `DEEPSEEK_API_KEY` / `XAI_API_KEY` |
+| **Hosted open-weights** | Together.ai · Fireworks.ai · Groq | `TOGETHER_API_KEY` / `FIREWORKS_API_KEY` / `GROQ_API_KEY` |
+| **China (大陆 access)** | SiliconFlow (硅基流动) · Moonshot (Kimi) · DashScope (Alibaba Qwen) · Zhipu (智谱 GLM) · Doubao (字节豆包) | `SILICONFLOW_API_KEY` / `MOONSHOT_API_KEY` / `DASHSCOPE_API_KEY` / `ZHIPUAI_API_KEY` / `DOUBAO_API_KEY` |
+| **Multi-vendor proxy** | OpenRouter (one key → 300+ models) | `OPENROUTER_API_KEY` |
+| **Local / self-hosted** | Ollama · LM Studio | (no key — local HTTP) |
+| **Escape hatch** | Any OpenAI-compatible endpoint | `THROUGHLINE_LLM_URL` + `THROUGHLINE_LLM_API_KEY` |
 
 **Smoke-test the install** (after step 16): ask something in
 OpenWebUI that overlaps your existing notes. You should see
@@ -276,9 +273,6 @@ from scratch. With throughline, the daemon already refined that
 conversation into a card — `Keto rebound after 6 months — three
 mechanisms, not willpower` — and the next chat pulls it back in.
 
-<details>
-<summary><b>Click to see the full card</b> (Markdown, ~50 lines, lives in your Obsidian vault)</summary>
-
 ```markdown
 ---
 title: "Keto weight rebound after 6 months — three mechanisms, not willpower"
@@ -286,6 +280,7 @@ date: 2026-04-02 20:42:00
 knowledge_identity: personal_persistent
 tags: [Health/Biohack, y/Mechanism, z/Node]
 source_conversation_id: "sample-002-keto-rebound"
+claim_provenance: user_stated
 ---
 
 # Scene & Pain Point
@@ -317,10 +312,12 @@ Keto rebound at month 6 = adaptive thermogenesis + portion drift +
 insulin recovery. Fix is a measurement week, not more willpower.
 ```
 
-</details>
-
 This is the file you grep with `ripgrep`, embed for RAG, and re-read
-in five years. The conversation it came from is one line in a daemon log.
+in five years. The conversation it came from is one line in a daemon
+log. Six structural sections + frontmatter (with `knowledge_identity`,
+XYZ axis tags, and `claim_provenance` so retrieval can filter
+user-stated facts from LLM speculation) — every refined card has the
+same shape so downstream tooling stays simple.
 
 ---
 
@@ -385,7 +382,46 @@ out-of-band, produces knowledge cards from completed conversations, and
 never reads live chat sessions. Filter bugs cannot corrupt the vault;
 daemon bugs cannot pollute a live reply.
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full story.
+### Beyond the diagram
+
+Several load-bearing safety + quality layers most "AI memory" tools
+skip — the parts that take real engineering, not just `embed + store
++ retrieve`:
+
+- **3-tier recall gate** in the Filter (cheap heuristic → Haiku judge
+  → explicit slash command) — keeps RAG silent when the user's
+  question doesn't actually want context, instead of dumping every
+  remotely-relevant card into the prompt.
+- **5-layer RAG integrity controls** — anti-pollution rules,
+  `claim_provenance` tagging, de-individualisation pre-write,
+  explicit DATA-not-INSTRUCTIONS wrapping at retrieval, forbidden-
+  prefix denylist before Qdrant upsert. Prevents stored cards from
+  becoming a prompt-injection vector against future replies.
+- **4-layer Personal Context stack** — profile / preference data
+  rides the Filter's injection path but never enters Qdrant. A
+  daemon bug cannot leak it into public RAG; a Filter bug cannot
+  corrupt it.
+- **Echo Guard** — detects redundant card refines (LLM rewrites of
+  the same content) and rejects them so the vault doesn't balloon
+  with re-summaries.
+- **Self-growing taxonomy with human-in-the-loop** — the system
+  *proposes* taxonomy expansions based on observed conversation
+  patterns; it never adopts them autonomously. Stops the LLM-emits-
+  ten-variants-of-the-same-tag drift that degrades retrieval.
+- **Forward-slash path-normalisation invariant** — load-bearing
+  Windows / *nix path mismatches become silent Qdrant point-id
+  corruption otherwise.
+- **Pluggable backend ABCs** — `BaseEmbedder` / `BaseReranker` /
+  `BaseVectorStore` factories with alias routing, lazy model load,
+  and stub-on-missing-dep so the wizard can list options without
+  crashing at import.
+- **Honest threat model** ([`SECURITY.md`](SECURITY.md) +
+  [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)) — what's defended
+  against, what isn't, and why each scope cut was made.
+
+Full breakdown of each layer:
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Why each design call
+was made: [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md).
 
 ---
 
