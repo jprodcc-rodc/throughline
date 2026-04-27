@@ -1,9 +1,16 @@
 """FastMCP application factory.
 
-Phase 1 scaffolding stub — registers the 3 tools as fastmcp
-decorators but each tool currently returns a placeholder shape.
-Real implementations land in subsequent commits (save_conversation
-in Week 1 commit 2, recall + list in Week 2).
+Phase 1 (v0.2.x, shipped) registered 3 real tools:
+- save_conversation, recall_memory, list_topics
+
+Phase 2 (v0.3, in progress) adds 3 more for the Reflection Layer:
+- find_open_threads, check_consistency, get_position_drift
+
+The Phase 2 trio currently registers as stubs (returning
+`_status: "stub"`) so MCP clients can wire up and test the surface
+end-to-end before the Reflection Pass daemon lands the underlying
+metadata. Engineering gate (≥75% topic-clustering pairwise accuracy
+on author's vault): cleared 2026-04-28 at 0.975.
 
 Per locked decision Q4 (`private/MCP_SCAFFOLDING_PLAN.md` § 12.A):
 tool names are NOT namespaced (`save_conversation`, not
@@ -23,10 +30,13 @@ from mcp_server import __version__
 from mcp_server.tools.save_conversation import save_conversation
 from mcp_server.tools.recall_memory import recall_memory
 from mcp_server.tools.list_topics import list_topics
+from mcp_server.tools.find_open_threads import find_open_threads
+from mcp_server.tools.check_consistency import check_consistency
+from mcp_server.tools.get_position_drift import get_position_drift
 
 
 def build_app() -> FastMCP:
-    """Construct + return the FastMCP application with all 3 tools
+    """Construct + return the FastMCP application with all tools
     registered. Factored out of module load so tests can build a
     fresh app per test if needed.
     """
@@ -35,8 +45,15 @@ def build_app() -> FastMCP:
         version=__version__,
     )
 
+    # Phase 1: foundational tools.
     app.tool()(save_conversation)
     app.tool()(recall_memory)
     app.tool()(list_topics)
+
+    # Phase 2: Reflection Layer (currently stub-tier; real impl
+    # in subsequent commits once daemon + position_signal land).
+    app.tool()(find_open_threads)
+    app.tool()(check_consistency)
+    app.tool()(get_position_drift)
 
     return app

@@ -1,16 +1,24 @@
-"""Phase 1 scaffolding smoke tests for mcp_server.
+"""Phase 1 + Phase 2 scaffolding smoke tests for mcp_server.
 
 These tests verify the *structure* of the MCP server — module imports
 work, tools have the expected signatures, docstrings are non-empty
 and contain the call-when guidance per locked decision Q3 in
 private/MCP_SCAFFOLDING_PLAN.md § 12.A.
 
+Phase 1 (shipped, v0.2.x): save_conversation / recall_memory /
+list_topics are real implementations.
+
+Phase 2 (in progress, v0.3): find_open_threads / check_consistency /
+get_position_drift are stubs returning `_status: "stub"` until the
+Reflection Pass daemon and position_signal frontmatter schema land.
+The scaffold tests here verify the surface (signature, docstring
+quality, return shape contract) so Phase 2 work can flip stubs to
+real implementations one at a time without rewriting the surface.
+
 What these tests do NOT cover (yet):
-- The fastmcp app build (requires fastmcp installed; gated test)
-- Real save_conversation file-write logic (Week 1 commit 2)
-- Real recall_memory HTTP roundtrip (Week 2)
-- Real list_topics taxonomy reading (Week 2)
-- End-to-end stdio handshake with a host client (Week 3 manual)
+- The fastmcp app build registers all tools (gated test below)
+- Real Reflection Pass daemon detection logic (subsequent commit)
+- End-to-end stdio handshake with a host client (manual smoke test)
 """
 from __future__ import annotations
 
@@ -30,16 +38,22 @@ def test_mcp_server_package_imports():
 
 
 def test_tools_module_imports():
-    """All three tool functions are importable without fastmcp."""
+    """All six tool functions are importable without fastmcp."""
     from mcp_server.tools import (
         save_conversation,
         recall_memory,
         list_topics,
+        find_open_threads,
+        check_consistency,
+        get_position_drift,
     )
 
     assert callable(save_conversation)
     assert callable(recall_memory)
     assert callable(list_topics)
+    assert callable(find_open_threads)
+    assert callable(check_consistency)
+    assert callable(get_position_drift)
 
 
 # ---------- Tool signature checks ----------
@@ -94,12 +108,68 @@ def test_list_topics_signature():
     assert params["include_card_counts"].default is True
 
 
+def test_find_open_threads_signature():
+    """find_open_threads takes (topic, limit). topic optional, limit
+    defaults 5. See docs/REFLECTION_LAYER_DESIGN.md § Open Threads."""
+    from mcp_server.tools import find_open_threads
+
+    sig = inspect.signature(find_open_threads)
+    params = sig.parameters
+
+    assert "topic" in params
+    assert "limit" in params
+
+    assert params["topic"].default is None
+    assert params["limit"].default == 5
+
+
+def test_check_consistency_signature():
+    """check_consistency takes (statement, soft_mode). statement
+    required; soft_mode defaults True (mitigation for engineering
+    risk #3 false-positive contradictions per design doc)."""
+    from mcp_server.tools import check_consistency
+
+    sig = inspect.signature(check_consistency)
+    params = sig.parameters
+
+    assert "statement" in params
+    assert "soft_mode" in params
+
+    # statement required (no default)
+    assert params["statement"].default is inspect.Parameter.empty
+    # soft_mode defaults True per design doc § 'Engineering risks'
+    assert params["soft_mode"].default is True
+
+
+def test_get_position_drift_signature():
+    """get_position_drift takes (topic, granularity). topic required;
+    granularity defaults 'transitions'."""
+    from mcp_server.tools import get_position_drift
+
+    sig = inspect.signature(get_position_drift)
+    params = sig.parameters
+
+    assert "topic" in params
+    assert "granularity" in params
+
+    # topic required
+    assert params["topic"].default is inspect.Parameter.empty
+    assert params["granularity"].default == "transitions"
+
+
 # ---------- Tool description quality (locked decision Q3) ----------
 
-@pytest.mark.parametrize(
-    "tool_name",
-    ["save_conversation", "recall_memory", "list_topics"],
-)
+ALL_TOOLS = [
+    "save_conversation",
+    "recall_memory",
+    "list_topics",
+    "find_open_threads",
+    "check_consistency",
+    "get_position_drift",
+]
+
+
+@pytest.mark.parametrize("tool_name", ALL_TOOLS)
 def test_tool_docstring_has_call_when_guidance(tool_name):
     """Per Q3: tool descriptions must include explicit 'Call this
     when:' guidance so the host LLM knows when to fire the tool."""
@@ -115,10 +185,7 @@ def test_tool_docstring_has_call_when_guidance(tool_name):
     )
 
 
-@pytest.mark.parametrize(
-    "tool_name",
-    ["save_conversation", "recall_memory", "list_topics"],
-)
+@pytest.mark.parametrize("tool_name", ALL_TOOLS)
 def test_tool_docstring_has_do_not_call_guidance(tool_name):
     """Per Q3: tool descriptions must include 'Do NOT call:' anti-
     pattern guidance so the host LLM doesn't over-call."""
@@ -188,11 +255,61 @@ def test_list_topics_returns_dict_with_status():
     assert result["_status"] in {"ok", "error"}  # not "stub" anymore
 
 
+# ---------- Phase 2 stub return shape ----------
+#
+# These return `_status: "stub"` until the Reflection Pass daemon and
+# position_signal frontmatter schema land. Tests assert the *contract*
+# (key names, types) so flipping each stub to real implementation
+# doesn't break the surface.
+
+
+def test_find_open_threads_returns_stub_shape():
+    """find_open_threads is currently a stub. Verify it returns the
+    documented shape with `_status: "stub"`. Real impl in subsequent
+    commit; this test will then need updating to allow `_status: "ok"`.
+    """
+    from mcp_server.tools import find_open_threads
+
+    result = find_open_threads()
+    assert isinstance(result, dict)
+    assert "open_threads" in result
+    assert isinstance(result["open_threads"], list)
+    assert "total_open_threads" in result
+    assert result["_status"] == "stub"
+    assert "_message" in result
+
+
+def test_check_consistency_returns_stub_shape():
+    """check_consistency is currently a stub. Verify shape contract."""
+    from mcp_server.tools import check_consistency
+
+    result = check_consistency(statement="I think we should use Postgres")
+    assert isinstance(result, dict)
+    assert "contradictions" in result
+    assert isinstance(result["contradictions"], list)
+    assert result["_status"] == "stub"
+    assert "_message" in result
+
+
+def test_get_position_drift_returns_stub_shape():
+    """get_position_drift is currently a stub. Verify shape contract."""
+    from mcp_server.tools import get_position_drift
+
+    result = get_position_drift(topic="pricing_strategy")
+    assert isinstance(result, dict)
+    assert "topic" in result
+    assert result["topic"] == "pricing_strategy"
+    assert "trajectory" in result
+    assert isinstance(result["trajectory"], list)
+    assert result["_status"] == "stub"
+    assert "_message" in result
+
+
 # ---------- FastMCP app build (gated on fastmcp install) ----------
 
-def test_build_app_registers_three_tools():
+def test_build_app_registers_all_tools():
     """If fastmcp is installed, build_app() returns a FastMCP
-    instance with all 3 tools registered.
+    instance with all 6 tools (3 Phase 1 + 3 Phase 2 stubs) registered.
 
     Skipped when fastmcp is not installed — scaffolding tests above
     still cover the structural invariants without it.
@@ -202,6 +319,6 @@ def test_build_app_registers_three_tools():
     from mcp_server.server import build_app
 
     app = build_app()
-    # fastmcp's tool registry shape may evolve; this assertion
-    # uses the public attr that exists across 0.4.x line.
+    # fastmcp's tool registry shape may evolve; this assertion uses
+    # the public attr that exists across 0.4.x line.
     assert app is not None
