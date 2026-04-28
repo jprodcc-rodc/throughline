@@ -145,22 +145,46 @@ def save_refined_card(
     daemon LLM cost. The host LLM (you) does the refining work on
     its own subscription budget; this tool just files the result.
 
+    **This is the DEFAULT save path** when the host LLM (you) is on
+    a Claude Desktop / Code / Cursor / Continue.dev subscription.
+    save_conversation is the legacy raw-queue path that costs ~$0.04
+    per save (daemon's paid OpenRouter refine call). This tool is
+    free — you do the refining on subscription budget that the user
+    already pays.
+
+    Both tools write the same frontmatter shape to the same vault;
+    cards from either path look identical to recall_memory + the
+    Reflection Layer. The only difference is who paid for the LLM
+    work that synthesized the body.
+
+    Decision flow when user says 'save' / 'remember' / 记住 / 保存:
+    1. CAN you synthesize the conversation into a coherent
+       structured card right now? → call save_refined_card (free)
+    2. Are you a thin LLM that can't synthesize well? → call
+       save_conversation (paid, daemon refines)
+    3. Did the user explicitly ask for raw save? → call
+       save_conversation
+
+    For Claude Sonnet 4.x / Opus 4.x hosts the answer to (1) is
+    almost always YES — prefer this tool.
+
     Call this when:
     - User says 'save this' / 'remember this' / 记住这个 / 保存这个
-      AND you can synthesize the conversation into a coherent
-      structured card yourself.
-    - The user is on a Claude Desktop / Cursor / Continue.dev
-      subscription where extra LLM work for refining is already
-      covered.
+      / '存下来' / 'capture this' (any save intent).
+    - User said 'refined' / 'refined conversation' / '精炼' /
+      'structured' anywhere in the request.
+    - You can synthesize the conversation into a 6-section card.
     - You want the card retrievable from the vault immediately
       (this tool writes directly; no daemon queue).
 
     Do NOT call:
-    - With raw, unstructured conversation transcripts. Use
-      save_conversation for that — daemon handles refining.
+    - When you genuinely cannot synthesize a coherent structured
+      card (extremely long fragmented input, content outside your
+      domain). Fall back to save_conversation.
     - When you cannot determine a good X-axis domain (call
       list_topics first to learn the user's taxonomy).
-    - For trivia / small talk / acknowledgements.
+    - For trivia / small talk / acknowledgements (don't save those
+      via either tool).
 
     Recommended body shape — 6 sections, free-form headers. Vault
     convention example::

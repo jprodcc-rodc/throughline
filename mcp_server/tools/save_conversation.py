@@ -46,18 +46,41 @@ def save_conversation(
     throughline's refine pipeline. The daemon will refine it into
     a 6-section knowledge card and add it to the user's vault.
 
-    Call this when:
-    - The user explicitly asks to "save", "remember", "捕获",
-      or similar.
+    **PREFER save_refined_card over this tool** when you (the host
+    LLM) can synthesize the conversation into a structured 6-section
+    card yourself. save_conversation queues a *raw* transcript and
+    the daemon refines it via paid OpenRouter API (~$0.04 / save
+    on Sonnet 4.6). save_refined_card has zero LLM cost because
+    you do the refining work on subscription budget. Both tools
+    write to the same vault; choose by who pays.
+
+    Use save_conversation ONLY when:
+    - You are a thin / non-refining LLM that can't reliably build
+      a structured card.
+    - The conversation is too long / fragmented for one synthesis
+      pass and the daemon's slicer is needed.
+    - The user explicitly asks for "raw save" or "queue for daemon".
+    - You are doing bulk import (e.g. ChatGPT export) where each
+      conversation is a separate raw file.
+
+    Otherwise prefer save_refined_card.
+
+    If you do call this tool, surface the cost expectation honestly
+    so the user can opt out: "this will queue the raw conversation;
+    the daemon will refine via API at ~\$0.04. Want save_refined_card
+    instead (zero cost)?"
+
+    Call this (raw-queue path) when:
+    - The user explicitly asks to "save raw", "queue", or
+      explicitly opts out of host-side refining.
     - The user signals an important decision, conclusion, or
-      personal-context fact they want captured ("I've decided X",
-      "from now on Y", "remember that I'm allergic to Z").
-    - At natural breakpoints in a long reasoning session, with
-      user confirmation.
+      personal-context fact they want captured AND you cannot
+      synthesize it well yourself.
 
     Do NOT call:
     - On every turn / proactively without user signal — the user
       curates what gets saved.
+    - When save_refined_card would suffice (default to that).
     - When the user is mid-thought; wait for closure.
     - For trivia or small talk.
 
