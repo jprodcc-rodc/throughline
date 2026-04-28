@@ -1,0 +1,36 @@
+# CODEOWNERS — auto-assigns review on every PR.
+#
+# Currently the project has a single maintainer, so every path
+# routes to one owner. The per-directory entries are kept so adding
+# additional owners later is a one-line edit per area instead of a
+# whole-file rewrite. Syntax: <pattern> <user1> <user2> …; more
+# specific patterns later in the file override earlier ones.
+#
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Catch-all
+*                       @jprodcc-rodc
+
+# Engineering surface
+/daemon/                @jprodcc-rodc
+/mcp_server/            @jprodcc-rodc
+/rag_server/            @jprodcc-rodc
+/filter/                @jprodcc-rodc
+/throughline_cli/       @jprodcc-rodc
+/packs/                 @jprodcc-rodc
+/scripts/               @jprodcc-rodc
+
+# Tests
+/fixtures/              @jprodcc-rodc
+
+# Documentation surface
+/docs/                  @jprodcc-rodc
+/README.md              @jprodcc-rodc
+/ROADMAP.md             @jprodcc-rodc
+/CHANGELOG.md           @jprodcc-rodc
+/SECURITY.md            @jprodcc-rodc
+/CONTRIBUTING.md        @jprodcc-rodc
+/CODE_OF_CONDUCT.md     @jprodcc-rodc
+
+# CI / repo plumbing
+/.github/               @jprodcc-rodc
