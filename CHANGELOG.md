@@ -15,6 +15,80 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Validated — Phase 2 Reflection Layer first real-LLM E2E (2026-04-28+2)
+
+**First end-to-end pass with real LLM calls against the maintainer's
+production vault.** All 8 stages of `daemon.reflection_pass` ran
+successfully on a 2477-file Obsidian vault, validating the full Phase 2
+pipeline beyond synthetic-fixture testing.
+
+**Pipeline numbers:**
+- 2477 markdown files scanned → 72 reflectable (filter dropped 2405
+  logs / drafts / indexes)
+- 72 cards clustered into 24 topics @ similarity threshold 0.70
+  (matches the gate experiment best score)
+- 23 of 24 clusters successfully named by LLM (1 sanitizer reject —
+  see Known issues below)
+- 72/72 cards back-filled with `claim_summary` and `open_questions`
+- 42 cards flagged with unresolved questions
+- 237 contradiction-judge pairs evaluated, 0 contradictions detected
+  (taxonomy `agreement` / `orthogonal` / `evolution` working;
+  validates precision — recall would need a deliberate-conflict test
+  set)
+- 35 drift phases computed across 24 clusters; per-cluster
+  `drift_kind` classifications correctly identify temporal evolution
+- 72 cards' worth of frontmatter additions visible in writeback
+  preview JSON; vault was NOT mutated (`--commit-writeback` flag
+  defaults OFF, schema verified non-conflicting)
+
+**Cost:** ~$0.18 across all LLM stages (gemini-2.5-flash via OpenRouter).
+**Wall time:** 8 minutes.
+
+**Significance:** Per-project history this is the first real LLM API
+call from any Phase 2 daemon stage. Prior validation was
+mock-tested; quality of synthetic outputs is now confirmed against
+real user data.
+
+**Sample quality (cluster names):** `personal_medication_regimen`
+(largest, size 17) · `veo_imagen_prompt_design` (size 13) ·
+`australian_immigration_491` · `tailscale_exit_node_troubleshooting`
+· `venlafaxine_xr_missed_dose` — all sensible snake_case matching
+the cluster's actual content.
+
+**Sample quality (open_questions):** specific actionable follow-ups,
+not generic "what is X" — e.g. for the PS5/HDMI card: "Does
+Topology A introduce noticeable input lag for competitive gaming?"
+"How to verify the actual passthrough bandwidth when manufacturer
+only states 'HDMI 2.1' without 4K/120Hz/VRR/ALLM specifics?"
+
+**Known issues surfaced and addressed in follow-up commits:**
+
+- Cluster name sanitizer rejected `3d_modeling_methods` because
+  `_VALID_NAME_RE` required leading letter; loosened to allow digit
+  prefix (snake_case identifier conventions allow it; schema docs
+  do not require letter-start). Fix: `2980244`.
+- Contradiction judge `DEFAULT_MAX_TOKENS=200` truncated 1/237
+  responses with verbose `reasoning_diff`; raised to 600. Fix:
+  `e03b4c1`.
+- Contradiction judge had no retry on transient TCP timeouts (4/237
+  affected); added `_urlopen_with_retry` helper distinguishing 4xx
+  (permanent) from 5xx/URLError/timeout (retry with exponential
+  backoff). Same commit `e03b4c1`. Re-run of the E2E pass after
+  these fixes shipped landed 0 errors across 242 pair judgments
+  (24/24 cluster names, 0 truncations, 0 unhandled timeouts).
+
+**Outstanding (deferred to a follow-up commit):** the maintainer's
+vault stores ZH/EN translations of the same conversation as
+separate cards (`20260415refined_<title>.md` paired with
+`<title>__<hash>.md`), causing duplicated work in stages 2/4/6.
+Upstream dedup heuristic (same hash suffix + similarity > 0.95)
+is the natural fix.
+
+**Run artifacts** (gitignored; private to maintainer):
+`private/dryrun_2026-04-28/` — `FINDINGS.md` plus 7 state JSON
+files plus run logs. Useful as a real-world reference when iterating
+on prompts, sanitizers, or schema.
+
 ### Added — Phase 2 Reflection Layer overnight wave (2026-04-28+1)
 
 12 commits extending the Phase 2 Reflection Layer with:
