@@ -511,10 +511,9 @@ API calls fired during tests.
     decision Q2: fail-with-message, never auto-install).
   - **No existing code modified** — Phase 1 is purely additive
     (~770 LOC code + ~1,000 LOC tests). 1260 → 1372 tests.
-  - Architectural decisions + 6 locked design choices in
-    `private/MCP_SCAFFOLDING_PLAN.md` (gitignored). Pre-implementation
-    audit at `private/MIGRATION_AUDIT.md` confirmed 99% of existing
-    33,700 LOC is shared core that needs zero changes for MCP form.
+  - The architectural decisions + 6 locked design choices that
+    drove this work confirmed 99% of existing 33,700 LOC is shared
+    core that needs zero changes for the MCP form.
     Phase 1.5 (post-dogfood, ~½ day) splits `mcp_server/` into an
     independent `throughline-mcp` PyPI package from the same git
     repo for cleaner one-line install (`pip install throughline-mcp`).

@@ -445,8 +445,8 @@ Mitigations:
   position on topic B, schema could link them. Out of scope; v0.3
   treats topics as independent.
 - **Multi-user vaults.** All `position_signal` is single-user. Team
-  vaults are out of scope per `private/PLAN_90D.md` (single-user
-  is the entire product axis).
+  vaults are out of scope — single-user is the entire product axis
+  (see [`docs/FAQ.md` § "What throughline is *not*"](FAQ.md#what-throughline-is-not)).
 
 ---
 
@@ -607,9 +607,6 @@ Reflection Pass daemon writes only to *frontmatter*
   was designed and run
 - `mcp_server/topic_clustering.py` — clustering algorithm
 - `mcp_server/clustering_accuracy.py` — gate metrics
-- `mcp_server/tools/find_open_threads.py` — Phase 2 tool stub
-- `mcp_server/tools/check_consistency.py` — Phase 2 tool stub
-- `mcp_server/tools/get_position_drift.py` — Phase 2 tool stub
-- `private/MCP_SCAFFOLDING_PLAN.md` § 12.A — locked decisions
-  (Q1-Q4) that constrain MCP tool surfaces
-- `private/PLAN_90D.md` — Phase 2 strategic position
+- `mcp_server/tools/find_open_threads.py` — Reflection Layer MCP tool
+- `mcp_server/tools/check_consistency.py` — Reflection Layer MCP tool
+- `mcp_server/tools/get_position_drift.py` — Reflection Layer MCP tool

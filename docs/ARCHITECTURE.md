@@ -575,7 +575,7 @@ Sections 1–12 describe the core v0.1.0 architecture and are still
 load-bearing. v0.2.0 added three orthogonal extensions that don't
 replace any of the above but slot in at specific seams.
 
-### 13.1 Pluggable backends (U12 / U20 / U21)
+### 13.1 Pluggable backends (embedder / reranker / vector store)
 
 Three abstractions live under `rag_server/`:
 
@@ -607,7 +607,7 @@ Qdrant collection's vector space; re-run `scripts/ingest_qdrant.py`
 afterwards — the script reads the active embedder's `vector_size`
 and creates a fresh collection with matching schema.
 
-### 13.2 User dials (U23)
+### 13.2 User dials
 
 The wizard's step 13 lets the user adjust five output dials
 (tone / length / sections / register / keep-verbatim) with a safe
@@ -624,7 +624,7 @@ typo in `dial_tone` must never brick the refiner. Dropping every
 body section would break the 6-section retention gate; the loader
 refuses an empty section list and retains the defaults.
 
-### 13.3 Self-growing taxonomy (U27)
+### 13.3 Self-growing taxonomy
 
 #### On "self-growing" — what we mean by it
 
@@ -646,17 +646,17 @@ solve. Human-in-the-loop is the trade-off chosen.
 The loop stays useful because:
 1. The observer is **passive** — zero cost per refine, zero
    periodic scan; signal accumulates as a side effect of normal
-   refining (U27.3).
+   refining.
 2. The reviewer is **batch + clustered** — `taxonomy review` clusters
    variants of the same proposal so the user makes one decision per
-   concept, not one per call (U27.4).
+   concept, not one per call.
 3. The decision is **surgical + auditable** — accepted proposals
    land via regex insert into `config/taxonomy.py`'s VALID_X_SET
    literal, so every taxonomy change is git-blameable.
 
 If you want fully autonomous taxonomy mutation, throughline is the
 wrong tool. If you want "the system notices drift and offers it to
-me on a quiet schedule", that's exactly what U27 does.
+me on a quiet schedule", that's exactly what this loop does.
 
 #### Mechanics
 
@@ -665,31 +665,36 @@ for users with 100+ existing cards) and static template fallbacks
 (JD/PARA/Zettel). v0.2.0 adds a growth loop for the 75% of users who
 arrive with <100 cards:
 
-- **U27.1 seed** — `config/taxonomy.minimal.py` ships 5 broad domains
+- **Seed** — `config/taxonomy.minimal.py` ships 5 broad domains
   (Tech / Creative / Health / Life / Misc). Wizard step 14 picks it
   when the scanned import has <100 cards.
-- **U27.2 signal** — all 8 refiner prompts emit both `primary_x`
+- **Signal** — all 8 refiner prompts emit both `primary_x`
   (must be in VALID_X_SET, the routing invariant) and
   `proposed_x_ideal` (unconstrained preferred tag). When they match,
   the fit is perfect; when they differ, the gap is growth signal.
-- **U27.3 observer** — `daemon/taxonomy_observer.py` appends every
+- **Observer** — `daemon/taxonomy_observer.py` appends every
   refine's `{ts, card_id, title, primary_x, proposed_x_ideal}` tuple
   to `state/taxonomy_observations.jsonl`. Pure append-only, no
   periodic scan, no in-memory counters.
-- **U27.4 review CLI** — `python -m throughline_cli taxonomy review`
+- **Review CLI** — `python -m throughline_cli taxonomy review`
   reads the log, clusters drift rows (normalised for casing and
   singular/plural), applies count + day-span thresholds, and prompts
   the user through each candidate with add/reject/name-as-different/
   skip actions. Add performs surgical regex insert into
   `config/taxonomy.py`'s VALID_X_SET literal, bootstrapping from the
   minimal seed on first write so the shipped file stays read-only.
+- **Doctor surfacing** — pending taxonomy candidates show up in
+  `python -m throughline_cli doctor` so the user gets nudged to run
+  `taxonomy review` rather than letting drift accumulate silently.
+- **Zero-usage leaf detection** — doctor flags taxonomy domains
+  with no cards routed to them, suggesting deprecation candidates.
 
-See `docs/TAXONOMY_GROWTH_DESIGN.md` for the full spec; U27.5 +
-U27.7 shipped during v0.2.x (doctor surfacing of pending candidates
-and zero-usage leaf detection); U27.6 (`taxonomy retag` batch
-re-refine) is the only remaining deferred-to-v0.3 piece.
+See `docs/TAXONOMY_GROWTH_DESIGN.md` for the full spec. Batch retag
+(`taxonomy retag --since DATE --domain X` for re-routing historical
+cards under a newly-added leaf) is the remaining deferred-to-v0.3
+piece.
 
-### 13.4 Budget enforcement (U3)
+### 13.4 Budget enforcement
 
 `daemon/budget.py` reads `THROUGHLINE_MAX_DAILY_USD` (env var wins)
 or `daily_budget_usd` in `config.toml`. `process_raw_file()` checks
@@ -720,7 +725,7 @@ own hand-rolled HTTP path. v0.2.x adds a **provider registry** so the
 same abstraction-first shape that rag_server has for embedder /
 reranker / vector-store now applies to the chat completion surface.
 
-### 14.1 Provider registry (U28)
+### 14.1 Provider registry
 
 `throughline_cli/providers.py` ships 16 OpenAI-compatible presets:
 
@@ -778,8 +783,8 @@ specific pointer to the right env var + signup URL.
 ---
 
 *Last update: v0.2.x provider-rebalance + repo-public flip,
-2026-04-24. Sections 1–12 are the original Phase 5 content
-translated + sanitised from the private ARCHITECTURE and design
-notes (see `CHINESE_STRIP_LOG.md § Phase 5`). Section 13 captures
+2026-04-24. Sections 1–12 are the original architecture, translated
+and sanitised for the open-source release (see
+`CHINESE_STRIP_LOG.md` for the migration log). Section 13 captures
 what v0.2.0 added. Section 14 captures what v0.2.x added after the
 public flip.*

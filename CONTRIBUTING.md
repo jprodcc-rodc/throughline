@@ -95,9 +95,10 @@ Conventional-Commits-ish, but with a U-item prefix for in-roadmap work:
 ```
 
 Common types: `fix`, `feat`, `chore`, `docs`, `test`, `ux`, `wire`.
-Special: a new U-item ships as `U<N>: <subject>` (see `git log` for
-historical examples — `U27.4: throughline_cli taxonomy`, `U21:
-BaseVectorStore abstraction`).
+Examples in the project's history follow the
+`<scope>: <subject>` shape (e.g. `daemon: stage 1.6 — dedup
+buffer/translation twins`, `mcp: cold-start hints for empty
+recall_memory + list_topics`).
 
 ### Pull requests
 
@@ -119,8 +120,8 @@ enforces this.
 
 - Filter / daemon / RAG-server improvements
 - New RecallJudge prompt variants with test fixtures
-- New backends for the U12 / U20 / U21 abstractions
-  (embedder / reranker / vector store)
+- New backends for the embedder / reranker / vector store
+  abstractions
 - Adapters for other chat frontends or export formats
 - Localized prompt files under `prompts/<lang>/`
 - UX polish in the wizard or `throughline_cli` subcommands

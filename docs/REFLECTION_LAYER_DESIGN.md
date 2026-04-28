@@ -455,7 +455,7 @@ in real conversations.
 
 ---
 
-## Engineering risks (from `private/MCP_SCAFFOLDING_PLAN.md` § 7)
+## Engineering risks
 
 **1. Topic clustering accuracy (gating).**
 Reflection Layer's value collapses if clustering misfires →
@@ -551,9 +551,8 @@ just its product direction.
 
 - Not a marketing pitch — internal positioning + public design
   rationale
-- Not a sprint plan — engineering details land in
-  `private/MCP_SCAFFOLDING_PLAN.md` and per-phase task breakdowns
-  as Phase 2 starts
+- Not a sprint plan — engineering details ship as task breakdowns
+  inside individual commits, not in a single planning artifact
 - Not a commitment to ship — clustering accuracy gate is real
 
 ---

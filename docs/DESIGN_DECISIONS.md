@@ -408,8 +408,8 @@ without crashing if the user picks it. `create_vector_store("milvus")`
   silently writes to Qdrant, the next time the user `docker stop`s
   Qdrant their "LanceDB" install evaporates. The alias is documented
   in code so curious readers see what's actually happening.
-- **The same pattern applies across U12 / U20 / U21.** Embedder,
-  reranker, and vector-store factories all do this consistently.
+- **The same pattern applies across the embedder, reranker, and
+  vector-store factories.** All three do this consistently.
   Three backends with the same shape is easier to reason about than
   three backends with three different unknown-name policies.
 
@@ -433,7 +433,7 @@ without crashing if the user picks it. `create_vector_store("milvus")`
 
 Every refiner prompt (8 variants) requires both fields. When
 `primary_x == proposed_x_ideal` the fit is perfect. When they differ,
-`proposed_x_ideal` is the growth signal the U27 observer logs.
+`proposed_x_ideal` is the growth signal the taxonomy observer logs.
 
 ### Reason
 

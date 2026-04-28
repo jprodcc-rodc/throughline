@@ -51,8 +51,8 @@ hygiene.
 
   **Engineering gate:** clustering accuracy ≥75% pairwise on the
   maintainer's vault (≥2,300 cards) — **cleared 2026-04-28 at
-  0.975** (best threshold 0.70). Phase 2 implementation unblocked
-  and shipped through 11 incremental commits.
+  0.975** (best threshold 0.70). Reflection Layer implementation
+  unblocked and shipped through a series of incremental commits.
 
   **Built on:** topic clustering (`mcp_server/topic_clustering.py`)
   + a Reflection Pass daemon (`daemon/reflection_pass.py`) that
@@ -81,12 +81,11 @@ hygiene.
   Position-metadata schema in
   [`docs/POSITION_METADATA_SCHEMA.md`](docs/POSITION_METADATA_SCHEMA.md).
 
-  **Remaining for v0.3 final:** atomic vault frontmatter writeback
-  (currently preview-only; high-blast-radius commit gated on its
-  own smoke-test cycle), stage 6 LLM contradiction judgment
-  (enriches `check_consistency` output), stage 7 LLM drift
-  segmentation (refines `get_position_drift` from per-card to
-  per-phase trajectory).
+  **Remaining for v0.3 final:** PyPI release of `throughline-mcp`
+  (currently `pip install -e mcp_server` from the cloned repo) and
+  scaling validation (the Reflection Pass has been validated on the
+  maintainer's ~70-card reflectable subset; behaviour on
+  10,000-card vaults is untested).
 
 - **OpenAI-compatible proxy adapter** — a small FastAPI proxy that
   exposes `/v1/chat/completions` and injects throughline RAG before
@@ -98,10 +97,11 @@ hygiene.
 - **`nomic-embed` + `MiniLM`** — distinct native embedder impls.
   Currently aliased to `bge-m3`; v0.3 ships the real models with
   their own vector-size + tokenizer wiring.
-- **U27.6** — `python -m throughline_cli taxonomy retag --since DATE
-  --domain X` for batch re-refining historical cards under a newly-
-  added taxonomy leaf. Cost-bearing operation; gated behind the
-  daily budget cap and an explicit `--confirm-cost`.
+- **Taxonomy `retag` batch re-refine** — `python -m throughline_cli
+  taxonomy retag --since DATE --domain X` for batch re-refining
+  historical cards under a newly-added taxonomy leaf. Cost-bearing
+  operation; gated behind the daily budget cap and an explicit
+  `--confirm-cost`.
 - **Stale-triage auto-archive** — `00_Buffer/` stubs older than
   N days (configurable, default 90) get auto-archived to
   `00_Buffer/_stale/` with a one-line manifest. Closes the "dual-
@@ -187,10 +187,11 @@ the deltas:
   `sqlite_vec` etc.).
 - **Reranker backends**: `voyage` + `jina` shipped as native HTTP
   clients (separate from the Cohere alias they used to share).
-- **U27.5** — Filter outlet `🌱 N taxonomy candidates` hint via
-  doctor + `__event_emitter__`.
-- **U27.7** — zero-usage taxonomy leaf detection in doctor with a
-  deprecation hint.
+- **Pending-taxonomy-candidates surface** — Filter outlet
+  `🌱 N taxonomy candidates` hint via doctor + `__event_emitter__`,
+  so users notice the self-growing taxonomy needs review.
+- **Zero-usage leaf detection** — doctor flags taxonomy domains
+  with no cards routed to them, suggesting a deprecation review.
 - **Docker compose for "try it out"** — single-command spin-up of
   Qdrant + daemon + an empty vault, with a sample import. README
   Quickstart leads with it.
@@ -200,12 +201,12 @@ the deltas:
 - **Wizard UX wave** — questionary arrow-key picker, rich spinner,
   hierarchical step-16 summary tree, back navigation, provider/key
   hard-block, universal "Other" model escape hatch.
-- **MCP server (Phase 1)** — `mcp_server/` package exposing three
-  tools (`save_conversation` / `recall_memory` / `list_topics`) over
-  stdio so any MCP-aware client (Claude Desktop / Claude Code /
-  Cursor / Continue.dev) can reach the throughline vault without
-  migrating to OpenWebUI. `pip install -e .[mcp]`; setup at
-  [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md). Shipped in:
+- **MCP server (vault-ops trio)** — `mcp_server/` package exposing
+  three foundational tools (`save_conversation` / `recall_memory` /
+  `list_topics`) over stdio so any MCP-aware client (Claude Desktop /
+  Claude Code / Cursor / Continue.dev) can reach the throughline
+  vault without migrating to OpenWebUI. `pip install -e .[mcp]`;
+  setup at [`docs/MCP_SETUP.md`](docs/MCP_SETUP.md). Shipped in:
   - `5776f3d` — scaffolding + 3 tool stubs + 14 tests
   - `ea62907` — `save_conversation` real impl (writes raw .md
     into daemon queue with defensive turn-shape coercion)
@@ -215,9 +216,21 @@ the deltas:
   - `2bd9051` — `list_topics` real impl (taxonomy + vault scanner
     with 60s cache)
 
-  Phase 2 reflection-layer tools (Open Threads / Contradiction
-  Surfacing / Drift Detection) remain dogfood-gated; design sketch
-  in `private/` strategy docs, NOT in the public ROADMAP yet.
+- **Reflection Layer trio** — `find_open_threads`,
+  `check_consistency`, `get_position_drift` over the same MCP
+  surface. Backed by `daemon/reflection_pass.py` (8-stage offline
+  pipeline that walks the vault, clusters reflectable cards, names
+  clusters, back-fills `claim_summary` + `open_questions`, judges
+  contradictions, segments drift phases). State files mediate so the
+  MCP hot path stays sub-millisecond. Engineering gate cleared
+  2026-04-28 (clustering 0.975 pairwise accuracy on real vault).
+  Auto-schedule templates ship under `config/launchd/` (macOS) and
+  `config/systemd/` (Linux).
+
+- **Discovery probe** — `throughline_status` MCP tool. Returns a
+  snapshot of install state (card count, last Reflection Pass age,
+  vault root) with cold-start / staleness hints, so a fresh-install
+  user has a discoverable entry point.
 
 ---
 

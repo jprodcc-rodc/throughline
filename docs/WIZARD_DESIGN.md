@@ -42,7 +42,7 @@ self-hosted PKM pipeline:
 | 11 | Refine tier (skim / normal / deep) | normal | 40× cost spread; deep is for re-refining important conversations later |
 | 12 | Card structure (standard / RAG-only / minimal) | standard | RAG-only mission shifts here automatically; standalone tweak available |
 | 13 | Live LLM preview + 5-dial tuning | (interactive) | Users see one real card refined from a real conversation BEFORE committing to backfill — the most-skipped step in similar tools, and the one that catches the most "wait, this doesn't fit my style" cases |
-| 14 | Taxonomy strategy (minimal / inherit / derive / template) | minimal | Users with <100 cards need a skeletal start; users with 2000+ need U13 derive |
+| 14 | Taxonomy strategy (minimal / inherit / derive / template) | minimal | Users with <100 cards need a skeletal start; users with 2000+ benefit from a one-shot LLM derivation of their existing content |
 | 15 | Daily USD cap | $20 | Hard kill-switch — no LLM-backed tool should be uncapped by default |
 | 16 | Summary + run import | (display + y/N) | Last chance to review every choice; one keypress to commit |
 

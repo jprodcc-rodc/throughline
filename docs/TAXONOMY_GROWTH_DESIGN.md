@@ -1,16 +1,16 @@
-# Self-growing taxonomy (U27) — design
+# Self-growing taxonomy — design
 
-> **Status (2026-04-27):** v0.2.0 shipped U27.1 + U27.2 + U27.3 + U27.4
-> (the minimum closed loop). v0.2.x then shipped U27.5 (doctor surfacing
-> of pending candidates, `5528434`) and U27.7 (zero-usage leaf
-> detection, `ec32dae`). Only **U27.6** (`taxonomy retag --since DATE
-> --domain X` batch re-refine) remains deferred to v0.3.
+> **Status (2026-04-27):** v0.2.0 shipped the minimum closed loop
+> (seed → signal → observer → review CLI). v0.2.x then shipped
+> doctor surfacing of pending candidates (`5528434`) and zero-usage
+> leaf detection (`ec32dae`). Only **batch retag** (`taxonomy retag
+> --since DATE --domain X`) remains deferred to v0.3.
 >
-> **Why this exists:** U13 (`scripts/derive_taxonomy.py`) generates a
-> one-shot taxonomy from a user's existing content. That fits users
-> like the original author (2300+ cards at install) but wrong-sizes
-> the ~75% of prospective users with 0–100 cards. Those users need a
-> **skeletal starter** that grows as content arrives.
+> **Why this exists:** the one-shot `scripts/derive_taxonomy.py`
+> generates a taxonomy from a user's existing content. That fits
+> users like the original author (2300+ cards at install) but
+> wrong-sizes the ~75% of prospective users with 0–100 cards. Those
+> users need a **skeletal starter** that grows as content arrives.
 >
 > This doc is the refined spec after two design passes. See
 > [`ROADMAP.md`](../ROADMAP.md) for the v0.3 plan and
@@ -25,12 +25,12 @@
 |---|---|
 | 0 cards (cold start) | Skeletal template (`taxonomy.minimal.py`, ~5 broad domains) |
 | 20–100 imported cards | Skeletal template → observer collects signal → first growth prompt after ~1 week |
-| 100–500 imported | Optionally U13 derive for a head start → then observer continues |
-| 2300+ (author) | U13 derive → observer picks up new topics as they emerge |
+| 100–500 imported | Optionally use the one-shot derive script for a head start → then observer continues |
+| 2300+ (author) | One-shot derive → observer picks up new topics as they emerge |
 
-U13 and U27 are **complementary**, not competing. Wizard step 14
-offers both paths; the skeletal template is the default for <100
-cards.
+The one-shot derive and the growing-observer paths are
+**complementary**, not competing. Wizard step 14 offers both; the
+skeletal template is the default for <100 cards.
 
 ---
 
@@ -162,7 +162,7 @@ Actions:
 - **Add** — append tag to `VALID_X_SET` in the active `taxonomy.py`;
   log the change in `state/taxonomy_history.jsonl`; old cards stay
   tagged with whatever `primary_x` they had (retag is opt-in via
-  U27.6).
+  the batch-retag CLI).
 - **Reject forever** — append normalised form to
   `config/taxonomy_rejected.json`; detector will never suggest it
   again.
@@ -181,20 +181,20 @@ editing `taxonomy.py` + removing tags from `taxonomy_history.jsonl`.
 
 ## v0.2.0 implementation split
 
-| U | Scope | Size | Ships in |
+| Component | Scope | Size | Ships in |
 |---|---|---|---|
-| **U27.1** | `config/taxonomy.minimal.py` + wizard step 14 uses it when cards < 100 | S | v0.2.0 |
-| **U27.2** | Refiner prompts (8 files) grow `proposed_x_ideal` field in output schema | S (cross-file) | v0.2.0 |
-| **U27.3** | Daemon writes `state/taxonomy_observations.jsonl` on every refine | S | v0.2.0 |
-| **U27.4** | CLI `taxonomy` + `taxonomy review` + `taxonomy reject` | M | v0.2.0 |
-| **U27.5** | Doctor surfacing of "N candidates pending" + Filter outlet hint | S | **shipped v0.2.x** (`5528434`) |
-| **U27.6** | `taxonomy retag --since DATE --domain X` batch re-refine | M (costs $) | v0.3 |
-| **U27.7** | Zero-usage leaf detection ("no cards in domain X for N months") + deprecation hint | L | **shipped v0.2.x** (`ec32dae`) |
+| **Seed** | `config/taxonomy.minimal.py` + wizard step 14 uses it when cards < 100 | S | v0.2.0 |
+| **Signal** | Refiner prompts (8 files) grow `proposed_x_ideal` field in output schema | S (cross-file) | v0.2.0 |
+| **Observer** | Daemon writes `state/taxonomy_observations.jsonl` on every refine | S | v0.2.0 |
+| **Review CLI** | `taxonomy` + `taxonomy review` + `taxonomy reject` | M | v0.2.0 |
+| **Doctor surfacing** | Doctor reports "N candidates pending" + Filter outlet hint | S | **shipped v0.2.x** (`5528434`) |
+| **Batch retag** | `taxonomy retag --since DATE --domain X` batch re-refine | M (costs $) | v0.3 |
+| **Zero-usage detection** | Flags taxonomy leaves with no cards routed to them, + deprecation hint | L | **shipped v0.2.x** (`ec32dae`) |
 
-MVP closed loop: U27.1 → U27.2 → U27.3 → U27.4. A user picking
-`taxonomy.minimal` at wizard install, running throughline for a week,
-then invoking `throughline_cli taxonomy review` to expand from 5
-domains to 7 → full round-trip works.
+MVP closed loop: seed → signal → observer → review CLI. A user
+picking `taxonomy.minimal` at wizard install, running throughline
+for a week, then invoking `throughline_cli taxonomy review` to
+expand from 5 domains to 7 → full round-trip works.
 
 ---
 
@@ -210,8 +210,8 @@ Everything else is read-only.
 ### P2 · Grandfathering
 
 Adding a new leaf never renames existing leaves. Cards tagged with
-the old `primary_x` retain that tag. Retagging is opt-in (U27.6)
-and costs money (one refine per card).
+the old `primary_x` retain that tag. Retagging is opt-in (via the
+batch-retag CLI) and costs money (one refine per card).
 
 ### P3 · No silent noise-triggered growth
 
@@ -220,12 +220,12 @@ Thresholds protect against:
 - **time binges** (`day-span >= 3 days` filters one-evening sprees)
 - **user veto** (`config/taxonomy_rejected.json` is absolute)
 
-### P4 · Sideways compatibility with U13
+### P4 · Sideways compatibility with the one-shot derive script
 
-`scripts/derive_taxonomy.py` (U13) writes `taxonomy.py`. U27's
-review command writes to the same file (append-only). Both share
-the rendered-module format; the user can switch between tools
-freely.
+`scripts/derive_taxonomy.py` writes `taxonomy.py`. The
+`taxonomy review` command writes to the same file (append-only).
+Both share the rendered-module format; the user can switch between
+tools freely.
 
 ### P5 · Idempotent observer
 
@@ -239,21 +239,21 @@ window. Daemon crashes / restarts do not double-count.
 
 - **No auto-merge** (`AI/LLM` + `AI/Agent` into `AI/LLM-Agent`). Users
   have strong opinions; merges are manual.
-- **No auto-deprecate.** U27.7 (shipped v0.2.x) *detects* zero-usage
-  leaves and surfaces them in `doctor`, but the `taxonomy.py` change
-  is still gated behind explicit user action. Users get attached to
-  folders; we surface, the user decides.
+- **No auto-deprecate.** Zero-usage leaf detection (shipped v0.2.x)
+  *flags* unused leaves and surfaces them in `doctor`, but the
+  `taxonomy.py` change is still gated behind explicit user action.
+  Users get attached to folders; we surface, the user decides.
 - **No scheduled polling.** Detector only runs on `throughline_cli
-  taxonomy` and `throughline_cli doctor`. U27.5 (shipped v0.2.x)
-  surfaces "N candidates pending" inside doctor's output; integration
-  with OpenWebUI's `__event_emitter__` for an in-chat weekly hint
-  remains v0.3 work.
+  taxonomy` and `throughline_cli doctor`. The doctor surfacing
+  (shipped v0.2.x) reports "N candidates pending"; integration with
+  OpenWebUI's `__event_emitter__` for an in-chat weekly hint remains
+  v0.3 work.
 - **No cross-language clustering.** If a user's refiner emits tags
   in multiple natural languages (`AI/Agent` + `AI/代理`), they
   don't cluster. v0.3+ with bge-m3 embedding similarity.
 - **No retroactive re-refine.** Old cards stay tagged with whatever
   `primary_x` they had when first refined. User opts in explicitly
-  via `taxonomy retag` (U27.6, v0.3).
+  via the batch-retag CLI (v0.3).
 
 ---
 
@@ -269,9 +269,10 @@ window. Daemon crashes / restarts do not double-count.
    should parent-creation require a higher threshold? Tentative: same
    threshold; parent proposal is visible in the CLI output so the
    user makes the call.
-4. **U27.4 UX.** Should `taxonomy review` show all candidates as a
-   batch or one-by-one? Batch is faster for power users; one-by-one
-   is safer for first-timers. v0.2.0: one-by-one (conservative).
+4. **Review CLI UX.** Should `taxonomy review` show all candidates
+   as a batch or one-by-one? Batch is faster for power users;
+   one-by-one is safer for first-timers. v0.2.0: one-by-one
+   (conservative).
 
 ---
 
@@ -287,4 +288,5 @@ Mocking-friendly split:
 - **CLI:** mock `input()` for interactive review; mock filesystem
   for the taxonomy write + history log.
 
-Target: ~40 tests across U27.1–U27.4 when all ship.
+Target: ~40 tests across seed / signal / observer / review CLI when
+all ship.

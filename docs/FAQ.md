@@ -258,7 +258,7 @@ for what was stripped and what's re-introducible.
 
 User-content handling is locale-neutral:
 - Non-ASCII card titles, tags, and body text round-trip correctly.
-- The taxonomy observer (U27) normalises AI/代理 and AI/Agent as
+- The taxonomy observer normalises AI/代理 and AI/Agent as
   string-distinct tags; v0.3 adds semantic clustering.
 - Frontmatter dates use ISO format, locale-independent.
 

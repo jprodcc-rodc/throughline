@@ -6,12 +6,12 @@
 [![license](https://img.shields.io/github/license/jprodcc-rodc/throughline)](LICENSE)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
 
-> **At a glance:** ~33,700 LOC Python · 7 runtime modules · 1,690+
+> **At a glance:** ~33,700 LOC Python · 7 runtime modules · 1,840+
 > tests, zero external network calls in CI · 6 first-class vector
 > store backends · 5 native rerankers · 16 LLM-provider presets ·
-> full threat model documented · MCP server entry point with
-> 6 tools (Phase 1 save/recall/list + Phase 2 Reflection Layer:
-> find_open_threads / check_consistency / get_position_drift) ·
+> full threat model documented · MCP server with 7 tools covering
+> save/recall/list-topics, three Reflection Layer tools (open
+> threads / consistency / drift), and a status/onboarding probe ·
 > vault portable across all AI tools (not locked to any one
 > vendor) · running 24/7 against the maintainer's vault since
 > v0.1.0.
@@ -239,8 +239,16 @@ Setup is the wizard flow above.
 
 ### Form B — MCP server (Claude Desktop / Code / Cursor / Continue.dev)
 
-A separate `throughline-mcp` PyPI package exposing three tools
-(`save_conversation` / `recall_memory` / `list_topics`) over stdio.
+A separate `throughline-mcp` PyPI package exposing seven tools over
+stdio:
+
+- **Vault ops** — `save_conversation`, `recall_memory`, `list_topics`
+- **Reflection Layer** — `find_open_threads`, `check_consistency`,
+  `get_position_drift`
+- **Discovery / onboarding** — `throughline_status` (snapshot of
+  install state, fires on "what's in my throughline?" / "first time
+  using this" questions)
+
 Best for: users who work across multiple AI tools and want **one
 vault** that all of them can write into and recall from — not
 locked to any single vendor's backend. Setup:
@@ -593,11 +601,13 @@ throughline/                  ~33,700 LOC Python, ~5,400 LOC tests (1,300+ cases
 ├── filter/        2.2K LOC   Single-file OpenWebUI Filter (paste-into-Admin install):
 │                             3-tier recall gate, badge UI, /recall + /forget +
 │                             @pte slash commands, valves config schema
-├── mcp_server/    2.1K LOC   MCP server entry. Phase 1: save_conversation,
-│                              recall_memory, list_topics. Phase 2: find_open_threads,
-│                              check_consistency, get_position_drift (Reflection Layer);
-│                             stdio transport via fastmcp, talks to existing
-│                             daemon + rag_server (no shared-core changes)
+├── mcp_server/    2.1K LOC   MCP server entry. 7 tools — vault ops
+│                             (save_conversation, recall_memory, list_topics),
+│                             Reflection Layer (find_open_threads,
+│                             check_consistency, get_position_drift), and
+│                             throughline_status (discovery probe). Stdio
+│                             transport via fastmcp, talks to existing daemon
+│                             + rag_server (no shared-core changes)
 ├── packs/         0.4K LOC   Pack runtime (per-domain slicer/refiner/routing override)
 ├── scripts/       0.7K LOC   ingest_qdrant.py, derive_taxonomy.py, uninstall scripts
 ├── prompts/en/               Verbatim runtime prompt strings (8 refiner variants
