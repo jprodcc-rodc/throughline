@@ -45,6 +45,12 @@ class TestSanitizeName:
             # Already snake_case variants
             ("b1_thiamine_therapy", "b1_thiamine_therapy"),
             ("diablo_4_build_optimization", "diablo_4_build_optimization"),
+            # Digit-prefix is allowed — schema specifies snake_case
+            # not Python-identifier; observed in practice as
+            # `3d_modeling_methods` (cluster topic from real vault
+            # 2026-04-28 E2E). See CHANGELOG entry under that date.
+            ("3d_modeling_methods", "3d_modeling_methods"),
+            ("1pricing", "1pricing"),
         ],
     )
     def test_sanitize_recovers_name(self, raw, expected):
@@ -59,8 +65,6 @@ class TestSanitizeName:
             "   ",
             "***",
             "...",
-            # Starts with digit (not valid identifier)
-            "1pricing",
         ],
     )
     def test_sanitize_returns_empty_on_unrecoverable(self, raw):

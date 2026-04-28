@@ -124,7 +124,7 @@ def resolve_model() -> str:
     return os.environ.get("THROUGHLINE_NAMER_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
 
 
-_VALID_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,79}$")
+_VALID_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_]{0,79}$")
 
 
 def _sanitize_name(raw: str) -> str:
