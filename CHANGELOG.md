@@ -15,6 +15,72 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — `throughline_status` MCP tool (discovery entry point) (2026-04-28+2)
+
+The 7th MCP tool, closing a UX gap surfaced when reasoning through
+cold-start flow. The previous 6 tools each have specific call
+conditions (save_conversation when user says 'save', recall_memory
+when user asks about a topic, etc.). None of them are the natural
+"tell me about my throughline" entry point. A fresh-install user
+with 0 cards had no discoverable trigger for any of the 6 — Claude
+had no signal that the system existed beyond the tool list.
+
+The new tool returns a snapshot of the install: card_count,
+domain_count, vault_root, last Reflection Pass timestamp + staleness
+flag (mirroring the doctor 14d threshold). Three status escalations
+attach actionable `_message` hints when relevant:
+
+- `card_count == 0` → `cold_start` + 'remember this' / '保存这个'
+  hint pointing at save_conversation
+- cards exist but no Reflection Pass yet → `warning` + hint
+  pointing at the auto-schedule templates from the previous entry
+- Reflection state >14d → `warning` + re-run hint
+
+No LLM calls, no network. Pure local file reads + reuse of
+list_topics's 60s vault-scan cache. Sub-millisecond on small vaults.
+
+Strong "Call this when:" docstring covers the natural triggers
+(general mentions of "knowledge base" / "my vault" / "what's in my
+throughline?", post-install "I just set this up", reflection-state
+queries). Fix: `f11cd17`. 8 new tests + docs/MCP_SETUP.md tool
+table updated 6 → 7.
+
+### Added — daemon stage 1.6: dedup buffer/translation twins by slice_id (2026-04-28+2)
+
+The refine daemon emits each refined slice twice in the default
+vault layout: once at `route_to` (canonical destination) and once
+in `00_Buffer/00.03_Refined_Notes/` (staging). Both copies share
+the same `slice_id`. Without dedup they entered clustering as
+siblings, ran through stages 4/6/7 twice, and the contradiction
+judge spent LLM calls confirming they say the same thing —
+correctly classified as `agreement` but each judgment cost $.
+
+Discovered during 2026-04-28 real-vault E2E: maintainer's vault had
+72 reflectable cards but only ~36 unique slice_ids; the other 36
+were buffer twins inflating cluster sizes by ~2× and burning
+duplicate LLM calls in stages 4/6/7.
+
+New stage 1.6 (between filter_reflectable and cluster) calls
+`_dedup_by_slice_id`. For each slice_id group with >1 card:
+- Cards whose parent dir matches `route_to` (daemon-canonical
+  destination) win over buffer copies.
+- Among routed candidates, longest-body card wins (more material
+  for stage 4 back-fill).
+
+Cards without `slice_id` (managed_by master profiles) are kept as-is
+— they have no daemon-emitted twin. Stage report shows the dedup
+count when > 0:
+
+    filter_reflectable (36 kept / 2405 excluded — logs/indexes/drafts;
+                        36 dedup'd by slice_id)
+
+Fix: `877788b`. 7 new tests covering: unique-slice-id pass-through,
+no-slice cards preserved, routed-wins-over-buffer, longest-body
+fallback, three-card group, Windows backslash path normalization,
+and mixed slice/no-slice cards. Non-destructive on already-committed
+vault data — cards previously written via commit-writeback retain
+their frontmatter; the next pass just operates on the dedup'd subset.
+
 ### Added — Reflection Pass auto-schedule templates + doctor staleness check (2026-04-28+2)
 
 The Reflection Pass was previously a manual command. A typical user
