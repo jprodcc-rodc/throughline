@@ -55,6 +55,18 @@ def list_topics(
                 "_status": "ok",
             }
 
+        On success but the vault is empty (cold-start hint)::
+
+            {
+                "domains": [{"path": "Health/Biohack",
+                             "card_count": 0}, ...],
+                "total_cards": 0,
+                "_status": "ok",
+                "_message": "Vault has 0 cards. Suggest saving "
+                            "conversations via 'remember this' / "
+                            "'保存这个' ...",
+            }
+
         When the daemon's taxonomy module can't be imported (rare
         — install issue)::
 
@@ -102,8 +114,22 @@ def list_topics(
         result_domains = [{"path": d, "card_count": None} for d in domains]
         total_cards = 0
 
-    return {
+    result: dict = {
         "domains": result_domains,
         "total_cards": total_cards,
         "_status": "ok",
     }
+    # Cold-start hint: if the daemon's taxonomy is loaded but no card
+    # has been written yet, tell the host LLM so it can teach the user
+    # how to populate the vault rather than reciting an empty domain
+    # list. Only fires when card-counts are available (without them
+    # we can't distinguish a fresh vault from include_card_counts=False).
+    if include_card_counts and total_cards == 0:
+        result["_message"] = (
+            "Vault has 0 cards. Suggest saving conversations via "
+            "'remember this' / '保存这个' / '记住这个' — that fires "
+            "save_conversation and the daemon refines into the vault. "
+            "Once a few cards exist, list_topics will return real "
+            "card_count distributions."
+        )
+    return result

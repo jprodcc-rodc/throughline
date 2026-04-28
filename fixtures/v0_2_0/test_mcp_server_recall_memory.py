@@ -345,3 +345,39 @@ class TestRecallMemoryTool:
             recall_memory(query="hi")
         body = json.loads(mocked.call_args[0][0].data.decode("utf-8"))
         assert body["top_k"] == 5
+
+    def test_zero_results_includes_cold_start_hint(self):
+        """Empty cards must come with a hint so the host LLM teaches
+        the user to populate the vault rather than silently failing."""
+        from mcp_server.tools import recall_memory
+
+        fake = _fake_urlopen_response({"results": [], "total_candidates": 0})
+        with patch("urllib.request.urlopen", return_value=fake):
+            result = recall_memory(query="anything")
+        assert result["cards"] == []
+        assert result["_status"] == "ok"
+        assert "_message" in result, (
+            "zero results must include a cold-start hint"
+        )
+        msg = result["_message"].lower()
+        assert "save_conversation" in msg or "remember" in msg, (
+            f"hint should reference save_conversation or 'remember' "
+            f"so the host LLM knows the next step; got: {msg!r}"
+        )
+
+    def test_nonzero_results_omit_cold_start_hint(self):
+        """Hint only fires when cards are empty — a happy-path response
+        with cards must not carry the cold-start message."""
+        from mcp_server.tools import recall_memory
+
+        fake = _fake_urlopen_response({
+            "results": [
+                {"title": "Card A", "tags": ["Health/Biohack"],
+                 "body_preview": "x", "final_score": 0.9},
+            ],
+            "total_candidates": 1,
+        })
+        with patch("urllib.request.urlopen", return_value=fake):
+            result = recall_memory(query="hi")
+        assert len(result["cards"]) == 1
+        assert "_message" not in result

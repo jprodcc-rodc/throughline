@@ -261,6 +261,53 @@ class TestListTopicsTool:
         for d in result["domains"]:
             assert d["path"].startswith("Health")
 
+    def test_empty_vault_includes_cold_start_hint(
+        self, tmp_path, monkeypatch
+    ):
+        """Fresh vault (taxonomy loaded, 0 cards): add hint so the
+        host LLM teaches save_conversation rather than silently
+        listing 30+ domains all with card_count=0."""
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(tmp_path))
+
+        from mcp_server.tools import list_topics
+        result = list_topics()
+
+        assert result["_status"] == "ok"
+        assert result["total_cards"] == 0
+        assert "_message" in result
+        msg = result["_message"].lower()
+        assert "save_conversation" in msg or "remember" in msg, (
+            f"hint should reference save_conversation; got: {msg!r}"
+        )
+
+    def test_populated_vault_omits_cold_start_hint(
+        self, tmp_path, monkeypatch
+    ):
+        """When cards exist, the hint must NOT fire — host LLM
+        should treat the response as normal."""
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(tmp_path))
+        _write_card(tmp_path, "c.md", ["Health/Biohack"])
+
+        from mcp_server.tools import list_topics
+        result = list_topics()
+
+        assert result["total_cards"] >= 1
+        assert "_message" not in result
+
+    def test_no_card_counts_omits_cold_start_hint(
+        self, tmp_path, monkeypatch
+    ):
+        """Without include_card_counts we can't distinguish empty
+        vault from skipped scan — hint must not fire to avoid
+        false-positive teaching when the user just opted out."""
+        monkeypatch.setenv("THROUGHLINE_VAULT_ROOT", str(tmp_path))
+
+        from mcp_server.tools import list_topics
+        result = list_topics(include_card_counts=False)
+
+        assert result["total_cards"] == 0
+        assert "_message" not in result
+
     def test_prefix_no_match_returns_ok_empty(self, tmp_path, monkeypatch):
         """A prefix that legitimately matches nothing is NOT an
         error — taxonomy is loaded, just the user's query was

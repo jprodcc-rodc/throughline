@@ -89,6 +89,18 @@ def recall_memory(
                 "_status": "ok",
             }
 
+        On success but zero matches (cold-start or no-match)::
+
+            {
+                "cards": [],
+                "personal_context": None,
+                "total_matched": 0,
+                "_status": "ok",
+                "_message": "No matching cards. If the user's vault is "
+                            "new, suggest saving conversations via "
+                            "'remember this' / '保存这个' ...",
+            }
+
         On error::
 
             {
@@ -162,12 +174,24 @@ def recall_memory(
     if include_personal_context:
         personal_context = _build_personal_context(raw_results)
 
-    return {
+    result: dict = {
         "cards": cards,
         "personal_context": personal_context,
         "total_matched": rag_response.get("total_candidates", len(cards)),
         "_status": "ok",
     }
+    if not cards:
+        # Cold-start hint: distinguishes "0 results" from "RAG error" so
+        # the host LLM can teach the user how to populate the vault
+        # instead of saying "I couldn't find anything" and stopping.
+        result["_message"] = (
+            "No matching cards. If the user's vault is new, suggest "
+            "saving conversations via 'remember this' / '保存这个' / "
+            "'记住这个' — that fires save_conversation and the daemon "
+            "will refine into the vault. If the vault has cards but "
+            "this query missed, try a broader query."
+        )
+    return result
 
 
 # ---------- helpers ----------
