@@ -67,4 +67,76 @@ def build_app() -> FastMCP:
     # for any of the other 6 tools.
     app.tool()(throughline_status)
 
+    # Slash-command prompts — surface in MCP-aware hosts (Claude
+    # Desktop / Code / Cursor) as `/<server>:<prompt>` shortcuts.
+    # Each expands into a chat message that triggers the matching
+    # tool flow + summary, so power users don't have to retype the
+    # natural-language phrase every time.
+    @app.prompt()
+    def overview() -> str:
+        """Quick vault state check + next-step menu.
+
+        Triggers throughline_status and asks the user what to do
+        next: list topics, surface open threads, or recall on a
+        specific topic.
+        """
+        return (
+            "Call the throughline_status tool. Then summarise the "
+            "result in one or two short paragraphs covering: "
+            "tagged_card_count and total_md_files (mention the gap "
+            "as profile drafts / indexes / pending-taxonomy items), "
+            "domain_count, last Reflection Pass age, and overall "
+            "_status. Finish with a one-line menu offering: list "
+            "topics / surface open threads / recall on a query / "
+            "save the current conversation."
+        )
+
+    @app.prompt()
+    def threads() -> str:
+        """Surface open threads — unfinished thinking grouped by topic.
+
+        Triggers find_open_threads and walks the user through the
+        most-recently-touched threads, offering to resume any of
+        them.
+        """
+        return (
+            "Call the find_open_threads tool with limit=5. Format "
+            "the result as a numbered list, one entry per thread: "
+            "topic_cluster name + most recent date + a one-line "
+            "summary of the open questions. Then ask the user "
+            "which thread they want to resume, or whether to surface "
+            "more (re-call with limit=10)."
+        )
+
+    @app.prompt()
+    def save_card() -> str:
+        """Refine + save the current conversation as a card — zero
+        LLM cost path.
+
+        Tells the host LLM to synthesize a 6-section card from the
+        conversation context using its own subscription, pick a
+        domain, then call save_refined_card.
+        """
+        return (
+            "Synthesize the current conversation into a structured "
+            "knowledge card. Pick a coherent thread / decision / "
+            "design rationale to capture; do not save trivia or "
+            "small talk.\n\n"
+            "Build a 6-section markdown body covering: scene & pain "
+            "point, core knowledge & first principles, detailed "
+            "execution plan, pitfalls & boundaries, insights & "
+            "mental models, summary. English / Chinese / mixed all "
+            "fine.\n\n"
+            "Call list_topics first to learn the user's active X-axis "
+            "taxonomy, then pick a domain that fits the content. Use "
+            "knowledge_identity 'universal' unless the content is "
+            "clearly personal_persistent (durable personal — e.g. "
+            "current meds, ongoing projects).\n\n"
+            "Finally call save_refined_card with the synthesized "
+            "title / body / domain / knowledge_identity — this path "
+            "is zero LLM cost (you do the refining on subscription, "
+            "the tool just files the .md to vault). Report the "
+            "card_path back to the user."
+        )
+
     return app
