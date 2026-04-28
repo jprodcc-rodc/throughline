@@ -109,7 +109,8 @@ def throughline_status() -> dict:
         On a healthy populated install::
 
             {
-                "card_count": 72,
+                "tagged_card_count": 72,    # cards with X-axis domain tag in VALID_X_SET
+                "total_md_files": 2477,     # raw .md count under vault_root
                 "domain_count": 24,
                 "vault_root": "/path/to/vault",
                 "reflection_pass": {
@@ -120,10 +121,18 @@ def throughline_status() -> dict:
                 "_status": "ok",
             }
 
-        On cold-start (zero cards)::
+        ``tagged_card_count`` and ``total_md_files`` are deliberately
+        separate. The first is what list_topics + recall_memory can
+        retrieve. The second is what's physically present. The gap
+        is profile drafts, system indexes, logs, and pending-taxonomy
+        cards — all real .md files but not yet retrievable until they
+        get a valid X-axis tag.
+
+        On cold-start (zero indexed cards)::
 
             {
-                "card_count": 0,
+                "tagged_card_count": 0,
+                "total_md_files": 0,
                 "domain_count": 0,
                 "vault_root": "/path/to/vault",
                 "reflection_pass": {
@@ -144,7 +153,8 @@ def throughline_status() -> dict:
         On populated vault but no Reflection Pass yet::
 
             {
-                "card_count": 30,
+                "tagged_card_count": 30,
+                "total_md_files": 245,
                 ...,
                 "reflection_pass": {"last_run": None, ...},
                 "_status": "warning",
@@ -173,10 +183,25 @@ def throughline_status() -> dict:
     state_dir = _resolve_state_dir()
     pass_state = _read_pass_state(state_dir)
 
-    # Card counts. Reuses list_topics's cached vault scan.
+    # Two distinct counts the host LLM needs to keep separate:
+    # - tagged_card_count: cards with a valid X-axis domain tag in
+    #   VALID_X_SET (i.e., what list_topics + recall_memory can
+    #   actually surface). Reuses list_topics's 60s cache.
+    # - total_md_files: raw .md count under vault_root, including
+    #   profile drafts, logs, indexes, and pending-taxonomy cards.
+    #   Surfaces the gap so users don't think "133 cards" means
+    #   "only 133 .md files in my vault".
     domain_counts = count_cards_per_domain()
-    card_count = sum(domain_counts.values())
+    tagged_card_count = sum(domain_counts.values())
     domain_count = sum(1 for v in domain_counts.values() if v > 0)
+    total_md_files: Optional[int] = None
+    if vault is not None:
+        try:
+            total_md_files = sum(1 for _ in vault.rglob("*.md"))
+        except OSError:
+            # Permission / TCC blocks (macOS Documents protection,
+            # for example) — surface as None rather than crash.
+            total_md_files = None
 
     # Reflection state.
     last_run: Optional[str] = None
@@ -199,7 +224,8 @@ def throughline_status() -> dict:
                 is_stale = None
 
     result: dict[str, Any] = {
-        "card_count": card_count,
+        "tagged_card_count": tagged_card_count,
+        "total_md_files": total_md_files,
         "domain_count": domain_count,
         "vault_root": str(vault) if vault else None,
         "reflection_pass": {
@@ -211,7 +237,7 @@ def throughline_status() -> dict:
     }
 
     # Status escalation:
-    if card_count == 0:
+    if tagged_card_count == 0:
         result["_status"] = "cold_start"
         result["_message"] = (
             "Vault is empty. Suggest the user save their first "
@@ -226,7 +252,7 @@ def throughline_status() -> dict:
     elif last_run is None:
         result["_status"] = "warning"
         result["_message"] = (
-            f"Vault has {card_count} cards but the Reflection Pass "
+            f"Vault has {tagged_card_count} cards but the Reflection Pass "
             "has not run yet. find_open_threads / check_consistency "
             "/ get_position_drift will return error _status until "
             "`python -m daemon.reflection_pass --enable-llm-naming "

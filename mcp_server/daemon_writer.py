@@ -169,10 +169,26 @@ def write_conversation(
 
 def estimate_cost_usd(text: str, tier: str = "normal") -> float:
     """Rough USD estimate for refining this conversation. Mirrors
-    `throughline_cli/wizard.py:_TIER_COST_PER_CONV` numbers.
+    `throughline_cli/wizard.py:_TIER_COST_PER_CONV` numbers — these
+    assume the daemon's REFINE_MODEL is a paid OpenRouter Sonnet-class
+    model. The cost is paid by the *daemon's* LLM call, not by the
+    MCP tool itself; saving via MCP just queues the raw .md, the
+    daemon picks it up async and refines it.
+
+    Override via env var when:
+    - ``THROUGHLINE_REFINE_COST_USD`` is set (any float). Use
+      ``THROUGHLINE_REFINE_COST_USD=0`` when the daemon's
+      REFINE_MODEL is a free model (e.g. ``:free`` OpenRouter
+      variant) or a local Ollama model.
 
     Crude char/4 → tokens, then per-tier $/conversation midpoint.
     """
+    override = os.environ.get("THROUGHLINE_REFINE_COST_USD")
+    if override is not None and override.strip() != "":
+        try:
+            return round(float(override), 4)
+        except ValueError:
+            pass  # fall through to default
     tier_cost = {
         "skim": 0.005,
         "normal": 0.040,

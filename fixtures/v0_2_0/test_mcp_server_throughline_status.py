@@ -64,7 +64,7 @@ class TestThroughlineStatus:
         from mcp_server.tools.throughline_status import throughline_status
         result = throughline_status()
 
-        assert result["card_count"] == 0
+        assert result["tagged_card_count"] == 0
         assert result["domain_count"] == 0
         assert result["_status"] == "cold_start"
         assert "_message" in result
@@ -86,7 +86,7 @@ class TestThroughlineStatus:
         from mcp_server.tools.throughline_status import throughline_status
         result = throughline_status()
 
-        assert result["card_count"] >= 2
+        assert result["tagged_card_count"] >= 2
         assert result["reflection_pass"]["last_run"] is None
         assert result["_status"] == "warning"
         msg = result["_message"].lower()
@@ -108,7 +108,7 @@ class TestThroughlineStatus:
         from mcp_server.tools.throughline_status import throughline_status
         result = throughline_status()
 
-        assert result["card_count"] >= 1
+        assert result["tagged_card_count"] >= 1
         assert result["reflection_pass"]["last_run"] is not None
         assert result["reflection_pass"]["is_stale"] is False
         assert result["_status"] == "ok"
@@ -178,7 +178,7 @@ class TestThroughlineStatus:
         result = throughline_status()
 
         # Top-level keys
-        for key in ["card_count", "domain_count", "vault_root",
+        for key in ["tagged_card_count", "total_md_files", "domain_count", "vault_root",
                     "reflection_pass", "_status"]:
             assert key in result, f"missing top-level key: {key}"
 
@@ -189,7 +189,7 @@ class TestThroughlineStatus:
             )
 
         # Types
-        assert isinstance(result["card_count"], int)
+        assert isinstance(result["tagged_card_count"], int)
         assert isinstance(result["domain_count"], int)
         assert result["vault_root"] is None or isinstance(
             result["vault_root"], str
