@@ -20,7 +20,7 @@
 # mobile layout, and pygments-style code blocks out of the box.
 
 site_name: throughline
-site_description: Turn every LLM conversation into searchable, self-growing personal knowledge.
+site_description: Refines AI conversations into a portable Markdown vault, then surfaces unfinished reasoning + drift back into your next chat. Cross-vendor (MCP + OpenWebUI), local-first.
 site_url: https://jprodcc-rodc.github.io/throughline/
 repo_url: https://github.com/jprodcc-rodc/throughline
 repo_name: jprodcc-rodc/throughline
