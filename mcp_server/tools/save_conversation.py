@@ -70,7 +70,7 @@ def save_conversation(
     the daemon will refine via API at ~\$0.04. Want save_refined_card
     instead (zero cost)?"
 
-    Call this (raw-queue path) when:
+    Call this when:
     - The user explicitly asks to "save raw", "queue", or
       explicitly opts out of host-side refining.
     - The user signals an important decision, conclusion, or

@@ -27,7 +27,6 @@ from __future__ import annotations
 from fastmcp import FastMCP
 
 from mcp_server import __version__
-from mcp_server.tools.save_conversation import save_conversation
 from mcp_server.tools.save_refined_card import save_refined_card
 from mcp_server.tools.recall_memory import recall_memory
 from mcp_server.tools.list_topics import list_topics
@@ -48,10 +47,22 @@ def build_app() -> FastMCP:
     )
 
     # Phase 1: foundational tools.
-    app.tool()(save_conversation)
-    # Subscription-friendly save path — host LLM does the refining
-    # itself, no daemon LLM cost. Complementary to save_conversation;
-    # docstrings teach the host LLM which to choose.
+    #
+    # NOTE: save_conversation (raw-queue → daemon refines via paid
+    # API) is deliberately NOT registered as an MCP tool. MCP-aware
+    # hosts (Claude Desktop / Code / Cursor / Continue.dev) are
+    # always subscription-billed → save_refined_card (host-LLM
+    # refines on subscription budget) is the only save path users
+    # should ever hit through MCP. Removing save_conversation
+    # eliminates the docstring tie-break problem where Claude could
+    # accidentally pick the paid path.
+    #
+    # The OpenWebUI Filter form is unaffected — it never used the
+    # MCP save_conversation tool. OpenWebUI's exporter writes raw
+    # .md to RAW_ROOT directly and the daemon picks up via watchdog.
+    # The save_conversation function still ships in the package
+    # (for callers that import the module directly, e.g. bulk
+    # import scripts) but is not auto-exposed via MCP.
     app.tool()(save_refined_card)
     app.tool()(recall_memory)
     app.tool()(list_topics)

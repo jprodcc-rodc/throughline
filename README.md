@@ -242,12 +242,19 @@ Setup is the wizard flow above.
 A separate `throughline-mcp` PyPI package exposing seven tools over
 stdio:
 
-- **Vault ops** — `save_conversation`, `recall_memory`, `list_topics`
+- **Vault ops** — `save_refined_card`, `recall_memory`, `list_topics`
 - **Reflection Layer** — `find_open_threads`, `check_consistency`,
   `get_position_drift`
 - **Discovery / onboarding** — `throughline_status` (snapshot of
   install state, fires on "what's in my throughline?" / "first time
   using this" questions)
+
+`save_refined_card` is the **zero-LLM-cost** save path: the host LLM
+(Claude / etc.) synthesizes the 6-section card on subscription budget,
+the tool just files it to vault. The older daemon-refining path
+(`save_conversation`) is intentionally NOT exposed via MCP to avoid
+double-billing subscription users — OpenWebUI Filter form still uses
+the daemon pipeline as before.
 
 Best for: users who work across multiple AI tools and want **one
 vault** that all of them can write into and recall from — not

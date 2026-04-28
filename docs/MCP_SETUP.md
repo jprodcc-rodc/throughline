@@ -27,13 +27,23 @@ onboarding entry point.
 
 | Tool | What it does | Calls cost? |
 |---|---|---|
-| `save_conversation` | Write a conversation segment into throughline's refine queue. Daemon picks it up automatically and produces a 6-section knowledge card. | ~$0.04 per refine on the Normal tier (one Sonnet call). |
+| `save_refined_card` | The host LLM (Claude / etc.) synthesizes a structured 6-section card from the conversation itself, then this tool files the result to vault. Subscription budget pays the synthesis. | **Free.** Uses host's subscription, not API. |
 | `recall_memory` | Retrieve cards from your vault relevant to a query. Embedding + reranking happens in the local rag_server. | ~$0.0003 (Haiku judge) + local compute. |
 | `list_topics` | List the X-axis taxonomy domains + (optionally) per-domain card counts. No LLM call. | Free. |
 | `find_open_threads` | Surfaces unfinished reasoning when the user starts a related conversation. Reads daemon state file populated by structural detection. | Free (state-file read). |
 | `check_consistency` | When user states a position, returns historical positions in the matching topic cluster + their original reasoning. Host LLM judges contradiction in conversation (soft-mode default). | Free (state-file read). |
 | `get_position_drift` | Returns the chronological trajectory of cards on a topic, with stance + reasoning per entry. Metacognitive infrastructure. | Free (state-file read). |
 | `throughline_status` | Snapshot of the install: card count, last Reflection Pass timestamp, vault location, cold-start / staleness hints. The natural call when the user asks "what's in my throughline?" or mentions the system in a general (non-specific-topic) way. | Free (local file reads only). |
+
+**Note on save paths.** The MCP form deliberately exposes only
+`save_refined_card`, not the older `save_conversation` (which queued
+a raw transcript for the daemon to refine via paid OpenRouter API at
+~$0.04 / save). Reasoning: every host that speaks MCP today
+(Claude Desktop / Code, Cursor, Continue.dev) is subscription-billed,
+so the host LLM can do the refining work itself on subscription
+budget — no double-billing. The OpenWebUI Filter form, which has
+its own injection path, still uses the daemon's refine pipeline as
+before; this change does not affect Filter users.
 
 Phase 2 tools depend on `daemon/reflection_pass.py` having run at
 least once to populate state files under `$THROUGHLINE_STATE_DIR/`.

@@ -17,6 +17,12 @@ from mcp_server.tools.check_consistency import check_consistency
 from mcp_server.tools.get_position_drift import get_position_drift
 from mcp_server.tools.throughline_status import throughline_status
 
+# save_conversation is importable here for direct (non-MCP) callers
+# such as bulk import scripts that queue raw .md straight into the
+# daemon's watch directory. It is intentionally NOT registered as
+# an MCP tool — see server.py for rationale. MCP-aware hosts only
+# get save_refined_card (the zero-cost path).
+
 __all__ = [
     "save_conversation",
     "save_refined_card",
