@@ -14,6 +14,7 @@ from mcp_server.tools.list_topics import list_topics
 from mcp_server.tools.find_open_threads import find_open_threads
 from mcp_server.tools.check_consistency import check_consistency
 from mcp_server.tools.get_position_drift import get_position_drift
+from mcp_server.tools.throughline_status import throughline_status
 
 __all__ = [
     "save_conversation",
@@ -22,4 +23,5 @@ __all__ = [
     "find_open_threads",
     "check_consistency",
     "get_position_drift",
+    "throughline_status",
 ]
