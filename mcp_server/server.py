@@ -28,6 +28,7 @@ from fastmcp import FastMCP
 
 from mcp_server import __version__
 from mcp_server.tools.save_conversation import save_conversation
+from mcp_server.tools.save_refined_card import save_refined_card
 from mcp_server.tools.recall_memory import recall_memory
 from mcp_server.tools.list_topics import list_topics
 from mcp_server.tools.find_open_threads import find_open_threads
@@ -48,6 +49,10 @@ def build_app() -> FastMCP:
 
     # Phase 1: foundational tools.
     app.tool()(save_conversation)
+    # Subscription-friendly save path — host LLM does the refining
+    # itself, no daemon LLM cost. Complementary to save_conversation;
+    # docstrings teach the host LLM which to choose.
+    app.tool()(save_refined_card)
     app.tool()(recall_memory)
     app.tool()(list_topics)
 

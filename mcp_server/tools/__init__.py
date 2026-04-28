@@ -9,6 +9,7 @@ up a FastMCP instance.
 from __future__ import annotations
 
 from mcp_server.tools.save_conversation import save_conversation
+from mcp_server.tools.save_refined_card import save_refined_card
 from mcp_server.tools.recall_memory import recall_memory
 from mcp_server.tools.list_topics import list_topics
 from mcp_server.tools.find_open_threads import find_open_threads
@@ -18,6 +19,7 @@ from mcp_server.tools.throughline_status import throughline_status
 
 __all__ = [
     "save_conversation",
+    "save_refined_card",
     "recall_memory",
     "list_topics",
     "find_open_threads",
