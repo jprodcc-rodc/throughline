@@ -15,6 +15,102 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Renamed — `find_open_threads` → `find_loose_ends` (Cowork collision) (2026-04-29)
+
+Anthropic shipped Cowork **persistent agent thread** at GA on
+April 9, 2026 — an autonomous task execution agent running
+workflows in an isolated VM. Throughline's `find_open_threads`
+surfaces *unfinished thinking in your knowledge base*. Same word
+"thread", completely opposite shape. The naming collision creates
+user confusion.
+
+Renamed the public surface:
+- MCP tool `find_open_threads` → `find_loose_ends` (file
+  `find_open_threads.py` → `find_loose_ends.py` via git mv)
+- Slash prompt `/threads` → `/loose_ends`
+- All docstring + doc references updated
+
+Backward compat (preserves existing vault data):
+- State file on disk kept as `reflection_open_threads.json`
+- Card frontmatter `status: open_thread` kept
+- `daemon-internal helpers like reflection_explain._find_open_threads_entry`
+  kept (no public surface)
+
+README "How throughline differs from Anthropic" section rewritten
+to address all three Anthropic features that overlap our space:
+chat memory (March), Cowork persistent agent thread (April GA),
+and our Reflection Layer. Three-line dichotomy:
+
+- *Claude memory remembers what you said.*
+- *Cowork executes tasks for you.*
+- *throughline knows what you stopped thinking about.*
+
+Fix: `c68f46a`. Tests 1823 passed / 3 skipped.
+
+### Added — `save_refined_card` MCP tool (zero-LLM-cost save path) (2026-04-29)
+
+Real Claude Desktop dogfood revealed: `save_conversation` charges
+~$0.04 per save via daemon's OpenRouter Sonnet refining call. For
+a user paying for a Claude subscription, that's double-billed and
+dramatic friction — "I'm using Claude already, why is throughline
+charging me again?" Bad OSS UX.
+
+New tool resolves the economics. Decision flow:
+1. User says save / remember / 记住 / 保存
+2. Host LLM (Claude / etc.) synthesizes 6-section card from
+   conversation context using its own subscription budget
+3. Host calls `save_refined_card` with `title / body / domain /
+   knowledge_identity`
+4. Tool atomically writes the .md to `<vault>/<domain>/<title>.md`
+5. Done — daemon never invoked, $0 to user
+
+Both save tools share frontmatter shape: cards from either path
+are identical to recall_memory + Reflection Layer. The only
+difference is who paid for the LLM synthesis work.
+
+Saved cards get `managed_by: "host_llm_refined"` in frontmatter
+so daemon-side tooling can distinguish provenance from the
+existing `refine_thinker_daemon_v9` source.
+
+`save_conversation` (the legacy paid path) is **deregistered from
+the MCP surface** (commit `866e94a`) but still ships as an
+importable function for direct callers (bulk import scripts that
+queue raw .md to the daemon's watch directory). Removing it from
+MCP eliminates the docstring tie-break problem where Claude could
+accidentally pick the paid path.
+
+OpenWebUI Filter form COMPLETELY UNAFFECTED. Filter has its own
+exporter → RAW_ROOT → daemon-watchdog flow that bypasses MCP.
+
+Fix: `604e3e4` (new tool) + `866e94a` (deregister save_conversation)
++ `58100a4` (docstring tuning to bias host LLM choice). 17 new tests
+covering input validation, atomic write, filename collision
+handling, frontmatter shape, server registration.
+
+### Added — MCP slash-command prompts (overview / loose_ends / save_card) (2026-04-29)
+
+MCP servers can expose `prompts/list` entries that surface in
+host LLM clients as `/<server>:<prompt>` slash shortcuts. Three
+prompts ship:
+
+- **`/overview`** — quick vault state. Triggers `throughline_status`
+  + summary + next-step menu.
+- **`/loose_ends`** (renamed from `/threads`) — surface unfinished
+  thinking. Triggers `find_loose_ends` with limit=5 + numbered
+  list format.
+- **`/save_card`** — synthesize current conversation into 6-section
+  card on subscription budget, then call `save_refined_card` (zero
+  LLM cost).
+
+Each prompt is a docstring-described function returning the
+expanded chat message. Hosts pick them up via `prompts/list`.
+
+Note: Claude Desktop's UI surfaces these in attachment menus rather
+than slash autocomplete (a UI choice on their end). Claude Code
+CLI surfaces them as slash commands directly.
+
+Fix: `f7818a3`.
+
 ### Added — `throughline_status` MCP tool (discovery entry point) (2026-04-28+2)
 
 The 7th MCP tool, closing a UX gap surfaced when reasoning through
