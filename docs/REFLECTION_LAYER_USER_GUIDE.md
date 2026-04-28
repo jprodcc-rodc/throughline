@@ -21,7 +21,7 @@ Three new MCP tools turn your throughline vault into a
 
 | Ask | Tool that fires | What you get |
 |-----|----------------|--------------|
-| "Where did I leave off on X?" | `find_open_threads` | Cards with unfinished questions |
+| "Where did I leave off on X?" | `find_loose_ends` | Cards with unfinished questions |
 | "I'm going with X." | `check_consistency` | Past positions on the topic + their reasoning |
 | "How has my view on X evolved?" | `get_position_drift` | Chronological trajectory with stance per phase |
 
@@ -48,11 +48,11 @@ Without it, the daemon writes only state files under
 
 ## What the three tools do
 
-### `find_open_threads` — surfaces unfinished thinking
+### `find_loose_ends` — surfaces unfinished thinking
 
 > User: "Let's revisit pricing again."
 >
-> Claude (calls `find_open_threads(topic="pricing")`):
+> Claude (calls `find_loose_ends(topic="pricing")`):
 > *"Before we dive in — you have two open threads on pricing:*
 > *- Two months ago you stopped at 'how to handle freemium
 >   conversion?'. You'd analyzed to the LTV model but didn't
@@ -326,7 +326,7 @@ Rough breakdown for vaults of different sizes:
 
 | If the user is... | Tool that fires |
 |---|---|
-| Re-starting a familiar topic | `find_open_threads` |
+| Re-starting a familiar topic | `find_loose_ends` |
 | Stating a position / decision | `check_consistency` |
 | Asking about evolution / "current view" | `get_position_drift` |
 | Asking a discrete factual question | `recall_memory` (Phase 1) |

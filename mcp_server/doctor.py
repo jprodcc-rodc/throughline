@@ -236,7 +236,7 @@ def _check_reflection_state_files() -> bool:
             "no Reflection Pass state files found",
             "Run `python -m daemon.reflection_pass --enable-llm-naming "
             "--enable-llm-backfill` to populate. Phase 2 MCP tools "
-            "(find_open_threads / check_consistency / get_position_drift) "
+            "(find_loose_ends / check_consistency / get_position_drift) "
             "return error _status until this runs.",
         )
         return False

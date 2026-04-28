@@ -1,4 +1,4 @@
-"""Tests for mcp_server.tools.find_open_threads (real impl).
+"""Tests for mcp_server.tools.find_loose_ends (real impl).
 
 The tool reads ``reflection_open_threads.json`` written by stage 5
 of the Reflection Pass. These tests build synthetic state files
@@ -44,32 +44,32 @@ def _write_state(state_dir: Path, entries: list[dict]) -> Path:
 
 class TestMissingState:
     def test_no_state_file_returns_error(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
-        result = find_open_threads()
+        result = find_loose_ends()
         assert result["_status"] == "error"
         assert "has not run yet" in result["_message"]
         assert result["open_threads"] == []
         assert result["total_open_threads"] == 0
 
     def test_malformed_json_returns_error(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         (state_dir / "reflection_open_threads.json").write_text(
             "not json at all", encoding="utf-8"
         )
-        result = find_open_threads()
+        result = find_loose_ends()
         assert result["_status"] == "error"
         assert "has not run yet" in result["_message"]
 
     def test_state_with_non_list_threads(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         (state_dir / "reflection_open_threads.json").write_text(
             json.dumps({"open_threads": "not a list"}),
             encoding="utf-8",
         )
-        result = find_open_threads()
+        result = find_loose_ends()
         assert result["_status"] == "error"
         assert "malformed" in result["_message"].lower()
 
@@ -78,7 +78,7 @@ class TestMissingState:
 
 class TestHappyPath:
     def test_returns_all_threads_when_no_filter(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         _write_state(state_dir, [
             {
@@ -97,7 +97,7 @@ class TestHappyPath:
             },
         ])
 
-        result = find_open_threads()
+        result = find_loose_ends()
         assert result["_status"] == "ok"
         assert result["total_open_threads"] == 2
         # Sort DESC by last_touched -> b1 first
@@ -105,7 +105,7 @@ class TestHappyPath:
         assert result["open_threads"][1]["topic_cluster"] == "pricing_strategy"
 
     def test_topic_filter_substring_match(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         _write_state(state_dir, [
             {
@@ -125,7 +125,7 @@ class TestHappyPath:
             },
         ])
 
-        result = find_open_threads(topic="b1")
+        result = find_loose_ends(topic="b1")
         assert result["_status"] == "ok"
         # Substring match: "b1" is in "b1_thiamine_therapy" but NOT
         # in "b12_supplementation" (which has "b12" not "b1")
@@ -137,7 +137,7 @@ class TestHappyPath:
         assert "a.md" not in paths
 
     def test_topic_filter_case_insensitive(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         _write_state(state_dir, [
             {
@@ -147,12 +147,12 @@ class TestHappyPath:
             },
         ])
 
-        result = find_open_threads(topic="PRICING")
+        result = find_loose_ends(topic="PRICING")
         assert result["_status"] == "ok"
         assert len(result["open_threads"]) == 1
 
     def test_topic_no_match_returns_ok_with_message(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         _write_state(state_dir, [
             {
@@ -162,7 +162,7 @@ class TestHappyPath:
             },
         ])
 
-        result = find_open_threads(topic="nonexistent")
+        result = find_loose_ends(topic="nonexistent")
         assert result["_status"] == "ok"
         assert result["open_threads"] == []
         # total_open_threads still 0 in the message-result
@@ -171,7 +171,7 @@ class TestHappyPath:
         assert "match topic" in result["_message"]
 
     def test_limit_clamps_results(self, state_dir):
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         entries = [
             {
@@ -185,7 +185,7 @@ class TestHappyPath:
         ]
         _write_state(state_dir, entries)
 
-        result = find_open_threads(limit=3)
+        result = find_loose_ends(limit=3)
         assert result["_status"] == "ok"
         # total is the FULL count regardless of limit
         assert result["total_open_threads"] == 10
@@ -197,10 +197,10 @@ class TestHappyPath:
 
     def test_empty_state_returns_ok(self, state_dir):
         """State file exists but has empty open_threads list."""
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         _write_state(state_dir, [])
-        result = find_open_threads()
+        result = find_loose_ends()
         assert result["_status"] == "ok"
         assert result["total_open_threads"] == 0
         assert result["open_threads"] == []
@@ -209,7 +209,7 @@ class TestHappyPath:
 # ---------- Internal helpers ----------
 
 def test_resolve_state_file_uses_env_var(monkeypatch, tmp_path):
-    from mcp_server.tools.find_open_threads import _resolve_state_file
+    from mcp_server.tools.find_loose_ends import _resolve_state_file
 
     monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "custom"))
     p = _resolve_state_file()
@@ -218,7 +218,7 @@ def test_resolve_state_file_uses_env_var(monkeypatch, tmp_path):
 
 
 def test_filter_by_topic_empty_needle_returns_all():
-    from mcp_server.tools.find_open_threads import _filter_by_topic
+    from mcp_server.tools.find_loose_ends import _filter_by_topic
 
     entries = [
         {"topic_cluster": "a"},

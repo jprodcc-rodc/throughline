@@ -30,7 +30,7 @@ onboarding entry point.
 | `save_refined_card` | The host LLM (Claude / etc.) synthesizes a structured 6-section card from the conversation itself, then this tool files the result to vault. Subscription budget pays the synthesis. | **Free.** Uses host's subscription, not API. |
 | `recall_memory` | Retrieve cards from your vault relevant to a query. Embedding + reranking happens in the local rag_server. | ~$0.0003 (Haiku judge) + local compute. |
 | `list_topics` | List the X-axis taxonomy domains + (optionally) per-domain card counts. No LLM call. | Free. |
-| `find_open_threads` | Surfaces unfinished reasoning when the user starts a related conversation. Reads daemon state file populated by structural detection. | Free (state-file read). |
+| `find_loose_ends` | Surfaces unfinished reasoning when the user starts a related conversation. Reads daemon state file populated by structural detection. | Free (state-file read). |
 | `check_consistency` | When user states a position, returns historical positions in the matching topic cluster + their original reasoning. Host LLM judges contradiction in conversation (soft-mode default). | Free (state-file read). |
 | `get_position_drift` | Returns the chronological trajectory of cards on a topic, with stance + reasoning per entry. Metacognitive infrastructure. | Free (state-file read). |
 | `throughline_status` | Snapshot of the install: card count, last Reflection Pass timestamp, vault location, cold-start / staleness hints. The natural call when the user asks "what's in my throughline?" or mentions the system in a general (non-specific-topic) way. | Free (local file reads only). |

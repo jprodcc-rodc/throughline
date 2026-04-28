@@ -3,7 +3,7 @@
 **Status (2026-04-28):** v0.3 in progress. **Engineering gate
 cleared at 0.975 pairwise clustering accuracy on author's vault**
 (target was ≥75%). All three MCP tools real implementations
-(`find_open_threads` / `check_consistency` / `get_position_drift`)
+(`find_loose_ends` / `check_consistency` / `get_position_drift`)
 reading state files written by `daemon/reflection_pass.py`.
 Reflection Pass orchestrates an 8-stage pipeline; stages 6
 (LLM contradiction judgment) and 7 (LLM drift segmentation) remain
@@ -106,13 +106,13 @@ refined card. It tags cards where reasoning was suspended — open
 questions without follow-up, hypotheses without conclusion,
 branches without resolution. These get `status: open_thread` in
 metadata. When the user starts a related conversation, throughline
-surfaces them via the `find_open_threads` MCP tool.
+surfaces them via the `find_loose_ends` MCP tool.
 
 **User experience:**
 
 > User: *"I want to think about pricing again."*
 >
-> Claude (calls `find_open_threads`): *"Before we dive in — you have
+> Claude (calls `find_loose_ends`): *"Before we dive in — you have
 > two open threads on pricing:*
 > *- Two months ago you stopped at 'how to handle freemium
 >   conversion'. You'd analyzed to the LTV model but didn't
@@ -413,7 +413,7 @@ hot path.
 
 ```python
 @mcp.tool()
-def find_open_threads(topic: str | None = None) -> list:
+def find_loose_ends(topic: str | None = None) -> list:
     """Find unfinished thinking on a topic the user may want to
     resume.
 
@@ -530,7 +530,7 @@ Phase 2 (v0.3, this design): Reflection Layer.
 - Topic clustering on author's vault → ≥75% accuracy → gate
 - Position metadata schema in card frontmatter
 - Reflection Pass daemon
-- 3 new MCP tools (`find_open_threads` / `check_consistency` /
+- 3 new MCP tools (`find_loose_ends` / `check_consistency` /
   `get_position_drift`)
 - Tool description iteration against real Claude / Cursor /
   Continue.dev sessions

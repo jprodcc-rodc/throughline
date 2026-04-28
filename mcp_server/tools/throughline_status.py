@@ -32,7 +32,7 @@ from mcp_server.taxonomy_reader import count_cards_per_domain
 
 
 # When the most recent reflection_pass_state.json is older than this,
-# the 3 Reflection Layer MCP tools (find_open_threads, check_consistency,
+# the 3 Reflection Layer MCP tools (find_loose_ends, check_consistency,
 # get_position_drift) are returning data that may not reflect the
 # vault's current state. Mirrors the doctor staleness threshold so a
 # user who runs both gets consistent signals.
@@ -159,7 +159,7 @@ def throughline_status() -> dict:
                 "reflection_pass": {"last_run": None, ...},
                 "_status": "warning",
                 "_message": "Vault has cards but the Reflection Pass "
-                            "has not run. find_open_threads / "
+                            "has not run. find_loose_ends / "
                             "check_consistency / get_position_drift "
                             "will return error _status until "
                             "`python -m daemon.reflection_pass` runs. "
@@ -246,14 +246,14 @@ def throughline_status() -> dict:
             "will refine it into a knowledge card. Once a few cards "
             "exist, recall_memory and list_topics start returning "
             "real data; once the Reflection Pass runs, the 3 "
-            "Reflection Layer tools (find_open_threads, "
+            "Reflection Layer tools (find_loose_ends, "
             "check_consistency, get_position_drift) come online."
         )
     elif last_run is None:
         result["_status"] = "warning"
         result["_message"] = (
             f"Vault has {tagged_card_count} cards but the Reflection Pass "
-            "has not run yet. find_open_threads / check_consistency "
+            "has not run yet. find_loose_ends / check_consistency "
             "/ get_position_drift will return error _status until "
             "`python -m daemon.reflection_pass --enable-llm-naming "
             "--enable-llm-backfill` runs. Auto-schedule templates "

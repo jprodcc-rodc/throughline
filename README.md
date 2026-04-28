@@ -10,8 +10,8 @@
 > tests, zero external network calls in CI · 6 first-class vector
 > store backends · 5 native rerankers · 16 LLM-provider presets ·
 > full threat model documented · MCP server with 7 tools covering
-> save/recall/list-topics, three Reflection Layer tools (open
-> threads / consistency / drift), and a status/onboarding probe ·
+> save/recall/list-topics, three Reflection Layer tools (loose
+> ends / consistency / drift), and a status/onboarding probe ·
 > vault portable across all AI tools (not locked to any one
 > vendor) · running 24/7 against the maintainer's vault since
 > v0.1.0.
@@ -243,7 +243,7 @@ A separate `throughline-mcp` PyPI package exposing seven tools over
 stdio:
 
 - **Vault ops** — `save_refined_card`, `recall_memory`, `list_topics`
-- **Reflection Layer** — `find_open_threads`, `check_consistency`,
+- **Reflection Layer** — `find_loose_ends`, `check_consistency`,
   `get_position_drift`
 - **Discovery / onboarding** — `throughline_status` (snapshot of
   install state, fires on "what's in my throughline?" / "first time
@@ -284,23 +284,35 @@ is a supported configuration; conversations saved through MCP get
 refined by the daemon and become recallable from the Filter, and
 vice versa.
 
-### How this is different from Claude Desktop's "never lose the thread"
+### How this is different from Anthropic's chat memory + Cowork "thread"
 
-April 2026 Anthropic shipped past-chat referencing in Claude
-Desktop. Honest framing of the difference:
+Anthropic shipped two different features in 2026 that overlap with
+throughline's surface area. Honest framing of the differences:
 
-- Anthropic's feature: **reactive recall** of past conversation
-  snippets, locked to Claude, on Anthropic's servers. Trigger:
-  user asks. Object: text snippets. *"Where did I leave off?"*
-- throughline (and especially the Reflection Layer landing in
-  v0.3): **proactive surfacing** of *thinking states* — open
-  questions without follow-up, contradictions with past reasoning,
-  position drift over time. Daemon scans, surfaces in any
-  MCP-aware host, vault stays on user's machine.
+- **Anthropic chat memory** (March 2026): reactive recall of past
+  conversation snippets, locked to Claude, on Anthropic's servers.
+  Trigger: user asks. Object: text snippets. *"Where did I leave off?"*
+- **Anthropic Cowork persistent agent thread** (April 9, 2026 GA):
+  an autonomous agent thread that runs tasks in an isolated VM —
+  schedule recurring jobs, manage workflows, "do things while you
+  work elsewhere." Trigger: user delegates. Object: pending tasks
+  + their state. *Action-oriented*.
+- **throughline Reflection Layer**: introspective surfacing of
+  *thinking states* in your knowledge base — `find_loose_ends`
+  (renamed from `find_open_threads` to avoid collision with
+  Cowork's "thread" naming) for unfinished questions,
+  `check_consistency` for contradictions with past reasoning,
+  `get_position_drift` for stance evolution. Daemon scans your
+  refined card vault offline, surfaces results in any MCP-aware
+  host, vault stays on user's machine. *Reflection-oriented*.
 
-In one line: *Claude Desktop remembers what you said; throughline
-knows what you stopped thinking about.* Both useful; different
-products. Reflection Layer design at
+One-line dichotomy:
+- *Claude memory remembers what you said.*
+- *Cowork executes tasks for you.*
+- *throughline knows what you stopped thinking about.*
+
+Three different products solving three different problems. Use
+all three together if it makes sense. Reflection Layer design at
 [`docs/REFLECTION_LAYER_DESIGN.md`](docs/REFLECTION_LAYER_DESIGN.md).
 
 ---
@@ -494,7 +506,7 @@ flowchart LR
     mcp -->|reads| state
     mcp -->|tool result| host
 
-    host -->|find_open_threads / check_consistency / get_position_drift| mcp
+    host -->|find_loose_ends / check_consistency / get_position_drift| mcp
 ```
 
 The Reflection Layer adds a third pipeline: an **offline daemon**
@@ -610,7 +622,7 @@ throughline/                  ~33,700 LOC Python, ~5,400 LOC tests (1,300+ cases
 │                             @pte slash commands, valves config schema
 ├── mcp_server/    2.1K LOC   MCP server entry. 7 tools — vault ops
 │                             (save_conversation, recall_memory, list_topics),
-│                             Reflection Layer (find_open_threads,
+│                             Reflection Layer (find_loose_ends,
 │                             check_consistency, get_position_drift), and
 │                             throughline_status (discovery probe). Stdio
 │                             transport via fastmcp, talks to existing daemon

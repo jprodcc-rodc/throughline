@@ -1,8 +1,18 @@
-"""find_open_threads — Phase 2 v0.3 real implementation.
+"""find_loose_ends — Phase 2 implementation, surfaces unfinished thinking.
+
+Renamed from ``find_open_threads`` (2026-04-28) to differentiate
+from Anthropic's Cowork **persistent agent thread** (2026-04-09 GA),
+which is a TASK execution agent that runs in an isolated VM and
+performs autonomous workflows. throughline's loose ends are the
+opposite shape: introspective surfacing of **unfinished reasoning
+in your knowledge base** — questions you raised in past
+conversations that never got resolved. No agent, no execution,
+just visibility into stuck thoughts.
 
 Reads the state file written by ``daemon.reflection_pass`` stage 5
-(``reflection_open_threads.json``) and surfaces cards with
-unresolved open questions to the host LLM.
+(``reflection_open_threads.json`` on disk — kept under that name
+for backward compat with vaults that already have it) and surfaces
+cards with unresolved open questions to the host LLM.
 
 The Reflection Pass daemon does the expensive work offline:
 - back-fill open_questions per card via LLM (stage 4)
@@ -11,10 +21,6 @@ The Reflection Pass daemon does the expensive work offline:
 
 This tool is a thin reader. No LLM calls, no vault scan, just JSON
 read + optional topic filter + result shaping. Sub-millisecond.
-
-Per locked decision Q3 (private/MCP_SCAFFOLDING_PLAN.md § 12.A):
-tool description has explicit "Call this when:" / "Do NOT call:"
-guidance. Q4: tool name is NOT namespaced.
 """
 from __future__ import annotations
 
@@ -62,7 +68,7 @@ def _filter_by_topic(
     ]
 
 
-def find_open_threads(
+def find_loose_ends(
     topic: Optional[str] = None,
     limit: int = 5,
 ) -> dict:
@@ -71,6 +77,13 @@ def find_open_threads(
     a conclusion, branches the user started exploring but never
     closed. throughline's Reflection Pass daemon (stage 5) tags
     these structurally; this tool surfaces them.
+
+    NOT to be confused with Claude Desktop's Cowork "persistent
+    agent thread" feature (which is a TASK execution agent running
+    autonomous workflows in an isolated VM). loose_ends are
+    *introspective* — surfacing UNFINISHED REASONING from your
+    own past chats. No agent, no execution, just visibility into
+    stuck thoughts so you can pick them back up.
 
     Call this when:
     - User starts a new conversation on a familiar topic
@@ -97,15 +110,15 @@ def find_open_threads(
     Example trigger conversations:
 
     - User: "Let's revisit pricing again" — call
-      ``find_open_threads(topic="pricing")``.
+      ``find_loose_ends(topic="pricing")``.
     - User: "Where did I leave off on the database migration?" —
-      call ``find_open_threads(topic="database migration")``.
+      call ``find_loose_ends(topic="database migration")``.
     - User: "What was I thinking about freemium conversion?" —
-      call ``find_open_threads(topic="freemium")``.
+      call ``find_loose_ends(topic="freemium")``.
     - User: "I need to think through the auth layer" — if the
       user has reasoned about auth before (you can check via
       list_topics first if unsure), call
-      ``find_open_threads(topic="auth")``.
+      ``find_loose_ends(topic="auth")``.
 
     Args:
         topic: Optional topic filter. Case-insensitive substring

@@ -54,7 +54,7 @@ def get_position_drift(
 
     Do NOT call:
     - For factual lookups — call `recall_memory` instead.
-    - For unfinished reasoning — call `find_open_threads` instead.
+    - For unfinished reasoning — call `find_loose_ends` instead.
     - For checking a specific assertion against past — call
       `check_consistency` instead.
 

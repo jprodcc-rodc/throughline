@@ -421,9 +421,9 @@ class TestToolDegradation:
         result = get_position_drift(topic="   ")
         assert result["_status"] == "error"
 
-    def test_find_open_threads_negative_limit_clamps(self, tmp_path, monkeypatch):
+    def test_find_loose_ends_negative_limit_clamps(self, tmp_path, monkeypatch):
         """limit=0 or negative shouldn't return error or crash."""
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path))
         (tmp_path / "reflection_open_threads.json").write_text(
@@ -438,7 +438,7 @@ class TestToolDegradation:
         # Negative limit: tool should still run (current behavior:
         # treats limit<=0 as "no clamp"; specific behavior less
         # important than not crashing)
-        result = find_open_threads(limit=0)
+        result = find_loose_ends(limit=0)
         assert result["_status"] == "ok"
         # With limit=0 and our implementation, no slicing happens
         # so all entries return

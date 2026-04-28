@@ -4,7 +4,7 @@ Phase 1 (v0.2.x, shipped) registered 3 real tools:
 - save_conversation, recall_memory, list_topics
 
 Phase 2 (v0.3, in progress) adds 3 more for the Reflection Layer:
-- find_open_threads, check_consistency, get_position_drift
+- find_loose_ends, check_consistency, get_position_drift
 
 The Phase 2 trio currently registers as stubs (returning
 `_status: "stub"`) so MCP clients can wire up and test the surface
@@ -30,7 +30,7 @@ from mcp_server import __version__
 from mcp_server.tools.save_refined_card import save_refined_card
 from mcp_server.tools.recall_memory import recall_memory
 from mcp_server.tools.list_topics import list_topics
-from mcp_server.tools.find_open_threads import find_open_threads
+from mcp_server.tools.find_loose_ends import find_loose_ends
 from mcp_server.tools.check_consistency import check_consistency
 from mcp_server.tools.get_position_drift import get_position_drift
 from mcp_server.tools.throughline_status import throughline_status
@@ -69,7 +69,7 @@ def build_app() -> FastMCP:
 
     # Phase 2: Reflection Layer (currently stub-tier; real impl
     # in subsequent commits once daemon + position_signal land).
-    app.tool()(find_open_threads)
+    app.tool()(find_loose_ends)
     app.tool()(check_consistency)
     app.tool()(get_position_drift)
 
@@ -103,20 +103,26 @@ def build_app() -> FastMCP:
         )
 
     @app.prompt()
-    def threads() -> str:
-        """Surface open threads — unfinished thinking grouped by topic.
+    def loose_ends() -> str:
+        """Surface unfinished reasoning grouped by topic.
 
-        Triggers find_open_threads and walks the user through the
-        most-recently-touched threads, offering to resume any of
-        them.
+        Triggers find_loose_ends and walks the user through the
+        most-recently-touched loose ends, offering to resume any
+        of them.
+
+        Renamed from /threads (2026-04-28) to differentiate from
+        Anthropic's Cowork **persistent agent thread** (2026-04-09
+        GA), which is a TASK execution agent — completely different
+        shape from throughline's introspective surfacing of
+        unfinished thinking.
         """
         return (
-            "Call the find_open_threads tool with limit=5. Format "
-            "the result as a numbered list, one entry per thread: "
-            "topic_cluster name + most recent date + a one-line "
-            "summary of the open questions. Then ask the user "
-            "which thread they want to resume, or whether to surface "
-            "more (re-call with limit=10)."
+            "Call the find_loose_ends tool with limit=5. Format "
+            "the result as a numbered list, one entry per loose "
+            "end: topic_cluster name + most recent date + a "
+            "one-line summary of the open questions. Then ask the "
+            "user which one they want to resume, or whether to "
+            "surface more (re-call with limit=10)."
         )
 
     @app.prompt()

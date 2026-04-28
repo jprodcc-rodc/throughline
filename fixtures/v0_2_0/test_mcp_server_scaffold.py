@@ -8,7 +8,7 @@ private/MCP_SCAFFOLDING_PLAN.md § 12.A.
 Phase 1 (shipped, v0.2.x): save_conversation / recall_memory /
 list_topics are real implementations.
 
-Phase 2 (in progress, v0.3): find_open_threads / check_consistency /
+Phase 2 (in progress, v0.3): find_loose_ends / check_consistency /
 get_position_drift are stubs returning `_status: "stub"` until the
 Reflection Pass daemon and position_signal frontmatter schema land.
 The scaffold tests here verify the surface (signature, docstring
@@ -43,7 +43,7 @@ def test_tools_module_imports():
         save_conversation,
         recall_memory,
         list_topics,
-        find_open_threads,
+        find_loose_ends,
         check_consistency,
         get_position_drift,
     )
@@ -51,7 +51,7 @@ def test_tools_module_imports():
     assert callable(save_conversation)
     assert callable(recall_memory)
     assert callable(list_topics)
-    assert callable(find_open_threads)
+    assert callable(find_loose_ends)
     assert callable(check_consistency)
     assert callable(get_position_drift)
 
@@ -108,12 +108,12 @@ def test_list_topics_signature():
     assert params["include_card_counts"].default is True
 
 
-def test_find_open_threads_signature():
-    """find_open_threads takes (topic, limit). topic optional, limit
+def test_find_loose_ends_signature():
+    """find_loose_ends takes (topic, limit). topic optional, limit
     defaults 5. See docs/REFLECTION_LAYER_DESIGN.md § Open Threads."""
-    from mcp_server.tools import find_open_threads
+    from mcp_server.tools import find_loose_ends
 
-    sig = inspect.signature(find_open_threads)
+    sig = inspect.signature(find_loose_ends)
     params = sig.parameters
 
     assert "topic" in params
@@ -163,7 +163,7 @@ ALL_TOOLS = [
     "save_conversation",
     "recall_memory",
     "list_topics",
-    "find_open_threads",
+    "find_loose_ends",
     "check_consistency",
     "get_position_drift",
 ]
@@ -263,15 +263,15 @@ def test_list_topics_returns_dict_with_status():
 # doesn't break the surface.
 
 
-def test_find_open_threads_returns_real_shape(monkeypatch, tmp_path):
-    """find_open_threads is now a real implementation reading the
+def test_find_loose_ends_returns_real_shape(monkeypatch, tmp_path):
+    """find_loose_ends is now a real implementation reading the
     state file written by Reflection Pass stage 5. With no state
     file present (point at empty dir), it returns _status: "error"
     with a clear message — never crashes."""
-    from mcp_server.tools import find_open_threads
+    from mcp_server.tools import find_loose_ends
 
     monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path / "no_state"))
-    result = find_open_threads()
+    result = find_loose_ends()
     assert isinstance(result, dict)
     assert "open_threads" in result
     assert isinstance(result["open_threads"], list)

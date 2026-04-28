@@ -16,7 +16,7 @@ namer, LLM extractor) with deterministic fakes. Runs the full
 - positions file has expected cluster shape
 - open_threads file has expected cards flagged
 - writeback_preview has expected diffs
-- find_open_threads MCP tool reads the state file correctly
+- find_loose_ends MCP tool reads the state file correctly
 - check_consistency MCP tool finds the right cluster
 - get_position_drift MCP tool returns chronological trajectory
 
@@ -421,9 +421,9 @@ class TestMCPToolsReadE2E:
         assert result["trajectory"][0]["ended"] == "2026-03-15"
         assert result["trajectory"][1]["ended"] is None
 
-    def test_find_open_threads_state_present(self, synth_vault):
+    def test_find_loose_ends_state_present(self, synth_vault):
         from daemon.reflection_pass import run_pass
-        from mcp_server.tools.find_open_threads import find_open_threads
+        from mcp_server.tools.find_loose_ends import find_loose_ends
 
         vault, state = synth_vault
 
@@ -454,7 +454,7 @@ class TestMCPToolsReadE2E:
         # All cards have unique questions — none get resolved by
         # later cards (titles differ enough that token overlap < 0.75).
         # So all back-filled cards should be flagged as open-thread.
-        result = find_open_threads()
+        result = find_loose_ends()
         assert result["_status"] == "ok"
         assert result["total_open_threads"] >= 1
 
