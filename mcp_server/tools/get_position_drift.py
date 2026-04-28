@@ -40,35 +40,52 @@ def get_position_drift(
     Returns the **full trajectory**, not just the current position.
     The point is to make intellectual evolution visible.
 
-    Call this when:
+    CALL THIS PROACTIVELY WHEN:
+    - User makes a confident assertion about a topic they've
+      discussed before ("I've decided X", "X is the right call",
+      "I'm going with X") AND the topic likely has prior cards.
+    - User uses retrospective framing ("Looking back...",
+      "I've changed my mind...", "I think I used to think...").
     - User asks about their "current framework" or "current view"
       on a topic ("what's my current take on pricing?", "where am
       I now on database choice?").
-    - User wants to see thinking history ("how has my thinking on
-      X evolved?", "show me the arc on Y").
-    - User seems uncertain whether their view has changed ("I'm
-      not sure if I still believe...", "I think I used to think...").
-    - User is building a writeup, retrospective, or decision doc
-      that benefits from showing evolution rather than just
-      conclusion.
+    - Topic mentions a named entity (project, technology, person,
+      decision) that has prior cards in the vault.
+    - User asks to "walk me through the arc" / "show evolution" /
+      "review the trajectory" on a topic.
 
-    Do NOT call:
-    - For factual lookups — call `recall_memory` instead.
-    - For unfinished reasoning — call `find_loose_ends` instead.
-    - For checking a specific assertion against past — call
-      `check_consistency` instead.
+    DO NOT CALL WHEN:
+    - User is asking a factual question ("what is X?",
+      "how does X work?") — that's a knowledge question, not a
+      stance retrospective.
+    - First time the topic appears in the vault (no history to
+      drift through). Use list_topics first if uncertain.
+    - User is in flow on a single tight task with no opinion
+      content — drift is for opinion / decision arcs, not coding.
+    - For checking a specific current assertion against past — use
+      `check_consistency` instead (drift is the long view, consistency
+      is the point comparison).
+    - For finding unfinished questions — use `find_loose_ends`.
 
-    Example trigger conversations:
+    EXAMPLE TRIGGERS:
+    User: "I think we should use Postgres for this."
+      → get_position_drift(topic="database choice")
+    User: "Actually, I changed my mind on the auth flow."
+      → get_position_drift(topic="auth flow")
+    User: "Show me how my thinking on pricing has evolved."
+      → get_position_drift(topic="pricing")
+    User: "What's my current framework for evaluating product ideas?"
+      → get_position_drift(topic="product evaluation")
+    User: "Walk me through the arc on database choice."
+      → get_position_drift(topic="database choice")
 
-    - User: "What's my current framework for evaluating product
-      ideas?" — call ``get_position_drift(topic="product evaluation")``.
-    - User: "Show me how my thinking on pricing has evolved" —
-      call ``get_position_drift(topic="pricing")``.
-    - User: "I think I used to feel differently about this — what
-      was my view on freemium?" — call
-      ``get_position_drift(topic="freemium")``.
-    - User: "Walk me through the arc on auth architecture" — call
-      ``get_position_drift(topic="auth architecture")``.
+    EXAMPLE NON-TRIGGERS:
+    User: "What's the difference between Postgres and MySQL?"
+      (factual question, no personal stance to drift through)
+    User: "Can you fix this SQL syntax error?"
+      (in-flow technical task, no stance content)
+    User: "Tell me about Postgres internals."
+      (educational, not retrospective)
 
     What you (the host LLM) do with the returned `trajectory`:
 

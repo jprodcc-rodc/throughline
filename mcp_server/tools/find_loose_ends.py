@@ -85,40 +85,49 @@ def find_loose_ends(
     own past chats. No agent, no execution, just visibility into
     stuck thoughts so you can pick them back up.
 
-    Call this when:
-    - User starts a new conversation on a familiar topic
-      ("I want to think about pricing again", "let's revisit
-      that database migration plan").
-    - User asks "what was I thinking about X?" or "where did I
-      leave off on Y?".
-    - User seems to be re-starting reasoning that may have already
-      begun ("ok so on freemium conversion...") — surfacing the
-      prior open thread saves them re-deriving from zero.
-    - First message of a session and the user references a topic
-      area without context — there may be a stale thread to pick
-      up.
+    CALL THIS PROACTIVELY WHEN:
+    - User starts a new session and asks "where was I" / "where did
+      I leave off" / "what was I thinking about X".
+    - User mentions a project or topic they haven't discussed in
+      >7 days (check via list_topics or recall_memory first if
+      uncertain about recency).
+    - User's current question implicitly depends on unresolved
+      earlier thinking ("ok so on freemium conversion..." —
+      surface their prior unresolved threads before they re-derive).
+    - Conversation hits a natural reflection point ("ok, what now?",
+      "where does this leave us?", "what's next").
+    - User uses the word "revisit" or "pick back up" or "come back
+      to" — explicit invitation to surface old threads.
 
-    Do NOT call:
-    - Speculatively on every message. The signal is the user
-      *signaling intent to reason about something familiar*. Random
-      topical mentions don't qualify.
-    - When the user is asking a discrete factual question — call
-      `recall_memory` instead.
-    - When the user has just expressed a clear position — call
-      `check_consistency` instead.
+    DO NOT CALL WHEN:
+    - User is in flow on a single tight task (coding, debugging,
+      writing) — don't interrupt with old loose ends.
+    - Every message in the session — once per session is plenty.
+    - User asks a discrete factual question — use `recall_memory`.
+    - User has just expressed a clear position — use
+      `check_consistency`.
+    - User explicitly says "fresh start" or "ignore history" — they
+      don't want surfacing.
 
-    Example trigger conversations:
+    EXAMPLE TRIGGERS:
+    User: "Let's revisit pricing again."
+      → find_loose_ends(topic="pricing")
+    User: "Where did I leave off on the database migration?"
+      → find_loose_ends(topic="database migration")
+    User: "What was I thinking about freemium conversion?"
+      → find_loose_ends(topic="freemium")
+    User: "I need to think through the auth layer."
+      → find_loose_ends(topic="auth")
+    User: "Ok, what now?" (after long discussion)
+      → find_loose_ends() (no topic filter)
 
-    - User: "Let's revisit pricing again" — call
-      ``find_loose_ends(topic="pricing")``.
-    - User: "Where did I leave off on the database migration?" —
-      call ``find_loose_ends(topic="database migration")``.
-    - User: "What was I thinking about freemium conversion?" —
-      call ``find_loose_ends(topic="freemium")``.
-    - User: "I need to think through the auth layer" — if the
-      user has reasoned about auth before (you can check via
-      list_topics first if unsure), call
-      ``find_loose_ends(topic="auth")``.
+    EXAMPLE NON-TRIGGERS:
+    User: "Fix this bug." (in-flow task, don't surface old threads)
+    User: "What is OAuth 2.0?" (factual question, use recall_memory)
+    User: "I'm going with Postgres." (clear position, use
+      check_consistency)
+    User: "Ignore everything else, just help me with this email."
+      (explicit fresh-start signal)
 
     Args:
         topic: Optional topic filter. Case-insensitive substring

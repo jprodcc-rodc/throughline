@@ -61,34 +61,52 @@ def check_consistency(
     contradicts their past thinking, this surfaces the conflict
     rather than silently absorbing the new position.
 
-    Call this when:
-    - User expresses a clear position, decision, or commitment
-      ("I'm going with usage-based pricing", "I think we should
-      pivot", "my view is that the database should be Postgres").
-    - User uses position-asserting phrases ("I think", "I've
-      decided", "my view is", "we should").
-    - User seems to be making a significant choice that will shape
-      downstream work.
+    CALL THIS PROACTIVELY WHEN:
+    - User states a principle, value, or rule of thumb
+      ("I think...", "my view is...", "we should...", "I've
+      decided...", "my take is...").
+    - User justifies a decision with reasoning that could be
+      checked against past reasoning ("X because Y" — Y might
+      contradict prior reasoning).
+    - User makes a claim with quantifiers ("always", "never",
+      "we don't do X", "X is the only way").
+    - User is making a significant choice that will shape
+      downstream work — surface contradictions BEFORE they invest
+      in the wrong direction.
 
-    Do NOT call:
-    - On every assertion. The signal is *position-asserting on a
-      topic the user has thought about before*, not every "I think
-      this looks good" passing remark.
-    - When the user is asking a question rather than asserting.
-    - When the user has flagged uncertainty ("I'm not sure but...")
-      — that's a reasoning state, not a position.
+    DO NOT CALL WHEN:
+    - User is asking a question rather than asserting
+      ("should we use X?" — wait until they DECIDE).
+    - User has flagged uncertainty ("I'm not sure but...",
+      "maybe X", "could go either way") — that's a reasoning
+      state, not a position to check.
+    - User is venting or expressing emotion ("I hate this
+      framework", "this is so painful") — not a stance worth
+      contradicting.
+    - Hypothetical / brainstorming framing ("what if we...",
+      "let's explore...") — exploratory, not committed.
+    - Every "I think this looks good" passing remark — signal is
+      position-asserting on a topic the user has thought about
+      before, not every micro-opinion.
 
-    Example trigger conversations:
+    EXAMPLE TRIGGERS:
+    User: "I'm going with usage-based pricing for the SaaS."
+      → check_consistency(statement="usage-based pricing for SaaS")
+    User: "I've decided full Postgres, no MongoDB."
+      → check_consistency(statement="full Postgres, no MongoDB")
+    User: "My view is that auth doesn't need a microservice."
+      → check_consistency(statement="auth without microservice")
+    User: "We should switch to TypeScript."
+      → check_consistency(statement="switch to TypeScript")
+    User: "I never use ORMs — they hide too much."
+      → check_consistency(statement="no ORMs, raw SQL")
 
-    - User: "I'm going with usage-based pricing for the SaaS" —
-      call ``check_consistency(statement="usage-based pricing for SaaS")``.
-    - User: "I've decided we should go full Postgres, no MongoDB" —
-      call ``check_consistency(statement="full Postgres no MongoDB")``.
-    - User: "My take is that we don't need a microservice for auth" —
-      call ``check_consistency(statement="auth doesn't need a
-      microservice")``.
-    - User: "We should switch to TypeScript" — call
-      ``check_consistency(statement="switch to TypeScript")``.
+    EXAMPLE NON-TRIGGERS:
+    User: "Should we use Postgres or MySQL?" (asking, not asserting)
+    User: "I'm leaning toward Postgres but not sure" (uncertainty)
+    User: "What if we just used SQLite for now?" (hypothetical)
+    User: "This bug is killing me" (venting, no stance)
+    User: "Postgres has some nice features" (passing remark)
 
     What you (the host LLM) do with the returned `contradictions`
     list:

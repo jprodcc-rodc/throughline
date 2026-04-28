@@ -42,22 +42,52 @@ def recall_memory(
     relevant to a query. Returns the cards' titles, content, and
     metadata for the host LLM to read.
 
-    Call this when:
-    - The user asks about something that may be in their vault
+    CALL THIS PROACTIVELY WHEN:
+    - User uses possessive references assuming shared context
+      ("my project", "the bug we discussed", "what I said before",
+      "our pricing strategy").
+    - User mentions a named entity that likely has prior cards
+      (project name, technology choice, person, decision label).
+    - User's question is ambiguous and historical context would
+      disambiguate ("how should I handle X?" — past cards may show
+      the answer is already there).
+    - User asks about something that's likely in their vault
       ("what did I decide about X?", "what's my framework for Y?").
-    - The user references past thinking ("like we discussed
-      before", "based on what I said last month").
-    - The user starts a topic where personal context matters
-      (medical, financial, relationship, project-specific).
+    - User references past thinking ("like we discussed before",
+      "based on what I said last month").
+    - User starts a topic where personal context matters (medical,
+      financial, relationship, project-specific).
     - You're about to give generic advice that throughline likely
-      has user-specific context for.
+      has user-specific context for — recall first to ground.
 
-    Do NOT call:
-    - For factual questions answerable from training data.
-    - For coding / technical questions unrelated to the user's
-      personal context.
-    - On every turn — only when the query has retrieval-relevant
+    DO NOT CALL WHEN:
+    - Pure factual question with no personal context ("what is
+      OAuth?").
+    - User explicitly says "fresh start" / "ignore history" /
+      "don't pull anything from before".
+    - In-flow coding / technical task with no opinion or personal-
+      context content.
+    - Every turn — only when the query has retrieval-relevant
       shape.
+
+    EXAMPLE TRIGGERS:
+    User: "What did I decide about the database choice?"
+      → recall_memory(query="database choice decision")
+    User: "What's my framework for evaluating product ideas?"
+      → recall_memory(query="product evaluation framework")
+    User: "Like we discussed last month about pricing."
+      → recall_memory(query="pricing discussion last month")
+    User: "Help me with my project setup." (possessive "my")
+      → recall_memory(query="project setup")
+    User: "How do I handle medication timing on travel days?"
+      → recall_memory(query="medication timing travel",
+                      include_personal_context=True)
+
+    EXAMPLE NON-TRIGGERS:
+    User: "What is bcrypt?" (factual, no personal context)
+    User: "Fix the indentation here." (in-flow task)
+    User: "Fresh start — help me design from scratch."
+      (explicit signal not to recall)
 
     Args:
         query: The natural-language query. Will be embedded +
