@@ -146,6 +146,172 @@ class TestIsReflectableCard:
         assert is_reflectable_card(card) is False
 
 
+class TestDedupBySliceId:
+    """Stage 1.6 — drop refiner-emitted twins sharing a slice_id.
+
+    Discovered during 2026-04-28 real-vault E2E: the maintainer's
+    daemon emits each refined slice both at route_to (canonical) and
+    in 00_Buffer/ (staging). Both frontmatters carry the same
+    slice_id. Without dedup they bloat clusters and burn duplicate
+    LLM calls in stages 4/6/7 — the contradiction judge correctly
+    classifies them as `agreement` but each judgment still costs $.
+    """
+
+    def _card(self, *, path: str, slice_id: str = "",
+              route_to: str = "", body: str = "x", **fm_extra) -> dict:
+        fm = {"title": "T", **fm_extra}
+        if slice_id:
+            fm["slice_id"] = slice_id
+        if route_to:
+            fm["route_to"] = route_to
+        return {"path": path, "body": body, "frontmatter": fm}
+
+    def test_unique_slice_ids_kept_as_is(self):
+        from daemon.reflection_pass import _dedup_by_slice_id
+
+        cards = [
+            self._card(path="/v/a.md", slice_id="a"),
+            self._card(path="/v/b.md", slice_id="b"),
+            self._card(path="/v/c.md", slice_id="c"),
+        ]
+        result, dropped = _dedup_by_slice_id(cards)
+        assert dropped == 0
+        assert len(result) == 3
+
+    def test_cards_without_slice_id_preserved(self):
+        """managed_by master profiles have no slice_id and should
+        never get dedup'd against each other or against slice cards."""
+        from daemon.reflection_pass import _dedup_by_slice_id
+
+        cards = [
+            self._card(path="/v/profile.md", managed_by="manual_profile"),
+            self._card(path="/v/master.md", managed_by="manual_master"),
+        ]
+        result, dropped = _dedup_by_slice_id(cards)
+        assert dropped == 0
+        assert len(result) == 2
+
+    def test_routed_copy_wins_over_buffer_twin(self):
+        from daemon.reflection_pass import _dedup_by_slice_id
+
+        # Twin pair: same slice_id; one matches route_to, one doesn't.
+        cards = [
+            self._card(
+                path="/vault/00_Buffer/00.03_Refined/buf_thiamine.md",
+                slice_id="abc123",
+                route_to="20_Health/20.02_Meds",
+                body="buf body",
+            ),
+            self._card(
+                path="/vault/20_Health/20.02_Meds/thiamine.md",
+                slice_id="abc123",
+                route_to="20_Health/20.02_Meds",
+                body="canonical body",
+            ),
+        ]
+        result, dropped = _dedup_by_slice_id(cards)
+        assert dropped == 1
+        assert len(result) == 1
+        kept_path = result[0]["path"]
+        assert "00_Buffer" not in kept_path
+        assert kept_path.endswith("thiamine.md")
+
+    def test_falls_back_to_longest_body_when_neither_routed(self):
+        """When route_to is empty or no card's parent matches it,
+        prefer the card with the longest body — more material for
+        stage 4 back-fill."""
+        from daemon.reflection_pass import _dedup_by_slice_id
+
+        cards = [
+            self._card(path="/v/short.md", slice_id="x", body="hi"),
+            self._card(
+                path="/v/long.md", slice_id="x",
+                body="much longer body content here",
+            ),
+        ]
+        result, dropped = _dedup_by_slice_id(cards)
+        assert dropped == 1
+        assert result[0]["path"] == "/v/long.md"
+
+    def test_three_card_group_keeps_one(self):
+        """Edge: three twins with same slice_id (uncommon but seen
+        when a card was auto-routed twice + buffer copy)."""
+        from daemon.reflection_pass import _dedup_by_slice_id
+
+        cards = [
+            self._card(
+                path="/v/00_Buffer/buf_a.md", slice_id="x",
+                route_to="70_AI/70.01_LLM_Brain", body="buffer copy",
+            ),
+            self._card(
+                path="/v/70_AI/70.01_LLM_Brain/a.md", slice_id="x",
+                route_to="70_AI/70.01_LLM_Brain",
+                body="canonical version with the full reasoning content",
+            ),
+            self._card(
+                path="/v/70_AI/70.01_LLM_Brain/a_legacy.md",
+                slice_id="x",
+                route_to="70_AI/70.01_LLM_Brain",
+                body="legacy",
+            ),
+        ]
+        result, dropped = _dedup_by_slice_id(cards)
+        assert dropped == 2
+        assert len(result) == 1
+        # All 3 routed; among routed, longest-body wins
+        assert result[0]["path"].endswith("/a.md")
+
+    def test_windows_backslash_path_normalized(self):
+        """Windows paths use backslashes; route_to is forward-slashed.
+        The matcher must normalize before comparing."""
+        from daemon.reflection_pass import _dedup_by_slice_id
+
+        cards = [
+            self._card(
+                path=r"S:\vault\00_Buffer\refined_x.md",
+                slice_id="x",
+                route_to="10_Tech/10.05_Software",
+                body="buf",
+            ),
+            self._card(
+                path=r"S:\vault\10_Tech\10.05_Software\x.md",
+                slice_id="x",
+                route_to="10_Tech/10.05_Software",
+                body="routed",
+            ),
+        ]
+        result, dropped = _dedup_by_slice_id(cards)
+        assert dropped == 1
+        assert "10_Tech" in result[0]["path"]
+
+    def test_mixed_slice_and_no_slice_cards(self):
+        """Pipeline-realistic: some cards have slice_id (refiner
+        output), some have only managed_by. All should be returned;
+        only the slice_id twins should dedup."""
+        from daemon.reflection_pass import _dedup_by_slice_id
+
+        cards = [
+            self._card(path="/v/profile.md", managed_by="manual_profile"),
+            self._card(
+                path="/v/00_Buffer/buf_a.md", slice_id="a",
+                route_to="70_AI", body="b",
+            ),
+            self._card(
+                path="/v/70_AI/a.md", slice_id="a",
+                route_to="70_AI", body="canonical",
+            ),
+            self._card(path="/v/loner.md", slice_id="b", body="solo"),
+        ]
+        result, dropped = _dedup_by_slice_id(cards)
+        assert dropped == 1
+        # Survivors: profile + 1-of-twins + loner = 3
+        assert len(result) == 3
+        survivor_paths = {c["path"] for c in result}
+        assert "/v/profile.md" in survivor_paths
+        assert "/v/loner.md" in survivor_paths
+        assert "/v/70_AI/a.md" in survivor_paths
+
+
 # ---------- Frontmatter parsing ----------
 
 class TestParseFrontmatter:

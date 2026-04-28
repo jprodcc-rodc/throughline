@@ -246,6 +246,81 @@ def is_reflectable_card(card: dict) -> bool:
     return False
 
 
+def _dedup_by_slice_id(cards: list[dict]) -> tuple[list[dict], int]:
+    """Drop redundant copies that share a slice_id.
+
+    The refine daemon emits each refined slice twice in the default
+    vault layout: once at the routed destination (e.g. ``70_AI/...``)
+    and once in a staging/buffer area (e.g. ``00_Buffer/00.03_Refined_Notes/``).
+    Both copies share the same ``slice_id``. Without dedup they enter
+    clustering as siblings, then stage 4 back-fill runs against both,
+    stage 6 contradiction-judge confirms they agree, stage 7 drift
+    sees duplicate timestamps. All wasted LLM cost.
+
+    For each ``slice_id`` group with >1 card:
+        1. Prefer the card whose parent directory matches ``route_to``
+           — that's the canonical copy by daemon convention.
+        2. Fall back to the longest-body card (more material for stage
+           4 back-fill).
+
+    Cards without ``slice_id`` (e.g. ``managed_by`` master profiles)
+    are kept as-is — they have no daemon-emitted twin.
+
+    Discovered during 2026-04-28 real-vault E2E: maintainer's vault
+    had 72 reflectable cards but only ~36 unique slice_ids; the other
+    36 were buffer twins inflating cluster sizes by ~2× and burning
+    duplicate LLM calls in stages 4/6/7.
+
+    Args:
+        cards: post-filter card dicts (each with ``frontmatter`` dict).
+
+    Returns:
+        ``(deduped_cards, dropped_count)``. Order of the survivors is
+        not guaranteed — caller should not rely on it.
+    """
+    by_slice: dict[str, list[dict]] = {}
+    no_slice: list[dict] = []
+    for card in cards:
+        fm = card.get("frontmatter") or {}
+        sid = fm.get("slice_id")
+        if sid:
+            by_slice.setdefault(sid, []).append(card)
+        else:
+            no_slice.append(card)
+
+    deduped: list[dict] = list(no_slice)
+    dropped = 0
+    for group in by_slice.values():
+        if len(group) == 1:
+            deduped.append(group[0])
+            continue
+        deduped.append(_pick_primary_copy(group))
+        dropped += len(group) - 1
+    return deduped, dropped
+
+
+def _pick_primary_copy(group: list[dict]) -> dict:
+    """Choose the canonical card from a slice_id group of >1 cards.
+
+    Priority:
+        1. Cards whose parent directory ends with the ``route_to``
+           frontmatter value (the daemon-canonical destination).
+        2. Among the survivors, the one with the longest body.
+    """
+    def _routed(card: dict) -> bool:
+        fm = card.get("frontmatter") or {}
+        route_to = (fm.get("route_to") or "").strip()
+        if not route_to:
+            return False
+        path = (card.get("path") or "").replace("\\", "/")
+        parent = os.path.dirname(path)
+        return parent.endswith(route_to)
+
+    routed = [c for c in group if _routed(c)]
+    candidates = routed if routed else group
+    return max(candidates, key=lambda c: len(c.get("body") or ""))
+
+
 def _walk_vault_for_cards(vault_root: Path) -> list[Path]:
     """Find all `.md` files under vault_root that look like refined
     cards.
@@ -1129,6 +1204,12 @@ def run_pass(
     cards = [c for c in all_cards if is_reflectable_card(c)]
     excluded_count = len(all_cards) - len(cards)
 
+    # Stage 1.6 — dedup buffer/translation twins sharing a slice_id.
+    # The default daemon emit duplicates each refined slice (canonical
+    # destination + buffer copy). Keeping both bloats clusters and
+    # burns duplicate LLM calls in stages 4/6/7.
+    cards, dedup_count = _dedup_by_slice_id(cards)
+
     result = PassResult(
         started_at=started,
         finished_at="",
@@ -1162,11 +1243,15 @@ def run_pass(
         f"load ({len(all_cards)} cards / "
         f"{result.cards_with_position_signal} with position_signal)"
     )
-    # Stage 1.5 — reflectable filter applied.
-    result.stages_completed.append(
+    # Stage 1.5 + 1.6 — reflectable filter + slice_id dedup applied.
+    filter_msg = (
         f"filter_reflectable ({len(cards)} kept / "
-        f"{excluded_count} excluded — logs/indexes/drafts)"
+        f"{excluded_count} excluded — logs/indexes/drafts"
     )
+    if dedup_count > 0:
+        filter_msg += f"; {dedup_count} dedup'd by slice_id"
+    filter_msg += ")"
+    result.stages_completed.append(filter_msg)
 
     if not cards:
         result.errors.append(
