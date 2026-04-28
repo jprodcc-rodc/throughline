@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from typing import Optional
@@ -46,7 +47,11 @@ class LLMJudgeUnavailable(LLMJudgeError):
 DEFAULT_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "google/gemini-2.5-flash"
 DEFAULT_TIMEOUT = 30.0
-DEFAULT_MAX_TOKENS = 200
+DEFAULT_MAX_TOKENS = 600  # 200 truncated 1/237 verbose evolution responses
+                          # observed during 2026-04-28 real-vault E2E
+DEFAULT_RETRIES = 2  # extra attempts on transient network errors;
+                     # WinError 10060 hit 4/237 pairs in same E2E run
+_RETRY_BACKOFF_SECONDS = 0.5  # first sleep; doubled per attempt
 
 
 _SYSTEM_PROMPT = """You judge whether two stances on the same topic are \
@@ -171,6 +176,40 @@ def _parse_judgment(content: str) -> dict:
     }
 
 
+# ---------- transport ----------
+
+def _urlopen_with_retry(req, *, timeout: float, retries: int) -> bytes:
+    """POST with bounded retry on transient network errors.
+
+    HTTP 4xx is treated as permanent (auth/contract) — no retry.
+    HTTP 5xx, generic URLError, TimeoutError, and OSError get
+    ``retries`` extra attempts with exponential backoff.
+
+    Raises ``LLMJudgeUnavailable`` after the final attempt fails.
+    """
+    last_exc: Optional[BaseException] = None
+    attempts = retries + 1
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.read()
+        except urllib.error.HTTPError as exc:
+            if 400 <= exc.code < 500:
+                raise LLMJudgeUnavailable(
+                    f"LLM endpoint unreachable: {exc}"
+                ) from exc
+            last_exc = exc
+        except urllib.error.URLError as exc:
+            last_exc = exc
+        except (TimeoutError, OSError) as exc:
+            last_exc = exc
+        if attempt < attempts - 1:
+            time.sleep(_RETRY_BACKOFF_SECONDS * (2 ** attempt))
+    raise LLMJudgeUnavailable(
+        f"LLM endpoint unreachable after {attempts} attempts: {last_exc}"
+    ) from last_exc
+
+
 # ---------- main entry ----------
 
 def judge_pair(
@@ -182,6 +221,7 @@ def judge_pair(
     api_key: Optional[str] = None,
     model: Optional[str] = None,
     timeout: float = DEFAULT_TIMEOUT,
+    retries: int = DEFAULT_RETRIES,
     extra_headers: Optional[dict[str, str]] = None,
 ) -> dict:
     """Judge whether ``later`` contradicts ``earlier`` on ``topic``.
@@ -261,13 +301,7 @@ def judge_pair(
         final_url, data=body_bytes, headers=headers, method="POST"
     )
 
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            data = resp.read()
-    except urllib.error.URLError as exc:
-        raise LLMJudgeUnavailable(f"LLM endpoint unreachable: {exc}") from exc
-    except (TimeoutError, OSError) as exc:
-        raise LLMJudgeUnavailable(f"LLM call timeout/socket: {exc}") from exc
+    data = _urlopen_with_retry(req, timeout=timeout, retries=retries)
 
     try:
         envelope = json.loads(data.decode("utf-8", errors="replace"))

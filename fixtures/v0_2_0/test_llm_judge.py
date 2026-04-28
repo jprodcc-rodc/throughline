@@ -224,7 +224,95 @@ class TestJudgePairErrors:
             side_effect=URLError("dns fail"),
         ):
             with pytest.raises(llm_judge.LLMJudgeUnavailable):
-                llm_judge.judge_pair({"stance": "X"}, {"stance": "Y"})
+                llm_judge.judge_pair(
+                    {"stance": "X"}, {"stance": "Y"}, retries=0
+                )
+
+    def test_retries_then_succeeds_on_transient_url_error(self, monkeypatch):
+        """Two transient URLErrors then a real response should succeed."""
+        from urllib.error import URLError
+        from mcp_server import llm_judge
+
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+        monkeypatch.setattr(llm_judge, "_RETRY_BACKOFF_SECONDS", 0.0)
+        good = _mock_response(json.dumps({
+            "is_contradiction": False,
+            "kind": "evolution",
+            "reasoning_diff": "later refines earlier",
+        }))
+        attempts = [URLError("blip 1"), URLError("blip 2"), good]
+        with patch.object(
+            llm_judge.urllib.request, "urlopen", side_effect=attempts
+        ):
+            result = llm_judge.judge_pair(
+                {"stance": "X"}, {"stance": "Y"}, retries=2
+            )
+        assert result["kind"] == "evolution"
+
+    def test_retries_then_succeeds_on_5xx(self, monkeypatch):
+        """5xx is retryable; 200 on retry should succeed."""
+        from urllib.error import HTTPError
+        from mcp_server import llm_judge
+
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+        monkeypatch.setattr(llm_judge, "_RETRY_BACKOFF_SECONDS", 0.0)
+        flake = HTTPError("u", 503, "Bad Gateway", {}, io.BytesIO(b"x"))
+        good = _mock_response(json.dumps({
+            "is_contradiction": False,
+            "kind": "agreement",
+            "reasoning_diff": "same point",
+        }))
+        with patch.object(
+            llm_judge.urllib.request, "urlopen", side_effect=[flake, good]
+        ):
+            result = llm_judge.judge_pair(
+                {"stance": "X"}, {"stance": "Y"}, retries=2
+            )
+        assert result["kind"] == "agreement"
+
+    def test_no_retry_on_4xx(self, monkeypatch):
+        """4xx is permanent (auth/contract); must raise immediately."""
+        from urllib.error import HTTPError
+        from mcp_server import llm_judge
+
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+        monkeypatch.setattr(llm_judge, "_RETRY_BACKOFF_SECONDS", 0.0)
+        unauth = HTTPError(
+            "u", 401, "Unauthorized", {}, io.BytesIO(b'{"err":"x"}')
+        )
+        calls = {"n": 0}
+
+        def counting_urlopen(*a, **kw):
+            calls["n"] += 1
+            raise unauth
+
+        with patch.object(
+            llm_judge.urllib.request, "urlopen", side_effect=counting_urlopen
+        ):
+            with pytest.raises(llm_judge.LLMJudgeUnavailable):
+                llm_judge.judge_pair(
+                    {"stance": "X"}, {"stance": "Y"}, retries=2
+                )
+        assert calls["n"] == 1, (
+            f"4xx should not retry; saw {calls['n']} attempts"
+        )
+
+    def test_exhausted_retries_raises_unavailable(self, monkeypatch):
+        """When all attempts fail with transient errors, raise."""
+        from urllib.error import URLError
+        from mcp_server import llm_judge
+
+        monkeypatch.setenv("OPENROUTER_API_KEY", "sk-test")
+        monkeypatch.setattr(llm_judge, "_RETRY_BACKOFF_SECONDS", 0.0)
+        with patch.object(
+            llm_judge.urllib.request, "urlopen",
+            side_effect=URLError("persistent"),
+        ):
+            with pytest.raises(llm_judge.LLMJudgeUnavailable) as excinfo:
+                llm_judge.judge_pair(
+                    {"stance": "X"}, {"stance": "Y"}, retries=2
+                )
+        assert "3 attempts" in str(excinfo.value)
 
     def test_invalid_kind_in_response(self, monkeypatch):
         from mcp_server import llm_judge
