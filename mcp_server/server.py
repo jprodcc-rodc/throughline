@@ -33,6 +33,7 @@ from mcp_server.tools.list_topics import list_topics
 from mcp_server.tools.find_open_threads import find_open_threads
 from mcp_server.tools.check_consistency import check_consistency
 from mcp_server.tools.get_position_drift import get_position_drift
+from mcp_server.tools.throughline_status import throughline_status
 
 
 def build_app() -> FastMCP:
@@ -55,5 +56,10 @@ def build_app() -> FastMCP:
     app.tool()(find_open_threads)
     app.tool()(check_consistency)
     app.tool()(get_position_drift)
+
+    # Discovery / onboarding entry point — closes the cold-start gap
+    # where a fresh-install user with 0 cards has no natural trigger
+    # for any of the other 6 tools.
+    app.tool()(throughline_status)
 
     return app
