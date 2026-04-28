@@ -335,6 +335,45 @@ non-retrying on LLM failures — errors are appended to the Issue Log at
 `00_Buffer/00.02_Data_Ingest/00.02.07_Daemon_Issues.md` for human
 triage rather than burned through retries.
 
+### Optional: Reflection Pass (weekly LLM enrichment)
+
+The Reflection Pass is a separate batch job — **not** the long-running
+refine daemon. It walks the vault once, clusters reflectable cards,
+LLM-names clusters, back-fills `claim_summary` + `open_questions` per
+card, judges contradictions, segments drift phases. Writes state files
+under `THROUGHLINE_STATE_DIR/` that the 3 Reflection Layer MCP tools
+(`find_open_threads`, `check_consistency`, `get_position_drift`) read
+on every call.
+
+| OS | Template | Cadence |
+|---|---|---|
+| macOS | `config/launchd/com.example.throughline.reflection-pass.plist` | Sunday 3 AM (StartCalendarInterval) |
+| Linux | `config/systemd/throughline-reflection-pass.service` + `.timer` | `OnCalendar=Sun *-*-* 03:00:00` |
+
+Cost per pass: ~$0.01 for a small vault (≤50 reflectable cards), up
+to ~$0.20 for a large vault (>500 reflectable cards). The
+contradiction-judge stage scales as O(n²) within each cluster and is
+the dominant cost; drop `--enable-llm-contradictions` from the
+template if you want roughly half the spend at the cost of losing
+narrowed `check_consistency` output.
+
+The template does **not** pass `--commit-writeback`. The pass writes
+state files + a preview JSON of would-be frontmatter additions; it
+never mutates your vault automatically. To commit reflection metadata
+into card frontmatter, run interactively:
+
+```bash
+python -m daemon.reflection_pass \
+  --vault "$THROUGHLINE_VAULT_ROOT" \
+  --enable-llm-naming --enable-llm-backfill \
+  --enable-llm-contradictions --enable-llm-drift \
+  --commit-writeback
+```
+
+That creates timestamped backups (`<card_dir>/.<card>.backup-<unix>`)
+before any mutation, uses atomic temp-file replace, and is idempotent
+on re-runs.
+
 ### Optional: conversation sync
 
 If OpenWebUI runs on a separate host and the daemon runs on another,

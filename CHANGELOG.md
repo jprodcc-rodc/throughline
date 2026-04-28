@@ -15,6 +15,55 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — Reflection Pass auto-schedule templates + doctor staleness check (2026-04-28+2)
+
+The Reflection Pass was previously a manual command. A typical user
+would install throughline, set up MCP, save some conversations, and
+then never run the pass — leaving the 3 Reflection Layer MCP tools
+permanently in "has not run yet" state.
+
+**3 new service templates** (mirroring the existing refine-daemon /
+rag-server pattern):
+
+- `config/launchd/com.example.throughline.reflection-pass.plist` —
+  macOS, fires Sunday 3 AM via `StartCalendarInterval`. Same env
+  shape as the refine-daemon template (OPENROUTER key reused).
+  `RunAtLoad=false` so login doesn't burn LLM cost.
+- `config/systemd/throughline-reflection-pass.service` — Linux
+  oneshot unit. Runs the pass with all four LLM stages enabled.
+  Reuses the same `openrouter.env` file from the refine-daemon unit.
+- `config/systemd/throughline-reflection-pass.timer` —
+  `OnCalendar=Sun *-*-* 03:00:00`, `Persistent=true` so a missed
+  run catches up on next boot.
+
+Templates do NOT pass `--commit-writeback`. The pass writes state
+files + a preview JSON; vault frontmatter stays untouched. Users
+who want metadata in their cards run the same command interactively
+with `--commit-writeback` once.
+
+**Cost-conscious tweaks** documented in template headers: drop
+`--enable-llm-contradictions` to halve cost (O(n²) per cluster);
+drop all four `--enable-llm-*` flags for free-only stages.
+
+**Doctor staleness check** (`mcp_server/doctor.py`): `[ok]` flips
+to `[warn]` when a Reflection state file is older than 14 days
+(twice the recommended weekly cadence). The warning hint references
+both manual re-run and auto-schedule install — making the
+schedule's existence discoverable via `--doctor`.
+
+**Documentation:**
+
+- `docs/DEPLOYMENT.md` — new "Optional: Reflection Pass" subsection
+  with template paths, cadence table, cost estimates, and the
+  `--commit-writeback` decision flow.
+- `docs/REFLECTION_LAYER_USER_GUIDE.md` — new "Auto-schedule" block
+  under "Periodic re-run" with verify / on-demand commands per OS.
+
+**Test coverage:** 1 new test in `test_mcp_server_doctor_and_wait.py`
+exercising the staleness threshold (file backdated 20 days → warn
++ "reflection_pass" hint in output). Full suite 1839 passed,
+1 skipped.
+
 ### Added — cold-start UX hints in recall_memory + list_topics (2026-04-28+2)
 
 When a fresh-install user connects an MCP client (Claude Code,

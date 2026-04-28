@@ -121,6 +121,32 @@ class TestDoctorChecks:
         out = capsys.readouterr().out
         assert "[ok] reflection.positions" in out
 
+    def test_reflection_state_files_stale_warns(
+        self, monkeypatch, tmp_path, capsys,
+    ):
+        """File present but older than the staleness threshold (14d)
+        emits a warn pointing the user at re-running the pass or
+        installing the auto-schedule template."""
+        import os
+        import time
+        from mcp_server.doctor import _check_reflection_state_files
+
+        f = tmp_path / "reflection_positions.json"
+        f.write_text('{"clusters": []}', encoding="utf-8")
+        # Backdate to 20 days old (well past the 14d threshold).
+        old = time.time() - 20 * 86400
+        os.utime(f, (old, old))
+
+        monkeypatch.setenv("THROUGHLINE_STATE_DIR", str(tmp_path))
+        ok = _check_reflection_state_files()
+        # Function still returns True (positions file is present); the
+        # staleness is a warning, not a blocking failure.
+        assert ok is True
+        out = capsys.readouterr().out
+        assert "[warn]" in out
+        assert "stale" in out.lower()
+        assert "reflection_pass" in out
+
     def test_check_daemon_taxonomy_importable(self, capsys):
         from mcp_server.doctor import _check_daemon_taxonomy_import
 

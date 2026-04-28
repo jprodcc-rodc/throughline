@@ -243,6 +243,10 @@ def _check_reflection_state_files() -> bool:
 
     # At least one file present — log per-file status
     now = time.time()
+    # 14d threshold = double the recommended weekly cadence; clear
+    # sign that the auto-schedule (or manual re-run) hasn't fired in
+    # a while and Reflection Layer outputs are drifting from vault state.
+    _STALE_SECONDS = 14 * 86400
     for name, p in files:
         if not p.exists():
             _emit(
@@ -261,10 +265,23 @@ def _check_reflection_state_files() -> bool:
             else:
                 age_label = f"{int(age / 86400)}d"
             size_kb = p.stat().st_size / 1024
-            _emit(
-                "[ok]", f"reflection.{name}",
-                f"present, {size_kb:.1f}K, age {age_label}",
-            )
+            if age > _STALE_SECONDS:
+                _emit(
+                    "[warn]", f"reflection.{name}",
+                    f"present, {size_kb:.1f}K, age {age_label} (stale)",
+                    "Re-run `python -m daemon.reflection_pass "
+                    "--enable-llm-naming --enable-llm-backfill "
+                    "--enable-llm-contradictions --enable-llm-drift` "
+                    "to refresh, or install the auto-schedule template "
+                    "(`config/launchd/com.example.throughline.reflection-pass.plist` "
+                    "on macOS, `config/systemd/throughline-reflection-pass.timer` "
+                    "on Linux).",
+                )
+            else:
+                _emit(
+                    "[ok]", f"reflection.{name}",
+                    f"present, {size_kb:.1f}K, age {age_label}",
+                )
         except OSError as exc:
             _emit("[warn]", f"reflection.{name}", f"stat failed: {exc}")
     return True

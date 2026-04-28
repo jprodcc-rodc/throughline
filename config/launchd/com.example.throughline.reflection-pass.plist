@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Reflection Pass — weekly LLM-enriched aggregation.
+
+  Runs `python -m daemon.reflection_pass` once a week (Sunday 3 AM)
+  with all four LLM stages enabled. Walks the vault, embeds + clusters
+  reflectable cards, names clusters, back-fills claim_summary +
+  open_questions, judges contradictions, segments drift phases. Writes
+  state files under THROUGHLINE_STATE_DIR/ that the 3 Reflection Layer
+  MCP tools (find_open_threads, check_consistency, get_position_drift)
+  read on every call.
+
+  Default cadence is weekly because:
+    - Typical card creation rate is < 50/week even for active users.
+    - Each pass costs ~$0.01-$0.20 in LLM calls depending on vault
+      size and how many new cards landed since the last pass.
+    - The state files are read on every MCP tool call; staleness of
+      a few days is fine for "what was I thinking about X?" queries.
+
+  IMPORTANT: this template does NOT pass --commit-writeback. The pass
+  computes everything and writes preview JSON; it never mutates your
+  vault frontmatter automatically. To commit reflection metadata into
+  card frontmatter, run the same command interactively with
+  --commit-writeback (creates timestamped backups, atomic writes).
+
+  Installation:
+    1. Replace every {{...}} placeholder below.
+    2. Put your OpenRouter API key in {{OPENROUTER_API_KEY}}, OR (more
+       secure) replace the EnvironmentVariables block with a wrapper
+       script that reads the key from a chmod 600 file.
+    3. Save as ~/Library/LaunchAgents/com.example.throughline.reflection-pass.plist
+    4. launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.throughline.reflection-pass.plist
+    5. launchctl enable    gui/$(id -u)/com.example.throughline.reflection-pass
+
+  Run-on-demand (skip the schedule wait):
+    launchctl kickstart -k gui/$(id -u)/com.example.throughline.reflection-pass
+
+  View logs:
+    tail -f /Users/{{USER}}/Library/Logs/throughline/reflection-pass.out.log
+
+  Cost-conscious tweaks (edit ProgramArguments below):
+    - Drop --enable-llm-contradictions to skip the most expensive stage
+      (per-pair LLM judgment scales with cluster size squared).
+    - Drop --enable-llm-drift if you only want cluster naming + backfill.
+    - Run free-only (no LLM): remove all four --enable-llm-* flags.
+      The 3 Reflection tools degrade to "Reflection Pass has not run"
+      hint mode for stages they need.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.throughline.reflection-pass</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{PYTHON}}</string>
+        <string>-m</string>
+        <string>daemon.reflection_pass</string>
+        <string>--vault</string>
+        <string>{{VAULT}}</string>
+        <string>--enable-llm-naming</string>
+        <string>--enable-llm-backfill</string>
+        <string>--enable-llm-contradictions</string>
+        <string>--enable-llm-drift</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>{{THROUGHLINE_HOME}}</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+
+        <!-- REQUIRED: same key the refine-daemon uses; reflection-pass
+             reads it via OPENROUTER_API_KEY → OPENAI_API_KEY fallback. -->
+        <key>OPENROUTER_API_KEY</key>
+        <string>{{OPENROUTER_API_KEY}}</string>
+        <key>OPENAI_BASE_URL</key>
+        <string>https://openrouter.ai/api/v1</string>
+
+        <!-- Reflection-stage models (gemini-2.5-flash chosen for
+             cost; override via THROUGHLINE_NAMER_MODEL etc. if you
+             prefer Claude / GPT). -->
+        <key>THROUGHLINE_NAMER_MODEL</key>
+        <string>google/gemini-2.5-flash</string>
+
+        <!-- Paths (must match the refine-daemon plist) -->
+        <key>THROUGHLINE_STATE_DIR</key>
+        <string>/Users/{{USER}}/.local/share/throughline/state</string>
+        <key>THROUGHLINE_RAG_URL</key>
+        <string>http://127.0.0.1:8000</string>
+    </dict>
+
+    <!-- Sunday 3 AM local time. Adjust Weekday + Hour as desired:
+         0=Sun, 1=Mon, ..., 6=Sat. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Don't run on load — only fire on the calendar trigger. The
+         pass is idempotent, but firing it at every login would burn
+         LLM cost for no reason. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <!-- This is a periodic batch job, not a long-running daemon —
+         no KeepAlive, no Restart. -->
+
+    <key>StandardOutPath</key>
+    <string>/Users/{{USER}}/Library/Logs/throughline/reflection-pass.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/{{USER}}/Library/Logs/throughline/reflection-pass.err.log</string>
+</dict>
+</plist>

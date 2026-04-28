@@ -1,0 +1,73 @@
+# systemd user unit — Reflection Pass batch job.
+#
+# Runs `python -m daemon.reflection_pass` once with all four LLM stages
+# enabled. Walks the vault, clusters reflectable cards, names clusters,
+# back-fills claim_summary + open_questions, judges contradictions,
+# segments drift phases. Writes state files under THROUGHLINE_STATE_DIR/
+# that the 3 Reflection Layer MCP tools (find_open_threads,
+# check_consistency, get_position_drift) read on every call.
+#
+# Schedule via the companion timer:
+#   throughline-reflection-pass.timer
+#
+# IMPORTANT: this unit does NOT pass --commit-writeback. The pass
+# computes everything and writes preview JSON; it never mutates your
+# vault frontmatter automatically. To commit reflection metadata into
+# card frontmatter, run the same command interactively with
+# --commit-writeback (creates timestamped backups, atomic writes).
+#
+# Installation:
+#   1. Replace every {{...}} placeholder below.
+#   2. Reuse the OpenRouter env file from refine-daemon, e.g.
+#      /home/{{USER}}/.config/throughline/openrouter.env (chmod 600).
+#   3. Install this unit to
+#      ~/.config/systemd/user/throughline-reflection-pass.service
+#   4. Install the timer (next file) to
+#      ~/.config/systemd/user/throughline-reflection-pass.timer
+#   5. systemctl --user daemon-reload
+#   6. systemctl --user enable --now throughline-reflection-pass.timer
+#
+# Run-on-demand (skip the schedule wait):
+#   systemctl --user start throughline-reflection-pass.service
+#
+# View logs:
+#   journalctl --user -u throughline-reflection-pass.service -f
+#
+# Cost-conscious tweaks (edit ExecStart below):
+#   - Drop --enable-llm-contradictions to skip the most expensive stage
+#     (per-pair LLM judgment scales with cluster size squared).
+#   - Drop --enable-llm-drift if you only want cluster naming + backfill.
+#   - Run free-only (no LLM): remove all four --enable-llm-* flags.
+
+[Unit]
+Description=Throughline Reflection Pass (weekly LLM enrichment)
+# Reflection pass needs the rag_server up for embedding/clustering.
+After=network-online.target throughline-rag-server.service
+Wants=throughline-rag-server.service
+
+[Service]
+Type=oneshot
+WorkingDirectory={{THROUGHLINE_HOME}}
+
+ExecStart={{PYTHON}} -m daemon.reflection_pass \
+  --vault {{VAULT}} \
+  --enable-llm-naming \
+  --enable-llm-backfill \
+  --enable-llm-contradictions \
+  --enable-llm-drift
+
+# Secrets (same env file the refine-daemon uses)
+EnvironmentFile=/home/{{USER}}/.config/throughline/openrouter.env
+
+Environment=PYTHONUNBUFFERED=1
+Environment=OPENAI_BASE_URL=https://openrouter.ai/api/v1
+Environment=THROUGHLINE_NAMER_MODEL=google/gemini-2.5-flash
+
+# Paths (must match the refine-daemon unit)
+Environment=THROUGHLINE_STATE_DIR=/home/{{USER}}/.local/share/throughline/state
+Environment=THROUGHLINE_RAG_URL=http://127.0.0.1:8000
+
+# This is a batch job, not a long-running daemon — no Restart.
+
+[Install]
+WantedBy=default.target

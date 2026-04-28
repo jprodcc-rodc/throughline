@@ -242,6 +242,41 @@ Cache files dedupe — only NEW or EDITED cards trigger LLM calls.
 For a stable vault that hasn't changed since last pass, total
 cost is near $0.
 
+### Auto-schedule (recommended for daily use)
+
+Manual re-runs work but most users will forget. Two service
+templates ship for a weekly auto-pass:
+
+- **macOS**: `config/launchd/com.example.throughline.reflection-pass.plist`
+  — fires Sunday 3 AM via `StartCalendarInterval`.
+- **Linux**: `config/systemd/throughline-reflection-pass.service` +
+  `.timer` — same cadence via `OnCalendar=Sun *-*-* 03:00:00`,
+  `Persistent=true` so a missed run catches up on next boot.
+
+Both templates run the same command as the manual re-run above
+(all 4 LLM stages enabled, NO `--commit-writeback` — preview only).
+Edit the template if you want a different cadence, fewer stages, or
+to commit writebacks automatically.
+
+Install instructions are in [`docs/DEPLOYMENT.md`](DEPLOYMENT.md).
+Verify the timer is active with:
+
+```bash
+# macOS
+launchctl list | grep throughline.reflection-pass
+# Linux
+systemctl --user list-timers throughline-reflection-pass.timer
+```
+
+To run the pass on demand (skip the schedule wait):
+
+```bash
+# macOS
+launchctl kickstart -k gui/$(id -u)/com.example.throughline.reflection-pass
+# Linux
+systemctl --user start throughline-reflection-pass.service
+```
+
 ---
 
 ## Cost expectations

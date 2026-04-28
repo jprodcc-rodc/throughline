@@ -1,0 +1,31 @@
+# systemd user timer — Reflection Pass schedule.
+#
+# Default cadence is weekly (Sunday 3 AM local time) because:
+#   - Typical card creation rate is < 50/week for active users.
+#   - Each pass costs ~$0.01-$0.20 in LLM calls depending on vault
+#     size and how many new cards landed since the last pass.
+#   - State file staleness of a few days is fine for the 3 Reflection
+#     MCP tools' "what was I thinking about X?" queries.
+#
+# Adjust OnCalendar to taste:
+#   daily            — runs at midnight every day
+#   Mon *-*-* 03:00  — Monday 3 AM
+#   *-*-* 03:00      — every day at 3 AM
+#   Sun *-*-* 03:00  — Sunday 3 AM (default below)
+#
+# Persistent=true means a missed run (machine off at the trigger time)
+# is caught up on the next boot.
+#
+# Installation: see the companion .service file's header.
+
+[Unit]
+Description=Schedule for Throughline Reflection Pass
+Requires=throughline-reflection-pass.service
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00:00
+Persistent=true
+Unit=throughline-reflection-pass.service
+
+[Install]
+WantedBy=timers.target
