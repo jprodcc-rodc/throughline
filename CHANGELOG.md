@@ -15,6 +15,28 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — cold-start UX hints in recall_memory + list_topics (2026-04-28+2)
+
+When a fresh-install user connects an MCP client (Claude Code,
+Cursor, Continue.dev) but hasn't saved any conversation yet, the
+previous behavior of `recall_memory` and `list_topics` was to
+silently return zero results. Claude would say "I couldn't find
+anything" and stop — no signal to the host LLM that the vault is in
+cold-start state.
+
+The 3 Reflection Layer tools (`find_open_threads`, `check_consistency`,
+`get_position_drift`) already emit a state-file hint pointing the
+user at `python -m daemon.reflection_pass`. The 2 retrieval tools
+that a user actually hits first were the silent gap.
+
+Now both tools attach a `_message` field on zero-result responses
+that teaches the host LLM to suggest 'remember this' / '保存这个'
+/ '记住这个' so `save_conversation` fires. Status stays `ok` (not
+an error condition). `list_topics` only emits the hint when
+`include_card_counts=True` to avoid false-positive teaching when
+the caller opted out of the vault scan. Fix: `0cb29a6`. 5 new
+tests covering zero/nonzero/no-counts paths.
+
 ### Validated — Phase 2 Reflection Layer first real-LLM E2E (2026-04-28+2)
 
 **First end-to-end pass with real LLM calls against the maintainer's
