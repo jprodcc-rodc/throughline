@@ -215,6 +215,51 @@ def detect_drift(current_claim, vault) -> DriftReport | None:
    Single-claim is cheaper. Empirical decision after running on
    author's vault — punt to implementation phase.
 
+4. **LLM-call wrapper location for the drift judge.** The
+   `LLMJudge` protocol lives in `mcp_server/drift_detector.py`;
+   the wrapper that actually invokes a Haiku-tier model conforming
+   to that protocol needs an HTTP path. The locked rule says
+   `mcp_server` cannot depend on `daemon`, but the existing LLM
+   call infrastructure (`call_llm_json`, the resolved endpoint /
+   key from `throughline_cli.active_provider.resolve_endpoint_and_key`)
+   lives in `daemon/refine_daemon.py`.
+
+   **Recommended resolution:** add a thin LLM client at
+   `mcp_server/llm_client.py` that imports
+   `throughline_cli.active_provider.resolve_endpoint_and_key`
+   (already a neutral cross-cut — `throughline_cli` is the parent
+   package both `daemon` and `mcp_server` depend on transitively
+   via the wizard config it owns). The client wraps the OpenAI-
+   compat `/chat/completions` HTTP call and exposes a simple
+   `call_completion(prompt, system, model="haiku") -> str` shape.
+   Then `mcp_server/llm_drift_judge.py` builds on that:
+
+   ```python
+   # mcp_server/llm_drift_judge.py
+   from mcp_server.drift_detector import LLMJudge, JudgeVerdict, safe_parse_judge_verdict
+   from mcp_server.llm_client import call_completion
+   from pathlib import Path
+
+   JUDGE_PROMPT = (Path(__file__).parents[1] / "prompts/en/drift_judge.md").read_text()
+
+   def make_haiku_judge() -> LLMJudge:
+       def judge(*, prior, current, intervening_context):
+           user_msg = _format_judge_input(prior, current, intervening_context)
+           raw = call_completion(prompt=user_msg, system=JUDGE_PROMPT,
+                                 model="anthropic/claude-haiku-4.5")
+           return safe_parse_judge_verdict(raw)
+       return judge
+   ```
+
+   No `daemon` import; `mcp_server` -> `throughline_cli` ->
+   provider config is the existing dependency graph. Daemon's
+   `call_llm_json` can be left alone or eventually refactored to
+   share with `mcp_server/llm_client.py` — that consolidation is a
+   separate cleanup commit.
+
+   *Tentative — confirm during implementation by walking the actual
+   imports of `throughline_cli.active_provider`.*
+
 ---
 
 ## Next session entry points (P0-2 implementation)
