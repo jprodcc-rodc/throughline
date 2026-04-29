@@ -87,6 +87,39 @@ hygiene.
   maintainer's ~70-card reflectable subset; behaviour on
   10,000-card vaults is untested).
 
+- **Tool-triggering eval harness** — a reproducible measure of
+  whether the host LLM (Claude Desktop / Code / Cursor) actually
+  fires the right MCP tool on common conversational signals,
+  based only on the tool's docstring. Lives in
+  [`evals/tool-triggering/`](evals/tool-triggering/). Runs against
+  Anthropic direct or OpenRouter-routed Claude models; produces
+  per-tool TP/FP/FN/TN + F1 + FPR. The 7 host-callable MCP tool
+  docstrings are now contract-tested in the spec's "Decision
+  Guide" format (`CALL THIS PROACTIVELY WHEN:` /
+  `DO NOT CALL WHEN:` / `EXAMPLE TRIGGERS:` /
+  `EXAMPLE NON-TRIGGERS:`); 28 scaffold tests fail if any of those
+  sections drops out. **Baseline (April 2026, Sonnet 4.6):** the
+  4 differentiation tools (drift / consistency / loose_ends /
+  recall) all clear F1 ≥ 0.75 + FPR ≤ 0.15 after one iteration of
+  docstring tuning.
+
+- **Stance-based drift detection (P0-2 algorithmic surface)** —
+  upgrade path from the existing card-level `position_signal` to
+  claim-level numeric stance scoring. The drift detector compares
+  current claim stance to the most-recent prior on the same
+  subject; `check_consistency` returns ALL conflicting priors as
+  ranked candidates. Both gated by a Haiku-tier LLM judge that
+  rules whether an apparent shift is genuine drift or context-
+  justified rephrasing. **Algorithmic surface complete** with
+  full mock-judge contract testing
+  ([`mcp_server/claim_schema.py`](mcp_server/claim_schema.py),
+  [`mcp_server/drift_detector.py`](mcp_server/drift_detector.py)).
+  Live LLM HTTP wrapper conforming to the `LLMJudge` protocol is
+  the remaining piece. Design rationale in
+  [`docs/CLAIM_STANCE_SCORING.md`](docs/CLAIM_STANCE_SCORING.md);
+  extraction prompt in
+  [`prompts/en/claim_extraction.md`](prompts/en/claim_extraction.md).
+
 - **OpenAI-compatible proxy adapter** — a small FastAPI proxy that
   exposes `/v1/chat/completions` and injects throughline RAG before
   forwarding to the user's actual LLM provider. Lets any OpenAI-SDK
