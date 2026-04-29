@@ -16,6 +16,13 @@ config/local.*
 secrets/
 ~/.restic-pass
 
+# === App pivot (2026-04-29, see private/APP_STRATEGY_2026-04-29.md) ===
+# new top-level app/ folder is hidden from main throughline OSS repo
+# until alpha milestone (~Month 2 per strategy doc) when we promote to
+# committed (option A in the isolation matrix). Until then app/ is
+# gitignored to preserve strategic flexibility on the pivot.
+app/
+
 # === OS / editor ===
 .DS_Store
 Thumbs.db
