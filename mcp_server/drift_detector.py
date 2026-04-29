@@ -1,12 +1,20 @@
-"""P0-2 Task 2.3 -- stance-based drift detection algorithm.
+"""P0-2 Task 2.3 + 2.4 -- claim-level drift and consistency analysis.
 
-Per private/SPEC_DEEP_OPTIMIZATION.md § P0-2 Task 2.3 and the
-design doc at docs/CLAIM_STANCE_SCORING.md.
+Per private/SPEC_DEEP_OPTIMIZATION.md § P0-2 and the design doc
+at docs/CLAIM_STANCE_SCORING.md.
+
+Two pure functions, side-effect-free, fully mock-testable:
+- `detect_drift(current, vault, judge)` -> DriftReport | None
+  Compares current claim to its MOST RECENT prior on the same
+  subject_canonical. Surfaces a single DriftReport when the
+  stance shifted dramatically AND the LLM judge confirms.
+- `detect_consistency_issues(current, vault, judge)` ->
+    list[ConsistencyReport]
+  Compares current claim to ALL relevant priors. Surfaces every
+  prior the LLM judge rules as a genuine contradiction (not
+  context-justified). Mirror of drift but multi-prior.
 
 Architecture:
-- Pure function `detect_drift()` -- takes a current Claim, a Vault
-  for prior-claim retrieval, and an LLM-judge callable. Returns a
-  DriftReport or None. Side-effect-free.
 - `Vault` is a Protocol so callers can plug in different storage
   backends (vault filesystem walker, sqlite cache, etc.) without
   the detector caring.
@@ -14,15 +22,15 @@ Architecture:
   (Haiku per spec § Out of Scope rule 4) can be swapped, and
   tests can pass mock judges without LLM calls.
 
-Invariants the algorithm preserves:
+Invariants both functions preserve:
 1. Embedding is for retrieval (find candidate priors), NEVER for
-   judgment. Drift verdict comes from LLM judge.
+   judgment. Drift / contradiction verdict comes from LLM judge.
 2. LLM judge is the LAST word. Algorithmic threshold is a pre-
-   filter; if threshold passes but judge says no, no drift.
+   filter; if threshold passes but judge says no, no report.
 3. Hedging modulates severity but not threshold. A high-hedging
    reversal is still a candidate; the severity score just gets
    damped to reflect that the user wasn't fully committed.
-4. The function does not mutate inputs. Vault and Claim instances
+4. The functions do not mutate inputs. Vault and Claim instances
    are read-only here.
 """
 from __future__ import annotations
@@ -69,6 +77,23 @@ class DriftReport:
     """Returned when a genuine drift is detected. Carries enough
     context for the host LLM to surface the drift gently to the
     user (per the existing soft-mode framing in check_consistency)."""
+
+    severity: float                # 0..1, hedging-damped magnitude
+    prior: Claim
+    current: Claim
+    time_gap_days: Optional[float]  # None if either timestamp missing
+    llm_explanation: str
+    judge_confidence: float
+
+
+@dataclass(frozen=True)
+class ConsistencyReport:
+    """Returned for each prior the LLM judge ruled as a genuine
+    contradiction with the current claim. detect_consistency_issues
+    returns a LIST of these (vs detect_drift's single DriftReport),
+    because consistency surfaces every relevant historical conflict
+    so the host LLM can present them all to the user. Soft-mode
+    framing handled at the MCP-tool layer, not here."""
 
     severity: float                # 0..1, hedging-damped magnitude
     prior: Claim
@@ -250,3 +275,83 @@ def detect_drift(
         llm_explanation=verdict.explanation,
         judge_confidence=verdict.confidence,
     )
+
+
+def detect_consistency_issues(
+    current_claim: Claim,
+    vault: Vault,
+    llm_judge: LLMJudge,
+    *,
+    significant_delta: float = SIGNIFICANT_DELTA,
+    judge_confidence_threshold: float = DEFAULT_JUDGE_CONFIDENCE_THRESHOLD,
+) -> list[ConsistencyReport]:
+    """Find ALL prior claims the LLM judge rules as genuine
+    contradictions with `current_claim`.
+
+    Mirror of `detect_drift` but multi-prior: drift returns the
+    most-recent prior as a single DriftReport (focus: time
+    evolution); consistency returns every conflicting prior as a
+    list of ConsistencyReports (focus: point-comparison).
+
+    Returns an empty list when:
+    - Current claim isn't drift-trackable (kind != stance | commitment)
+    - No history found for this subject_canonical + predicate
+    - Every prior fails the algorithmic delta threshold OR the LLM
+      judge ruled them context-justified
+
+    Returns a populated list when one or more priors passed all
+    gates. Each entry is sorted by judge confidence (descending) so
+    the most-confident contradictions surface first to the host LLM.
+
+    All inputs are read-only; the function is side-effect-free.
+    """
+    # Gate 1: only stance / commitment Claims are drift-trackable.
+    if current_claim.kind not in ("stance", "commitment"):
+        return []
+
+    # Gate 2: retrieve all candidate priors. Vault decides what
+    # "predicate_similar_to" means.
+    history = vault.find_claims(
+        subject_canonical=current_claim.subject_canonical,
+        predicate_similar_to=current_claim.predicate,
+        before=current_claim.timestamp,
+    )
+    if not history:
+        return []
+
+    # Pre-compute intervening_context once per prior the judge sees.
+    # Caller's Vault may use this hook for per-pair context fetches;
+    # we don't cache across pairs.
+    reports: list[ConsistencyReport] = []
+    for prior in history:
+        # Gate 3: algorithmic threshold per pair.
+        stance_delta = current_claim.stance - prior.stance
+        if abs(stance_delta) < significant_delta:
+            continue
+
+        # Gate 4: LLM judge ruling per pair.
+        intervening = vault.context_between(prior, current_claim)
+        verdict = llm_judge(
+            prior=prior,
+            current=current_claim,
+            intervening_context=intervening,
+        )
+        if not verdict.is_genuine_drift:
+            continue
+        if verdict.confidence < judge_confidence_threshold:
+            continue
+
+        severity = _severity(stance_delta, prior, current_claim)
+        reports.append(ConsistencyReport(
+            severity=severity,
+            prior=prior,
+            current=current_claim,
+            time_gap_days=_time_gap_days(prior, current_claim),
+            llm_explanation=verdict.explanation,
+            judge_confidence=verdict.confidence,
+        ))
+
+    # Sort by judge confidence descending so most-certain
+    # contradictions surface first.
+    reports.sort(key=lambda r: r.judge_confidence, reverse=True)
+    return reports

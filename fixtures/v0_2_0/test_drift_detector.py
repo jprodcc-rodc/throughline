@@ -1,8 +1,8 @@
-"""P0-2 Task 2.3: pin detect_drift() behavior with fully-mocked LLM
-judge + Vault. No real LLM calls; this exercises the algorithm
-gates only. The LLM-judge integration with a real Haiku-tier model
-is a separate concern (Task 2.3 implementation step), unblocked by
-this contract.
+"""P0-2 Task 2.3 + 2.4: pin detect_drift() and
+detect_consistency_issues() behavior with fully-mocked LLM judge +
+Vault. No real LLM calls; these exercise the algorithm gates only.
+The LLM-judge integration with a real Haiku-tier model is a separate
+concern (implementation step), unblocked by these contracts.
 """
 from __future__ import annotations
 
@@ -14,12 +14,14 @@ from mcp_server.claim_schema import Claim
 from mcp_server.drift_detector import (
     DEFAULT_JUDGE_CONFIDENCE_THRESHOLD,
     SIGNIFICANT_DELTA,
+    ConsistencyReport,
     DriftReport,
     JudgeVerdict,
     Vault,
     _parse_iso8601,
     _severity,
     _time_gap_days,
+    detect_consistency_issues,
     detect_drift,
 )
 
@@ -407,3 +409,216 @@ def test_fake_vault_satisfies_protocol():
     v: Vault = _FakeVault([])
     # Just verifying assignment doesn't fail under typing
     assert v is not None
+
+
+# ── detect_consistency_issues ===========================================
+#
+# Mirror of detect_drift but multi-prior. Tests pin the gate behavior
+# AND the multi-prior surface (returns list, sorted by confidence).
+
+
+def test_consistency_returns_empty_for_fact_kind():
+    current = _claim(kind="fact", stance=1.0)
+    prior = _claim(kind="stance", stance=-1.0,
+                   timestamp="2026-01-01T00:00:00Z")
+    vault = _FakeVault([prior])
+    assert detect_consistency_issues(current, vault, _judge_drift()) == []
+
+
+def test_consistency_returns_empty_for_preference_kind():
+    current = _claim(kind="preference", stance=1.0)
+    prior = _claim(kind="stance", stance=-1.0,
+                   timestamp="2026-01-01T00:00:00Z")
+    vault = _FakeVault([prior])
+    assert detect_consistency_issues(current, vault, _judge_drift()) == []
+
+
+def test_consistency_returns_empty_for_no_history():
+    current = _claim(stance=1.0)
+    vault = _FakeVault([])
+    assert detect_consistency_issues(current, vault, _judge_drift()) == []
+
+
+def test_consistency_returns_empty_when_all_priors_below_delta():
+    current = _claim(stance=0.5)
+    p1 = _claim(stance=0.4, timestamp="2026-01-01T00:00:00Z", raw="p1")
+    p2 = _claim(stance=0.3, timestamp="2026-02-01T00:00:00Z", raw="p2")
+    vault = _FakeVault([p1, p2])
+    # All deltas below SIGNIFICANT_DELTA -> empty list
+    assert detect_consistency_issues(current, vault, _judge_drift()) == []
+
+
+def test_consistency_returns_single_when_one_prior_passes():
+    current = _claim(stance=1.0)
+    aligned = _claim(stance=0.8, timestamp="2026-01-01T00:00:00Z",
+                     raw="aligned")  # delta 0.2, below threshold
+    contradicting = _claim(stance=-0.5, timestamp="2026-02-01T00:00:00Z",
+                           raw="contradicting")  # delta 1.5, above threshold
+    vault = _FakeVault([aligned, contradicting])
+    reports = detect_consistency_issues(current, vault, _judge_drift())
+    assert len(reports) == 1
+    assert reports[0].prior.raw_text == "contradicting"
+
+
+def test_consistency_returns_multiple_for_multiple_contradictions():
+    """Mirror of drift's multi-history case but consistency surfaces
+    EACH contradicting prior, not just the most-recent."""
+    current = _claim(stance=1.0)
+    c1 = _claim(stance=-1.0, timestamp="2026-01-01T00:00:00Z", raw="c1")
+    c2 = _claim(stance=-0.8, timestamp="2026-02-01T00:00:00Z", raw="c2")
+    c3 = _claim(stance=-0.7, timestamp="2026-03-01T00:00:00Z", raw="c3")
+    vault = _FakeVault([c1, c2, c3])
+    reports = detect_consistency_issues(current, vault, _judge_drift())
+    # All three priors have delta > SIGNIFICANT_DELTA, all three
+    # judged as drift, all three pass confidence threshold -> all
+    # three returned.
+    assert len(reports) == 3
+    raw_texts = {r.prior.raw_text for r in reports}
+    assert raw_texts == {"c1", "c2", "c3"}
+
+
+def test_consistency_judge_can_veto_per_pair():
+    """The judge runs per-pair. Some priors can be ruled
+    context-justified while others surface."""
+    current = _claim(stance=1.0)
+    p_genuine = _claim(stance=-1.0, timestamp="2026-01-01T00:00:00Z",
+                       raw="genuine")
+    p_justified = _claim(stance=-0.8, timestamp="2026-02-01T00:00:00Z",
+                         raw="justified")
+    vault = _FakeVault([p_genuine, p_justified])
+
+    def selective_judge(*, prior, current, intervening_context):
+        # Vetoes the second prior's pair -> only the first surfaces.
+        if prior.raw_text == "justified":
+            return JudgeVerdict(
+                is_genuine_drift=False,
+                explanation="context shift justifies",
+                confidence=0.95,
+            )
+        return JudgeVerdict(
+            is_genuine_drift=True,
+            explanation="real flip",
+            confidence=0.95,
+        )
+
+    reports = detect_consistency_issues(current, vault, selective_judge)
+    assert len(reports) == 1
+    assert reports[0].prior.raw_text == "genuine"
+
+
+def test_consistency_low_judge_confidence_suppressed():
+    """Per-pair confidence filtering matches detect_drift behavior."""
+    current = _claim(stance=1.0)
+    high = _claim(stance=-1.0, timestamp="2026-01-01T00:00:00Z",
+                  raw="high_conf")
+    low = _claim(stance=-1.0, timestamp="2026-02-01T00:00:00Z",
+                 raw="low_conf")
+    vault = _FakeVault([high, low])
+
+    def varying_confidence_judge(*, prior, current, intervening_context):
+        confidence = 0.95 if prior.raw_text == "high_conf" else 0.3
+        return JudgeVerdict(is_genuine_drift=True, explanation="x",
+                            confidence=confidence)
+
+    reports = detect_consistency_issues(
+        current, vault, varying_confidence_judge,
+    )
+    assert len(reports) == 1
+    assert reports[0].prior.raw_text == "high_conf"
+
+
+def test_consistency_results_sorted_by_confidence_desc():
+    """Most-confident contradictions surface first to host LLM."""
+    current = _claim(stance=1.0)
+    a = _claim(stance=-1.0, timestamp="2026-01-01T00:00:00Z", raw="a")
+    b = _claim(stance=-1.0, timestamp="2026-02-01T00:00:00Z", raw="b")
+    c = _claim(stance=-1.0, timestamp="2026-03-01T00:00:00Z", raw="c")
+    vault = _FakeVault([a, b, c])
+
+    confidences = {"a": 0.7, "b": 0.95, "c": 0.6}
+
+    def per_prior_judge(*, prior, current, intervening_context):
+        return JudgeVerdict(
+            is_genuine_drift=True,
+            explanation=prior.raw_text,
+            confidence=confidences[prior.raw_text],
+        )
+
+    reports = detect_consistency_issues(current, vault, per_prior_judge)
+    assert len(reports) == 3
+    # b (0.95), a (0.7), c (0.6) -- descending
+    assert [r.prior.raw_text for r in reports] == ["b", "a", "c"]
+    assert [r.judge_confidence for r in reports] == [0.95, 0.7, 0.6]
+
+
+def test_consistency_report_carries_severity_and_time_gap():
+    current = _claim(stance=1.0, hedging=0.0,
+                     timestamp="2026-04-29T00:00:00Z")
+    prior = _claim(stance=-1.0, hedging=0.0,
+                   timestamp="2026-01-29T00:00:00Z", raw="prior")
+    vault = _FakeVault([prior])
+    reports = detect_consistency_issues(current, vault, _judge_drift())
+    assert len(reports) == 1
+    r = reports[0]
+    assert isinstance(r, ConsistencyReport)
+    assert r.severity == pytest.approx(2.0)
+    assert r.time_gap_days is not None
+    assert 89 < r.time_gap_days < 91
+
+
+def test_consistency_judge_called_once_per_pair():
+    """Cost discipline: each prior is judged exactly once. Below-
+    threshold deltas skip the judge entirely. Above-threshold pairs
+    get exactly one judge call -- no caching, no retries here."""
+    current = _claim(stance=1.0)
+    above = _claim(stance=-1.0, timestamp="2026-01-01T00:00:00Z", raw="above")
+    below = _claim(stance=0.5, timestamp="2026-02-01T00:00:00Z", raw="below")
+    vault = _FakeVault([above, below])
+
+    judge_calls: list[str] = []
+
+    def tracking_judge(*, prior, current, intervening_context):
+        judge_calls.append(prior.raw_text)
+        return JudgeVerdict(is_genuine_drift=True, explanation="x")
+
+    detect_consistency_issues(current, vault, tracking_judge)
+    # only "above" is above the delta threshold -> only one judge call
+    assert judge_calls == ["above"]
+
+
+def test_consistency_thresholds_are_tunable():
+    """Same as drift: callers can raise/lower significance + judge
+    confidence thresholds independently."""
+    current = _claim(stance=0.4)
+    prior = _claim(stance=0.0, timestamp="2026-01-01T00:00:00Z")
+    vault = _FakeVault([prior])
+    # Default 0.6: no fire
+    assert detect_consistency_issues(current, vault, _judge_drift()) == []
+    # Lower to 0.3: fires
+    reports = detect_consistency_issues(
+        current, vault, _judge_drift(),
+        significant_delta=0.3,
+    )
+    assert len(reports) == 1
+
+
+def test_consistency_intervening_context_per_pair():
+    """Each judge call gets its own intervening_context fetch."""
+    current = _claim(stance=1.0)
+    p1 = _claim(stance=-1.0, timestamp="2026-01-01T00:00:00Z", raw="p1")
+    p2 = _claim(stance=-1.0, timestamp="2026-02-01T00:00:00Z", raw="p2")
+    vault = _FakeVault([p1, p2], context="some shared context")
+
+    captured_contexts: list[Optional[str]] = []
+
+    def capture_context(*, prior, current, intervening_context):
+        captured_contexts.append(intervening_context)
+        return JudgeVerdict(is_genuine_drift=True, explanation="x")
+
+    detect_consistency_issues(current, vault, capture_context)
+    # The fake vault returns the same context for both pairs; in
+    # production, vault.context_between() may return per-pair
+    # specifics. The contract just says: judge is called with the
+    # vault-returned context.
+    assert captured_contexts == ["some shared context",
+                                 "some shared context"]
