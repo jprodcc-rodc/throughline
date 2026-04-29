@@ -157,47 +157,92 @@ def test_get_position_drift_signature():
     assert params["granularity"].default == "transitions"
 
 
-# ---------- Tool description quality (locked decision Q3) ----------
+# ---------- Tool description quality (locked decision Q3 +
+# P0-1 Decision Guide upgrade per private/SPEC_DEEP_OPTIMIZATION.md) -
 
+# All 7 tools registered on the MCP surface (mcp_server.server.build_app).
+# save_conversation is intentionally NOT here — it's been deregistered as
+# a host-callable tool (the host LLM should always go through
+# save_refined_card; save_conversation remains an internal/raw-queue
+# entry point used by the daemon writer).
 ALL_TOOLS = [
-    "save_conversation",
+    "save_refined_card",
     "recall_memory",
     "list_topics",
     "find_loose_ends",
     "check_consistency",
     "get_position_drift",
+    "throughline_status",
 ]
 
 
 @pytest.mark.parametrize("tool_name", ALL_TOOLS)
 def test_tool_docstring_has_call_when_guidance(tool_name):
-    """Per Q3: tool descriptions must include explicit 'Call this
-    when:' guidance so the host LLM knows when to fire the tool."""
+    """Per Q3 + P0-1: tool descriptions must include explicit
+    'CALL THIS PROACTIVELY WHEN:' guidance so the host LLM knows
+    when to fire the tool. Decision Guide format raises the bar from
+    'Call this when:' (passive-voice, easily missed) to active proactive
+    triggering — see private/SPEC_DEEP_OPTIMIZATION.md § P0-1."""
     import importlib
 
     mod = importlib.import_module(f"mcp_server.tools.{tool_name}")
     fn = getattr(mod, tool_name)
 
     assert fn.__doc__, f"{tool_name} must have a docstring"
-    assert "Call this when:" in fn.__doc__, (
-        f"{tool_name} docstring must include 'Call this when:' guidance "
-        "per locked decision Q3"
+    assert "CALL THIS PROACTIVELY WHEN:" in fn.__doc__, (
+        f"{tool_name} docstring must include 'CALL THIS PROACTIVELY "
+        "WHEN:' guidance per P0-1 Decision Guide format"
     )
 
 
 @pytest.mark.parametrize("tool_name", ALL_TOOLS)
 def test_tool_docstring_has_do_not_call_guidance(tool_name):
-    """Per Q3: tool descriptions must include 'Do NOT call:' anti-
-    pattern guidance so the host LLM doesn't over-call."""
+    """Per Q3 + P0-1: tool descriptions must include 'DO NOT CALL
+    WHEN:' anti-pattern guidance so the host LLM doesn't over-call."""
     import importlib
 
     mod = importlib.import_module(f"mcp_server.tools.{tool_name}")
     fn = getattr(mod, tool_name)
 
     assert fn.__doc__, f"{tool_name} must have a docstring"
-    assert "Do NOT call:" in fn.__doc__, (
-        f"{tool_name} docstring must include 'Do NOT call:' guidance "
-        "per locked decision Q3"
+    assert "DO NOT CALL WHEN:" in fn.__doc__, (
+        f"{tool_name} docstring must include 'DO NOT CALL WHEN:' "
+        "guidance per P0-1 Decision Guide format"
+    )
+
+
+@pytest.mark.parametrize("tool_name", ALL_TOOLS)
+def test_tool_docstring_has_example_triggers(tool_name):
+    """Per P0-1 Decision Guide format: each tool must include
+    EXAMPLE TRIGGERS (utterance → tool call mapping) so the host
+    LLM has worked examples grounding the abstract triggers."""
+    import importlib
+
+    mod = importlib.import_module(f"mcp_server.tools.{tool_name}")
+    fn = getattr(mod, tool_name)
+
+    assert fn.__doc__, f"{tool_name} must have a docstring"
+    assert "EXAMPLE TRIGGERS:" in fn.__doc__, (
+        f"{tool_name} docstring must include 'EXAMPLE TRIGGERS:' "
+        "section per P0-1 Decision Guide format"
+    )
+
+
+@pytest.mark.parametrize("tool_name", ALL_TOOLS)
+def test_tool_docstring_has_example_non_triggers(tool_name):
+    """Per P0-1 Decision Guide format: each tool must include
+    EXAMPLE NON-TRIGGERS (look-similar utterances that should NOT
+    fire the tool) — paired with EXAMPLE TRIGGERS, this is the
+    decision boundary."""
+    import importlib
+
+    mod = importlib.import_module(f"mcp_server.tools.{tool_name}")
+    fn = getattr(mod, tool_name)
+
+    assert fn.__doc__, f"{tool_name} must have a docstring"
+    assert "EXAMPLE NON-TRIGGERS:" in fn.__doc__, (
+        f"{tool_name} docstring must include 'EXAMPLE NON-TRIGGERS:' "
+        "section per P0-1 Decision Guide format"
     )
 
 

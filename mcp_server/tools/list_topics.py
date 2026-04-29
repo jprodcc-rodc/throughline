@@ -20,21 +20,57 @@ def list_topics(
     include_card_counts: bool = True,
 ) -> dict:
     """List the taxonomy domains the user has organized their
-    knowledge into. Useful when the user asks 'what do I know
-    about?' or 'what topics have I covered?', or when you need to
-    figure out an appropriate domain for a save_conversation call.
+    knowledge into. The X-axis taxonomy — what subject buckets exist
+    + how many cards live in each. Use this to discover the shape
+    of the vault before recall_memory or save_refined_card.
 
-    Call this when:
-    - The user asks about their knowledge structure.
-    - You need to pick a domain_filter for recall_memory.
-    - You're trying to understand the shape of the user's vault.
+    CALL THIS PROACTIVELY WHEN:
+    - User asks meta-questions about their knowledge structure
+      ('what topics do I have?', 'what do I know about?', 'show me
+      my domains', '我都有哪些知识?', 'list my topics').
+    - You need to pick a `domain` for save_refined_card and aren't
+      sure which X-axis bucket fits — call list_topics first, then
+      save with the most appropriate bucket.
+    - You need a `domain_filter` for recall_memory to narrow the
+      search ('recall my Health cards' → list_topics → confirm
+      'Health/Biohack' exists → recall_memory(domain_filter=...)).
+    - User asks for an inventory / dashboard view ('how big is my
+      vault?', 'show me the breakdown').
+    - User is curious about coverage / gaps ('what areas am I
+      thin on?', 'what topics have only a few cards?').
 
-    Do NOT call:
-    - Speculatively at the start of every conversation — wait for
-      a signal that the user cares about taxonomy or you need
-      domain context for another tool call.
-    - When the user is asking about a specific topic — call
-      recall_memory directly instead.
+    DO NOT CALL WHEN:
+    - User asks about a specific topic — call recall_memory directly
+      with that topic; don't speculatively list everything first.
+    - Speculatively at the start of every conversation — only fire
+      when the user's intent is explicitly meta-taxonomy or you
+      genuinely need a domain to pass to another tool.
+    - On every save — if you already know a reasonable domain for
+      this card from prior context, just use it.
+    - User just installed throughline ('first time using this') —
+      use throughline_status instead, which shows install state +
+      cold-start hints, not just a domain list.
+
+    EXAMPLE TRIGGERS:
+    User: "What topics do I have cards on?"
+      → list_topics()
+    User: "Show me my Health domain breakdown."
+      → list_topics(prefix="Health")
+    User: "我都存过哪些类别?"
+      → list_topics()
+    User: "Save this AI prompting trick."
+      → list_topics(prefix="AI") to confirm 'AI/LLM' exists
+        → save_refined_card(domain="AI/LLM", ...)
+    User: "How many cards do I have total?"
+      → list_topics(include_card_counts=True)
+
+    EXAMPLE NON-TRIGGERS:
+    User: "What did I write about Tailscale?"
+      (specific topic; call recall_memory directly)
+    User: "Hi, just installed this."
+      (use throughline_status — cold-start aware)
+    User: "Save this conversation."
+      (if domain is obvious from context, save_refined_card directly)
 
     Args:
         prefix: Optional domain prefix filter. `'Health'` returns

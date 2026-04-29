@@ -145,46 +145,66 @@ def save_refined_card(
     daemon LLM cost. The host LLM (you) does the refining work on
     its own subscription budget; this tool just files the result.
 
-    **This is the DEFAULT save path** when the host LLM (you) is on
-    a Claude Desktop / Code / Cursor / Continue.dev subscription.
-    save_conversation is the legacy raw-queue path that costs ~$0.04
-    per save (daemon's paid OpenRouter refine call). This tool is
-    free — you do the refining on subscription budget that the user
-    already pays.
+    **This is the DEFAULT save path** for the host LLM (you) on a
+    Claude Desktop / Code / Cursor / Continue.dev subscription. You
+    synthesize the 6-section card from the conversation; this tool
+    files it. No daemon LLM cost (daemon path was ~$0.04/save). Both
+    paths write the same frontmatter shape; cards from either look
+    identical to recall_memory + the Reflection Layer.
 
-    Both tools write the same frontmatter shape to the same vault;
-    cards from either path look identical to recall_memory + the
-    Reflection Layer. The only difference is who paid for the LLM
-    work that synthesized the body.
+    For Claude Sonnet 4.x / Opus 4.x hosts the answer to "can I
+    synthesize a coherent structured card?" is almost always YES —
+    prefer this tool over the legacy daemon-queue path.
 
-    Decision flow when user says 'save' / 'remember' / 记住 / 保存:
-    1. CAN you synthesize the conversation into a coherent
-       structured card right now? → call save_refined_card (free)
-    2. Are you a thin LLM that can't synthesize well? → call
-       save_conversation (paid, daemon refines)
-    3. Did the user explicitly ask for raw save? → call
-       save_conversation
+    CALL THIS PROACTIVELY WHEN:
+    - User signals save intent: 'save this' / 'remember this' /
+      'capture this' / 'store this' / '记住这个' / '保存这个' /
+      '存下来' / '记下来'.
+    - User explicitly says 'refined' / 'structured' / '精炼' /
+      'as a card' anywhere in the request.
+    - Conversation has hit a natural decision / synthesis point and
+      you can summarize it into a 6-section card right now.
+    - User asks to 'document this' / 'add to my knowledge base' /
+      'add to throughline' / 'put this in the vault'.
 
-    For Claude Sonnet 4.x / Opus 4.x hosts the answer to (1) is
-    almost always YES — prefer this tool.
+    DO NOT CALL WHEN:
+    - You genuinely cannot synthesize a coherent structured card
+      (extremely long fragmented input, content outside your
+      reasoning ability). Tell the user instead — don't save junk.
+    - You cannot determine a good X-axis domain — call list_topics
+      first to learn the user's taxonomy, then save with the right
+      domain.
+    - Trivia / small talk / acknowledgements ('thanks', 'ok',
+      'got it') — don't pollute the vault.
+    - The user is mid-thought and hasn't reached a save-worthy
+      synthesis yet — wait for closure.
+    - User explicitly says 'don't save' / '别存' / 'just chatting'.
 
-    Call this when:
-    - User says 'save this' / 'remember this' / 记住这个 / 保存这个
-      / '存下来' / 'capture this' (any save intent).
-    - User said 'refined' / 'refined conversation' / '精炼' /
-      'structured' anywhere in the request.
-    - You can synthesize the conversation into a 6-section card.
-    - You want the card retrievable from the vault immediately
-      (this tool writes directly; no daemon queue).
+    EXAMPLE TRIGGERS:
+    User: "Save this whole conversation about my Postgres → SQLite
+           decision."
+      → save_refined_card(title="Postgres → SQLite decision",
+          body=<6-section synthesis>, domain="Tech/Database")
+    User: "记住这个药物清单。"
+      → save_refined_card(title="Master 用药清单",
+          body=<synthesized list>, domain="Health/Medicine",
+          knowledge_identity="personal_persistent")
+    User: "把今天讨论的产品定位策略存进 throughline。"
+      → save_refined_card(title="产品定位策略 v2",
+          body=<6-section card>, domain="Business/Strategy")
+    User: "Capture this as a structured card."
+      → save_refined_card(title=<derive from topic>,
+          body=<refined>, domain=<from list_topics>)
 
-    Do NOT call:
-    - When you genuinely cannot synthesize a coherent structured
-      card (extremely long fragmented input, content outside your
-      domain). Fall back to save_conversation.
-    - When you cannot determine a good X-axis domain (call
-      list_topics first to learn the user's taxonomy).
-    - For trivia / small talk / acknowledgements (don't save those
-      via either tool).
+    EXAMPLE NON-TRIGGERS:
+    User: "What's a good database for OLTP?"
+      (factual question; nothing to save yet)
+    User: "Thanks, that helps."
+      (acknowledgement; no save-worthy content)
+    User: "Don't save this, I'm just venting."
+      (explicit opt-out)
+    User: "Show me what I've saved before."
+      (this is recall_memory, not save)
 
     Recommended body shape — 6 sections, free-form headers. Vault
     convention example::

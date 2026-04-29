@@ -71,37 +71,64 @@ def _read_pass_state(state_dir: Path) -> Optional[dict[str, Any]]:
 def throughline_status() -> dict:
     """Return a snapshot of the user's throughline install: total
     card count, last Reflection Pass timestamp, vault location, and
-    cold-start/warning hints when the install is fresh or stale.
+    cold-start / warning hints when the install is fresh or stale.
 
-    The discovery entry point. The other 6 throughline tools each
-    have specific triggers (save_conversation when user says 'save',
-    recall_memory when user asks about a topic). This one is the
-    "tell me about my throughline" tool — it's the natural call when
-    the user references their knowledge base in a general way OR
-    when you need to understand the shape of the install before
-    deciding which specific tool to fire.
+    The discovery entry point. The other 6 throughline tools have
+    specific triggers (save when user says 'save', recall when user
+    asks about a topic). This one is the "tell me about my
+    throughline" tool — fire it when the user references their
+    knowledge base in a general way OR when you need to understand
+    install state before deciding which specific tool to call.
 
-    Call this when:
-    - The user asks 'what's in my throughline?', 'how many cards do
-      I have?', 'is my vault set up?', 'do I have anything stored?'.
-    - The user mentions 'throughline' / 'my knowledge base' /
-      'my vault' in a general (non-specific-topic) way, especially
-      early in a conversation.
-    - Before suggesting save_conversation / recall_memory for the
-      first time in a session — knowing whether the vault is empty
-      vs populated changes how to phrase the suggestion.
-    - The user just installed throughline ('I just set this up',
-      'first time using this').
-    - The user asks about reflection state ('is my reflection
-      running?', 'when did the daemon last sync?').
+    CALL THIS PROACTIVELY WHEN:
+    - User asks meta-questions about the install: 'what's in my
+      throughline?', 'how many cards do I have?', 'is my vault set
+      up?', 'do I have anything stored?', '我有多少卡?', '我的
+      throughline 怎么样?'.
+    - User mentions 'throughline' / 'my knowledge base' / 'my vault'
+      in a general (non-topic-specific) way, especially early in
+      a conversation.
+    - User just installed: 'I just set this up', 'first time using
+      this', '第一次用', 'how do I get started with this?'.
+    - User asks about reflection state: 'is my reflection running?',
+      'when did the daemon last sync?', '上次反思啥时候?'.
+    - Before suggesting save_refined_card / recall_memory the first
+      time in a session — knowing if the vault is empty vs populated
+      changes how you phrase the suggestion (cold-start onboarding
+      vs casual recall).
+    - User asks 'is throughline working?' / 'what state is this in?'.
 
-    Do NOT call:
-    - When the user is asking about a specific topic — call
-      recall_memory directly instead.
-    - On every turn — once per session is enough; the result rarely
-      changes within one conversation.
-    - When the user explicitly invokes save_conversation /
-      recall_memory etc. — they already know what they want.
+    DO NOT CALL WHEN:
+    - User asks about a specific topic — call recall_memory directly
+      with that topic.
+    - On every turn / repeatedly in one session — once per session
+      is enough; install state rarely changes mid-conversation.
+    - User has already explicitly invoked save_refined_card /
+      recall_memory etc. — they know what they want; don't gate
+      their request behind a status probe.
+    - User is mid-task and not asking about install state.
+
+    EXAMPLE TRIGGERS:
+    User: "What's in my throughline?"
+      → throughline_status()
+    User: "I just installed this — what now?"
+      → throughline_status() (returns cold_start hint with onboarding)
+    User: "How many cards do I have?"
+      → throughline_status()
+    User: "When did the reflection pass last run?"
+      → throughline_status() (reflection_pass.last_run field)
+    User: "我的 vault 现在多大?"
+      → throughline_status()
+
+    EXAMPLE NON-TRIGGERS:
+    User: "What did I write about Postgres?"
+      (specific topic; call recall_memory)
+    User: "Save this."
+      (call save_refined_card; don't probe status first)
+    User: "Show me my Health cards."
+      (specific filter; call recall_memory or list_topics)
+    User: "Hi."
+      (no signal of intent toward throughline)
 
     Args: (none)
 
