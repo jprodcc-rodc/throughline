@@ -61,22 +61,38 @@ def check_consistency(
     contradicts their past thinking, this surfaces the conflict
     rather than silently absorbing the new position.
 
+    BOUNDARY WITH `get_position_drift` — fires often together; pick
+    one:
+    - **Decision announcement on a SPECIFIC topic that has prior
+      cards** ("I've decided Postgres", "I've come around on React
+      Native", "Looking back, I'm going with X") → call
+      `get_position_drift`, NOT `check_consistency`. Drift handles
+      stance evolution on a single topic; consistency would be
+      double-firing.
+    - **ABSTRACT principle / quantifier / rule of thumb that spans
+      the user's whole codebase or worldview** ("We never use
+      ORMs", "I always optimize reads over writes", "Every feature
+      ships behind a flag") → call `check_consistency`. These are
+      not topic-specific decisions; they're cross-cutting rules.
+
     CALL THIS PROACTIVELY WHEN:
-    - User states a principle, value, or rule of thumb
-      ("I think...", "my view is...", "we should...", "I've
-      decided...", "my take is...").
-    - User justifies a decision with reasoning that could be
-      checked against past reasoning ("X because Y" — Y might
-      contradict prior reasoning).
-    - User makes a claim with quantifiers ("always", "never",
-      "we don't do X", "X is the only way").
-    - User is making a significant choice that will shape
-      downstream work — surface contradictions BEFORE they invest
-      in the wrong direction.
+    - User states an abstract **principle / value / rule of thumb**
+      that applies across multiple topics ("my principle is X",
+      "we always do X", "we never do Y", "X is the only way").
+    - User asserts with **strong quantifiers** ("always", "never",
+      "every time", "no exceptions", "without fail").
+    - User justifies a decision with reasoning of the form
+      "X because [general principle Y]" — Y might contradict
+      prior cross-topic reasoning even if X itself is fine.
 
     DO NOT CALL WHEN:
-    - User is asking a question rather than asserting
-      ("should we use X?" — wait until they DECIDE).
+    - User is **announcing a topic-specific decision** ("I've
+      decided Postgres", "going with React Native") — that's
+      `get_position_drift` territory, not consistency. Drift
+      surfaces stance evolution on the topic; consistency on top
+      is double-firing.
+    - User is asking a question rather than asserting ("should we
+      use X?" — wait until they DECIDE).
     - User has flagged uncertainty ("I'm not sure but...",
       "maybe X", "could go either way") — that's a reasoning
       state, not a position to check.
@@ -85,23 +101,30 @@ def check_consistency(
       contradicting.
     - Hypothetical / brainstorming framing ("what if we...",
       "let's explore...") — exploratory, not committed.
-    - Every "I think this looks good" passing remark — signal is
-      position-asserting on a topic the user has thought about
-      before, not every micro-opinion.
+    - Passing remarks ("X looks good") — too low-confidence to
+      surface contradictions for.
 
     EXAMPLE TRIGGERS:
-    User: "I'm going with usage-based pricing for the SaaS."
-      → check_consistency(statement="usage-based pricing for SaaS")
-    User: "I've decided full Postgres, no MongoDB."
-      → check_consistency(statement="full Postgres, no MongoDB")
-    User: "My view is that auth doesn't need a microservice."
-      → check_consistency(statement="auth without microservice")
-    User: "We should switch to TypeScript."
-      → check_consistency(statement="switch to TypeScript")
+    (all are abstract principles or strong-quantifier rules — not
+    topic-specific decisions)
+    User: "My view is that auth doesn't need a microservice for
+      anything under 1k QPS."
+      → check_consistency(statement="auth without microservice
+                          under 1k QPS")
+    User: "We should never deploy on Fridays."
+      → check_consistency(statement="no Friday deploys")
     User: "I never use ORMs — they hide too much."
       → check_consistency(statement="no ORMs, raw SQL")
+    User: "Every API endpoint has to ship with a load test."
+      → check_consistency(statement="every endpoint requires
+                          load test")
 
     EXAMPLE NON-TRIGGERS:
+    User: "I've decided Postgres, no MongoDB." (topic-specific
+      decision — call get_position_drift instead, not consistency)
+    User: "Looking back at all my notes, I'm going with Postgres."
+      (decision announcement on a specific topic — drift, not
+      consistency)
     User: "Should we use Postgres or MySQL?" (asking, not asserting)
     User: "I'm leaning toward Postgres but not sure" (uncertainty)
     User: "What if we just used SQLite for now?" (hypothetical)

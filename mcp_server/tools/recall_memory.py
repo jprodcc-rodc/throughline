@@ -43,32 +43,44 @@ def recall_memory(
     metadata for the host LLM to read.
 
     CALL THIS PROACTIVELY WHEN:
-    - User uses possessive references assuming shared context
-      ("my project", "the bug we discussed", "what I said before",
-      "our pricing strategy").
-    - User mentions a named entity that likely has prior cards
-      (project name, technology choice, person, decision label).
-    - User's question is ambiguous and historical context would
-      disambiguate ("how should I handle X?" — past cards may show
-      the answer is already there).
-    - User asks about something that's likely in their vault
-      ("what did I decide about X?", "what's my framework for Y?").
-    - User references past thinking ("like we discussed before",
-      "based on what I said last month").
-    - User starts a topic where personal context matters (medical,
-      financial, relationship, project-specific).
-    - You're about to give generic advice that throughline likely
-      has user-specific context for — recall first to ground.
+    - User uses **explicit possessive + topic** referring to their
+      own knowledge: "my pricing tiers", "my framework for X",
+      "my chronic-headache notes", "我的 X". Generic nouns ("the
+      card", "the API") do NOT count — must be "my X" or
+      equivalent first-person possession of *historical thinking*.
+    - User explicitly references prior conversation: "like we
+      discussed last month", "what did we end up deciding about
+      X", "based on what I said before", "上次聊到 X 的时候",
+      "我之前是怎么决定的".
+    - User asks a recall-shaped question: "what did I decide
+      about X", "what's my take on Y", "what was my framework
+      for Z".
+    - User starts a topic where personal context is load-bearing
+      (medical / medication, financial planning, current personal
+      project) AND is asking a question about themselves, not a
+      generic factual question.
 
     DO NOT CALL WHEN:
-    - Pure factual question with no personal context ("what is
+    (these are HARD OVERRIDES — do not fire even if other triggers
+    seem to fit)
+    - User says **fresh-start signals**: "fresh start" / "start
+      over" / "from scratch" / "redo it" / "forget what I said" /
+      "ignore history" / "don't pull anything from before" / "重来"
+      / "从头" / "别用之前的". The user is explicitly opting out of
+      historical context; firing recall here is the worst kind of
+      overtrigger.
+    - User is asking a hypothetical ("what if...", "假设...") or
+      brainstorming new options. Hypotheticals are not requests
+      for retrieval.
+    - User is mid-flow on a concrete micro-task (UI tweak, bug
+      fix, formatting, syntax) and the only "topic-shaped" thing
+      in the message is a generic noun phrase like "the card" /
+      "the form" / "the function" — those are scene references,
+      not memory references.
+    - Pure factual question with no personal possessive ("what is
       OAuth?").
-    - User explicitly says "fresh start" / "ignore history" /
-      "don't pull anything from before".
-    - In-flow coding / technical task with no opinion or personal-
-      context content.
     - Every turn — only when the query has retrieval-relevant
-      shape.
+      shape per the triggers above.
 
     EXAMPLE TRIGGERS:
     User: "What did I decide about the database choice?"
@@ -77,17 +89,26 @@ def recall_memory(
       → recall_memory(query="product evaluation framework")
     User: "Like we discussed last month about pricing."
       → recall_memory(query="pricing discussion last month")
-    User: "Help me with my project setup." (possessive "my")
-      → recall_memory(query="project setup")
     User: "How do I handle medication timing on travel days?"
       → recall_memory(query="medication timing travel",
                       include_personal_context=True)
 
     EXAMPLE NON-TRIGGERS:
-    User: "What is bcrypt?" (factual, no personal context)
-    User: "Fix the indentation here." (in-flow task)
-    User: "Fresh start — help me design from scratch."
-      (explicit signal not to recall)
+    User: "What is bcrypt?" (factual, no personal possessive)
+    User: "Fix the indentation here." (in-flow micro-task)
+    User: "Add a primary action button to the login form, top-right
+      of the card." (generic 'the card' / 'the form' is scene
+      reference, not memory reference — micro-task, no recall)
+    User: "Let's start fresh on the API design — forget what I said
+      before." (HARD OVERRIDE: explicit fresh-start opts out of
+      recall regardless of any topic mention)
+    User: "What if we tried server-side rendering instead?"
+      (hypothetical brainstorming, not a recall request)
+    User: "Forget everything I said before — let's start over."
+      (HARD OVERRIDE: fresh-start signal)
+    User: "Where was I before lunch?" (this is find_loose_ends
+      territory — surfacing unfinished thinking, not retrieving
+      cards by query)
 
     Args:
         query: The natural-language query. Will be embedded +
