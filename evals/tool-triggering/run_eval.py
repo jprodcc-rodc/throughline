@@ -278,30 +278,56 @@ def score_case(
             stats[tool].tn += 1
 
 
-# ---------- API runner ----------------------------------------------------
+# ---------- API runners ---------------------------------------------------
+# Two providers supported, picked by --provider:
+#   - anthropic: native Anthropic Messages API. Requires ANTHROPIC_API_KEY.
+#     Most accurate eval — same wire format Claude Desktop / Code use.
+#   - openrouter: OpenAI-compat /chat/completions at openrouter.ai. Requires
+#     OPENROUTER_API_KEY. Useful when the user's card is rejected by
+#     Anthropic but already works with OpenRouter (matches throughline
+#     daemon's existing setup). Tool format gets adapter-converted.
 
 
-def run_one_case(
+def _build_user_content(case: EvalCase) -> str:
+    """Single-string user content for both providers. Multi-turn context
+    folded into one user message to keep the eval shape uniform."""
+    if case.context:
+        return (
+            "[Conversation so far]\n"
+            f"{case.context}\n\n"
+            "[User's latest message]\n"
+            f"{case.user_msg}"
+        )
+    return case.user_msg
+
+
+def _to_openai_tool_format(anthropic_tool_defs: list[dict]) -> list[dict]:
+    """Convert Anthropic tool defs -> OpenAI/OpenRouter tool defs.
+    Anthropic shape: {name, description, input_schema}.
+    OpenAI shape:    {type:"function", function:{name, description, parameters}}.
+    """
+    out = []
+    for d in anthropic_tool_defs:
+        out.append({
+            "type": "function",
+            "function": {
+                "name": d["name"],
+                "description": d["description"],
+                "parameters": d["input_schema"],
+            },
+        })
+    return out
+
+
+def _call_anthropic(
     client,
     tool_defs: list[dict],
     system_prompt: str,
     model: str,
     case: EvalCase,
 ) -> tuple[set[str], dict]:
-    """Send one case to the Messages API. Returns (selected_tool_names,
-    summary_dict). cache_control on the system block caches tools +
-    system together — first call writes (~1.25x), subsequent calls
-    read (~0.1x)."""
-    if case.context:
-        user_content = (
-            "[Conversation so far]\n"
-            f"{case.context}\n\n"
-            "[User's latest message]\n"
-            f"{case.user_msg}"
-        )
-    else:
-        user_content = case.user_msg
-
+    """Anthropic native path. cache_control on the system block caches
+    tools + system together (tools render before system in the prefix)."""
     response = client.messages.create(
         model=model,
         max_tokens=2048,
@@ -312,12 +338,9 @@ def run_one_case(
         }],
         tools=tool_defs,
         tool_choice={"type": "auto"},
-        messages=[{"role": "user", "content": user_content}],
+        messages=[{"role": "user", "content": _build_user_content(case)}],
     )
-
-    selected: set[str] = {
-        b.name for b in response.content if b.type == "tool_use"
-    }
+    selected = {b.name for b in response.content if b.type == "tool_use"}
     summary = {
         "stop_reason": response.stop_reason,
         "selected_tools": sorted(selected),
@@ -329,6 +352,70 @@ def run_one_case(
         "cache_creation_input_tokens": getattr(
             response.usage, "cache_creation_input_tokens", 0
         ),
+    }
+    return selected, summary
+
+
+def _call_openrouter(
+    api_key: str,
+    tool_defs_anthropic: list[dict],
+    system_prompt: str,
+    model: str,
+    case: EvalCase,
+) -> tuple[set[str], dict]:
+    """OpenRouter /chat/completions path (OpenAI-compat shape).
+
+    Tool defs are adapter-converted to OpenAI format. Caching is skipped
+    on this path — OpenRouter exposes Anthropic prompt caching only via
+    the native /messages endpoint shape, which OpenRouter does not
+    publicly serve. The 24-case full run on Sonnet 4.6 via OpenRouter
+    is ~$0.10 uncached, so the optimization isn't worth the format split.
+    """
+    import requests
+
+    tool_defs_oai = _to_openai_tool_format(tool_defs_anthropic)
+    payload = {
+        "model": model,
+        "max_tokens": 2048,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": _build_user_content(case)},
+        ],
+        "tools": tool_defs_oai,
+        "tool_choice": "auto",
+    }
+    resp = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://github.com/jprodcc-rodc/throughline",
+            "X-Title": "throughline-eval",
+        },
+        json=payload,
+        timeout=60,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+
+    choice = body["choices"][0]
+    msg = choice.get("message", {})
+    tool_calls = msg.get("tool_calls") or []
+    selected = {
+        tc["function"]["name"]
+        for tc in tool_calls
+        if tc.get("type") == "function" and tc.get("function", {}).get("name")
+    }
+    usage = body.get("usage") or {}
+    summary = {
+        "stop_reason": choice.get("finish_reason"),
+        "selected_tools": sorted(selected),
+        "input_tokens": usage.get("prompt_tokens"),
+        "output_tokens": usage.get("completion_tokens"),
+        # OpenRouter doesn't return Anthropic-style cache fields on
+        # the OpenAI-compat endpoint; leave 0 for shape compatibility.
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
     }
     return selected, summary
 
@@ -414,8 +501,16 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="Where to write report.md + raw.jsonl",
     )
     parser.add_argument(
-        "--model", default="claude-opus-4-7",
-        help="Anthropic model ID (default: claude-opus-4-7)",
+        "--provider", choices=["auto", "anthropic", "openrouter"],
+        default="auto",
+        help=("auto (default): pick OpenRouter if OPENROUTER_API_KEY is "
+              "set, else Anthropic. Override to force one path."),
+    )
+    parser.add_argument(
+        "--model", default=None,
+        help=("Model ID. Default depends on --provider: anthropic -> "
+              "claude-opus-4-7; openrouter -> anthropic/claude-sonnet-4.6 "
+              "(matches throughline daemon's REFINE_MODEL)."),
     )
     parser.add_argument(
         "--max-cases", type=int, default=None,
@@ -466,33 +561,69 @@ def main(argv: Optional[list[str]] = None) -> int:
         print("\n[dry-run] OK -- fixtures + tool schemas validate.")
         return 0
 
-    try:
-        import anthropic
-    except ImportError:
-        print(
-            "[error] pip install anthropic — required for non-dry-run.",
-            file=sys.stderr,
-        )
-        return 1
+    # Provider resolution: auto-detect from env unless explicit override.
+    provider = args.provider
+    if provider == "auto":
+        if os.environ.get("OPENROUTER_API_KEY"):
+            provider = "openrouter"
+        elif os.environ.get("ANTHROPIC_API_KEY"):
+            provider = "anthropic"
+        else:
+            print(
+                "[error] No API key found. Set OPENROUTER_API_KEY or "
+                "ANTHROPIC_API_KEY, or pass --provider explicitly.",
+                file=sys.stderr,
+            )
+            return 1
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print(
-            "[error] ANTHROPIC_API_KEY not set.", file=sys.stderr,
-        )
-        return 1
+    # Default model depends on provider.
+    if args.model is None:
+        if provider == "anthropic":
+            model = "claude-opus-4-7"
+        else:
+            model = "anthropic/claude-sonnet-4.6"
+    else:
+        model = args.model
 
-    client = anthropic.Anthropic()
+    # Resolve client / api key per provider.
+    anthropic_client = None
+    openrouter_key = None
+    if provider == "anthropic":
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            print("[error] ANTHROPIC_API_KEY not set.", file=sys.stderr)
+            return 1
+        try:
+            import anthropic as _anthropic_pkg
+        except ImportError:
+            print(
+                "[error] pip install anthropic -- required for "
+                "--provider=anthropic.", file=sys.stderr,
+            )
+            return 1
+        anthropic_client = _anthropic_pkg.Anthropic()
+    else:  # openrouter
+        openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+        if not openrouter_key:
+            print(
+                "[error] OPENROUTER_API_KEY not set.", file=sys.stderr,
+            )
+            return 1
 
     stats = {tool: ToolStats() for tool in EVAL_TOOLS}
     raw_runs: list[dict] = []
     cases_failed = 0
 
-    print(f"\nRunning {len(cases)} cases against {args.model}...\n")
+    print(f"\nRunning {len(cases)} cases via {provider} / {model}...\n")
     for i, case in enumerate(cases):
         try:
-            selected, summary = run_one_case(
-                client, tool_defs, SYSTEM_PROMPT, args.model, case,
-            )
+            if provider == "anthropic":
+                selected, summary = _call_anthropic(
+                    anthropic_client, tool_defs, SYSTEM_PROMPT, model, case,
+                )
+            else:
+                selected, summary = _call_openrouter(
+                    openrouter_key, tool_defs, SYSTEM_PROMPT, model, case,
+                )
         except Exception as e:
             cases_failed += 1
             print(
@@ -533,7 +664,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     report = render_report(
-        model=args.model,
+        model=f"{provider}/{model}",
         cases_run=len(raw_runs),
         cases_failed=cases_failed,
         stats=stats,

@@ -86,13 +86,36 @@ positive or negative coverage.
 
 ### Real run
 
+Two providers supported. The harness auto-detects from env vars; pass
+`--provider` to force one explicitly.
+
+**Via OpenRouter** (if your card isn't accepted by Anthropic, or you
+already have OpenRouter set up for the throughline daemon):
+
+```bash
+OPENROUTER_API_KEY=sk-or-... python -m evals.tool-triggering.run_eval
+```
+
+Default model when going through OpenRouter is
+`anthropic/claude-sonnet-4.6` (matches the throughline daemon's
+`REFINE_MODEL`). Override with `--model anthropic/claude-opus-4` etc.
+Tool definitions are adapter-converted to OpenAI/OpenRouter format
+behind the scenes; eval signal is equivalent to the native path.
+
+**Via Anthropic direct**:
+
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... python -m evals.tool-triggering.run_eval
 ```
 
-Default model is `claude-opus-4-7`. Use `--model claude-sonnet-4-6` for
-a cheaper baseline; `--model claude-haiku-4-5` to test what the cheapest
-host would do.
+Default model is `claude-opus-4-7`. Use `--model claude-sonnet-4-6`
+for a cheaper baseline; `--model claude-haiku-4-5` to test what the
+cheapest host would do. This path uses prompt caching on the
+tools+system prefix (`cache_control: ephemeral`).
+
+**Auto-detect priority**: if both `OPENROUTER_API_KEY` and
+`ANTHROPIC_API_KEY` are set, OpenRouter wins by default. Use
+`--provider anthropic` to force the native path.
 
 Outputs land in `results/`:
 - `<UTC-date>.md` — markdown report (per-tool F1 + per-case log)
@@ -106,10 +129,11 @@ python -m evals.tool-triggering.run_eval --max-cases 5
 
 ## Cost
 
-Tool definitions + system prompt are cached via top-level
-`cache_control: {type: "ephemeral"}` — the first case writes the cache
-(~1.25× cost), every subsequent case reads (~0.1× cost). Estimated
-full-run cost on `claude-opus-4-7` for 24 fixture cases:
+**Anthropic direct path**: tool definitions + system prompt are
+cached via per-block `cache_control: {type: "ephemeral"}` on the
+system text block — the first case writes the cache (~1.25× cost),
+every subsequent case reads (~0.1× cost). Estimated full-run cost
+on `claude-opus-4-7` for 24 fixture cases:
 
 - ~10K cached prefix tokens × first-case write + 23 × 0.1 × 10K
 - + 24 × ~150 user input + 24 × ~200 output
@@ -117,6 +141,13 @@ full-run cost on `claude-opus-4-7` for 24 fixture cases:
 - **≈ $0.30 per full run**
 
 Cheaper on Sonnet 4.6 (~$0.10) or Haiku 4.5 (~$0.04).
+
+**OpenRouter path**: prompt caching is skipped because OpenRouter
+exposes Anthropic prompt caching only via the native `/messages`
+endpoint shape, which they don't publicly serve. Cost is therefore
+~5-10x what the cached Anthropic path would cost on the same model,
+but since the eval is small the absolute cost stays under $0.50 even
+on Opus.
 
 ## Growing the fixture set
 
