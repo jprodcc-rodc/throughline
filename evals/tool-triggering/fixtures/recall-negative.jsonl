@@ -1,0 +1,5 @@
+// Should NOT trigger recall_memory: pure factual / in-flow / explicit
+// fresh-start.
+{"context": "", "user_msg": "What is OAuth 2.1 and how does it differ from OAuth 2.0?", "expected_tools": [], "expected_params": {}, "rationale": "Pure factual question with no possessive or personal-context reference."}
+{"context": "", "user_msg": "Format this JSON for me: {\"a\":1,\"b\":[2,3]}", "expected_tools": [], "expected_params": {}, "rationale": "In-flow micro-task; no historical context relevant."}
+{"context": "", "user_msg": "Forget everything I said before — let's start over on requirements from scratch.", "expected_tools": [], "expected_params": {}, "rationale": "Explicit 'forget everything' / 'start over' — the docstring's exact non-trigger language."}

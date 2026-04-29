@@ -1,0 +1,5 @@
+// Should NOT trigger get_position_drift: factual / in-flow / educational
+// — no personal stance to retrospect.
+{"context": "", "user_msg": "What's the difference between PostgreSQL's and CockroachDB's consistency models?", "expected_tools": [], "expected_params": {}, "rationale": "Factual comparison question — no personal stance, no decision being announced."}
+{"context": "", "user_msg": "Help me write a SQL migration that adds a non-null column to the orders table.", "expected_tools": [], "expected_params": {}, "rationale": "In-flow technical task; no opinion content."}
+{"context": "", "user_msg": "Explain how the React reconciler decides what to re-render.", "expected_tools": [], "expected_params": {}, "rationale": "Educational / how-it-works question; not retrospective on user's own thinking."}

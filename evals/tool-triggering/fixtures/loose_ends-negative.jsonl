@@ -1,0 +1,5 @@
+// Should NOT trigger find_loose_ends: in-flow task / fresh-start signal /
+// micro-action.
+{"context": "", "user_msg": "Help me debug this stack trace — getting NullPointerException on line 42.", "expected_tools": [], "expected_params": {}, "rationale": "In-flow concrete debugging task; user is mid-flow, not reflecting."}
+{"context": "", "user_msg": "Let's start fresh on the API design — forget what I said before, I want to redo it.", "expected_tools": [], "expected_params": {}, "rationale": "Explicit fresh-start signal — opposite of 'where was I'."}
+{"context": "", "user_msg": "Add a primary action button to the login form, top-right of the card.", "expected_tools": [], "expected_params": {}, "rationale": "Concrete micro-task — no reflection or stale-topic shape."}

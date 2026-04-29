@@ -1,0 +1,5 @@
+// Should trigger find_loose_ends: session-start retrospect / stale-topic
+// resume / explicit reflection point.
+{"context": "", "user_msg": "Hey — where was I before lunch? What was I in the middle of?", "expected_tools": ["find_loose_ends"], "expected_params": {}, "rationale": "Classic session-start 'where was I' — exact textbook trigger."}
+{"context": "", "user_msg": "I haven't touched the embedding pipeline in two weeks. What was I working through that didn't get resolved?", "expected_tools": ["find_loose_ends"], "expected_params": {"topic": "embedding pipeline"}, "rationale": "Explicit 'didn't get resolved' on a stale-topic resume — surfaces unfinished thinking."}
+{"context": "", "user_msg": "OK, what now? Where does this leave us on the auth refactor?", "expected_tools": ["find_loose_ends"], "expected_params": {"topic": "auth refactor"}, "rationale": "'Where does this leave us' is the docstring's reflection-point phrase verbatim."}

@@ -1,0 +1,5 @@
+// Should NOT trigger check_consistency: hypothetical / uncertain /
+// venting / question-asking — not a committed position.
+{"context": "", "user_msg": "Maybe we should consider switching to gRPC at some point?", "expected_tools": [], "expected_params": {}, "rationale": "Uncertainty markers ('maybe', 'should consider', 'at some point') — not a committed position."}
+{"context": "", "user_msg": "What if we tried server-side rendering instead of client-side?", "expected_tools": [], "expected_params": {}, "rationale": "'What if' is hypothetical / brainstorming, not asserted."}
+{"context": "", "user_msg": "I hate working in this codebase right now, everything is so painful.", "expected_tools": [], "expected_params": {}, "rationale": "Venting / emotion — not a stance to confront with prior positions."}

@@ -1,0 +1,5 @@
+// Should trigger check_consistency: principle assertion / quantifier /
+// rule-of-thumb that could clash with prior reasoning.
+{"context": "", "user_msg": "We never use ORMs anymore — too much hidden complexity.", "expected_tools": ["check_consistency"], "expected_params": {"statement": "We never use ORMs anymore"}, "rationale": "Strong quantifier 'never' on a recurring engineering principle — exact shape consistency targets."}
+{"context": "", "user_msg": "My principle for this codebase: always optimize for read performance over write performance.", "expected_tools": ["check_consistency"], "expected_params": {"statement": "always optimize for read performance over write performance"}, "rationale": "Explicit 'my principle' + quantifier 'always' — textbook consistency trigger."}
+{"context": "", "user_msg": "We ship every feature behind a flag, no exceptions.", "expected_tools": ["check_consistency"], "expected_params": {"statement": "ship every feature behind a flag, no exceptions"}, "rationale": "'every' + 'no exceptions' is a quantifier-style principle declaration."}

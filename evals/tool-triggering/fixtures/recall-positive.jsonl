@@ -1,0 +1,5 @@
+// Should trigger recall_memory: possessive references / past-decision
+// references / personal-context-relevant questions.
+{"context": "", "user_msg": "What did we end up deciding about my pricing tiers — was it three or four?", "expected_tools": ["recall_memory"], "expected_params": {"query": "pricing tiers decision"}, "rationale": "Possessive 'my pricing tiers' + 'what did we end up deciding' is a clear recall-from-history shape."}
+{"context": "", "user_msg": "Like we discussed last month for the API rate limiting — was it 100 RPS or 1000?", "expected_tools": ["recall_memory"], "expected_params": {"query": "API rate limiting last month"}, "rationale": "'Like we discussed last month' is the docstring's past-reference signal verbatim."}
+{"context": "", "user_msg": "What's the deal with my chronic-headache notes — what triggers did I land on?", "expected_tools": ["recall_memory"], "expected_params": {"query": "chronic headache triggers", "include_personal_context": true}, "rationale": "Possessive 'my chronic-headache notes' + medical / personal-context topic — recall is mandatory + likely with include_personal_context."}
