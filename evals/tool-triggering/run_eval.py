@@ -289,8 +289,9 @@ def run_one_case(
     case: EvalCase,
 ) -> tuple[set[str], dict]:
     """Send one case to the Messages API. Returns (selected_tool_names,
-    summary_dict). Top-level cache_control auto-caches the tools+system
-    prefix — first call writes (~1.25x), subsequent calls read (~0.1x)."""
+    summary_dict). cache_control on the system block caches tools +
+    system together — first call writes (~1.25x), subsequent calls
+    read (~0.1x)."""
     if case.context:
         user_content = (
             "[Conversation so far]\n"
@@ -304,8 +305,11 @@ def run_one_case(
     response = client.messages.create(
         model=model,
         max_tokens=2048,
-        cache_control={"type": "ephemeral"},
-        system=system_prompt,
+        system=[{
+            "type": "text",
+            "text": system_prompt,
+            "cache_control": {"type": "ephemeral"},
+        }],
         tools=tool_defs,
         tool_choice={"type": "auto"},
         messages=[{"role": "user", "content": user_content}],
