@@ -15,6 +15,113 @@ pre-1.0 minor bumps can include breaking config shape changes.
 
 ## [Unreleased]
 
+### Added — P0-2 stance-based drift detection (algorithmic surface complete) (2026-04-29)
+
+Phase 2's claim-level drift detector — the engine behind
+`get_position_drift` and `check_consistency` once it lands —
+shipped the algorithmic surface plus the LLM judge spec, but not
+yet the live LLM HTTP wrapper.
+
+What's there:
+
+- `mcp_server/claim_schema.py` — pydantic v2 `Claim` model with 9
+  LLM-emitted fields (subject, subject_canonical, predicate,
+  object, stance ∈ [-1.0, +1.0], hedging ∈ [0.0, 1.0], raw_text,
+  reasoning, kind) and 4 daemon-attached persistence fields (id,
+  card_id, timestamp, source_turn_id). Strict validators on
+  range, snake_case canonicalization, predicate enum (11 verbs),
+  kind enum (stance / fact / preference / commitment).
+- `mcp_server/drift_detector.py` — pure-function
+  `detect_drift(current, vault, judge) → DriftReport | None`
+  and `detect_consistency_issues(current, vault, judge) →
+  list[ConsistencyReport]`. Five-gate algorithm: kind-eligibility
+  → history-exists → |stance_delta| ≥ 0.6 → judge says drift →
+  judge confidence ≥ 0.5. Severity formula damps by
+  `max(prior.hedging, current.hedging)`. Vault and LLMJudge are
+  Protocols so storage backends and judge models swap freely.
+- `prompts/en/claim_extraction.md` — extraction prompt that emits
+  the Claim shape from a conversation slice. 5 worked examples
+  including the reverse cases (factual question, quoted_other)
+  that produce empty arrays.
+- `prompts/en/drift_judge.md` — judge prompt with 5 worked verdict
+  examples and confidence calibration anchors. Outputs strict
+  3-field JSON consumed by `parse_judge_verdict()` /
+  `safe_parse_judge_verdict()`.
+- `docs/CLAIM_STANCE_SCORING.md` — design integration doc
+  explaining how the new numeric stance/hedging extends the
+  existing categorical `position_signal` block without breaking
+  the 72+ already-refined cards in the maintainer's vault.
+- 200+ new unit tests pinning the algorithm behaviour with
+  fully-mocked LLM judge (no network calls in CI). 2032 / 3
+  skipped in `fixtures/v0_2_0`.
+
+What's deferred:
+- The live LLM HTTP wrapper conforming to `LLMJudge`. The
+  protocol is locked; the wrapper is a small commit alone.
+- Refiner prompt updates to emit numeric `stance_score` /
+  `hedging_score` (gated on a focused review session per the
+  feedback rule against speculative refiner prompt churn).
+- Wiring detect_drift / detect_consistency_issues into
+  `daemon/reflection_pass.py`.
+
+Commits: `3b5d71d`, `f91a94a`, `3c91e52`, `04a19b6`, `33ed64b`.
+
+### Added — Tool-triggering eval harness + P0-1 closure (2026-04-29)
+
+Closes P0-1 of `private/SPEC_DEEP_OPTIMIZATION.md`. Anthropic
+Messages API's tool-selection behaviour was previously evaluated
+by hand. Now there's a reproducible harness that scores per-tool
+F1 + false-positive rate against a fixture set of utterances.
+
+What ships:
+
+- `evals/tool-triggering/run_eval.py` — auto-detects provider
+  from env (OpenRouter or Anthropic direct), introspects
+  `mcp_server.tools.*` into Anthropic tool defs (function
+  signatures → JSON schema, full Decision-Guide docstrings →
+  descriptions), runs the fixtures through the Messages API,
+  computes per-tool TP/FP/FN/TN. `--no-llm` dry-run validates
+  fixtures + tool schemas without burning any API budget.
+- `evals/tool-triggering/fixtures/{drift,consistency,loose_ends,
+  recall}-{positive,negative}.jsonl` — 24 hand-written cases
+  covering each of the 4 differentiation tools.
+- `evals/tool-triggering/results/2026-04-29.{md,jsonl}` —
+  baseline run + iteration 1 result, both committed for
+  reproducibility.
+
+Concurrent docstring upgrades. The 7 host-callable MCP tool
+docstrings were rewritten in the spec's "Decision Guide" format
+(`CALL THIS PROACTIVELY WHEN:` / `DO NOT CALL WHEN:` /
+`EXAMPLE TRIGGERS:` / `EXAMPLE NON-TRIGGERS:`). The format is
+now a contract enforced by 28 scaffold tests across all 7 tools.
+
+Iteration trajectory on `claude-sonnet-4-6` via OpenRouter:
+
+| Tool | Baseline F1 | Iter 1 F1 |
+|---|---|---|
+| `get_position_drift` | 1.00 | 1.00 |
+| `check_consistency` | 0.75 | 1.00 |
+| `find_loose_ends` | 0.86 | 1.00 |
+| `recall_memory` | 0.55 | 0.86 |
+
+Spec target (F1 ≥ 0.75 + FPR ≤ 0.15 per tool) cleared on all 4
+differentiation tools after one iteration of docstring tuning.
+Two key fixes: `recall_memory` got HARD OVERRIDE non-triggers
+covering fresh-start signals (English + Chinese); `check_consistency`
+got an explicit BOUNDARY-WITH-drift section routing topic-decision
+announcements to drift instead of double-firing.
+
+Cost: ~$0.10 OpenRouter credit total for both runs (24 cases ×
+~10K tokens × 2 runs at Sonnet 4.6 pricing). The eval is small
+enough to grow alongside the fixture set without budget concern.
+
+Pending: Task 1.3 (≥30 real conversation fixtures from the
+maintainer's Claude history) is the remaining open item — only
+the user can capture and label these from their actual sessions.
+
+Commits: `2d499b9`, `9ac33e3`, `06da9ac`, `18445c1`, `ddc8e85`,
+`a778b9a`, `765389d`.
+
 ### Renamed — `find_open_threads` → `find_loose_ends` (Cowork collision) (2026-04-29)
 
 Anthropic shipped Cowork **persistent agent thread** at GA on
