@@ -35,6 +35,7 @@ Invariants both functions preserve:
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional, Protocol
@@ -355,3 +356,101 @@ def detect_consistency_issues(
     # contradictions surface first.
     reports.sort(key=lambda r: r.judge_confidence, reverse=True)
     return reports
+
+
+# ── LLM judge output parsing ───────────────────────────────────────────
+
+
+def parse_judge_verdict(text: str) -> JudgeVerdict:
+    """Parse the LLM judge's JSON output (per prompts/en/drift_judge.md)
+    into a validated JudgeVerdict.
+
+    Expected input shape (single JSON object):
+        {
+          "is_genuine_drift": <bool>,
+          "explanation": <str>,
+          "confidence": <float in [0.0, 1.0]>
+        }
+
+    Raises ValueError on malformed input. The LLM-call wrapper that
+    invokes the judge prompt should catch this and return a
+    safe-default verdict (is_genuine_drift=False, confidence=0.0)
+    so the algorithm falls through cleanly rather than crashing.
+
+    Strict validation:
+    - Top-level must be a dict (not array, not scalar).
+    - All three fields must be present.
+    - is_genuine_drift must be a bool (not 0/1, not "true").
+    - explanation must be a non-empty string.
+    - confidence must be a float / int convertible to float, in
+      [0.0, 1.0].
+    """
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Judge output is not valid JSON: {e}") from e
+
+    if not isinstance(parsed, dict):
+        raise ValueError(
+            f"Judge output must be a JSON object; got "
+            f"{type(parsed).__name__}"
+        )
+
+    for field_name in ("is_genuine_drift", "explanation", "confidence"):
+        if field_name not in parsed:
+            raise ValueError(
+                f"Judge output missing required field: {field_name!r}"
+            )
+
+    is_drift = parsed["is_genuine_drift"]
+    if not isinstance(is_drift, bool):
+        raise ValueError(
+            f"is_genuine_drift must be bool; got {type(is_drift).__name__}"
+        )
+
+    explanation = parsed["explanation"]
+    if not isinstance(explanation, str) or not explanation.strip():
+        raise ValueError(
+            "explanation must be a non-empty string"
+        )
+
+    raw_conf = parsed["confidence"]
+    if isinstance(raw_conf, bool):
+        # bool is subclass of int in Python; reject bool explicitly.
+        raise ValueError(
+            f"confidence must be float, not bool; got {raw_conf!r}"
+        )
+    if not isinstance(raw_conf, (int, float)):
+        raise ValueError(
+            f"confidence must be numeric; got {type(raw_conf).__name__}"
+        )
+    confidence = float(raw_conf)
+    if not (0.0 <= confidence <= 1.0):
+        raise ValueError(
+            f"confidence must be in [0.0, 1.0]; got {confidence}"
+        )
+
+    return JudgeVerdict(
+        is_genuine_drift=is_drift,
+        explanation=explanation.strip(),
+        confidence=confidence,
+    )
+
+
+def safe_parse_judge_verdict(text: str) -> JudgeVerdict:
+    """Like parse_judge_verdict but returns a safe-default verdict
+    on any parse error.
+
+    Use this in the LLM-call wrapper when you want algorithm
+    fall-through instead of exception propagation: a malformed
+    judge response becomes 'no drift, no confidence' which causes
+    detect_drift to skip the report cleanly.
+    """
+    try:
+        return parse_judge_verdict(text)
+    except (ValueError, TypeError):
+        return JudgeVerdict(
+            is_genuine_drift=False,
+            explanation="(judge output unparseable)",
+            confidence=0.0,
+        )
