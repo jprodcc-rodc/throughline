@@ -147,3 +147,89 @@ class TestResolveEndpointAndKey:
         assert key == "sk-or"
         assert "HTTP-Referer" in extra
         assert pid == "openrouter"
+
+
+class TestSkOrV1PrefixSniff:
+    """Regression: an OpenRouter key (`sk-or-v1-...`) pasted into
+    `OPENAI_API_KEY` (the OpenAI-SDK-compat pattern with
+    `OPENAI_BASE_URL=https://openrouter.ai/api/v1`) must route to
+    OpenRouter — not OpenAI, where the key produces a 401 "Incorrect
+    API key" error.
+    """
+
+    def test_detect_openrouter_key_in_openai_env_var(
+        self, tmp_path, monkeypatch,
+    ):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        _clear_all_keys(monkeypatch)
+        # User pasted OpenRouter key into OPENAI_API_KEY — common
+        # when running OpenAI clients via OPENAI_BASE_URL override.
+        monkeypatch.setenv(
+            "OPENAI_API_KEY",
+            "sk-or-v1-abcdef0123456789abcdef0123456789",
+        )
+        # Detect must return openrouter, not openai.
+        assert pr.detect_configured_provider() == "openrouter"
+
+    def test_resolve_endpoint_routes_to_openrouter_url(
+        self, tmp_path, monkeypatch,
+    ):
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        _clear_all_keys(monkeypatch)
+        monkeypatch.setenv(
+            "OPENAI_API_KEY",
+            "sk-or-v1-abcdef0123456789abcdef0123456789",
+        )
+        url, key, extra, pid = ap.resolve_endpoint_and_key()
+        assert "openrouter.ai" in url, (
+            f"expected openrouter URL, got {url}"
+        )
+        assert url.endswith("/chat/completions")
+        # Key value still passes through (legacy_key_lookup falls
+        # back to OPENAI_API_KEY when OPENROUTER_API_KEY is empty).
+        assert key.startswith("sk-or-v1-")
+        # OpenRouter's required headers attached.
+        assert "HTTP-Referer" in extra
+        assert pid == "openrouter"
+
+    def test_real_openai_key_still_routes_to_openai(
+        self, tmp_path, monkeypatch,
+    ):
+        """Sanity: a normal OpenAI key (no `sk-or-v1` prefix) still
+        routes to OpenAI."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        _clear_all_keys(monkeypatch)
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-proj-realopenai")
+        url, _, _, pid = ap.resolve_endpoint_and_key()
+        assert "api.openai.com" in url
+        assert pid == "openai"
+
+    def test_explicit_provider_env_var_still_wins(
+        self, tmp_path, monkeypatch,
+    ):
+        """If `THROUGHLINE_LLM_PROVIDER` is set, prefix sniff in
+        autodetect doesn't apply (env var is the highest-precedence
+        layer above autodetect)."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        _clear_all_keys(monkeypatch)
+        monkeypatch.setenv("THROUGHLINE_LLM_PROVIDER", "deepseek")
+        monkeypatch.setenv(
+            "OPENAI_API_KEY", "sk-or-v1-abcdef0123456789",
+        )
+        # Explicit env var beats prefix sniff.
+        assert ap.resolve_provider_id() == "deepseek"
+
+    def test_openrouter_env_var_with_v1_prefix_unaffected(
+        self, tmp_path, monkeypatch,
+    ):
+        """Sanity: an OpenRouter key correctly placed in
+        OPENROUTER_API_KEY still resolves to openrouter."""
+        monkeypatch.setenv("THROUGHLINE_CONFIG_DIR", str(tmp_path))
+        _clear_all_keys(monkeypatch)
+        monkeypatch.setenv(
+            "OPENROUTER_API_KEY", "sk-or-v1-properly-placed",
+        )
+        url, key, _, pid = ap.resolve_endpoint_and_key()
+        assert "openrouter.ai" in url
+        assert key == "sk-or-v1-properly-placed"
+        assert pid == "openrouter"

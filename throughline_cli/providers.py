@@ -393,13 +393,33 @@ def presets_by_region(region: str) -> List[ProviderPreset]:
 
 def detect_configured_provider() -> Optional[str]:
     """Inspect env vars and return the first provider id with a key
-    set, or None. Used for backward compat + auto-defaulting."""
+    set, or None. Used for backward compat + auto-defaulting.
+
+    Special case — `sk-or-v1` prefix sniff:
+        OpenRouter keys are documented to start with `sk-or-v1-`.
+        A key with that prefix in *any* of our known env vars is
+        unambiguously an OpenRouter key. We return "openrouter" up
+        front so that users who paste an OpenRouter key into
+        `OPENAI_API_KEY` (the common OpenAI-SDK pattern with
+        `OPENAI_BASE_URL=https://openrouter.ai/api/v1`) get routed
+        to OpenRouter's URL instead of hitting OpenAI with a key
+        OpenAI rejects (401 "Incorrect API key").
+        See `legacy_key_lookup()` — both env vars are still scanned
+        for the actual key value once the provider is locked in.
+    """
     # Keep OpenRouter first so existing users don't get silently
     # swapped to another provider just because they happen to also
     # have OPENAI_API_KEY set.
     ordered = [_OPENROUTER, _OPENAI, _ANTHROPIC, _DEEPSEEK, _TOGETHER,
                 _FIREWORKS, _GROQ, _XAI, _SILICONFLOW, _MOONSHOT,
                 _DASHSCOPE, _ZHIPU, _DOUBAO]
+    # First pass: prefix sniff for an unambiguous OpenRouter key
+    # in any env var.
+    for p in ordered:
+        v = os.environ.get(p.env_var, "").strip()
+        if v.startswith("sk-or-v1"):
+            return "openrouter"
+    # Second pass: original env-var-by-precedence logic.
     for p in ordered:
         v = os.environ.get(p.env_var, "").strip()
         if v:

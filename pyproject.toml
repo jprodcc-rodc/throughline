@@ -199,3 +199,9 @@ select = ["F", "E9"]
 testpaths = ["fixtures"]
 python_files = ["test_*.py"]
 addopts = "-q --tb=short"
+# Markers registered to silence "PytestUnknownMarkWarning". Anything
+# tagged `integration` is opt-in only (e.g., `RUN_INTEGRATION=1` env
+# guard) so default `pytest` runs stay fast + offline.
+markers = [
+    "integration: opt-in tests that hit real services (LLM provider, etc.). Skipped by default.",
+]
