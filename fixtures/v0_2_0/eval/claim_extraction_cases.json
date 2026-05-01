@@ -1,0 +1,207 @@
+{
+  "_meta": {
+    "schema": "4-field claim extraction (topic / concern / hope / question)",
+    "spec": "docs/superpowers/specs/web-product-design.md §5.5 + docs/superpowers/plans/2026-05-01-claim-extraction.md",
+    "categories": ["career", "relationships", "technical", "abstract", "chitchat"],
+    "n_cases": 14,
+    "language_mix": "Chinese-primary (matching maintainer's vault) with 4 English cases for diversity"
+  },
+  "cases": [
+    {
+      "id": "career-1",
+      "category": "career",
+      "input": {
+        "user": "我在想要不要换工作,但又怕断了收入",
+        "ai": "先把'换'和'断收入'分开看。你具体在想换到什么方向?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": "想换到什么方向"
+      }
+    },
+    {
+      "id": "career-2",
+      "category": "career",
+      "input": {
+        "user": "我想做自由职业,这样可以更自由地安排时间,但不知道客户从哪里来。",
+        "ai": "自由的代价是销售自己。你之前的工作有没有现成的人脉或者作品可以作为起点?"
+      },
+      "expected": {
+        "topic": "自由职业",
+        "concern": null,
+        "hope": "时间自由",
+        "question": "客户从哪里来"
+      }
+    },
+    {
+      "id": "career-3",
+      "category": "career",
+      "input": {
+        "user": "I'm considering leaving my senior eng role to start my own thing. Salary cut would be brutal but I want to build something I own.",
+        "ai": "Building something you own is a strong pull. What's the runway you'd have if revenue is zero for 12 months?"
+      },
+      "expected": {
+        "topic": "leaving senior eng role / starting own thing",
+        "concern": "salary cut",
+        "hope": "build something I own",
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-1",
+      "category": "relationships",
+      "input": {
+        "user": "我和爸妈这周末又吵了一架,觉得他们一直都不理解我的想法。",
+        "ai": "听起来积累了挺久了。你希望他们理解的具体是哪一部分?"
+      },
+      "expected": {
+        "topic": "和父母的关系",
+        "concern": "不被理解",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-2",
+      "category": "relationships",
+      "input": {
+        "user": "我想和我老公多有些独处时间,但有了孩子后真的很难。",
+        "ai": "时间不是凭空冒出来的,得从某处挪。你们目前一周里最容易匀出时间的是哪个时段?"
+      },
+      "expected": {
+        "topic": "夫妻独处时间",
+        "concern": "孩子让独处困难",
+        "hope": "多些独处时间",
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-3",
+      "category": "relationships",
+      "input": {
+        "user": "My friend group has drifted apart since college. I miss the closeness but I don't know if it's worth forcing reunions when everyone is busy.",
+        "ai": "Drift is normal but sometimes a single thoughtful invite restarts things. What did you used to actually do together that mattered?"
+      },
+      "expected": {
+        "topic": "friend group drift",
+        "concern": null,
+        "hope": "the closeness",
+        "question": "is it worth forcing reunions"
+      }
+    },
+    {
+      "id": "technical-1",
+      "category": "technical",
+      "input": {
+        "user": "我想把 Postgres 换成 SQLite 让部署简单一点,但又担心丢掉事务的保证。",
+        "ai": "SQLite 其实有事务,只是并发写有限。你这个项目的写入量大概是什么规模?"
+      },
+      "expected": {
+        "topic": "Postgres 换 SQLite",
+        "concern": "丢掉事务保证",
+        "hope": "部署简单",
+        "question": null
+      }
+    },
+    {
+      "id": "technical-2",
+      "category": "technical",
+      "input": {
+        "user": "I want to migrate this Postgres DB to SQLite for simplicity but I'm worried about losing transaction guarantees.",
+        "ai": "That's a reasonable trade-off to think through. What scale of writes are you handling?"
+      },
+      "expected": {
+        "topic": "Postgres to SQLite migration",
+        "concern": "losing transaction guarantees",
+        "hope": "simplicity",
+        "question": null
+      }
+    },
+    {
+      "id": "technical-3",
+      "category": "technical",
+      "input": {
+        "user": "Should I learn Rust or Go for systems work? I keep going back and forth.",
+        "ai": "Both are solid. What's the project you'd actually use it on?"
+      },
+      "expected": {
+        "topic": "Rust vs Go",
+        "concern": null,
+        "hope": null,
+        "question": "Rust or Go for systems work"
+      }
+    },
+    {
+      "id": "abstract-1",
+      "category": "abstract",
+      "input": {
+        "user": "我最近一直在想,人生的意义到底是什么?如果只是工作和消费的循环,好像没什么意思。",
+        "ai": "这个问题很多人想过,可能不会有 final answer。具体什么时刻让你觉得'没什么意思'?"
+      },
+      "expected": {
+        "topic": "人生意义",
+        "concern": "工作消费循环没意思",
+        "hope": null,
+        "question": "人生意义是什么"
+      }
+    },
+    {
+      "id": "abstract-2",
+      "category": "abstract",
+      "input": {
+        "user": "I want to live a more intentional life — less reactive, less scrolling, more aimed at things that matter. But I don't even know what 'matters' to me yet.",
+        "ai": "That's the harder half. What's something you've done in the past year that didn't feel like it mattered, even though you spent real time on it?"
+      },
+      "expected": {
+        "topic": "intentional life",
+        "concern": "reactive / scrolling",
+        "hope": "aimed at things that matter",
+        "question": "what matters to me"
+      }
+    },
+    {
+      "id": "chitchat-1",
+      "category": "chitchat",
+      "input": {
+        "user": "谢谢你的帮助!",
+        "ai": "不客气,有什么需要随时来。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-2",
+      "category": "chitchat",
+      "input": {
+        "user": "Thanks, that's helpful! Have a good one.",
+        "ai": "You too, take care."
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-3",
+      "category": "chitchat",
+      "input": {
+        "user": "今天天气不错啊,挺凉爽的。",
+        "ai": "确实,这种天气最适合出去走走了。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    }
+  ]
+}
