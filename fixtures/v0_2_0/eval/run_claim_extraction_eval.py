@@ -400,12 +400,20 @@ def _llm_judge_match(
 
 
 def field_match(
-    expected: str | None,
+    expected: str | list[str] | None,
     actual: str | None,
     *,
     user_text: str | None = None,
 ) -> tuple[bool, str]:
     """Score one field. Returns (correct, reason).
+
+    `expected` may be:
+    - str  → single canonical answer (legacy / backwards compat)
+    - list[str] → multiple acceptable variants (per Rodc directive
+      2026-05-02 evening — concern field ground truth has paraphrase
+      variance: "losing income" ≈ "family financial stability if I
+      quit"; both should pass). Any variant matching = TP.
+    - None → expected null
 
     Rules:
     - Both null  -> correct
@@ -415,6 +423,36 @@ def field_match(
       the heuristic would otherwise return False on a short field
       with combined length ≤ 60 and user_text + judge config available).
     """
+    # Multi-variant: dispatch to single-variant matcher per element;
+    # first match wins. Empty list treated as null (no expected value).
+    if isinstance(expected, list):
+        if not expected:
+            expected = None
+        elif actual is None:
+            return False, "expected_value_got_null"
+        else:
+            last_reason = "no_variant_matched"
+            for variant in expected:
+                ok, reason = _field_match_single(
+                    variant, actual, user_text=user_text,
+                )
+                if ok:
+                    return True, f"{reason} (variant={variant!r})"
+                last_reason = reason
+            return False, f"no_variant_matched (last: {last_reason})"
+
+    # Single-variant path (legacy / fast path).
+    return _field_match_single(expected, actual, user_text=user_text)
+
+
+def _field_match_single(
+    expected: str | None,
+    actual: str | None,
+    *,
+    user_text: str | None = None,
+) -> tuple[bool, str]:
+    """Single-variant scorer. The body of the previous field_match;
+    extracted so the multi-variant wrapper can call it per variant."""
     if expected is None and actual is None:
         return True, "both_null"
     if expected is None and actual is not None:
@@ -518,11 +556,20 @@ def score_case(
 # ---------- summary helpers (per-language reporting per Rodc directive 2026-05-02) ----------
 
 
+# Ship gate v1.7 (per Rodc + External Opus directive 2026-05-02 evening).
+# Old v1.3 gates (recall 0.90/0.80/0.80/0.75 + precision 0.80/0.85/0.85/0.80)
+# were calibrated assuming single-canonical ground truth — that assumption
+# broke under the rebalanced English eval set where concern field has
+# real paraphrase variance ("losing income" ≈ "family financial stability
+# if I quit"). v1.7 lowers per-field recall/precision to production-
+# realistic levels AND adds a hallucination-rate cap that targets the
+# actual trust-killer (model fabricating user-not-said content) rather
+# than wording-mismatch noise.
 _GATES = {
-    "topic":    {"recall": 0.90, "precision": 0.80},
-    "concern":  {"recall": 0.80, "precision": 0.85},
-    "hope":     {"recall": 0.80, "precision": 0.85},
-    "question": {"recall": 0.75, "precision": 0.80},
+    "topic":    {"recall": 0.60, "precision": 0.70, "max_hallucination_rate": 0.08},
+    "concern":  {"recall": 0.60, "precision": 0.70, "max_hallucination_rate": 0.08},
+    "hope":     {"recall": 0.60, "precision": 0.70, "max_hallucination_rate": 0.08},
+    "question": {"recall": 0.60, "precision": 0.70, "max_hallucination_rate": 0.08},
 }
 
 
@@ -568,12 +615,19 @@ def compute_summary(rs: list[dict], label: str) -> dict | None:
         for r in rs:
             bf = r["score"]["by_field"][field]
             e = bf["expected"]; a = bf["actual"]; ok = bf["correct"]
-            if e is None and a is None:
+            # Normalize multi-variant ground truth: empty list is "no
+            # expected"; non-empty list means expected is non-null.
+            if isinstance(e, list):
+                e_is_null = len(e) == 0
+            else:
+                e_is_null = e is None
+            a_is_null = a is None
+            if e_is_null and a_is_null:
                 tn += 1
-            elif e is None and a is not None:
+            elif e_is_null and not a_is_null:
                 fp += 1
                 fp_hall += 1
-            elif e is not None and a is None:
+            elif not e_is_null and a_is_null:
                 fn += 1
             else:
                 if ok:
@@ -596,6 +650,11 @@ def compute_summary(rs: list[dict], label: str) -> dict | None:
     gate_results: list[dict] = []
     for field, gate in _GATES.items():
         m = field_metrics[field]
+        # Hallucination cap (v1.7): trust killer is fabricated content,
+        # not paraphrased content. Cap at rate, not absolute count, so
+        # the same threshold applies to EN bucket (n=64) and ZH bucket
+        # (n=16) without a separate config.
+        hall_rate = m["fp_hallucinations"] / n if n else 0.0
         gate_results.append({
             "field": field,
             "recall": m["recall"],
@@ -604,11 +663,19 @@ def compute_summary(rs: list[dict], label: str) -> dict | None:
             "precision": m["precision"],
             "precision_gate": gate["precision"],
             "precision_pass": m["precision"] >= gate["precision"],
+            "hallucination_rate": round(hall_rate, 4),
+            "hallucination_gate": gate["max_hallucination_rate"],
+            "hallucination_pass": hall_rate <= gate["max_hallucination_rate"],
         })
     chit_pass = fp_rate <= 0.05
     overall_pass = avg_acc >= 0.75
+    # v1.7 ship gate: per-field recall + precision + hallucination
+    # (4×3 = 12) plus chitchat-FP and overall accuracy = 14 conditions.
     all_pass = (
-        all(g["recall_pass"] and g["precision_pass"] for g in gate_results)
+        all(
+            g["recall_pass"] and g["precision_pass"] and g["hallucination_pass"]
+            for g in gate_results
+        )
         and chit_pass and overall_pass
     )
     return {
@@ -625,6 +692,8 @@ def compute_summary(rs: list[dict], label: str) -> dict | None:
         "gate_results": gate_results,
         "chitchat_fp_pass": chit_pass,
         "overall_accuracy_pass": overall_pass,
+        "all_conditions_pass": all_pass,
+        # Backwards-compat alias (older code may read all_10_conditions_pass).
         "all_10_conditions_pass": all_pass,
     }
 
@@ -643,16 +712,19 @@ def print_summary(s: dict, header: str, *, ship_gate_active: bool) -> None:
         for cat, v in s["per_category_accuracy"].items():
             print(f"  {cat}: {v * 100:.1f}% (n={s['per_category_n'][cat]})")
     print()
-    print("Per-field precision/recall (asymmetric gate v1.3):")
+    print("Per-field precision/recall + hallucination (ship gate v1.7):")
     for gr in s["gate_results"]:
         rm = "PASS" if gr["recall_pass"] else "FAIL"
         pm = "PASS" if gr["precision_pass"] else "FAIL"
+        hm = "PASS" if gr["hallucination_pass"] else "FAIL"
         print(
             f"  {gr['field']:8s} "
             f"recall={gr['recall'] * 100:5.1f}% "
             f"(gate ≥{gr['recall_gate'] * 100:.0f}% [{rm}])  "
             f"precision={gr['precision'] * 100:5.1f}% "
-            f"(gate ≥{gr['precision_gate'] * 100:.0f}% [{pm}])"
+            f"(gate ≥{gr['precision_gate'] * 100:.0f}% [{pm}])  "
+            f"hallucination={gr['hallucination_rate'] * 100:4.1f}% "
+            f"(gate ≤{gr['hallucination_gate'] * 100:.0f}% [{hm}])"
         )
     fpm = "PASS" if s["chitchat_fp_pass"] else "FAIL"
     print(f"  chitchat FP rate: {s['chitchat_fp_rate'] * 100:.1f}% "
@@ -661,7 +733,7 @@ def print_summary(s: dict, header: str, *, ship_gate_active: bool) -> None:
     print(f"  overall accuracy: {s['average_accuracy'] * 100:.1f}% "
           f"(gate ≥75% [{om}])")
     print()
-    print("Per-field hallucination breakdown (FP type):")
+    print("Per-field FP breakdown (raw counts):")
     for field in ("topic", "concern", "hope", "question"):
         m = s["field_metrics"][field]
         print(
@@ -671,8 +743,8 @@ def print_summary(s: dict, header: str, *, ship_gate_active: bool) -> None:
             f"mismatches={m['fp_mismatches']} (both non-null but wrong)"
         )
     print(f"API failures: {s['api_failures']}/{s['n']}")
-    verdict = "PASS" if s["all_10_conditions_pass"] else "FAIL"
-    print(f"ALL 10 CONDITIONS: {verdict}")
+    verdict = "PASS" if s["all_conditions_pass"] else "FAIL"
+    print(f"ALL 14 CONDITIONS (v1.7): {verdict}")
 
 
 # ---------- main ----------
