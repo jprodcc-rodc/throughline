@@ -1,6 +1,18 @@
 # Rodix Implementation Roadmap
 
-**Version**: v1.2 (2026-05-01)
+**Version**: v1.2 (2026-05-01) · **Status checkpoint 2026-05-02 EOD: Wave 1b code-complete + ship-ready, pending Rodc Task 15 dogfood**
+
+> **Wave 1b status (2026-05-02 EOD)**:
+> - ✅ `#1a` Settings panel — done
+> - ✅ `#intent-classifier` — eval GREEN (92% / 97.5% / 100% / 88%) after timeout+retry patch
+> - ✅ `#3a` Cards Management — done (17 tasks + 15.5 DB isolation), reconciliation done with chat_claims via JOIN
+> - ✅ `#claim-extraction` — Tasks 1-14 done; Phase 1 ship via split-route (env-var seam `THROUGHLINE_EXTRACTION_PROVIDER` default Haiku 4.5). Trust killer GREEN (2.3% hallucination), overall 79.3% PASS. Plan v1.8 ship gate: HARD blockers PASS / monitor-only conservatism. Calibration trigger: production hallucination > 5% sustained → emergency v4 prompt.
+> - ⏳ `#claim-extraction` Task 15 — Rodc 5-round subjective dogfood (manual; pending next session). Dogfood ≥4/5 PASS confirms ship + triggers Wave 2; ≤2/5 PASS rolls back to (A) hope+question relabel + v4.
+> - ✅ `#w-docs` outline created
+> - 643 / 2 tests; commits `53b56f0 / 21c4a2d / 36920a4 / 31a6a3d / 583cd67 / 052e6e9` on main.
+>
+> See `project_app_state_2026_05_02.md` (memory) and per-feature plan files for full state.
+
 **v1.2 修订**: Rodc v1.1 review 3 HIGH issues 入档:(1) §1.4 加 #r-payment-fallback-research(P1,Paddle denial 真 mitigation)(2) §1.2 #b-dev-deploy 简化(Rodc directive: 0.0.0.0 + LAN URL print + 防火墙,不 HTTPS/mkcert/hosts)(3) #3a mock fixture 用 `rodix_dev.db` 隔离 dogfood 真 data
 **v1.1 修订**: 外部 Opus 8 findings 入档:(1) Paddle individual seller 不依赖 #r-company → launch 不再被 #r-company 6-12 周 lead-time 阻塞 (2) 新增 #b-dev-deploy 局域网开发部署(sustainability)(3) 新增 #r-email-service(#9a + #b-auth 的依赖)(4) 删 #r-alpha-batch1/2(Rodc anonymous solo founder,直接 public launch)(5) Wave 1 拆 1a(demo-ready)+ 1b(fully functional)(6) Soak gate 定义 sharpened (per protocol §8.3 v1.5)(7) Dev mode 默认 OpenRouter free 模型 (8) `#3a` 用 mock fixtures(Choice A)解耦 #claim-extraction
 **v1.0**: 初版 master roadmap
