@@ -30,6 +30,16 @@ EXTRACTION RULES PER FIELD
 - Neutral statements about challenges or constraints are NOT concerns. ("工作很忙" is not a concern. "工作很忙我担心这样下去会垮" IS a concern.)
 - Emotional venting without explicit worry → concern = null.
 
+ADDITIONAL RULES (v3):
+- Concern must contain explicit worry/risk language. Mood states alone do NOT qualify.
+  - "burned out" alone → not a concern
+  - "burned out and worried I won't recover" → concern: "won't recover from burnout"
+- Extract using user's own wording, 4-8 words preferred, do NOT paraphrase.
+  - User said: "afraid the gap will hurt my next role"
+  - DO write: "gap hurting next role"
+  - DO NOT write: "career impact concerns" (paraphrased)
+- If you cannot find an explicit worry verb / risk word in the user's text near the candidate concern, return null.
+
 [hope]
 - Extract ONLY if the user names what they want, aim for, dream of, or hope to achieve.
 - Trigger words: 想, 希望, 期望, 想要, 目标, 梦想, 打算, 计划, want, hope, aim, goal, plan
@@ -109,6 +119,28 @@ Output:
   "question": null
 }
 Rationale: Pure greeting. Nothing to extract. (This case is normally pre-filtered by intent classifier, but the prompt should handle it gracefully.)
+
+Example 7 (concern reject — mood-only state):
+Input: "I've been so burned out lately."
+Output:
+{
+  "topic": "burnout",
+  "concern": null,
+  "hope": null,
+  "question": null
+}
+Rationale: "burned out" is a state/mood, not a worry. No explicit worry verb in the text. concern = null.
+
+Example 8 (concern accept — explicit worry verb):
+Input: "I'm worried this burnout is going to cost me the promotion."
+Output:
+{
+  "topic": "burnout impact on promotion",
+  "concern": "burnout costing me the promotion",
+  "hope": null,
+  "question": null
+}
+Rationale: "I'm worried" is the explicit worry signal. Concern extracts user's own wording closely.
 
 OUTPUT FORMAT
 

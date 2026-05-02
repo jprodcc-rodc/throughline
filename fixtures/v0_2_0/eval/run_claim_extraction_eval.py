@@ -326,15 +326,94 @@ def normalize_for_compare(s: str | None) -> str:
     return s
 
 
-def field_match(expected: str | None, actual: str | None) -> tuple[bool, str]:
+# ── LLM-judge fallback for paraphrase tolerance ───────────────────
+# Per External Opus directive 2026-05-02 evening: the heuristic
+# (substring + bigram/word Jaccard) is too strict on short paraphrases
+# that humans would accept (e.g. "losing income" ≈ "family financial
+# stability if I quit" given context). When the heuristic fails on a
+# short field, call Haiku 4.5 to judge semantic equivalence.
+
+# Module-level config; set by main() if --llm-judge is enabled (default).
+_JUDGE_CFG: dict | None = None
+_JUDGE_STATS = {
+    "calls": 0,
+    "flips_to_match": 0,
+    "errors": 0,
+}
+# Combined-length cap: paraphrase tolerance only makes sense for short
+# fields. Long phrases tend to be either copy-paste from user or wrong
+# in a structural way the heuristic catches.
+_JUDGE_LEN_CAP = 60
+
+
+def _llm_judge_match(
+    expected: str,
+    actual: str,
+    user_text: str,
+) -> bool | None:
+    """Ask the configured judge model whether two phrases are
+    semantically equivalent given the user message. Returns True/False/
+    None (None = judge errored — caller should fall back to heuristic
+    verdict)."""
+    if _JUDGE_CFG is None:
+        return None
+    _JUDGE_STATS["calls"] += 1
+    prompt = (
+        f"Given this user message: {user_text}\n"
+        f"Are these two phrases semantically equivalent?\n"
+        f"Phrase A: {expected}\n"
+        f"Phrase B: {actual}\n"
+        f"Reply YES or NO only."
+    )
+    payload = {
+        "model": _JUDGE_CFG["model"],
+        "temperature": 0.0,
+        "max_tokens": 16,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    headers = {
+        "Authorization": f"Bearer {_JUDGE_CFG['api_key']}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/jprodcc-rodc/throughline",
+        "X-Title": "throughline-claim-extraction-eval-judge",
+    }
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        _JUDGE_CFG["url"], data=body, headers=headers, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15.0) as resp:
+            data = resp.read()
+        envelope = json.loads(data.decode("utf-8", errors="replace"))
+        content = envelope["choices"][0]["message"]["content"] or ""
+    except Exception:
+        _JUDGE_STATS["errors"] += 1
+        return None
+    verdict = content.strip().upper()
+    if verdict.startswith("YES"):
+        _JUDGE_STATS["flips_to_match"] += 1
+        return True
+    if verdict.startswith("NO"):
+        return False
+    # Unparseable verdict → treat as False but don't count as flip.
+    return False
+
+
+def field_match(
+    expected: str | None,
+    actual: str | None,
+    *,
+    user_text: str | None = None,
+) -> tuple[bool, str]:
     """Score one field. Returns (correct, reason).
 
     Rules:
     - Both null  -> correct
     - One null other not -> wrong
-    - Both non-null -> correct if substring overlap or significant
-      n-gram overlap. We're generous on phrasing diff but strict on
-      missing entities.
+    - Both non-null -> correct if substring overlap, n-gram overlap,
+      OR LLM-judge says semantically equivalent (only triggered when
+      the heuristic would otherwise return False on a short field
+      with combined length ≤ 60 and user_text + judge config available).
     """
     if expected is None and actual is None:
         return True, "both_null"
@@ -358,6 +437,7 @@ def field_match(expected: str | None, actual: str | None) -> tuple[bool, str]:
         return True, "substring_match"
     # Character-bigram Jaccard for Chinese (no whitespace tokens),
     # word-overlap for English.
+    heuristic_reason: str
     if any("一" <= ch <= "鿿" for ch in e + a):
         # Chinese: char-bigram Jaccard
         def bigrams(s):
@@ -365,24 +445,47 @@ def field_match(expected: str | None, actual: str | None) -> tuple[bool, str]:
         eb = bigrams(e)
         ab = bigrams(a)
         if not eb or not ab:
-            return False, "empty_bigrams"
-        jac = len(eb & ab) / len(eb | ab)
-        if jac >= 0.4:
-            return True, f"bigram_jaccard={jac:.2f}"
-        return False, f"bigram_jaccard_low={jac:.2f}"
+            heuristic_reason = "empty_bigrams"
+        else:
+            jac = len(eb & ab) / len(eb | ab)
+            if jac >= 0.4:
+                return True, f"bigram_jaccard={jac:.2f}"
+            heuristic_reason = f"bigram_jaccard_low={jac:.2f}"
     else:
         # English: word-set Jaccard
         ew = set(re.findall(r"\w+", e))
         aw = set(re.findall(r"\w+", a))
         if not ew or not aw:
-            return False, "empty_word_sets"
-        jac = len(ew & aw) / len(ew | aw)
-        if jac >= 0.4:
-            return True, f"word_jaccard={jac:.2f}"
-        return False, f"word_jaccard_low={jac:.2f}"
+            heuristic_reason = "empty_word_sets"
+        else:
+            jac = len(ew & aw) / len(ew | aw)
+            if jac >= 0.4:
+                return True, f"word_jaccard={jac:.2f}"
+            heuristic_reason = f"word_jaccard_low={jac:.2f}"
+    # Heuristic says no. Try LLM-judge fallback for short paraphrases.
+    can_judge = (
+        _JUDGE_CFG is not None
+        and user_text
+        and len(str(expected)) + len(str(actual)) <= _JUDGE_LEN_CAP
+    )
+    if can_judge:
+        verdict = _llm_judge_match(
+            str(expected), str(actual), user_text,
+        )
+        if verdict is True:
+            return True, f"llm_judge_yes ({heuristic_reason})"
+        if verdict is False:
+            return False, f"llm_judge_no ({heuristic_reason})"
+        # judge errored → fall through to heuristic verdict
+    return False, heuristic_reason
 
 
-def score_case(expected: dict, actual: dict | None) -> dict:
+def score_case(
+    expected: dict,
+    actual: dict | None,
+    *,
+    user_text: str | None = None,
+) -> dict:
     """Score one case. Returns per-field correct/reason + case_accuracy."""
     if actual is None:
         return {
@@ -401,7 +504,7 @@ def score_case(expected: dict, actual: dict | None) -> dict:
         a = actual.get(k)
         if a is not None:
             any_nonnull = True
-        ok, reason = field_match(e, a)
+        ok, reason = field_match(e, a, user_text=user_text)
         by_field[k] = {"correct": ok, "reason": reason, "expected": e, "actual": a}
         if ok:
             correct_count += 1
@@ -584,6 +687,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-cases", type=int, default=None)
     parser.add_argument("--sleep", type=float, default=SLEEP_BETWEEN_CALLS_S)
     parser.add_argument("--output-dir", type=Path, default=HERE)
+    parser.add_argument(
+        "--llm-judge", action=argparse.BooleanOptionalAction, default=True,
+        help="Use LLM judge as fallback for short-field paraphrase "
+             "tolerance (default: on; ~30 calls / ~$0.05 per 80-case run).",
+    )
+    parser.add_argument(
+        "--judge-model", default="anthropic/claude-haiku-4.5",
+        help="Model for LLM-judge calls when --llm-judge is enabled.",
+    )
     args = parser.parse_args(argv)
 
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip() or os.environ.get("OPENAI_API_KEY", "").strip()
@@ -605,6 +717,21 @@ def main(argv: list[str] | None = None) -> int:
     if args.max_cases is not None:
         cases = cases[: args.max_cases]
     system_prompt = load_system_prompt(args.prompt)
+
+    # Wire LLM-judge fallback (per External Opus directive 2026-05-02 evening).
+    # Sets the module-level _JUDGE_CFG that field_match consults when its
+    # heuristic fails on short fields. Same provider/key as extraction.
+    global _JUDGE_CFG
+    if args.llm_judge:
+        _JUDGE_CFG = {
+            "model": args.judge_model,
+            "api_key": api_key,
+            "url": url,
+        }
+        print(f"LLM-judge fallback: ENABLED (model={args.judge_model})")
+    else:
+        _JUDGE_CFG = None
+        print("LLM-judge fallback: disabled (--no-llm-judge)")
 
     started_at = datetime.now(timezone.utc)
     print(f"Model: {args.model}")
@@ -629,7 +756,9 @@ def main(argv: list[str] | None = None) -> int:
             user_msg=user,
             ai_reply=ai,
         )
-        score = score_case(expected, api_result["parsed_output"])
+        score = score_case(
+            expected, api_result["parsed_output"], user_text=user,
+        )
         case_acc = score["case_accuracy"]
         err = api_result.get("error")
         print(f"acc={case_acc:.2f}  latency={api_result['latency_s']}s  err={err!r}")
@@ -699,6 +828,23 @@ def main(argv: list[str] | None = None) -> int:
         summary_en and summary_en["all_10_conditions_pass"]
     )
 
+    # ---------- LLM-judge stats ----------
+    if _JUDGE_CFG is not None and _JUDGE_STATS["calls"] > 0:
+        print()
+        print("=" * 60)
+        print("LLM-judge fallback stats")
+        print("=" * 60)
+        flip_pct = (
+            _JUDGE_STATS["flips_to_match"] / _JUDGE_STATS["calls"] * 100
+            if _JUDGE_STATS["calls"] else 0.0
+        )
+        print(f"  Total judge calls : {_JUDGE_STATS['calls']}")
+        print(f"  Flipped to match  : {_JUDGE_STATS['flips_to_match']} "
+              f"({flip_pct:.1f}% of calls)")
+        print(f"  Judge errors      : {_JUDGE_STATS['errors']}")
+        print(f"  Cost estimate     : ~${_JUDGE_STATS['calls'] * 0.0017:.3f}"
+              f" (Haiku 4.5 ~$0.0017/call rough)")
+
     # ---------- write outputs ----------
     args.output_dir.mkdir(parents=True, exist_ok=True)
     slug = re.sub(r"[^a-z0-9]+", "-", args.model.lower()).strip("-")[:60]
@@ -722,6 +868,7 @@ def main(argv: list[str] | None = None) -> int:
                 },
                 "ship_gate_passes": ship_gate_passes,
                 "ship_gate_basis": "metrics_by_language.en (Phase 1)",
+                "llm_judge_stats": dict(_JUDGE_STATS) if _JUDGE_CFG else None,
                 "cases": results,
             },
             ensure_ascii=False,
