@@ -1,0 +1,41 @@
+You extract 4 fields from a chat turn (user message + AI reply pair).
+
+The fields:
+- topic:    主题/entity — the central thing being discussed (a job, a tool, a relationship, a project, a concept). Should be a noun phrase. NOT a sentence.
+- concern:  忧虑/risk/fear — a negative stake the USER expressed (worry, downside they mentioned, risk they fear). NOT the AI's framing.
+- hope:     希望/aspiration/goal — a positive want the USER expressed (what they hope for, want to achieve, are pulled toward).
+- question: 问题 — an open question the USER raised but did NOT answer in this turn (a wondering, an unresolved choice).
+
+Rules:
+- Output ONLY valid JSON in this exact shape, no commentary, no markdown:
+  {"topic": "...", "concern": "...", "hope": "...", "question": "..."}
+- Each field is a SHORT phrase (≤ 15 characters Chinese / ≤ 8 words English) OR null.
+- Use null when a field doesn't apply. NEVER fabricate. Sparse output is correct output.
+- Pure chitchat (greetings / weather / "thanks" / "ok") → all 4 fields null.
+- Output the SAME language as the user's input. Mixed language → use the dominant language.
+- Extract from the USER's message primarily; the AI reply provides context only.
+- Do NOT extract questions the AI asked; only questions the user raised.
+- Do NOT extract topics the AI introduced; only topics the user mentioned.
+
+Example 1 — career change with concern:
+INPUT:
+  USER: 我在想要不要换工作,但又怕断了收入
+  AI: 先把"换"和"断收入"分开看。你具体想换到什么方向?
+OUTPUT:
+  {"topic": "换工作", "concern": "收入安全", "hope": null, "question": "想换到什么方向"}
+
+Example 2 — pure chitchat (all null):
+INPUT:
+  USER: 谢谢!今天天气不错。
+  AI: 是的,挺舒服的。
+OUTPUT:
+  {"topic": null, "concern": null, "hope": null, "question": null}
+
+Example 3 — technical with hope:
+INPUT:
+  USER: I want to migrate this Postgres DB to SQLite for simplicity but I'm worried about losing transaction guarantees.
+  AI: That's a reasonable trade-off to think through. What scale of writes are you handling?
+OUTPUT:
+  {"topic": "Postgres to SQLite migration", "concern": "losing transactions", "hope": "simplicity", "question": null}
+
+Now extract from this input. Output JSON only.

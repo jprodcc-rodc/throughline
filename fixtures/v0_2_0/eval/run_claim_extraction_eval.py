@@ -487,15 +487,136 @@ def main(argv: list[str] | None = None) -> int:
     fp_rate = chitchat_fp / chitchat_n if chitchat_n else 0.0
     api_failures = sum(1 for r in results if r["api_error"])
 
+    # ---------- per-field precision / recall (v1.3 asymmetric gate) ----------
+    # Definitions per plan §"Asymmetric accuracy gate":
+    # - For each field F (topic / concern / hope / question):
+    #   - Recall = TP / (TP + FN) where the population is cases with
+    #     `expected[F] != null`. TP = field-match correct (per
+    #     field_match() heuristic). FN = expected non-null, actual
+    #     null OR mismatch.
+    #   - Precision = TP / (TP + FP) where the population is cases
+    #     where `actual[F] != null`. FP = "actual non-null but
+    #     expected was null" (the anti-hallucination check) OR
+    #     "actual non-null AND expected non-null but mismatch".
+    # - Substring-vs-exact heuristic in field_match() is documented
+    #   for reproducibility.
+    field_metrics: dict[str, dict] = {}
+    for field in ("topic", "concern", "hope", "question"):
+        # Counts:
+        # tp_total: extracted-and-matched
+        # fn_total: expected non-null, missed (null actual or mismatch)
+        # fp_total: actual non-null but expected null (hallucination)
+        #          OR actual non-null + expected non-null + mismatch
+        # tn_total: both null
+        tp_total = 0
+        fn_total = 0
+        fp_total = 0
+        tn_total = 0
+        # FP breakdown: hallucination (actual non-null, expected null)
+        # vs mismatch (actual non-null, expected non-null, no match)
+        fp_hallucinations = 0
+        fp_mismatches = 0
+        for r in results:
+            bf = r["score"]["by_field"][field]
+            expected = bf["expected"]
+            actual = bf["actual"]
+            correct = bf["correct"]
+            if expected is None and actual is None:
+                tn_total += 1
+            elif expected is None and actual is not None:
+                # Hallucination — gate's primary precision concern.
+                fp_total += 1
+                fp_hallucinations += 1
+            elif expected is not None and actual is None:
+                fn_total += 1
+            else:
+                # Both non-null
+                if correct:
+                    tp_total += 1
+                else:
+                    # Both non-null, no match → FP for precision
+                    # (extracted something, but wrong) AND FN for
+                    # recall (didn't capture the expected).
+                    fp_total += 1
+                    fp_mismatches += 1
+                    fn_total += 1
+        # Recall denom = number of cases with expected non-null
+        recall_denom = tp_total + fn_total
+        precision_denom = tp_total + fp_total
+        recall = (tp_total / recall_denom) if recall_denom > 0 else 1.0
+        precision = (tp_total / precision_denom) if precision_denom > 0 else 1.0
+        field_metrics[field] = {
+            "tp": tp_total,
+            "fn": fn_total,
+            "fp": fp_total,
+            "tn": tn_total,
+            "fp_hallucinations": fp_hallucinations,
+            "fp_mismatches": fp_mismatches,
+            "recall": round(recall, 4),
+            "precision": round(precision, 4),
+            "recall_denom": recall_denom,
+            "precision_denom": precision_denom,
+        }
+
+    # Asymmetric gate per plan §"Asymmetric accuracy gate" v1.3:
+    GATES = {
+        "topic":    {"recall": 0.90, "precision": 0.80},
+        "concern":  {"recall": 0.80, "precision": 0.85},
+        "hope":     {"recall": 0.80, "precision": 0.85},
+        "question": {"recall": 0.75, "precision": 0.80},
+    }
+    gate_results: list[dict] = []
+    for field, gate in GATES.items():
+        m = field_metrics[field]
+        gate_results.append({
+            "field": field,
+            "recall": m["recall"],
+            "recall_gate": gate["recall"],
+            "recall_pass": m["recall"] >= gate["recall"],
+            "precision": m["precision"],
+            "precision_gate": gate["precision"],
+            "precision_pass": m["precision"] >= gate["precision"],
+        })
+    chitchat_fp_pass = fp_rate <= 0.05
+    overall_acc_pass = avg_acc >= 0.75
+
     print("\n" + "=" * 60)
     print(f"Average accuracy: {avg_acc * 100:.1f}%")
     print("Per-category:")
     for cat, v in cat_avg.items():
         print(f"  {cat}: {v * 100:.1f}% (n={len(by_category[cat])})")
-    print(f"Chitchat FP rate: {fp_rate * 100:.1f}% ({chitchat_fp}/{chitchat_n})")
+    print()
+    print("Per-field precision/recall (asymmetric gate v1.3):")
+    for gr in gate_results:
+        rec_mark = "PASS" if gr["recall_pass"] else "FAIL"
+        prec_mark = "PASS" if gr["precision_pass"] else "FAIL"
+        print(
+            f"  {gr['field']:8s} "
+            f"recall={gr['recall'] * 100:5.1f}% (gate ≥{gr['recall_gate'] * 100:.0f}% [{rec_mark}])  "
+            f"precision={gr['precision'] * 100:5.1f}% (gate ≥{gr['precision_gate'] * 100:.0f}% [{prec_mark}])"
+        )
+    fp_mark = "PASS" if chitchat_fp_pass else "FAIL"
+    print(f"  chitchat FP rate: {fp_rate * 100:.1f}% (gate ≤5% [{fp_mark}])")
+    overall_mark = "PASS" if overall_acc_pass else "FAIL"
+    print(f"  overall accuracy: {avg_acc * 100:.1f}% (gate ≥75% [{overall_mark}])")
+    print()
+    print("Per-field hallucination breakdown (FP type):")
+    for field in ("topic", "concern", "hope", "question"):
+        m = field_metrics[field]
+        print(
+            f"  {field:8s} "
+            f"hallucinations={m['fp_hallucinations']} (expected null, got value)  "
+            f"mismatches={m['fp_mismatches']} (both non-null but wrong)"
+        )
+    print()
     print(f"API failures: {api_failures}/{total}")
-    threshold_60 = "PASS" if avg_acc >= 0.60 else "FAIL"
-    print(f"60% threshold: {threshold_60}")
+    # Summary verdict: all 10 conditions
+    all_gates = (
+        all(gr["recall_pass"] and gr["precision_pass"] for gr in gate_results)
+        and chitchat_fp_pass
+        and overall_acc_pass
+    )
+    print("\nALL 10 CONDITIONS:", "PASS" if all_gates else "FAIL")
 
     # ---------- write outputs ----------
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -519,6 +640,12 @@ def main(argv: list[str] | None = None) -> int:
                     "chitchat_fp_count": chitchat_fp,
                     "api_failures": api_failures,
                     "passes_60_threshold": avg_acc >= 0.60,
+                    # v1.3 asymmetric gate:
+                    "field_metrics": field_metrics,
+                    "gate_results": gate_results,
+                    "chitchat_fp_pass": chitchat_fp_pass,
+                    "overall_accuracy_pass": overall_acc_pass,
+                    "all_10_conditions_pass": all_gates,
                 },
                 "cases": results,
             },

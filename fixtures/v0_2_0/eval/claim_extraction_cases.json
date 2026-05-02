@@ -2,9 +2,14 @@
   "_meta": {
     "schema": "4-field claim extraction (topic / concern / hope / question)",
     "spec": "docs/superpowers/specs/web-product-design.md §5.5 + docs/superpowers/plans/2026-05-01-claim-extraction.md",
-    "categories": ["career", "relationships", "technical", "abstract", "chitchat"],
-    "n_cases": 14,
-    "language_mix": "Chinese-primary (matching maintainer's vault) with 4 English cases for diversity"
+    "categories": ["career", "relationships", "technical", "abstract", "chitchat", "mixed", "sparse", "emotional_rambling"],
+    "n_cases": 80,
+    "language_mix": "Chinese-primary (matching maintainer's vault) with English cases for diversity",
+    "distribution": {
+      "core_60": {"career": 16, "relationships": 13, "technical": 11, "abstract": 10, "chitchat": 10},
+      "boundary_20": {"mixed": 7, "sparse": 7, "emotional_rambling": 6}
+    },
+    "version": "v1.3 — bumped 14 → 80 per plan §Task 11 push back 2"
   },
   "cases": [
     {
@@ -46,6 +51,188 @@
         "topic": "leaving senior eng role / starting own thing",
         "concern": "salary cut",
         "hope": "build something I own",
+        "question": null
+      }
+    },
+    {
+      "id": "career-4",
+      "category": "career",
+      "input": {
+        "user": "我手上有两个 offer,一个稳定大厂一个小创业公司,纠结要不要去创业公司。",
+        "ai": "稳定 vs 学习曲线之争。这两个 offer 你实际看重的是不同的东西吗?"
+      },
+      "expected": {
+        "topic": "两个 offer 选择",
+        "concern": null,
+        "hope": null,
+        "question": "要不要去创业公司"
+      }
+    },
+    {
+      "id": "career-5",
+      "category": "career",
+      "input": {
+        "user": "我在做销售但我其实更喜欢写代码,可惜没有计算机背景,要不要转行做开发?",
+        "ai": "学习路径不是问题,出路是看作品+经验积累。你写过什么代码项目吗?"
+      },
+      "expected": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "做喜欢的事情",
+        "question": "要不要转行"
+      }
+    },
+    {
+      "id": "career-6",
+      "category": "career",
+      "input": {
+        "user": "我做这行已经十五年了,但现在四十岁觉得已经看到天花板,想做些不一样的事。",
+        "ai": "天花板感是个清晰信号。你想到哪种'不一样的事'是你最近反复在想的?"
+      },
+      "expected": {
+        "topic": "中年职业转换",
+        "concern": "看到天花板",
+        "hope": "做不一样的事",
+        "question": null
+      }
+    },
+    {
+      "id": "career-7",
+      "category": "career",
+      "input": {
+        "user": "公司要我搬去新城市,搬还是不搬?家里反对。",
+        "ai": "家里的反对是什么具体的担心?这往往是关键。"
+      },
+      "expected": {
+        "topic": "搬城市",
+        "concern": "家里反对",
+        "hope": null,
+        "question": "搬还是不搬"
+      }
+    },
+    {
+      "id": "career-8",
+      "category": "career",
+      "input": {
+        "user": "感觉这份工作每天都在重复,没什么成就感,但工资还行。",
+        "ai": "重复感和工资稳定是常见的取舍。你想要的成就感是来自哪种类型的工作?"
+      },
+      "expected": {
+        "topic": "工作满意度",
+        "concern": "缺乏成就感",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "career-9",
+      "category": "career",
+      "input": {
+        "user": "我升任经理半年了,完全不会管人,觉得我可能不适合做管理。",
+        "ai": "管理是一种技能,不是天赋。具体哪一面让你觉得不适合?"
+      },
+      "expected": {
+        "topic": "做管理",
+        "concern": "不适合做管理",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "career-10",
+      "category": "career",
+      "input": {
+        "user": "I want to take a sabbatical for six months to travel and reset, but I'm afraid I won't be employable when I come back.",
+        "ai": "Sabbatical anxiety is real but usually overblown. What kind of role would you target on return?"
+      },
+      "expected": {
+        "topic": "sabbatical",
+        "concern": "won't be employable",
+        "hope": "travel and reset",
+        "question": null
+      }
+    },
+    {
+      "id": "career-11",
+      "category": "career",
+      "input": {
+        "user": "我刚毕业不知道该选大公司还是创业公司起步,大公司锻炼少但稳定。",
+        "ai": "起点选择没有绝对答案。你毕业后的目标是积累什么?"
+      },
+      "expected": {
+        "topic": "毕业选择第一份工作",
+        "concern": "大公司锻炼少",
+        "hope": "稳定",
+        "question": null
+      }
+    },
+    {
+      "id": "career-12",
+      "category": "career",
+      "input": {
+        "user": "I keep getting passed over for promotions even though my reviews are strong. I don't know what I'm missing.",
+        "ai": "Strong reviews + no promotion is often about visibility, not performance. Who's advocating for you?"
+      },
+      "expected": {
+        "topic": "未获晋升",
+        "concern": null,
+        "hope": null,
+        "question": "what I'm missing"
+      }
+    },
+    {
+      "id": "career-13",
+      "category": "career",
+      "input": {
+        "user": "我的行业最近裁员潮,我现在还在,但下一波可能轮到我,要不要主动找工作?",
+        "ai": "主动找比被动等更有筹码。你现在的市场价大概什么水平?"
+      },
+      "expected": {
+        "topic": "裁员风险下找工作",
+        "concern": "下一波可能轮到我",
+        "hope": null,
+        "question": "要不要主动找工作"
+      }
+    },
+    {
+      "id": "career-14",
+      "category": "career",
+      "input": {
+        "user": "我是一个相对小众的领域(医疗器械软件),想换行但不确定我的经验能转到哪。",
+        "ai": "小众但深入的经验可以撬动相邻领域。你最熟悉的具体能力是什么?"
+      },
+      "expected": {
+        "topic": "小众行业转行",
+        "concern": "经验难迁移",
+        "hope": null,
+        "question": "经验能转到哪"
+      }
+    },
+    {
+      "id": "career-15",
+      "category": "career",
+      "input": {
+        "user": "我做副业写作两年了,有点收入但不够稳定,要不要全职做这个?",
+        "ai": "副业过渡到全职最关键的是收入下限。你目前最低保证收入是多少?"
+      },
+      "expected": {
+        "topic": "副业转全职",
+        "concern": "收入不稳定",
+        "hope": null,
+        "question": "要不要全职做"
+      }
+    },
+    {
+      "id": "career-16",
+      "category": "career",
+      "input": {
+        "user": "我最近做事完全没有动力,这份工作以前我喜欢的,现在每天都很累。",
+        "ai": "突然失去动力通常是某个变化触发的。最近三个月有什么变化吗?"
+      },
+      "expected": {
+        "topic": "工作动力丧失",
+        "concern": "每天都很累",
+        "hope": null,
         "question": null
       }
     },
@@ -92,6 +279,146 @@
       }
     },
     {
+      "id": "relationships-4",
+      "category": "relationships",
+      "input": {
+        "user": "我和女朋友异地一年了,最近她说想分手,我不想分。",
+        "ai": "异地一年的张力是真实的。她说的'想分手'背后想要什么?"
+      },
+      "expected": {
+        "topic": "异地恋",
+        "concern": "女朋友想分手",
+        "hope": "不想分",
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-5",
+      "category": "relationships",
+      "input": {
+        "user": "我和闺蜜十年了,最近她结婚后就疏远了,我说什么她都不太回。",
+        "ai": "婚后转向是友情转折点的常见现象。你们之前最自然在一起的事情是什么?"
+      },
+      "expected": {
+        "topic": "和闺蜜疏远",
+        "concern": "她不太回",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-6",
+      "category": "relationships",
+      "input": {
+        "user": "我女儿上高中了,什么都不和我说,我担心是不是我哪里做错了。",
+        "ai": "高中独立期的疏离常被误读为关系破裂。她和别人比如同学、爸爸有共享日常吗?"
+      },
+      "expected": {
+        "topic": "和高中女儿疏远",
+        "concern": "我哪里做错了",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-7",
+      "category": "relationships",
+      "input": {
+        "user": "我老公总是把工作放在家庭前面,这样下去不行,我想和他谈一次但又怕吵起来。",
+        "ai": "怕吵但必须谈是个常见困境。你最理想的对话是怎样的?"
+      },
+      "expected": {
+        "topic": "和老公的冲突",
+        "concern": "怕吵起来",
+        "hope": "谈一次",
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-8",
+      "category": "relationships",
+      "input": {
+        "user": "我搬到新城市半年了,还是没什么朋友,周末特别孤独。",
+        "ai": "新城市六个月孤独感是常见的曲线低点。你尝试过哪种社交方式?"
+      },
+      "expected": {
+        "topic": "新城市社交困难",
+        "concern": "孤独",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-9",
+      "category": "relationships",
+      "input": {
+        "user": "I'm considering ending my relationship of 5 years. We're stable but I don't feel any spark anymore.",
+        "ai": "Stable + no spark is one of the hardest patterns to read. What's the version of the relationship you'd want?"
+      },
+      "expected": {
+        "topic": "ending 5-year relationship",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-10",
+      "category": "relationships",
+      "input": {
+        "user": "我妈妈一直催我结婚,我才28岁,但她说她那时候已经有孩子了。",
+        "ai": "代际期望差异是个长跑议题。你目前对结婚这件事自己想得清楚吗?"
+      },
+      "expected": {
+        "topic": "妈妈催婚",
+        "concern": "代际期望压力",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-11",
+      "category": "relationships",
+      "input": {
+        "user": "我交往了三个月的对象昨天突然说想要更多空间,我不知道这是不是分手前兆。",
+        "ai": "'更多空间'有时是真信号有时是缓冲带。她最近有什么具体的变化吗?"
+      },
+      "expected": {
+        "topic": "对象想要更多空间",
+        "concern": "可能是分手前兆",
+        "hope": null,
+        "question": "是不是分手前兆"
+      }
+    },
+    {
+      "id": "relationships-12",
+      "category": "relationships",
+      "input": {
+        "user": "我哥哥借了我十万,半年了一直没还,问他他就说快了快了,我又不想撕破脸。",
+        "ai": "家人借钱+不还是经典两难。十万对你目前的现金流是必须收回吗?"
+      },
+      "expected": {
+        "topic": "哥哥借钱不还",
+        "concern": "不想撕破脸",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "relationships-13",
+      "category": "relationships",
+      "input": {
+        "user": "我和老婆一年没有亲密了,我们还是好朋友,但我不知道这样下去对不对。",
+        "ai": "好朋友模式可以稳定但不一定是双方都想要的。你们谈过这个吗?"
+      },
+      "expected": {
+        "topic": "夫妻亲密关系",
+        "concern": "一年没有亲密",
+        "hope": null,
+        "question": "这样下去对不对"
+      }
+    },
+    {
       "id": "technical-1",
       "category": "technical",
       "input": {
@@ -134,6 +461,118 @@
       }
     },
     {
+      "id": "technical-4",
+      "category": "technical",
+      "input": {
+        "user": "我想用 Kubernetes 做部署但是 cluster 维护成本是不是太高了?",
+        "ai": "K8s 学习曲线和维护负担是真的。你的服务规模目前怎样?"
+      },
+      "expected": {
+        "topic": "Kubernetes 部署",
+        "concern": "维护成本高",
+        "hope": null,
+        "question": "维护成本是不是太高"
+      }
+    },
+    {
+      "id": "technical-5",
+      "category": "technical",
+      "input": {
+        "user": "我们的 API 在高并发的时候会卡死,我怀疑是 N+1 查询,但 profile 看不出来。",
+        "ai": "卡死且 profile 看不出来,通常是连接池或者锁等待。生产的连接池配置是多少?"
+      },
+      "expected": {
+        "topic": "API 高并发卡死",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "technical-6",
+      "category": "technical",
+      "input": {
+        "user": "I'm considering migrating from React to Solid for performance. Any reason this is a bad idea for a 50k LOC codebase?",
+        "ai": "Solid is fast but the ecosystem is smaller. What's the perf bottleneck you're trying to fix?"
+      },
+      "expected": {
+        "topic": "React to Solid migration",
+        "concern": null,
+        "hope": "performance",
+        "question": "any reason this is a bad idea"
+      }
+    },
+    {
+      "id": "technical-7",
+      "category": "technical",
+      "input": {
+        "user": "我在选择给前端做框架,React vs Vue vs Solid,主要是想要小项目快迭代。",
+        "ai": "小项目+快迭代场景, ecosystem 重要性大于性能。你团队现在熟悉哪个?"
+      },
+      "expected": {
+        "topic": "前端框架选择",
+        "concern": null,
+        "hope": "快迭代",
+        "question": null
+      }
+    },
+    {
+      "id": "technical-8",
+      "category": "technical",
+      "input": {
+        "user": "我想从单体迁到微服务,但我们团队只有四个人,会不会反而拖慢开发速度?",
+        "ai": "微服务的运营负担需要团队规模摊销。四人团队可能要考虑模块化单体先。"
+      },
+      "expected": {
+        "topic": "单体到微服务",
+        "concern": "拖慢开发速度",
+        "hope": null,
+        "question": "会不会反而拖慢"
+      }
+    },
+    {
+      "id": "technical-9",
+      "category": "technical",
+      "input": {
+        "user": "I keep hearing about LLM-driven dev tools but I'm not sure if they actually save time or just shift it.",
+        "ai": "Empirically the answer is workflow-dependent. What's your typical task type?"
+      },
+      "expected": {
+        "topic": "LLM dev tools",
+        "concern": null,
+        "hope": "save time",
+        "question": "save time or just shift it"
+      }
+    },
+    {
+      "id": "technical-10",
+      "category": "technical",
+      "input": {
+        "user": "我想从 OpenAI API 切到本地 Ollama,主要是隐私考虑,但本地模型质量真的够吗?",
+        "ai": "Ollama 上的中等模型对一般任务足够,边缘任务还是有差距。你具体跑什么任务?"
+      },
+      "expected": {
+        "topic": "OpenAI 切到 Ollama",
+        "concern": "本地模型质量",
+        "hope": "隐私",
+        "question": "本地模型质量够吗"
+      }
+    },
+    {
+      "id": "technical-11",
+      "category": "technical",
+      "input": {
+        "user": "我想给 SaaS 引入计费,选 Stripe 还是 Lemon Squeezy?后者好像处理税务更简单。",
+        "ai": "税务确实是 LS 的卖点。你的目标市场国家是哪些?"
+      },
+      "expected": {
+        "topic": "Stripe vs Lemon Squeezy",
+        "concern": null,
+        "hope": "简化税务",
+        "question": "选哪个"
+      }
+    },
+    {
       "id": "abstract-1",
       "category": "abstract",
       "input": {
@@ -159,6 +598,118 @@
         "concern": "reactive / scrolling",
         "hope": "aimed at things that matter",
         "question": "what matters to me"
+      }
+    },
+    {
+      "id": "abstract-3",
+      "category": "abstract",
+      "input": {
+        "user": "我有时候会怀疑我现在的所有选择,是不是只是因为习惯了,而不是真的想要。",
+        "ai": "习惯和欲望的区分需要安静的回望。你最近有过明确想要的事情吗?"
+      },
+      "expected": {
+        "topic": "怀疑自己的选择",
+        "concern": "只是因为习惯",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "abstract-4",
+      "category": "abstract",
+      "input": {
+        "user": "我想知道我十年后会是什么样,但又怕自己看到的不是我想要的。",
+        "ai": "想象未来的自己是个有用的工具但确实有风险。你目前最不愿意成为的版本是什么?"
+      },
+      "expected": {
+        "topic": "想象未来",
+        "concern": "怕看到的不是想要的",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "abstract-5",
+      "category": "abstract",
+      "input": {
+        "user": "I keep thinking about death lately. Not in a dark way, just realizing I have less time than I thought.",
+        "ai": "Mortality awareness can be productive when it shifts priorities. What's something you've been postponing?"
+      },
+      "expected": {
+        "topic": "thinking about death",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "abstract-6",
+      "category": "abstract",
+      "input": {
+        "user": "我觉得自己一直在表演,在所有人面前都不是真正的我,但'真正的我'到底是什么也不清楚。",
+        "ai": "表演感和未知的真我是同一个状态的两面。你最放松的时候是和谁在一起?"
+      },
+      "expected": {
+        "topic": "真实自我",
+        "concern": "一直在表演",
+        "hope": null,
+        "question": "真正的我是什么"
+      }
+    },
+    {
+      "id": "abstract-7",
+      "category": "abstract",
+      "input": {
+        "user": "成功对我到底意味着什么?有钱?有名?自由?我现在一个都没有,但又不知道应该追哪个。",
+        "ai": "三个目标的优先级会随生命阶段变。你现在最缺哪一个?"
+      },
+      "expected": {
+        "topic": "成功的定义",
+        "concern": null,
+        "hope": null,
+        "question": "成功对我意味着什么"
+      }
+    },
+    {
+      "id": "abstract-8",
+      "category": "abstract",
+      "input": {
+        "user": "我想知道我是不是太执着于结果而忽略了过程,但又觉得没有结果的过程也没什么意义。",
+        "ai": "结果和过程的张力是哲学问题也是实践问题。你做事时哪一刻最享受?"
+      },
+      "expected": {
+        "topic": "过程和结果",
+        "concern": "执着于结果",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "abstract-9",
+      "category": "abstract",
+      "input": {
+        "user": "I want to be remembered for something but I don't know what I want to be remembered for.",
+        "ai": "Want-to-be-remembered without a clear what is a useful starting point. Who do you currently most admire?"
+      },
+      "expected": {
+        "topic": "legacy",
+        "concern": null,
+        "hope": "to be remembered",
+        "question": "what to be remembered for"
+      }
+    },
+    {
+      "id": "abstract-10",
+      "category": "abstract",
+      "input": {
+        "user": "我在思考时间到底是真实的还是错觉,是连续的还是离散的,这种问题让我有时候很迷茫。",
+        "ai": "形而上学问题对日常的影响是有限但持续的。你在哪种时刻特别想这些?"
+      },
+      "expected": {
+        "topic": "时间的本质",
+        "concern": "迷茫",
+        "hope": null,
+        "question": null
       }
     },
     {
@@ -199,6 +750,388 @@
       "expected": {
         "topic": null,
         "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-4",
+      "category": "chitchat",
+      "input": {
+        "user": "嗯嗯",
+        "ai": "好的。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-5",
+      "category": "chitchat",
+      "input": {
+        "user": "好的,知道了",
+        "ai": "好。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-6",
+      "category": "chitchat",
+      "input": {
+        "user": "ok cool",
+        "ai": "Got it."
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-7",
+      "category": "chitchat",
+      "input": {
+        "user": "早上好",
+        "ai": "早。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-8",
+      "category": "chitchat",
+      "input": {
+        "user": "晚安",
+        "ai": "晚安,好梦。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-9",
+      "category": "chitchat",
+      "input": {
+        "user": "今天午饭吃什么好呢哈哈",
+        "ai": "看看冰箱里有什么呢。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "chitchat-10",
+      "category": "chitchat",
+      "input": {
+        "user": "Hey what's up",
+        "ai": "Hi, how can I help?"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "mixed-1",
+      "category": "mixed",
+      "input": {
+        "user": "我在想换工作,而且家里催婚,搞不清哪个先解决。",
+        "ai": "两件事互相关联又各自独立。哪一件更紧迫?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": null,
+        "hope": null,
+        "question": "哪个先解决"
+      },
+      "notes": "Multi-topic: 换工作 + 催婚. Annotator picks dominant; either topic acceptable but hope/concern should reflect the user's expressed framing of each."
+    },
+    {
+      "id": "mixed-2",
+      "category": "mixed",
+      "input": {
+        "user": "我又想搬到新城市,又想攒钱买房,这两个目标好像冲突。",
+        "ai": "搬城市常见的现金压力。你目前一个月能攒多少?"
+      },
+      "expected": {
+        "topic": "搬城市",
+        "concern": "攒钱目标冲突",
+        "hope": "搬到新城市",
+        "question": null
+      }
+    },
+    {
+      "id": "mixed-3",
+      "category": "mixed",
+      "input": {
+        "user": "I want to start a family but also feel like my career is just hitting its stride. I keep flip-flopping.",
+        "ai": "Career and family timing is one of life's hardest puzzles. What's your partner's view?"
+      },
+      "expected": {
+        "topic": "family vs career",
+        "concern": null,
+        "hope": "start a family",
+        "question": null
+      }
+    },
+    {
+      "id": "mixed-4",
+      "category": "mixed",
+      "input": {
+        "user": "我老婆希望我多陪孩子,我老板希望我多加班,我希望能够安静地写写自己想写的东西。",
+        "ai": "三方拉扯的情况下,哪个是你最不能妥协的?"
+      },
+      "expected": {
+        "topic": "三方时间冲突",
+        "concern": null,
+        "hope": "安静地写自己想写的东西",
+        "question": null
+      }
+    },
+    {
+      "id": "mixed-5",
+      "category": "mixed",
+      "input": {
+        "user": "我想搞副业,但又怕被公司发现,还想休息一下,这些都搅在一起。",
+        "ai": "三层目标的冲突。你哪个最近最影响你睡眠?"
+      },
+      "expected": {
+        "topic": "副业 vs 休息 vs 合规",
+        "concern": "怕被公司发现",
+        "hope": "想搞副业",
+        "question": null
+      }
+    },
+    {
+      "id": "mixed-6",
+      "category": "mixed",
+      "input": {
+        "user": "我有时候想全职做开源,有时候想做创业,有时候又想就老老实实上班,完全不知道哪个是真的我想要的。",
+        "ai": "三个版本都听起来像你的一部分。最近三个月你哪一个做得最多?"
+      },
+      "expected": {
+        "topic": "职业方向选择",
+        "concern": null,
+        "hope": null,
+        "question": "哪个是真的我想要的"
+      }
+    },
+    {
+      "id": "mixed-7",
+      "category": "mixed",
+      "input": {
+        "user": "I want to learn Mandarin AND start a side project AND get back into running. I always start everything at once and finish nothing.",
+        "ai": "Three goals with same start date = high failure pattern. Which one would help you most this quarter?"
+      },
+      "expected": {
+        "topic": "multiple new goals",
+        "concern": "finish nothing",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "sparse-1",
+      "category": "sparse",
+      "input": {
+        "user": "我对哲学有点兴趣。",
+        "ai": "哲学很广阔。你最被哪个分支或者哪本书吸引?"
+      },
+      "expected": {
+        "topic": "对哲学有兴趣",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "sparse-2",
+      "category": "sparse",
+      "input": {
+        "user": "我最近在看心理学的书。",
+        "ai": "哪一类心理学书?"
+      },
+      "expected": {
+        "topic": "心理学",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "sparse-3",
+      "category": "sparse",
+      "input": {
+        "user": "I've been thinking about chess.",
+        "ai": "Playing or watching?"
+      },
+      "expected": {
+        "topic": "chess",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "sparse-4",
+      "category": "sparse",
+      "input": {
+        "user": "我有点想学吉他。",
+        "ai": "为什么是吉他不是其他?"
+      },
+      "expected": {
+        "topic": "学吉他",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "sparse-5",
+      "category": "sparse",
+      "input": {
+        "user": "最近天气变冷了,我开始想跑步的事情。",
+        "ai": "天冷反而是开始跑步的好时机。你之前跑过吗?"
+      },
+      "expected": {
+        "topic": "跑步",
+        "concern": null,
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "sparse-6",
+      "category": "sparse",
+      "input": {
+        "user": "感觉这本书还行。",
+        "ai": "什么书?"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "notes": "Underspecified — 'this book' has no referent the extractor can capture. Annotator: all null is correct (don't make up topic)."
+    },
+    {
+      "id": "sparse-7",
+      "category": "sparse",
+      "input": {
+        "user": "I've been doing some thinking.",
+        "ai": "About what specifically?"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "notes": "Underspecified — 'thinking about something' without an object. All null is correct."
+    },
+    {
+      "id": "emotional_rambling-1",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "今天真的太烦了,什么都不顺,感觉整个世界都在和我作对,早上起来咖啡机坏了,然后地铁又晚点,到公司开会被老板批评,中午吃饭又难吃,我真不知道我哪里招惹了谁。",
+        "ai": "听起来一连串小挫折叠加成大情绪。睡前你最想抓住的是哪一刻?"
+      },
+      "expected": {
+        "topic": "今天很烦",
+        "concern": "什么都不顺",
+        "hope": null,
+        "question": null
+      },
+      "notes": "Emotional rambling: low information density, coarse topic acceptable, must NOT manufacture concrete concern beyond what was said."
+    },
+    {
+      "id": "emotional_rambling-2",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "唉,最近就是觉得很累,什么都不想做,但又不知道为什么,就是一直处在那种灰色的状态里,做什么都没有意思,但好像也没有什么具体的事情让我难过,就是一直这样。",
+        "ai": "灰色无名的疲惫是身体或者心理的低声警报。最后一次你觉得活着有意思是什么时候?"
+      },
+      "expected": {
+        "topic": "持续疲惫",
+        "concern": "什么都没有意思",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "emotional_rambling-3",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "我刚刚在路上看到一个小孩在哭,我突然就想起我小时候我妈妈也是这样不理我,然后想到我现在也是这样对我儿子,我就觉得我这一辈子是不是就是在重复这种模式。",
+        "ai": "代际模式的觉察是改变的起点。你最希望停止重复的具体瞬间是什么?"
+      },
+      "expected": {
+        "topic": "代际重复模式",
+        "concern": "重复同样的模式",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "emotional_rambling-4",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "I just feel kind of lost lately, you know? Like nothing is bad exactly but nothing is great either, I'm doing all the things you're supposed to do but I don't know what I'm doing them for anymore.",
+        "ai": "Functional but unmoored is one of the harder middles. When did you last feel like things had a direction?"
+      },
+      "expected": {
+        "topic": "feeling lost",
+        "concern": "nothing is great",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "emotional_rambling-5",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "今天和老婆吵架了,具体也不是什么大事,就是早上她说了一句什么我没听清楚回错了,然后她就说我不重视她,然后我就说她敏感,然后就吵起来了,现在我也不知道我们俩到底是怎么回事,有时候真的觉得很累。",
+        "ai": "吵架升级常常和真正的议题没什么关系。你和她最近最长的、不吵的对话是关于什么的?"
+      },
+      "expected": {
+        "topic": "和老婆吵架",
+        "concern": "觉得很累",
+        "hope": null,
+        "question": null
+      }
+    },
+    {
+      "id": "emotional_rambling-6",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "我妈昨天打电话说她的腰不舒服,我让她去医院她又说没事,我又不能强迫她,但她要是真出什么事情我又会自责一辈子,这种事情真的让我没办法专心工作。",
+        "ai": "亲人的健康焦虑很消耗专注力。她有没有信任的医生?"
+      },
+      "expected": {
+        "topic": "妈妈健康",
+        "concern": "她要是真出什么事我会自责一辈子",
         "hope": null,
         "question": null
       }
