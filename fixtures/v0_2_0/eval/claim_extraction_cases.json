@@ -32,7 +32,8 @@
         "zh": 16
       }
     },
-    "version": "v1.6 — rebalance English-first per Rodc directive 2026-05-02"
+    "version": "v1.7 — concern field multi-variant per Rodc + External Opus directive 2026-05-02 evening (23 EN cases relabeled)",
+    "concern_field_format": "string | list[string] — first match wins per field_match()"
   },
   "cases": [
     {
@@ -301,7 +302,15 @@
       },
       "expected": {
         "topic": "quitting job",
-        "concern": "family financial stability if I quit",
+        "concern": [
+          "family financial stability if I quit",
+          "losing income",
+          "paycheck stability",
+          "scared to quit",
+          "family stability",
+          "losing the paycheck",
+          "income loss"
+        ],
         "hope": null,
         "question": null
       },
@@ -316,7 +325,13 @@
       },
       "expected": {
         "topic": "transition to product management",
-        "concern": "being too late to transition",
+        "concern": [
+          "being too late to transition",
+          "too late",
+          "being too old",
+          "missed the window",
+          "timing"
+        ],
         "hope": "move into product management",
         "question": "am I too late"
       },
@@ -361,7 +376,13 @@
       },
       "expected": {
         "topic": "career growth blocked at current job",
-        "concern": "stuck without growth",
+        "concern": [
+          "stuck without growth",
+          "no growth",
+          "passed over for promotion",
+          "career stagnation",
+          "stuck in current role"
+        ],
         "hope": "grow my career",
         "question": null
       },
@@ -376,7 +397,13 @@
       },
       "expected": {
         "topic": "starting own business",
-        "concern": "kids' private school expenses",
+        "concern": [
+          "kids' private school expenses",
+          "private school costs",
+          "supporting kids in school",
+          "school tuition",
+          "financial responsibility for kids"
+        ],
         "hope": "start my own thing",
         "question": null
       },
@@ -391,7 +418,13 @@
       },
       "expected": {
         "topic": "manager undermining me",
-        "concern": "manager undermining me publicly",
+        "concern": [
+          "manager undermining me publicly",
+          "manager undermining my work",
+          "being undermined by manager",
+          "manager publicly undermining me",
+          "public undermining"
+        ],
         "hope": null,
         "question": "how much longer can I take this"
       },
@@ -406,7 +439,13 @@
       },
       "expected": {
         "topic": "management vs technical track",
-        "concern": "both tracks feel like dead ends",
+        "concern": [
+          "both tracks feel like dead ends",
+          "dead ends",
+          "both options feel limited",
+          "no good option",
+          "both paths feel like dead ends"
+        ],
         "hope": null,
         "question": "management track or stay technical"
       },
@@ -436,7 +475,13 @@
       },
       "expected": {
         "topic": "taking sabbatical",
-        "concern": "gap hurting next role",
+        "concern": [
+          "gap hurting next role",
+          "career gap",
+          "gap on resume",
+          "gap hurting career",
+          "the gap will hurt my next role"
+        ],
         "hope": "take 3 months off to recover from burnout",
         "question": null
       },
@@ -451,7 +496,12 @@
       },
       "expected": {
         "topic": "stay for vesting vs leave for happiness",
-        "concern": "being miserable at current job",
+        "concern": [
+          "being miserable at current job",
+          "miserable at work",
+          "unhappy at job",
+          "misery at current role"
+        ],
         "hope": null,
         "question": null
       },
@@ -466,7 +516,12 @@
       },
       "expected": {
         "topic": "writing publicly to grow career",
-        "concern": "freezing when I try to write",
+        "concern": [
+          "freezing when I try to write",
+          "freezing up",
+          "can't write publicly",
+          "writing block"
+        ],
         "hope": "grow my career through writing",
         "question": null
       },
@@ -481,7 +536,13 @@
       },
       "expected": {
         "topic": "communication gap with wife",
-        "concern": "we only talk logistics now",
+        "concern": [
+          "we only talk logistics now",
+          "only talking logistics",
+          "no real communication",
+          "lost connection",
+          "communication gap"
+        ],
         "hope": null,
         "question": null
       },
@@ -511,7 +572,13 @@
       },
       "expected": {
         "topic": "wanting closer relationship with dad",
-        "concern": "every visit turns into argument",
+        "concern": [
+          "every visit turns into argument",
+          "always arguing",
+          "we keep arguing",
+          "every visit becomes a fight",
+          "fighting with dad"
+        ],
         "hope": "be closer to my dad",
         "question": null
       },
@@ -571,7 +638,13 @@
       },
       "expected": {
         "topic": "friend going through something",
-        "concern": "friend deflecting when I bring it up",
+        "concern": [
+          "friend deflecting when I bring it up",
+          "friend changes subject",
+          "friend deflecting",
+          "can't talk to friend",
+          "friend won't open up"
+        ],
         "hope": null,
         "question": null
       },
@@ -586,7 +659,13 @@
       },
       "expected": {
         "topic": "mom's early dementia",
-        "concern": "being only kid in country to handle it",
+        "concern": [
+          "being only kid in country to handle it",
+          "only one to help",
+          "responsible for mom alone",
+          "no siblings nearby",
+          "alone in caring for mom"
+        ],
         "hope": null,
         "question": null
       },
@@ -601,7 +680,13 @@
       },
       "expected": {
         "topic": "setting boundaries with in-laws",
-        "concern": "husband not backing me up",
+        "concern": [
+          "husband not backing me up",
+          "husband won't back me",
+          "no support from husband",
+          "husband doesn't support me",
+          "lack of husband's support"
+        ],
         "hope": "set boundaries with in-laws",
         "question": null
       },
@@ -826,7 +911,13 @@
       },
       "expected": {
         "topic": "uncertainty about meaning of current work",
-        "concern": "what I'm building won't matter",
+        "concern": [
+          "what I'm building won't matter",
+          "work might not matter",
+          "wasted effort",
+          "everything won't matter",
+          "what I build doesn't matter"
+        ],
         "hope": null,
         "question": "what if everything I'm building doesn't matter"
       },
@@ -886,7 +977,13 @@
       },
       "expected": {
         "topic": "Postgres to SQLite migration",
-        "concern": "losing transaction guarantees",
+        "concern": [
+          "losing transaction guarantees",
+          "losing transactions",
+          "transaction safety",
+          "losing ACID guarantees",
+          "no transaction safety"
+        ],
         "hope": "simplicity from SQLite",
         "question": null
       },
@@ -1006,7 +1103,13 @@
       },
       "expected": {
         "topic": "understanding event sourcing",
-        "concern": "still don't actually get it after 5 articles",
+        "concern": [
+          "still don't actually get it after 5 articles",
+          "not getting it",
+          "can't grasp event sourcing",
+          "still don't understand",
+          "5 articles in and still confused"
+        ],
         "hope": null,
         "question": null
       },
@@ -1096,7 +1199,13 @@
       },
       "expected": {
         "topic": "feeling like job and relationship are both slipping",
-        "concern": "both job and relationship slipping",
+        "concern": [
+          "both job and relationship slipping",
+          "both slipping",
+          "feeling like everything is slipping",
+          "things slipping",
+          "job and relationship both slipping"
+        ],
         "hope": null,
         "question": null
       },
@@ -1112,7 +1221,13 @@
       },
       "expected": {
         "topic": "competing personal goals (Mandarin / climbing / writing)",
-        "concern": "having to drop something",
+        "concern": [
+          "having to drop something",
+          "something has to give",
+          "can't do everything",
+          "have to choose",
+          "can't fit it all in"
+        ],
         "hope": null,
         "question": null
       },
@@ -1127,7 +1242,13 @@
       },
       "expected": {
         "topic": "back pain and insomnia from work stress",
-        "concern": "back pain + insomnia + work stress",
+        "concern": [
+          "back pain + insomnia + work stress",
+          "physical symptoms from stress",
+          "back pain and insomnia",
+          "stress symptoms",
+          "physical effects of work stress"
+        ],
         "hope": null,
         "question": null
       },
@@ -1143,7 +1264,13 @@
       },
       "expected": {
         "topic": "moving cities decision",
-        "concern": "losing my network if I move",
+        "concern": [
+          "losing my network if I move",
+          "losing network",
+          "leaving my network",
+          "network is here",
+          "network would be lost"
+        ],
         "hope": "lower cost of living",
         "question": null
       },
@@ -1158,7 +1285,13 @@
       },
       "expected": {
         "topic": "house vs investing in business",
-        "concern": "locking myself in either way",
+        "concern": [
+          "locking myself in either way",
+          "locked in either way",
+          "feeling locked in",
+          "either way locks me in",
+          "can't keep flexibility"
+        ],
         "hope": null,
         "question": "house or business investment"
       },
@@ -1173,7 +1306,13 @@
       },
       "expected": {
         "topic": "everything stacking up at once (kid + parents + work project)",
-        "concern": "everything stacking up at once",
+        "concern": [
+          "everything stacking up at once",
+          "too much at once",
+          "everything happening at once",
+          "kid and parents and work all at once",
+          "stacking up"
+        ],
         "hope": null,
         "question": null
       },
