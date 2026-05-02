@@ -1,7 +1,8 @@
 # `#claim-extraction` — Implementation Plan
 
-> **Status (2026-05-02):** v1.4 — Tasks 1-14 implementer DONE 2026-05-02. Eval gate FAIL on nvidia free (33.8% overall, hope recall 22%, API fail 25%) → Rodc directive (a)+(d): Step 1 = isolation eval on Haiku 4.5, Step 2 = split-route ship if Haiku passes / prompt rewrite if not. v1.4 adds Post-launch P2 follow-up for Task 14 log-grep verification at Rodc dogfood. Tasks 15 (Rodc 5-round dogfood) parallel with Step 1 eval.
-> v1.3 (2026-05-01): Rodc + 外部 Opus reviewed, 4 push backs incorporated, approved for dispatch. Implementer prerequisite: #intent-classifier eval gate GREEN (which landed 2026-05-02 92% / 97.5% / 100% / 88%).
+> **Status (2026-05-02 evening):** v1.5 — **Eval gate decision suspended pending eval rebalance.** v2 prompt eval (Haiku 4.5, 80 cases) FAIL targets (overall 64.1% vs 70% target; hope/topic/sparse regressions). Rodc surfaced critical context: **Rodix launches English**; the 80-case eval is 65% 中文 / 25% English (Chinese-primary per `_meta.language_mix`) and v2 few-shot is 6/6 Chinese. Eval metrics calibrated on 中文 do NOT reflect English production. Path forward: rebalance eval set + few-shot bilingual before re-running gate. NOT v3 prompt iteration yet — that's downstream of rebalanced eval data. Awaiting rebalance directive from Rodc + 外部 Opus.
+> v1.4 (2026-05-02 afternoon): Tasks 1-14 implementer DONE; eval gate FAIL on nvidia free (33.8% overall, hope recall 22%, API fail 25%) → Rodc directive (a)+(d): Step 1 isolation eval on Haiku 4.5, Step 2 split-route ship / prompt rewrite. Step 1 result: API fails 25%→1.25% (provider was unstable) but overall 33.8%→61.3% with hope recall 22%→65% — directionally improved but still gate-FAIL. Step 2 path picked = (b) prompt rewrite (per directive: hope <70% = schema/prompt issue). Added P2 follow-up for Task 14 log-grep verification at Rodc dogfood.
+> v1.3 (2026-05-01): Rodc + 外部 Opus reviewed, 4 push backs incorporated, approved for dispatch. Implementer prerequisite: #intent-classifier eval gate GREEN (landed 2026-05-02 92% / 97.5% / 100% / 88%).
 > **For agentic workers:** Use `superpowers:test-driven-development` per task. Then `superpowers:subagent-driven-development` extended with `docs/superpowers/skills/scenario-verification.md`.
 > **App/ gitignored** — `app/shared/extraction/` + `app/web/server.py` + `app/web/static/app.js` modifications do NOT go to git. Skip the per-task `Commit ...` lines for those files. `fixtures/` artifacts (eval set + runner) DO commit.
 
@@ -85,6 +86,8 @@ Manual annotation: ~30-60 min additional for the 20 boundary cases (1.5h - 2h to
 **Free model risk mitigation**:
 - Detect free-model unavailable (rate limit / deprecation / quota): graceful fallback → placeholder card with subtle "extraction unavailable" hint + log warning + raise to Rodc
 - JSON parse failure: defensive scan for `{...}` block (no `response_format: json_object`); on validation fail retry once; second fail → silent skip per spec edge case 2
+
+**Eval set + few-shot language bias (v1.5 added 2026-05-02 evening)**: Rodix launches English. Dev / Rodc dogfood uses 中文 for UI convenience only — that's a *test-time* preference, not a *ship-time* truth. The 80-case eval set as committed is **65% 中文 / 25% English / 10% mixed** (per `_meta.language_mix: "Chinese-primary"`); v2 few-shot examples are 6/6 中文. Consequence: per-field metrics + asymmetric gate are calibrated on 中文 distribution and do NOT reflect English production performance. **Mitigation**: rebalance eval set to ≥50% English + bilingual few-shot before gating any ship decision. After rebalance, English-bucket metrics are the ship gate; 中文-bucket metrics inform Phase 2 (Chinese launch). Per-language metric reporting required in the runner.
 
 ## Files
 
