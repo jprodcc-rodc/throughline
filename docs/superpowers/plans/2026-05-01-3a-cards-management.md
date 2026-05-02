@@ -1,8 +1,10 @@
 # `#3a` Cards Management — Implementation Plan
 
-> **For agentic workers:** Use `superpowers:test-driven-development` per task.
+> **Status (2026-05-02):** v1.3 — Rodc reviewed v1.2,**1 push back incorporated** (mobile breakpoint 768-1023px clarification per Option A: ≥768px 都 35/65 + padding 调整,< 768px 单列)。**Approved for implementer dispatch** per protocol §5.5. Implementer can dispatch parallel with `#claim-extraction` (no shared deps; #3a uses mock fixtures Choice A).
+> **For agentic workers:** Use `superpowers:test-driven-development` per task. Then `superpowers:subagent-driven-development` extended with `docs/superpowers/skills/scenario-verification.md`.
+> **App/ gitignored** — `app/web/server.py` + `app/web/static/*` + `app/shared/storage_py/*` modifications do NOT go to git. Skip the per-task `Commit ...` lines for those files; they're disk-only. Files under `app/shared/storage_py/fixtures/cards/*.json` and tests therein are also gitignored. **Tracked**: nothing new — no fixtures/ artifacts here (mock fixtures live in app/, not fixtures/).
 
-**Goal:** Implement Vault tab master-detail(35/65 桌面 full-bleed)with 时间分组 + 4 级 cold start + Recall summary 阈值 3 + 删除 + Markdown 导出。
+**Goal:** Implement Vault tab master-detail(35/65 桌面 full-bleed)with 时间分组 + 4 级 cold start + Recall summary 阈值 3 + 删除 + Markdown 导出。No dependency on `#claim-extraction` — uses mock fixtures (Choice A per finding 7) so #3a + #claim-extraction can dispatch in parallel.
 
 **Architecture:** Client-side routing under Vault tab. Left list rendered from `/api/cards?group=time`(extends existing endpoint),right detail panel rendered from `/api/cards/{id}`(new endpoint). Cold start lifecycle = client-side rendering branch by `vault.length`。
 
@@ -166,10 +168,32 @@
   - SUCCESS state(per `#5` micro-adj 3): toast "导出 47 张卡片 · 2.3 MB · markdown / 下载已到你的浏览器 · Your data, your file"
   - Commit `feat(ui): bulk markdown export with brand 叙事`
 
-- [ ] **Task 15: Mobile responsive**
-  - <768px:master-detail collapse to single column → click row → push fullscreen detail → back ←
-  - Test at 375px
-  - Commit `feat(ui): mobile master-detail collapse`
+- [ ] **Task 15: Responsive breakpoints**(v1.3 修订 per Rodc push back — explicit 768-1023px range per Option A)
+
+  **Breakpoint table** (locked v1.3):
+
+  | Viewport | Layout | Padding | Notes |
+  |---|---|---|---|
+  | **≥ 1024px**(desktop) | 35/65 master-detail full-bleed | comfortable: list 24px / detail 32px | default; spec §5.6 baseline |
+  | **768-1023px**(iPad landscape) | **35/65 same as desktop** | tight: list 16px / detail 20px | only padding 缩小,不切 layout |
+  | **< 768px**(phone / iPad portrait) | single column,push fullscreen detail + back ← | 16px | row click → detail view; 顶左 ← 回 list |
+
+  **关键纪律**:768-1023px 不要切到 45/55 或浮层 — 简单 + 一致 > 多模式 layout。详 detail panel 在 iPad landscape 也用 35/65 (~614px wide) 完全够展开 4 字段块。
+
+  **TDD**:
+  - Write failing CSS unit test(or browser smoke at 1024px / 1023px / 768px / 375px)— layout 切换在正确断点
+  - Implement `app.css` media queries:
+    ```css
+    /* default desktop ≥ 1024px */
+    @media (min-width: 1024px) { ... }
+    /* iPad landscape 768-1023px */
+    @media (min-width: 768px) and (max-width: 1023px) { ... }
+    /* phone / iPad portrait < 768px */
+    @media (max-width: 767px) { ... }
+    ```
+  - Test viewport sizes: 1440 / 1024 / 1023 / 800 / 768 / 767 / 375
+  - PASS
+  - Commit `feat(ui): responsive breakpoints with iPad landscape clarity`
 
 - [ ] **Task 15.5: DB isolation `index_dev.db` vs `index.db`(v1.2 加 per Issue 3)**
   - Write failing test `test_vault_path.py::test_dev_mode_uses_dev_db` — `RODIX_DEV=1` set → `vault_db_path()` returns `~/.../index_dev.db`;unset → `index.db`
@@ -213,8 +237,23 @@
 3. ✓ §7.4 5 项 articulated
 4. ✓ Pre-mortem 4 modes:全过(spec brainstorm 时已 5/5 ★)
 5. ✓ 桌面横向 35/65
-6. ✓ Mobile responsive 显式 task 15
+6. ✓ Mobile responsive 显式 task 15(v1.3:加 768-1023px iPad landscape 显式 breakpoint 表)
 7. ✓ Empty state 4 级 lifecycle 显式 task 11
+
+## Risk register
+
+- **Mock fixtures drift from real `#claim-extraction` schema** → after `#claim-extraction` ships, fixture JSON shape (4 fields topic/concern/hope/question) may diverge from the actual claims table columns. **Mitigation**: Task 16 fixture schema mirrors what `#claim-extraction` plan v1.3 §"Files" §"Persistence" calls out (4 nullable TEXT columns + `message_id` foreign key). When `#claim-extraction` lands, run a one-shot fixture validator against the real schema and patch fixture JSONs. Tracked as a follow-up item, NOT a Wave 1b blocker.
+- **Recall summary 阈值 3 wrong** → users see summary too eager (2 recalls collapses) or too late (10 recalls still inline). **Mitigation**: P1 ships at 3 (matches "数到 3 就 summarize" mental model); P2 telemetry-driven calibration via `#1b` recall threshold slider — already on roadmap.
+- **Markdown export edge cases**:
+  - Card body has triple-backticks → break frontmatter or fence. **Mitigation**: Task 6 escapes / wraps as needed; test_markdown_exporter has cases for nested fences.
+  - Card body has YAML reserved chars in topic field → frontmatter parse breakage. **Mitigation**: quote topic always.
+- **DB isolation drift** (Issue 3 root cause if mishandled) → Rodc dogfoods in `dev` mode forgetting to switch back, accidentally pollutes dev DB with real thinking. **Mitigation**: Task 15.5 makes `is_dev_mode()` explicit + visible top-bar banner ("DEV MODE · 用 mock data") so Rodc sees state at-a-glance. (Same pattern as `#1a` Settings panel DEV MODE banner.)
+- **Mobile collapse master-detail UX feel** → 35/65 splits poorly at 768px (iPad portrait) — half-detail panel cramped. **Mitigation**: Task 15 collapses to single-column at < 768px so iPad portrait gets full-screen list / push-detail (same as phone). Desktop 35/65 only fires ≥ 1024px.
+- **`/api/cards/export` long-running** for very large vaults (1000+) → request times out. **Mitigation**: P1 alpha vaults < 100 → not yet a concern. P2 markers note streaming export. Wave 4+ if a real user hits this. Add a comment in the endpoint referencing this debt.
+
+## Post-launch follow-ups (P2)
+
+- **Playwright upgrade for breakpoint smokes** (added 2026-05-02 per Rodc directive): when **INFRA 4** starts (after Wave 1b done + B-重 SaaS upgrade prep), upgrade the 6 regex-against-compiled-CSS assertions in Task 15 to real Playwright headless browser smokes at viewport sizes 1440 / 1024 / 1023 / 800 / 768 / 767 / 375. The regex smokes confirm CSS rules are *present and well-formed*; Playwright would confirm rules *render correctly across browsers*. Track with the rest of the test infra investments at INFRA 4.
 
 ## References
 
