@@ -1,0 +1,424 @@
+{
+  "meta": {
+    "model": "anthropic/claude-haiku-4.5",
+    "url": "https://openrouter.ai/api/v1/chat/completions",
+    "started_at": "2026-05-02T12:18:15.862467+00:00",
+    "n_cases": 3,
+    "n_en": 0,
+    "n_zh": 3
+  },
+  "summary": {
+    "label": "overall",
+    "n": 3,
+    "average_accuracy": 0.5833333333333334,
+    "per_category_accuracy": {
+      "career": 0.5833333333333334
+    },
+    "per_category_n": {
+      "career": 3
+    },
+    "chitchat_fp_rate": 0.0,
+    "chitchat_n": 0,
+    "chitchat_fp_count": 0,
+    "api_failures": 0,
+    "field_metrics": {
+      "topic": {
+        "tp": 3,
+        "fn": 0,
+        "fp": 0,
+        "tn": 0,
+        "fp_hallucinations": 0,
+        "fp_mismatches": 0,
+        "recall": 1.0,
+        "precision": 1.0,
+        "recall_denom": 3,
+        "precision_denom": 3
+      },
+      "concern": {
+        "tp": 1,
+        "fn": 1,
+        "fp": 2,
+        "tn": 0,
+        "fp_hallucinations": 1,
+        "fp_mismatches": 1,
+        "recall": 0.5,
+        "precision": 0.3333,
+        "recall_denom": 2,
+        "precision_denom": 3
+      },
+      "hope": {
+        "tp": 0,
+        "fn": 2,
+        "fp": 2,
+        "tn": 1,
+        "fp_hallucinations": 0,
+        "fp_mismatches": 2,
+        "recall": 0.0,
+        "precision": 0.0,
+        "recall_denom": 2,
+        "precision_denom": 2
+      },
+      "question": {
+        "tp": 2,
+        "fn": 1,
+        "fp": 0,
+        "tn": 0,
+        "fp_hallucinations": 0,
+        "fp_mismatches": 0,
+        "recall": 0.6667,
+        "precision": 1.0,
+        "recall_denom": 3,
+        "precision_denom": 2
+      }
+    },
+    "gate_results": [
+      {
+        "field": "topic",
+        "recall": 1.0,
+        "recall_gate": 0.6,
+        "recall_pass": true,
+        "precision": 1.0,
+        "precision_gate": 0.7,
+        "precision_pass": true,
+        "hallucination_rate": 0.0,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "concern",
+        "recall": 0.5,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 0.3333,
+        "precision_gate": 0.7,
+        "precision_pass": false,
+        "hallucination_rate": 0.3333,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": false
+      },
+      {
+        "field": "hope",
+        "recall": 0.0,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 0.0,
+        "precision_gate": 0.7,
+        "precision_pass": false,
+        "hallucination_rate": 0.0,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "question",
+        "recall": 0.6667,
+        "recall_gate": 0.6,
+        "recall_pass": true,
+        "precision": 1.0,
+        "precision_gate": 0.7,
+        "precision_pass": true,
+        "hallucination_rate": 0.0,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      }
+    ],
+    "chitchat_fp_pass": true,
+    "overall_accuracy_pass": false,
+    "all_conditions_pass": false,
+    "all_10_conditions_pass": false
+  },
+  "metrics_by_language": {
+    "en": null,
+    "zh": {
+      "label": "zh",
+      "n": 3,
+      "average_accuracy": 0.5833333333333334,
+      "per_category_accuracy": {
+        "career": 0.5833333333333334
+      },
+      "per_category_n": {
+        "career": 3
+      },
+      "chitchat_fp_rate": 0.0,
+      "chitchat_n": 0,
+      "chitchat_fp_count": 0,
+      "api_failures": 0,
+      "field_metrics": {
+        "topic": {
+          "tp": 3,
+          "fn": 0,
+          "fp": 0,
+          "tn": 0,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 0,
+          "recall": 1.0,
+          "precision": 1.0,
+          "recall_denom": 3,
+          "precision_denom": 3
+        },
+        "concern": {
+          "tp": 1,
+          "fn": 1,
+          "fp": 2,
+          "tn": 0,
+          "fp_hallucinations": 1,
+          "fp_mismatches": 1,
+          "recall": 0.5,
+          "precision": 0.3333,
+          "recall_denom": 2,
+          "precision_denom": 3
+        },
+        "hope": {
+          "tp": 0,
+          "fn": 2,
+          "fp": 2,
+          "tn": 1,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 2,
+          "recall": 0.0,
+          "precision": 0.0,
+          "recall_denom": 2,
+          "precision_denom": 2
+        },
+        "question": {
+          "tp": 2,
+          "fn": 1,
+          "fp": 0,
+          "tn": 0,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 0,
+          "recall": 0.6667,
+          "precision": 1.0,
+          "recall_denom": 3,
+          "precision_denom": 2
+        }
+      },
+      "gate_results": [
+        {
+          "field": "topic",
+          "recall": 1.0,
+          "recall_gate": 0.6,
+          "recall_pass": true,
+          "precision": 1.0,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "concern",
+          "recall": 0.5,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.3333,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.3333,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": false
+        },
+        {
+          "field": "hope",
+          "recall": 0.0,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.0,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "question",
+          "recall": 0.6667,
+          "recall_gate": 0.6,
+          "recall_pass": true,
+          "precision": 1.0,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        }
+      ],
+      "chitchat_fp_pass": true,
+      "overall_accuracy_pass": false,
+      "all_conditions_pass": false,
+      "all_10_conditions_pass": false
+    }
+  },
+  "ship_gate_passes": false,
+  "ship_gate_basis": "metrics_by_language.en (Phase 1)",
+  "llm_judge_stats": null,
+  "cases": [
+    {
+      "case_id": "career-1",
+      "category": "career",
+      "input": {
+        "user": "我在想要不要换工作,但又怕断了收入",
+        "ai": "先把'换'和'断收入'分开看。你具体在想换到什么方向?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": "想换到什么方向"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"换工作\",\n  \"concern\": \"断了收入\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "换工作",
+        "concern": "断了收入",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1954,
+      "tokens_out": 45,
+      "latency_s": 1.58,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "换工作",
+            "actual": "换工作"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.20",
+            "expected": "收入安全",
+            "actual": "断了收入"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "想换到什么方向",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-2",
+      "category": "career",
+      "input": {
+        "user": "我想做自由职业,这样可以更自由地安排时间,但不知道客户从哪里来。",
+        "ai": "自由的代价是销售自己。你之前的工作有没有现成的人脉或者作品可以作为起点?"
+      },
+      "expected": {
+        "topic": "自由职业",
+        "concern": null,
+        "hope": "时间自由",
+        "question": "客户从哪里来"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"转向自由职业\",\n  \"concern\": \"不知道客户从哪里来\",\n  \"hope\": \"更自由地安排时间\",\n  \"question\": \"客户从哪里来\"\n}\n```",
+      "actual_parsed": {
+        "topic": "转向自由职业",
+        "concern": "不知道客户从哪里来",
+        "hope": "更自由地安排时间",
+        "question": "客户从哪里来"
+      },
+      "api_error": null,
+      "tokens_in": 1979,
+      "tokens_out": 70,
+      "latency_s": 1.74,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "自由职业",
+            "actual": "转向自由职业"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "不知道客户从哪里来"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.25",
+            "expected": "时间自由",
+            "actual": "更自由地安排时间"
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "客户从哪里来",
+            "actual": "客户从哪里来"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-5",
+      "category": "career",
+      "input": {
+        "user": "我在做销售但我其实更喜欢写代码,可惜没有计算机背景,要不要转行做开发?",
+        "ai": "学习路径不是问题,出路是看作品+经验积累。你写过什么代码项目吗?"
+      },
+      "expected": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "做喜欢的事情",
+        "question": "要不要转行"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"转行做开发\",\n  \"concern\": \"没有计算机背景\",\n  \"hope\": \"转行做开发\",\n  \"question\": \"要不要转行做开发\"\n}\n```",
+      "actual_parsed": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "转行做开发",
+        "question": "要不要转行做开发"
+      },
+      "api_error": null,
+      "tokens_in": 1980,
+      "tokens_out": 64,
+      "latency_s": 1.72,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "转行做开发",
+            "actual": "转行做开发"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "没有计算机背景",
+            "actual": "没有计算机背景"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "做喜欢的事情",
+            "actual": "转行做开发"
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "要不要转行",
+            "actual": "要不要转行做开发"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    }
+  ]
+}

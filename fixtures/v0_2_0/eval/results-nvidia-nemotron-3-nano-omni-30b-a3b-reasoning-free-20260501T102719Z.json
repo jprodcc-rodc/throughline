@@ -1,0 +1,795 @@
+{
+  "meta": {
+    "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "url": "https://openrouter.ai/api/v1/chat/completions",
+    "started_at": "2026-05-01T10:27:19.768675+00:00",
+    "n_cases": 14
+  },
+  "summary": {
+    "average_accuracy": 0.7678571428571429,
+    "per_category_accuracy": {
+      "career": 0.8333333333333334,
+      "relationships": 0.5833333333333334,
+      "technical": 0.75,
+      "abstract": 0.625,
+      "chitchat": 1.0
+    },
+    "chitchat_fp_rate": 0.0,
+    "chitchat_n": 3,
+    "chitchat_fp_count": 0,
+    "api_failures": 0,
+    "passes_60_threshold": true
+  },
+  "cases": [
+    {
+      "case_id": "career-1",
+      "category": "career",
+      "input": {
+        "user": "我在想要不要换工作,但又怕断了收入",
+        "ai": "先把'换'和'断收入'分开看。你具体在想换到什么方向?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": "想换到什么方向"
+      },
+      "actual_raw": "{\"topic\":\"换工作\",\"concern\":\"收入安全\",\"hope\":null,\"question\":null}",
+      "actual_parsed": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 661,
+      "tokens_out": 353,
+      "latency_s": 4.2,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "换工作",
+            "actual": "换工作"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "收入安全",
+            "actual": "收入安全"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "想换到什么方向",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-2",
+      "category": "career",
+      "input": {
+        "user": "我想做自由职业,这样可以更自由地安排时间,但不知道客户从哪里来。",
+        "ai": "自由的代价是销售自己。你之前的工作有没有现成的人脉或者作品可以作为起点?"
+      },
+      "expected": {
+        "topic": "自由职业",
+        "concern": null,
+        "hope": "时间自由",
+        "question": "客户从哪里来"
+      },
+      "actual_raw": "{\"topic\": \"自由职业\", \"concern\": \"客户来源不明\", \"hope\": \"时间自由\", \"question\": \"客户从哪来\"}",
+      "actual_parsed": {
+        "topic": "自由职业",
+        "concern": "客户来源不明",
+        "hope": "时间自由",
+        "question": "客户从哪来"
+      },
+      "api_error": null,
+      "tokens_in": 675,
+      "tokens_out": 700,
+      "latency_s": 8.65,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "自由职业",
+            "actual": "自由职业"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "客户来源不明"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "时间自由",
+            "actual": "时间自由"
+          },
+          "question": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.50",
+            "expected": "客户从哪里来",
+            "actual": "客户从哪来"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-3",
+      "category": "career",
+      "input": {
+        "user": "I'm considering leaving my senior eng role to start my own thing. Salary cut would be brutal but I want to build something I own.",
+        "ai": "Building something you own is a strong pull. What's the runway you'd have if revenue is zero for 12 months?"
+      },
+      "expected": {
+        "topic": "leaving senior eng role / starting own thing",
+        "concern": "salary cut",
+        "hope": "build something I own",
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"senior eng role to own startup\", \"concern\": \"salary cut\", \"hope\": \"build own thing\", \"question\": null}",
+      "actual_parsed": {
+        "topic": "senior eng role to own startup",
+        "concern": "salary cut",
+        "hope": "build own thing",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 677,
+      "tokens_out": 477,
+      "latency_s": 6.21,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.44",
+            "expected": "leaving senior eng role / starting own thing",
+            "actual": "senior eng role to own startup"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "salary cut",
+            "actual": "salary cut"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "word_jaccard=0.40",
+            "expected": "build something I own",
+            "actual": "build own thing"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "relationships-1",
+      "category": "relationships",
+      "input": {
+        "user": "我和爸妈这周末又吵了一架,觉得他们一直都不理解我的想法。",
+        "ai": "听起来积累了挺久了。你希望他们理解的具体是哪一部分?"
+      },
+      "expected": {
+        "topic": "和父母的关系",
+        "concern": "不被理解",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"和爸妈吵架\", \"concern\": \"不被理解\", \"hope\": \"希望被理解\", \"question\": null}",
+      "actual_parsed": {
+        "topic": "和爸妈吵架",
+        "concern": "不被理解",
+        "hope": "希望被理解",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 670,
+      "tokens_out": 432,
+      "latency_s": 6.22,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "和父母的关系",
+            "actual": "和爸妈吵架"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "不被理解",
+            "actual": "不被理解"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "希望被理解"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "relationships-2",
+      "category": "relationships",
+      "input": {
+        "user": "我想和我老公多有些独处时间,但有了孩子后真的很难。",
+        "ai": "时间不是凭空冒出来的,得从某处挪。你们目前一周里最容易匀出时间的是哪个时段?"
+      },
+      "expected": {
+        "topic": "夫妻独处时间",
+        "concern": "孩子让独处困难",
+        "hope": "多些独处时间",
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"独处时间\", \"concern\": \"孩子导致时间不足\", \"hope\": \"更多独处时间\", \"question\": null}",
+      "actual_parsed": {
+        "topic": "独处时间",
+        "concern": "孩子导致时间不足",
+        "hope": "更多独处时间",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 678,
+      "tokens_out": 424,
+      "latency_s": 3.93,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "夫妻独处时间",
+            "actual": "独处时间"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.08",
+            "expected": "孩子让独处困难",
+            "actual": "孩子导致时间不足"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.43",
+            "expected": "多些独处时间",
+            "actual": "更多独处时间"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "relationships-3",
+      "category": "relationships",
+      "input": {
+        "user": "My friend group has drifted apart since college. I miss the closeness but I don't know if it's worth forcing reunions when everyone is busy.",
+        "ai": "Drift is normal but sometimes a single thoughtful invite restarts things. What did you used to actually do together that mattered?"
+      },
+      "expected": {
+        "topic": "friend group drift",
+        "concern": null,
+        "hope": "the closeness",
+        "question": "is it worth forcing reunions"
+      },
+      "actual_raw": "{\"topic\": \"朋友群疏远\", \"concern\": \"时间冲突\", \"hope\": \"重建友情\", \"question\": \"是否值得强行重聚\"}",
+      "actual_parsed": {
+        "topic": "朋友群疏远",
+        "concern": "时间冲突",
+        "hope": "重建友情",
+        "question": "是否值得强行重聚"
+      },
+      "api_error": null,
+      "tokens_in": 678,
+      "tokens_out": 601,
+      "latency_s": 7.27,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "bilingual_lexicon",
+            "expected": "friend group drift",
+            "actual": "朋友群疏远"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "时间冲突"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "the closeness",
+            "actual": "重建友情"
+          },
+          "question": {
+            "correct": true,
+            "reason": "bilingual_lexicon",
+            "expected": "is it worth forcing reunions",
+            "actual": "是否值得强行重聚"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "technical-1",
+      "category": "technical",
+      "input": {
+        "user": "我想把 Postgres 换成 SQLite 让部署简单一点,但又担心丢掉事务的保证。",
+        "ai": "SQLite 其实有事务,只是并发写有限。你这个项目的写入量大概是什么规模?"
+      },
+      "expected": {
+        "topic": "Postgres 换 SQLite",
+        "concern": "丢掉事务保证",
+        "hope": "部署简单",
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"Postgres 换 SQLite\", \"concern\": \"丢失事务保证\", \"hope\": \"部署更简单\", \"question\": null}",
+      "actual_parsed": {
+        "topic": "Postgres 换 SQLite",
+        "concern": "丢失事务保证",
+        "hope": "部署更简单",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 680,
+      "tokens_out": 477,
+      "latency_s": 6.14,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "Postgres 换 SQLite",
+            "actual": "Postgres 换 SQLite"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.43",
+            "expected": "丢掉事务保证",
+            "actual": "丢失事务保证"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.40",
+            "expected": "部署简单",
+            "actual": "部署更简单"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "technical-2",
+      "category": "technical",
+      "input": {
+        "user": "I want to migrate this Postgres DB to SQLite for simplicity but I'm worried about losing transaction guarantees.",
+        "ai": "That's a reasonable trade-off to think through. What scale of writes are you handling?"
+      },
+      "expected": {
+        "topic": "Postgres to SQLite migration",
+        "concern": "losing transaction guarantees",
+        "hope": "simplicity",
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"Postgres toSQLite migration\", \"concern\": \"losing transaction guarantees\", \"hope\": \"simplicity\", \"question\": null}",
+      "actual_parsed": {
+        "topic": "Postgres toSQLite migration",
+        "concern": "losing transaction guarantees",
+        "hope": "simplicity",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 661,
+      "tokens_out": 328,
+      "latency_s": 2.72,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.40",
+            "expected": "Postgres to SQLite migration",
+            "actual": "Postgres toSQLite migration"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "losing transaction guarantees",
+            "actual": "losing transaction guarantees"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "simplicity",
+            "actual": "simplicity"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "technical-3",
+      "category": "technical",
+      "input": {
+        "user": "Should I learn Rust or Go for systems work? I keep going back and forth.",
+        "ai": "Both are solid. What's the project you'd actually use it on?"
+      },
+      "expected": {
+        "topic": "Rust vs Go",
+        "concern": null,
+        "hope": null,
+        "question": "Rust or Go for systems work"
+      },
+      "actual_raw": "{\"topic\": \"Rust or Go systems\", \"concern\": \"indecision about choice\", \"hope\": \"choose the right language\", \"question\": \"Should I learn Rust or Go?\"}",
+      "actual_parsed": {
+        "topic": "Rust or Go systems",
+        "concern": "indecision about choice",
+        "hope": "choose the right language",
+        "question": "Should I learn Rust or Go?"
+      },
+      "api_error": null,
+      "tokens_in": 654,
+      "tokens_out": 567,
+      "latency_s": 5.96,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.40",
+            "expected": "Rust vs Go",
+            "actual": "Rust or Go systems"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "indecision about choice"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "choose the right language"
+          },
+          "question": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.33",
+            "expected": "Rust or Go for systems work",
+            "actual": "Should I learn Rust or Go?"
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "abstract-1",
+      "category": "abstract",
+      "input": {
+        "user": "我最近一直在想,人生的意义到底是什么?如果只是工作和消费的循环,好像没什么意思。",
+        "ai": "这个问题很多人想过,可能不会有 final answer。具体什么时刻让你觉得'没什么意思'?"
+      },
+      "expected": {
+        "topic": "人生意义",
+        "concern": "工作消费循环没意思",
+        "hope": null,
+        "question": "人生意义是什么"
+      },
+      "actual_raw": "{\"topic\":\"人生意义\",\"concern\":\"循环无意义\",\"hope\":null,\"question\":\"人生意义是什么\"}",
+      "actual_parsed": {
+        "topic": "人生意义",
+        "concern": "循环无意义",
+        "hope": null,
+        "question": "人生意义是什么"
+      },
+      "api_error": null,
+      "tokens_in": 680,
+      "tokens_out": 482,
+      "latency_s": 5.04,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "人生意义",
+            "actual": "人生意义"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.09",
+            "expected": "工作消费循环没意思",
+            "actual": "循环无意义"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "人生意义是什么",
+            "actual": "人生意义是什么"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "abstract-2",
+      "category": "abstract",
+      "input": {
+        "user": "I want to live a more intentional life — less reactive, less scrolling, more aimed at things that matter. But I don't even know what 'matters' to me yet.",
+        "ai": "That's the harder half. What's something you've done in the past year that didn't feel like it mattered, even though you spent real time on it?"
+      },
+      "expected": {
+        "topic": "intentional life",
+        "concern": "reactive / scrolling",
+        "hope": "aimed at things that matter",
+        "question": "what matters to me"
+      },
+      "actual_raw": "{\"topic\": \"更有意的生活\", \"concern\": \"不清楚自己该在乎的事\", \"hope\": \"更有意的生活\", \"question\": \"什么对自己重要\"}",
+      "actual_parsed": {
+        "topic": "更有意的生活",
+        "concern": "不清楚自己该在乎的事",
+        "hope": "更有意的生活",
+        "question": "什么对自己重要"
+      },
+      "api_error": null,
+      "tokens_in": 692,
+      "tokens_out": 899,
+      "latency_s": 11.55,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "bilingual_lexicon",
+            "expected": "intentional life",
+            "actual": "更有意的生活"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "reactive / scrolling",
+            "actual": "不清楚自己该在乎的事"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "aimed at things that matter",
+            "actual": "更有意的生活"
+          },
+          "question": {
+            "correct": true,
+            "reason": "bilingual_lexicon",
+            "expected": "what matters to me",
+            "actual": "什么对自己重要"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "chitchat-1",
+      "category": "chitchat",
+      "input": {
+        "user": "谢谢你的帮助!",
+        "ai": "不客气,有什么需要随时来。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "{\"topic\": null, \"concern\": null, \"hope\": null, \"question\": null}",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 642,
+      "tokens_out": 115,
+      "latency_s": 1.57,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      }
+    },
+    {
+      "case_id": "chitchat-2",
+      "category": "chitchat",
+      "input": {
+        "user": "Thanks, that's helpful! Have a good one.",
+        "ai": "You too, take care."
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "{\"topic\": null, \"concern\": null, \"hope\": null, \"question\": null}",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 639,
+      "tokens_out": 108,
+      "latency_s": 1.67,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      }
+    },
+    {
+      "case_id": "chitchat-3",
+      "category": "chitchat",
+      "input": {
+        "user": "今天天气不错啊,挺凉爽的。",
+        "ai": "确实,这种天气最适合出去走走了。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "{\"topic\":null, \"concern\": null, \"hope\": null, \"question\": null}",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 652,
+      "tokens_out": 141,
+      "latency_s": 2.15,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      }
+    }
+  ]
+}

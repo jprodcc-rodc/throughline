@@ -1,0 +1,4891 @@
+{
+  "meta": {
+    "model": "anthropic/claude-haiku-4.5",
+    "url": "https://openrouter.ai/api/v1/chat/completions",
+    "started_at": "2026-05-02T12:25:20.124601+00:00",
+    "n_cases": 80,
+    "n_en": 64,
+    "n_zh": 16
+  },
+  "summary": {
+    "label": "overall",
+    "n": 80,
+    "average_accuracy": 0.209375,
+    "per_category_accuracy": {
+      "career": 0.5,
+      "relationships": 0.1346153846153846,
+      "chitchat": 0.2,
+      "abstract": 0.05,
+      "technical": 0.06818181818181818,
+      "sparse": 0.25,
+      "mixed": 0.14285714285714285,
+      "emotional_rambling": 0.16666666666666666
+    },
+    "per_category_n": {
+      "career": 16,
+      "relationships": 13,
+      "chitchat": 10,
+      "abstract": 10,
+      "technical": 11,
+      "sparse": 7,
+      "mixed": 7,
+      "emotional_rambling": 6
+    },
+    "chitchat_fp_rate": 0.0,
+    "chitchat_n": 10,
+    "chitchat_fp_count": 0,
+    "api_failures": 57,
+    "field_metrics": {
+      "topic": {
+        "tp": 13,
+        "fn": 57,
+        "fp": 7,
+        "tn": 10,
+        "fp_hallucinations": 0,
+        "fp_mismatches": 7,
+        "recall": 0.1857,
+        "precision": 0.65,
+        "recall_denom": 70,
+        "precision_denom": 20
+      },
+      "concern": {
+        "tp": 7,
+        "fn": 26,
+        "fp": 5,
+        "tn": 46,
+        "fp_hallucinations": 1,
+        "fp_mismatches": 4,
+        "recall": 0.2121,
+        "precision": 0.5833,
+        "recall_denom": 33,
+        "precision_denom": 12
+      },
+      "hope": {
+        "tp": 5,
+        "fn": 12,
+        "fp": 6,
+        "tn": 60,
+        "fp_hallucinations": 3,
+        "fp_mismatches": 3,
+        "recall": 0.2941,
+        "precision": 0.4545,
+        "recall_denom": 17,
+        "precision_denom": 11
+      },
+      "question": {
+        "tp": 5,
+        "fn": 20,
+        "fp": 0,
+        "tn": 55,
+        "fp_hallucinations": 0,
+        "fp_mismatches": 0,
+        "recall": 0.2,
+        "precision": 1.0,
+        "recall_denom": 25,
+        "precision_denom": 5
+      }
+    },
+    "gate_results": [
+      {
+        "field": "topic",
+        "recall": 0.1857,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 0.65,
+        "precision_gate": 0.7,
+        "precision_pass": false,
+        "hallucination_rate": 0.0,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "concern",
+        "recall": 0.2121,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 0.5833,
+        "precision_gate": 0.7,
+        "precision_pass": false,
+        "hallucination_rate": 0.0125,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "hope",
+        "recall": 0.2941,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 0.4545,
+        "precision_gate": 0.7,
+        "precision_pass": false,
+        "hallucination_rate": 0.0375,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "question",
+        "recall": 0.2,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 1.0,
+        "precision_gate": 0.7,
+        "precision_pass": true,
+        "hallucination_rate": 0.0,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      }
+    ],
+    "chitchat_fp_pass": true,
+    "overall_accuracy_pass": false,
+    "all_conditions_pass": false,
+    "all_10_conditions_pass": false
+  },
+  "metrics_by_language": {
+    "en": {
+      "label": "en",
+      "n": 64,
+      "average_accuracy": 0.09765625,
+      "per_category_accuracy": {
+        "career": 0.4807692307692308,
+        "relationships": 0.0,
+        "chitchat": 0.0,
+        "abstract": 0.0,
+        "technical": 0.0,
+        "sparse": 0.0,
+        "mixed": 0.0,
+        "emotional_rambling": 0.0
+      },
+      "per_category_n": {
+        "career": 13,
+        "relationships": 10,
+        "chitchat": 8,
+        "abstract": 8,
+        "technical": 10,
+        "sparse": 5,
+        "mixed": 6,
+        "emotional_rambling": 4
+      },
+      "chitchat_fp_rate": 0.0,
+      "chitchat_n": 8,
+      "chitchat_fp_count": 0,
+      "api_failures": 56,
+      "field_metrics": {
+        "topic": {
+          "tp": 6,
+          "fn": 50,
+          "fp": 2,
+          "tn": 8,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 2,
+          "recall": 0.1071,
+          "precision": 0.75,
+          "recall_denom": 56,
+          "precision_denom": 8
+        },
+        "concern": {
+          "tp": 3,
+          "fn": 20,
+          "fp": 2,
+          "tn": 41,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 2,
+          "recall": 0.1304,
+          "precision": 0.6,
+          "recall_denom": 23,
+          "precision_denom": 5
+        },
+        "hope": {
+          "tp": 3,
+          "fn": 10,
+          "fp": 1,
+          "tn": 51,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 1,
+          "recall": 0.2308,
+          "precision": 0.75,
+          "recall_denom": 13,
+          "precision_denom": 4
+        },
+        "question": {
+          "tp": 1,
+          "fn": 19,
+          "fp": 0,
+          "tn": 44,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 0,
+          "recall": 0.05,
+          "precision": 1.0,
+          "recall_denom": 20,
+          "precision_denom": 1
+        }
+      },
+      "gate_results": [
+        {
+          "field": "topic",
+          "recall": 0.1071,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.75,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "concern",
+          "recall": 0.1304,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.6,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "hope",
+          "recall": 0.2308,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.75,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "question",
+          "recall": 0.05,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 1.0,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        }
+      ],
+      "chitchat_fp_pass": true,
+      "overall_accuracy_pass": false,
+      "all_conditions_pass": false,
+      "all_10_conditions_pass": false
+    },
+    "zh": {
+      "label": "zh",
+      "n": 16,
+      "average_accuracy": 0.65625,
+      "per_category_accuracy": {
+        "career": 0.5833333333333334,
+        "relationships": 0.5833333333333334,
+        "chitchat": 1.0,
+        "abstract": 0.25,
+        "technical": 0.75,
+        "sparse": 0.875,
+        "mixed": 1.0,
+        "emotional_rambling": 0.5
+      },
+      "per_category_n": {
+        "career": 3,
+        "relationships": 3,
+        "chitchat": 2,
+        "abstract": 2,
+        "technical": 1,
+        "sparse": 2,
+        "mixed": 1,
+        "emotional_rambling": 2
+      },
+      "chitchat_fp_rate": 0.0,
+      "chitchat_n": 2,
+      "chitchat_fp_count": 0,
+      "api_failures": 1,
+      "field_metrics": {
+        "topic": {
+          "tp": 7,
+          "fn": 7,
+          "fp": 5,
+          "tn": 2,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 5,
+          "recall": 0.5,
+          "precision": 0.5833,
+          "recall_denom": 14,
+          "precision_denom": 12
+        },
+        "concern": {
+          "tp": 4,
+          "fn": 6,
+          "fp": 3,
+          "tn": 5,
+          "fp_hallucinations": 1,
+          "fp_mismatches": 2,
+          "recall": 0.4,
+          "precision": 0.5714,
+          "recall_denom": 10,
+          "precision_denom": 7
+        },
+        "hope": {
+          "tp": 2,
+          "fn": 2,
+          "fp": 5,
+          "tn": 9,
+          "fp_hallucinations": 3,
+          "fp_mismatches": 2,
+          "recall": 0.5,
+          "precision": 0.2857,
+          "recall_denom": 4,
+          "precision_denom": 7
+        },
+        "question": {
+          "tp": 4,
+          "fn": 1,
+          "fp": 0,
+          "tn": 11,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 0,
+          "recall": 0.8,
+          "precision": 1.0,
+          "recall_denom": 5,
+          "precision_denom": 4
+        }
+      },
+      "gate_results": [
+        {
+          "field": "topic",
+          "recall": 0.5,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.5833,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "concern",
+          "recall": 0.4,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.5714,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.0625,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "hope",
+          "recall": 0.5,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.2857,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.1875,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": false
+        },
+        {
+          "field": "question",
+          "recall": 0.8,
+          "recall_gate": 0.6,
+          "recall_pass": true,
+          "precision": 1.0,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        }
+      ],
+      "chitchat_fp_pass": true,
+      "overall_accuracy_pass": false,
+      "all_conditions_pass": false,
+      "all_10_conditions_pass": false
+    }
+  },
+  "ship_gate_passes": false,
+  "ship_gate_basis": "metrics_by_language.en (Phase 1)",
+  "llm_judge_stats": {
+    "calls": 26,
+    "flips_to_match": 2,
+    "errors": 3
+  },
+  "cases": [
+    {
+      "case_id": "career-1",
+      "category": "career",
+      "input": {
+        "user": "我在想要不要换工作,但又怕断了收入",
+        "ai": "先把'换'和'断收入'分开看。你具体在想换到什么方向?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": "想换到什么方向"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"换工作\",\n  \"concern\": \"断了收入\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "换工作",
+        "concern": "断了收入",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1954,
+      "tokens_out": 45,
+      "latency_s": 1.45,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "换工作",
+            "actual": "换工作"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.20)",
+            "expected": "收入安全",
+            "actual": "断了收入"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "想换到什么方向",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-2",
+      "category": "career",
+      "input": {
+        "user": "我想做自由职业,这样可以更自由地安排时间,但不知道客户从哪里来。",
+        "ai": "自由的代价是销售自己。你之前的工作有没有现成的人脉或者作品可以作为起点?"
+      },
+      "expected": {
+        "topic": "自由职业",
+        "concern": null,
+        "hope": "时间自由",
+        "question": "客户从哪里来"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"转向自由职业\",\n  \"concern\": \"不知道客户从哪里来\",\n  \"hope\": \"更自由地安排时间\",\n  \"question\": \"客户从哪里来\"\n}\n```",
+      "actual_parsed": {
+        "topic": "转向自由职业",
+        "concern": "不知道客户从哪里来",
+        "hope": "更自由地安排时间",
+        "question": "客户从哪里来"
+      },
+      "api_error": null,
+      "tokens_in": 1979,
+      "tokens_out": 70,
+      "latency_s": 1.45,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "自由职业",
+            "actual": "转向自由职业"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "不知道客户从哪里来"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.25)",
+            "expected": "时间自由",
+            "actual": "更自由地安排时间"
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "客户从哪里来",
+            "actual": "客户从哪里来"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-5",
+      "category": "career",
+      "input": {
+        "user": "我在做销售但我其实更喜欢写代码,可惜没有计算机背景,要不要转行做开发?",
+        "ai": "学习路径不是问题,出路是看作品+经验积累。你写过什么代码项目吗?"
+      },
+      "expected": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "做喜欢的事情",
+        "question": "要不要转行"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"转行做开发\",\n  \"concern\": \"没有计算机背景\",\n  \"hope\": \"转行做开发\",\n  \"question\": \"要不要转行做开发\"\n}\n```",
+      "actual_parsed": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "转行做开发",
+        "question": "要不要转行做开发"
+      },
+      "api_error": null,
+      "tokens_in": 1980,
+      "tokens_out": 64,
+      "latency_s": 4.93,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "转行做开发",
+            "actual": "转行做开发"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "没有计算机背景",
+            "actual": "没有计算机背景"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "做喜欢的事情",
+            "actual": "转行做开发"
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "要不要转行",
+            "actual": "要不要转行做开发"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "relationships-1",
+      "category": "relationships",
+      "input": {
+        "user": "我和爸妈这周末又吵了一架,觉得他们一直都不理解我的想法。",
+        "ai": "听起来积累了挺久了。你希望他们理解的具体是哪一部分?"
+      },
+      "expected": {
+        "topic": "和父母的关系",
+        "concern": "不被理解",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"和爸妈的沟通\",\n  \"concern\": null,\n  \"hope\": \"爸妈理解我的想法\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "和爸妈的沟通",
+        "concern": null,
+        "hope": "爸妈理解我的想法",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1969,
+      "tokens_out": 57,
+      "latency_s": 1.52,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "和父母的关系",
+            "actual": "和爸妈的沟通"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "不被理解",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "爸妈理解我的想法"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "relationships-2",
+      "category": "relationships",
+      "input": {
+        "user": "我想和我老公多有些独处时间,但有了孩子后真的很难。",
+        "ai": "时间不是凭空冒出来的,得从某处挪。你们目前一周里最容易匀出时间的是哪个时段?"
+      },
+      "expected": {
+        "topic": "夫妻独处时间",
+        "concern": "孩子让独处困难",
+        "hope": "多些独处时间",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"和老公的独处时间\",\n  \"concern\": \"有了孩子后很难找到独处时间\",\n  \"hope\": \"和老公多有些独处时间\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "和老公的独处时间",
+        "concern": "有了孩子后很难找到独处时间",
+        "hope": "和老公多有些独处时间",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1978,
+      "tokens_out": 70,
+      "latency_s": 1.74,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "llm_judge_yes (bigram_jaccard_low=0.33)",
+            "expected": "夫妻独处时间",
+            "actual": "和老公的独处时间"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.12",
+            "expected": "孩子让独处困难",
+            "actual": "有了孩子后很难找到独处时间"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.40",
+            "expected": "多些独处时间",
+            "actual": "和老公多有些独处时间"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "relationships-4",
+      "category": "relationships",
+      "input": {
+        "user": "我和女朋友异地一年了,最近她说想分手,我不想分。",
+        "ai": "异地一年的张力是真实的。她说的'想分手'背后想要什么?"
+      },
+      "expected": {
+        "topic": "异地恋",
+        "concern": "女朋友想分手",
+        "hope": "不想分",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"女朋友要分手\",\n  \"concern\": \"女朋友想分手\",\n  \"hope\": \"不想分手\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "女朋友要分手",
+        "concern": "女朋友想分手",
+        "hope": "不想分手",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1961,
+      "tokens_out": 56,
+      "latency_s": 2.08,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "异地恋",
+            "actual": "女朋友要分手"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "女朋友想分手",
+            "actual": "女朋友想分手"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "不想分",
+            "actual": "不想分手"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "chitchat-1",
+      "category": "chitchat",
+      "input": {
+        "user": "谢谢你的帮助!",
+        "ai": "不客气,有什么需要随时来。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1932,
+      "tokens_out": 38,
+      "latency_s": 1.81,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "chitchat-3",
+      "category": "chitchat",
+      "input": {
+        "user": "今天天气不错啊,挺凉爽的。",
+        "ai": "确实,这种天气最适合出去走走了。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1942,
+      "tokens_out": 38,
+      "latency_s": 1.94,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "abstract-3",
+      "category": "abstract",
+      "input": {
+        "user": "我有时候会怀疑我现在的所有选择,是不是只是因为习惯了,而不是真的想要。",
+        "ai": "习惯和欲望的区分需要安静的回望。你最近有过明确想要的事情吗?"
+      },
+      "expected": {
+        "topic": "怀疑自己的选择",
+        "concern": "只是因为习惯",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 21.03,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "怀疑自己的选择",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "只是因为习惯",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "abstract-4",
+      "category": "abstract",
+      "input": {
+        "user": "我想知道我十年后会是什么样,但又怕自己看到的不是我想要的。",
+        "ai": "想象未来的自己是个有用的工具但确实有风险。你目前最不愿意成为的版本是什么?"
+      },
+      "expected": {
+        "topic": "想象未来",
+        "concern": "怕看到的不是想要的",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"十年后的自己\",\n  \"concern\": \"看到的不是想要的样子\",\n  \"hope\": \"想知道十年后会是什么样\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "十年后的自己",
+        "concern": "看到的不是想要的样子",
+        "hope": "想知道十年后会是什么样",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1977,
+      "tokens_out": 65,
+      "latency_s": 1.41,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "想象未来",
+            "actual": "十年后的自己"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.70",
+            "expected": "怕看到的不是想要的",
+            "actual": "看到的不是想要的样子"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "想知道十年后会是什么样"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "technical-8",
+      "category": "technical",
+      "input": {
+        "user": "我想从单体迁到微服务,但我们团队只有四个人,会不会反而拖慢开发速度?",
+        "ai": "微服务的运营负担需要团队规模摊销。四人团队可能要考虑模块化单体先。"
+      },
+      "expected": {
+        "topic": "单体到微服务",
+        "concern": "拖慢开发速度",
+        "hope": null,
+        "question": "会不会反而拖慢"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"单体迁到微服务\",\n  \"concern\": \"微服务会拖慢开发速度\",\n  \"hope\": \"从单体迁到微服务\",\n  \"question\": \"四人团队迁微服务会不会反而拖慢开发速度\"\n}\n```",
+      "actual_parsed": {
+        "topic": "单体迁到微服务",
+        "concern": "微服务会拖慢开发速度",
+        "hope": "从单体迁到微服务",
+        "question": "四人团队迁微服务会不会反而拖慢开发速度"
+      },
+      "api_error": null,
+      "tokens_in": 1981,
+      "tokens_out": 90,
+      "latency_s": 2.55,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.57",
+            "expected": "单体到微服务",
+            "actual": "单体迁到微服务"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "拖慢开发速度",
+            "actual": "微服务会拖慢开发速度"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "从单体迁到微服务"
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "会不会反而拖慢",
+            "actual": "四人团队迁微服务会不会反而拖慢开发速度"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "sparse-1",
+      "category": "sparse",
+      "input": {
+        "user": "我对哲学有点兴趣。",
+        "ai": "哲学很广阔。你最被哪个分支或者哪本书吸引?"
+      },
+      "expected": {
+        "topic": "对哲学有兴趣",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: The user's message is a light, passing statement of interest (\"我对哲学有点兴趣\"). It expresses mild curiosity but does not name a specific subject of active thinking, worry, want, or unresolved question. The AI's follow-up is exploratory but the user has not yet engaged with it. No extraction warranted.",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1947,
+      "tokens_out": 119,
+      "latency_s": 2.54,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "对哲学有兴趣",
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": false
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "sparse-2",
+      "category": "sparse",
+      "input": {
+        "user": "我最近在看心理学的书。",
+        "ai": "哪一类心理学书?"
+      },
+      "expected": {
+        "topic": "心理学",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"看心理学的书\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "看心理学的书",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1929,
+      "tokens_out": 44,
+      "latency_s": 2.39,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "心理学",
+            "actual": "看心理学的书"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "mixed-1",
+      "category": "mixed",
+      "input": {
+        "user": "我在想换工作,而且家里催婚,搞不清哪个先解决。",
+        "ai": "两件事互相关联又各自独立。哪一件更紧迫?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": null,
+        "hope": null,
+        "question": "哪个先解决"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"换工作 vs 催婚的优先顺序\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"哪个先解决\"\n}\n```",
+      "actual_parsed": {
+        "topic": "换工作 vs 催婚的优先顺序",
+        "concern": null,
+        "hope": null,
+        "question": "哪个先解决"
+      },
+      "api_error": null,
+      "tokens_in": 1958,
+      "tokens_out": 60,
+      "latency_s": 1.83,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "换工作",
+            "actual": "换工作 vs 催婚的优先顺序"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "哪个先解决",
+            "actual": "哪个先解决"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "emotional_rambling-1",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "今天真的太烦了,什么都不顺,感觉整个世界都在和我作对,早上起来咖啡机坏了,然后地铁又晚点,到公司开会被老板批评,中午吃饭又难吃,我真不知道我哪里招惹了谁。",
+        "ai": "听起来一连串小挫折叠加成大情绪。睡前你最想抓住的是哪一刻?"
+      },
+      "expected": {
+        "topic": "今天很烦",
+        "concern": "什么都不顺",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"情绪低落\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "情绪低落",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 2036,
+      "tokens_out": 43,
+      "latency_s": 1.37,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "今天很烦",
+            "actual": "情绪低落"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "什么都不顺",
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "emotional_rambling-2",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "唉,最近就是觉得很累,什么都不想做,但又不知道为什么,就是一直处在那种灰色的状态里,做什么都没有意思,但好像也没有什么具体的事情让我难过,就是一直这样。",
+        "ai": "灰色无名的疲惫是身体或者心理的低声警报。最后一次你觉得活着有意思是什么时候?"
+      },
+      "expected": {
+        "topic": "持续疲惫",
+        "concern": "什么都没有意思",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"情绪低落和疲惫\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "情绪低落和疲惫",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 2030,
+      "tokens_out": 48,
+      "latency_s": 1.37,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.12)",
+            "expected": "持续疲惫",
+            "actual": "情绪低落和疲惫"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "什么都没有意思",
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-en-1",
+      "category": "career",
+      "input": {
+        "user": "I'm thinking about leaving my job.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "leaving current job",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"leaving my job\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "leaving my job",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1916,
+      "tokens_out": 41,
+      "latency_s": 1.5,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.50",
+            "expected": "leaving current job",
+            "actual": "leaving my job"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-2",
+      "category": "career",
+      "input": {
+        "user": "I'm scared to quit. The paycheck is what's keeping my family stable.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "quitting job",
+        "concern": [
+          "family financial stability if I quit",
+          "losing income",
+          "paycheck stability",
+          "scared to quit",
+          "family stability",
+          "losing the paycheck",
+          "income loss"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"quitting job\",\n  \"concern\": \"paycheck needed to keep family stable\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "quitting job",
+        "concern": "paycheck needed to keep family stable",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1925,
+      "tokens_out": 48,
+      "latency_s": 1.66,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "quitting job",
+            "actual": "quitting job"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: llm_judge_no (word_jaccard_low=0.00))",
+            "expected": [
+              "family financial stability if I quit",
+              "losing income",
+              "paycheck stability",
+              "scared to quit",
+              "family stability",
+              "losing the paycheck",
+              "income loss"
+            ],
+            "actual": "paycheck needed to keep family stable"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-3",
+      "category": "career",
+      "input": {
+        "user": "I want to move into product management but I don't know if I'm too late.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "transition to product management",
+        "concern": [
+          "being too late to transition",
+          "too late",
+          "being too old",
+          "missed the window",
+          "timing"
+        ],
+        "hope": "move into product management",
+        "question": "am I too late"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"transition to product management\",\n  \"concern\": \"too late to move into product management\",\n  \"hope\": \"move into product management\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "transition to product management",
+        "concern": "too late to move into product management",
+        "hope": "move into product management",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1926,
+      "tokens_out": 53,
+      "latency_s": 1.43,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "transition to product management",
+            "actual": "transition to product management"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "substring_match (variant='too late')",
+            "expected": [
+              "being too late to transition",
+              "too late",
+              "being too old",
+              "missed the window",
+              "timing"
+            ],
+            "actual": "too late to move into product management"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "move into product management",
+            "actual": "move into product management"
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "am I too late",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-4",
+      "category": "career",
+      "input": {
+        "user": "My team's getting reorged next quarter. Not sure if I should ride it out or jump.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "team reorg decision",
+        "concern": null,
+        "hope": null,
+        "question": "ride out the reorg or jump now"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"team reorg decision\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"should I ride it out or jump\"\n}\n```",
+      "actual_parsed": {
+        "topic": "team reorg decision",
+        "concern": null,
+        "hope": null,
+        "question": "should I ride it out or jump"
+      },
+      "api_error": null,
+      "tokens_in": 1929,
+      "tokens_out": 50,
+      "latency_s": 1.56,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "team reorg decision",
+            "actual": "team reorg decision"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.40",
+            "expected": "ride out the reorg or jump now",
+            "actual": "should I ride it out or jump"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-5",
+      "category": "career",
+      "input": {
+        "user": "Got an offer from a startup. Half the salary but I'd actually own something.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "startup offer decision",
+        "concern": null,
+        "hope": "actually own something",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"startup offer decision\",\n  \"concern\": null,\n  \"hope\": \"own something / equity upside\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "startup offer decision",
+        "concern": null,
+        "hope": "own something / equity upside",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1925,
+      "tokens_out": 47,
+      "latency_s": 1.74,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "startup offer decision",
+            "actual": "startup offer decision"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "word_jaccard=0.40",
+            "expected": "actually own something",
+            "actual": "own something / equity upside"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-6",
+      "category": "career",
+      "input": {
+        "user": "I keep getting passed over for promotion. I think I need to leave to grow.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "career growth blocked at current job",
+        "concern": [
+          "stuck without growth",
+          "no growth",
+          "passed over for promotion",
+          "career stagnation",
+          "stuck in current role"
+        ],
+        "hope": "grow my career",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"getting passed over for promotion\",\n  \"concern\": \"not growing in current role\",\n  \"hope\": \"grow by leaving\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "getting passed over for promotion",
+        "concern": "not growing in current role",
+        "hope": "grow by leaving",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1925,
+      "tokens_out": 51,
+      "latency_s": 2.56,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.00",
+            "expected": "career growth blocked at current job",
+            "actual": "getting passed over for promotion"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "llm_judge_yes (word_jaccard_low=0.00) (variant='career stagnation')",
+            "expected": [
+              "stuck without growth",
+              "no growth",
+              "passed over for promotion",
+              "career stagnation",
+              "stuck in current role"
+            ],
+            "actual": "not growing in current role"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "llm_judge_no (word_jaccard_low=0.20)",
+            "expected": "grow my career",
+            "actual": "grow by leaving"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-7",
+      "category": "career",
+      "input": {
+        "user": "I want to start my own thing but I have two kids in private school.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "starting own business",
+        "concern": [
+          "kids' private school expenses",
+          "private school costs",
+          "supporting kids in school",
+          "school tuition",
+          "financial responsibility for kids"
+        ],
+        "hope": "start my own thing",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"starting own business\",\n  \"concern\": \"private school costs for two kids\",\n  \"hope\": \"start own thing\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "starting own business",
+        "concern": "private school costs for two kids",
+        "hope": "start own thing",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1924,
+      "tokens_out": 50,
+      "latency_s": 1.63,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "starting own business",
+            "actual": "starting own business"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.43 (variant=\"kids' private school expenses\")",
+            "expected": [
+              "kids' private school expenses",
+              "private school costs",
+              "supporting kids in school",
+              "school tuition",
+              "financial responsibility for kids"
+            ],
+            "actual": "private school costs for two kids"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "word_jaccard=0.75",
+            "expected": "start my own thing",
+            "actual": "start own thing"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-8",
+      "category": "career",
+      "input": {
+        "user": "My manager keeps undermining my work in front of the team. I don't know how much longer I can take this.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "manager undermining me",
+        "concern": [
+          "manager undermining me publicly",
+          "manager undermining my work",
+          "being undermined by manager",
+          "manager publicly undermining me",
+          "public undermining"
+        ],
+        "hope": null,
+        "question": "how much longer can I take this"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"manager undermining work in front of team\",\n  \"concern\": \"can't take this much longer\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "manager undermining work in front of team",
+        "concern": "can't take this much longer",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1933,
+      "tokens_out": 52,
+      "latency_s": 2.86,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.25",
+            "expected": "manager undermining me",
+            "actual": "manager undermining work in front of team"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: llm_judge_no (word_jaccard_low=0.00))",
+            "expected": [
+              "manager undermining me publicly",
+              "manager undermining my work",
+              "being undermined by manager",
+              "manager publicly undermining me",
+              "public undermining"
+            ],
+            "actual": "can't take this much longer"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "how much longer can I take this",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-9",
+      "category": "career",
+      "input": {
+        "user": "Should I take the management track or stay technical? Both feel like dead ends in different ways.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "management vs technical track",
+        "concern": [
+          "both tracks feel like dead ends",
+          "dead ends",
+          "both options feel limited",
+          "no good option",
+          "both paths feel like dead ends"
+        ],
+        "hope": null,
+        "question": "management track or stay technical"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3967. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.62,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "management vs technical track",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "both tracks feel like dead ends",
+              "dead ends",
+              "both options feel limited",
+              "no good option",
+              "both paths feel like dead ends"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "management track or stay technical",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-10",
+      "category": "career",
+      "input": {
+        "user": "I'm interviewing at three places this week and I have no idea which one I actually want.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "choosing between three job offers",
+        "concern": null,
+        "hope": null,
+        "question": "which one do I actually want"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3967. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.58,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "choosing between three job offers",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "which one do I actually want",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-11",
+      "category": "career",
+      "input": {
+        "user": "Burned out. Considering taking 3 months off but afraid the gap will hurt my next role.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "taking sabbatical",
+        "concern": [
+          "gap hurting next role",
+          "career gap",
+          "gap on resume",
+          "gap hurting career",
+          "the gap will hurt my next role"
+        ],
+        "hope": "take 3 months off to recover from burnout",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3967. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 1.91,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "taking sabbatical",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "gap hurting next role",
+              "career gap",
+              "gap on resume",
+              "gap hurting career",
+              "the gap will hurt my next role"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "take 3 months off to recover from burnout",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-12",
+      "category": "career",
+      "input": {
+        "user": "My company just IPO'd and my equity vests next year. Hard to leave but I'm miserable.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "stay for vesting vs leave for happiness",
+        "concern": [
+          "being miserable at current job",
+          "miserable at work",
+          "unhappy at job",
+          "misery at current role"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3967. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.59,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "stay for vesting vs leave for happiness",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "being miserable at current job",
+              "miserable at work",
+              "unhappy at job",
+              "misery at current role"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-13",
+      "category": "career",
+      "input": {
+        "user": "I think I need to write more publicly to grow my career, but I freeze every time I try.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "writing publicly to grow career",
+        "concern": [
+          "freezing when I try to write",
+          "freezing up",
+          "can't write publicly",
+          "writing block"
+        ],
+        "hope": "grow my career through writing",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3967. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.96,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "writing publicly to grow career",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "freezing when I try to write",
+              "freezing up",
+              "can't write publicly",
+              "writing block"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "grow my career through writing",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-1",
+      "category": "relationships",
+      "input": {
+        "user": "My wife and I haven't really talked in weeks. Just logistics.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "communication gap with wife",
+        "concern": [
+          "we only talk logistics now",
+          "only talking logistics",
+          "no real communication",
+          "lost connection",
+          "communication gap"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3967. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.9,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "communication gap with wife",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "we only talk logistics now",
+              "only talking logistics",
+              "no real communication",
+              "lost connection",
+              "communication gap"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-2",
+      "category": "relationships",
+      "input": {
+        "user": "My best friend got engaged and didn't tell me. Found out from Instagram.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "best friend's engagement, not told",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.52,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "best friend's engagement, not told",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-3",
+      "category": "relationships",
+      "input": {
+        "user": "I want to be closer to my dad before he gets sicker but every visit just turns into an argument.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "wanting closer relationship with dad",
+        "concern": [
+          "every visit turns into argument",
+          "always arguing",
+          "we keep arguing",
+          "every visit becomes a fight",
+          "fighting with dad"
+        ],
+        "hope": "be closer to my dad",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 1.59,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "wanting closer relationship with dad",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "every visit turns into argument",
+              "always arguing",
+              "we keep arguing",
+              "every visit becomes a fight",
+              "fighting with dad"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "be closer to my dad",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-4",
+      "category": "relationships",
+      "input": {
+        "user": "My partner wants kids in the next two years. I'm still not sure I want them at all.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "kids decision with partner",
+        "concern": null,
+        "hope": null,
+        "question": "do I want kids at all"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.6,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "kids decision with partner",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "do I want kids at all",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-5",
+      "category": "relationships",
+      "input": {
+        "user": "My therapist suggested I might be the avoidant one in my relationships. Sitting with that.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "being the avoidant one in relationships",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.52,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "being the avoidant one in relationships",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-6",
+      "category": "relationships",
+      "input": {
+        "user": "My sister and I keep cycling through the same fight every six months.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "recurring fight with sister",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.54,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "recurring fight with sister",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-7",
+      "category": "relationships",
+      "input": {
+        "user": "I think my friend is going through something but every time I bring it up he changes the subject.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "friend going through something",
+        "concern": [
+          "friend deflecting when I bring it up",
+          "friend changes subject",
+          "friend deflecting",
+          "can't talk to friend",
+          "friend won't open up"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.54,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "friend going through something",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "friend deflecting when I bring it up",
+              "friend changes subject",
+              "friend deflecting",
+              "can't talk to friend",
+              "friend won't open up"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-8",
+      "category": "relationships",
+      "input": {
+        "user": "My mom is showing early signs of dementia. I'm her only kid in the country.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "mom's early dementia",
+        "concern": [
+          "being only kid in country to handle it",
+          "only one to help",
+          "responsible for mom alone",
+          "no siblings nearby",
+          "alone in caring for mom"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.51,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "mom's early dementia",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "being only kid in country to handle it",
+              "only one to help",
+              "responsible for mom alone",
+              "no siblings nearby",
+              "alone in caring for mom"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-9",
+      "category": "relationships",
+      "input": {
+        "user": "I want to set boundaries with my in-laws but my husband won't back me up.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "setting boundaries with in-laws",
+        "concern": [
+          "husband not backing me up",
+          "husband won't back me",
+          "no support from husband",
+          "husband doesn't support me",
+          "lack of husband's support"
+        ],
+        "hope": "set boundaries with in-laws",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.51,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "setting boundaries with in-laws",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "husband not backing me up",
+              "husband won't back me",
+              "no support from husband",
+              "husband doesn't support me",
+              "lack of husband's support"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "set boundaries with in-laws",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-10",
+      "category": "relationships",
+      "input": {
+        "user": "My friend keeps asking for advice and then doing the opposite. Should I just stop responding?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "friend ignoring advice",
+        "concern": null,
+        "hope": null,
+        "question": "should I stop responding"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.92,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "friend ignoring advice",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "should I stop responding",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-1",
+      "category": "chitchat",
+      "input": {
+        "user": "Hey there",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.67,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-2",
+      "category": "chitchat",
+      "input": {
+        "user": "Good morning",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 1.63,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-3",
+      "category": "chitchat",
+      "input": {
+        "user": "Thanks!",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.63,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-4",
+      "category": "chitchat",
+      "input": {
+        "user": "How's it going",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 1.03,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-5",
+      "category": "chitchat",
+      "input": {
+        "user": "OK cool",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.55,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-6",
+      "category": "chitchat",
+      "input": {
+        "user": "Nice weather today huh",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.51,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-7",
+      "category": "chitchat",
+      "input": {
+        "user": "Got it",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 21.05,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-8",
+      "category": "chitchat",
+      "input": {
+        "user": "Hi! Quick question — actually, never mind. I'll figure it out.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.47,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-1",
+      "category": "abstract",
+      "input": {
+        "user": "I keep wondering what I'd actually do if I had unlimited time.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "what I'd do with unlimited time",
+        "concern": null,
+        "hope": null,
+        "question": "what would I actually do with unlimited time"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.48,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what I'd do with unlimited time",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what would I actually do with unlimited time",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-2",
+      "category": "abstract",
+      "input": {
+        "user": "What does it mean to live a good life when you can't tell what's good anymore?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "meaning of a good life",
+        "concern": null,
+        "hope": null,
+        "question": "what is a good life when you can't tell what's good"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.95,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "meaning of a good life",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what is a good life when you can't tell what's good",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-3",
+      "category": "abstract",
+      "input": {
+        "user": "I think the version of myself I want to become wouldn't recognize who I am now.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "gap between current self and ideal self",
+        "concern": null,
+        "hope": "become a different version of myself",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.63,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "gap between current self and ideal self",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "become a different version of myself",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-4",
+      "category": "abstract",
+      "input": {
+        "user": "There's something about getting older that makes regret heavier.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "regret in aging",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.54,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "regret in aging",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-5",
+      "category": "abstract",
+      "input": {
+        "user": "I want to leave something behind but I have no idea what.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "leaving something behind / legacy",
+        "concern": null,
+        "hope": "leave something behind",
+        "question": "what should I leave behind"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.56,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "leaving something behind / legacy",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "leave something behind",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what should I leave behind",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-6",
+      "category": "abstract",
+      "input": {
+        "user": "What if everything I'm building right now turns out to not matter?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "uncertainty about meaning of current work",
+        "concern": [
+          "what I'm building won't matter",
+          "work might not matter",
+          "wasted effort",
+          "everything won't matter",
+          "what I build doesn't matter"
+        ],
+        "hope": null,
+        "question": "what if everything I'm building doesn't matter"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.73,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "uncertainty about meaning of current work",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "what I'm building won't matter",
+              "work might not matter",
+              "wasted effort",
+              "everything won't matter",
+              "what I build doesn't matter"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what if everything I'm building doesn't matter",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-7",
+      "category": "abstract",
+      "input": {
+        "user": "I've been reading Stoicism but it feels like it's optimized for men 2000 years ago.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Stoicism's relevance today",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.65,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "Stoicism's relevance today",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-8",
+      "category": "abstract",
+      "input": {
+        "user": "Sometimes I think I'm just a bundle of habits performing being a person.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "identity as performance / habits",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.87,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "identity as performance / habits",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-1",
+      "category": "technical",
+      "input": {
+        "user": "How does a B-tree differ from a B+ tree in practice?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "B-tree vs B+ tree differences",
+        "concern": null,
+        "hope": null,
+        "question": "how do they differ in practice"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.6,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "B-tree vs B+ tree differences",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "how do they differ in practice",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-2",
+      "category": "technical",
+      "input": {
+        "user": "I'm thinking about migrating our Postgres DB to SQLite for simplicity. Worried about losing transaction guarantees.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Postgres to SQLite migration",
+        "concern": [
+          "losing transaction guarantees",
+          "losing transactions",
+          "transaction safety",
+          "losing ACID guarantees",
+          "no transaction safety"
+        ],
+        "hope": "simplicity from SQLite",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.79,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "Postgres to SQLite migration",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "losing transaction guarantees",
+              "losing transactions",
+              "transaction safety",
+              "losing ACID guarantees",
+              "no transaction safety"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "simplicity from SQLite",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-3",
+      "category": "technical",
+      "input": {
+        "user": "Rust vs Go for a CLI that needs heavy concurrency.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Rust vs Go for concurrent CLI",
+        "concern": null,
+        "hope": null,
+        "question": "Rust or Go"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.74,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "Rust vs Go for concurrent CLI",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "Rust or Go",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-4",
+      "category": "technical",
+      "input": {
+        "user": "Just learned about CRDTs. Mind blown — but I can't see how to apply them in our actual stack.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "CRDTs applicability to current stack",
+        "concern": null,
+        "hope": null,
+        "question": "how to apply CRDTs in our actual stack"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.55,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "CRDTs applicability to current stack",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "how to apply CRDTs in our actual stack",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-5",
+      "category": "technical",
+      "input": {
+        "user": "What's the modern equivalent of Java EE if I'm starting fresh?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "modern Java EE equivalent",
+        "concern": null,
+        "hope": null,
+        "question": "what's the modern equivalent if starting fresh"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.58,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "modern Java EE equivalent",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what's the modern equivalent if starting fresh",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-6",
+      "category": "technical",
+      "input": {
+        "user": "Building a real-time multiplayer game. Thinking websocket vs WebRTC for the data channel.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "websocket vs WebRTC for game data channel",
+        "concern": null,
+        "hope": null,
+        "question": "websocket or WebRTC"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.75,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "websocket vs WebRTC for game data channel",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "websocket or WebRTC",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-7",
+      "category": "technical",
+      "input": {
+        "user": "Can you explain attention heads in plain English?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "attention heads explanation",
+        "concern": null,
+        "hope": null,
+        "question": "what are attention heads"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.57,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "attention heads explanation",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what are attention heads",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-8",
+      "category": "technical",
+      "input": {
+        "user": "I want to add fuzzy search to my app. Considering Meilisearch vs Typesense vs just SQLite FTS5.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "fuzzy search engine choice",
+        "concern": null,
+        "hope": "add fuzzy search to my app",
+        "question": "Meilisearch, Typesense, or SQLite FTS5"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.72,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "fuzzy search engine choice",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "add fuzzy search to my app",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "Meilisearch, Typesense, or SQLite FTS5",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-9",
+      "category": "technical",
+      "input": {
+        "user": "What does idempotency mean in API design?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "idempotency in API design",
+        "concern": null,
+        "hope": null,
+        "question": "what does idempotency mean"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 21.04,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "idempotency in API design",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "what does idempotency mean",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-10",
+      "category": "technical",
+      "input": {
+        "user": "Trying to grok event sourcing. Read 5 articles and still feel like I don't actually get it.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "understanding event sourcing",
+        "concern": [
+          "still don't actually get it after 5 articles",
+          "not getting it",
+          "can't grasp event sourcing",
+          "still don't understand",
+          "5 articles in and still confused"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.8,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "understanding event sourcing",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "still don't actually get it after 5 articles",
+              "not getting it",
+              "can't grasp event sourcing",
+              "still don't understand",
+              "5 articles in and still confused"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-1",
+      "category": "sparse",
+      "input": {
+        "user": "I keep thinking about the conversation I had with my brother last week.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "conversation with brother last week",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.53,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "conversation with brother last week",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-2",
+      "category": "sparse",
+      "input": {
+        "user": "Still mulling over the team retro from yesterday.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "team retro from yesterday",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.71,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "team retro from yesterday",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-3",
+      "category": "sparse",
+      "input": {
+        "user": "I've been turning over this product idea in my head for a few days.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "this product idea",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.91,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "this product idea",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-4",
+      "category": "sparse",
+      "input": {
+        "user": "That book on attention has been on my mind all week.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "the book on attention",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.55,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "the book on attention",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-5",
+      "category": "sparse",
+      "input": {
+        "user": "Thinking about my grandmother today.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "my grandmother",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 1.06,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "my grandmother",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-1",
+      "category": "mixed",
+      "input": {
+        "user": "My job's getting heavier and my relationship is on the rocks. Both feel like they're slipping.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "feeling like job and relationship are both slipping",
+        "concern": [
+          "both job and relationship slipping",
+          "both slipping",
+          "feeling like everything is slipping",
+          "things slipping",
+          "job and relationship both slipping"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 1.61,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "feeling like job and relationship are both slipping",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "both job and relationship slipping",
+              "both slipping",
+              "feeling like everything is slipping",
+              "things slipping",
+              "job and relationship both slipping"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-2",
+      "category": "mixed",
+      "input": {
+        "user": "I want to learn Mandarin AND get back into climbing AND finally write that book. Something has to give.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "competing personal goals (Mandarin / climbing / writing)",
+        "concern": [
+          "having to drop something",
+          "something has to give",
+          "can't do everything",
+          "have to choose",
+          "can't fit it all in"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3880. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.49,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "competing personal goals (Mandarin / climbing / writing)",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "having to drop something",
+              "something has to give",
+              "can't do everything",
+              "have to choose",
+              "can't fit it all in"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-3",
+      "category": "mixed",
+      "input": {
+        "user": "My back's been hurting for weeks and I haven't slept properly in months. I think it's all stress from work.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "back pain and insomnia from work stress",
+        "concern": [
+          "back pain + insomnia + work stress",
+          "physical symptoms from stress",
+          "back pain and insomnia",
+          "stress symptoms",
+          "physical effects of work stress"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.96,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "back pain and insomnia from work stress",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "back pain + insomnia + work stress",
+              "physical symptoms from stress",
+              "back pain and insomnia",
+              "stress symptoms",
+              "physical effects of work stress"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-4",
+      "category": "mixed",
+      "input": {
+        "user": "Considering moving cities. Lower cost of living but my whole network is here.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "moving cities decision",
+        "concern": [
+          "losing my network if I move",
+          "losing network",
+          "leaving my network",
+          "network is here",
+          "network would be lost"
+        ],
+        "hope": "lower cost of living",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.68,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "moving cities decision",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "losing my network if I move",
+              "losing network",
+              "leaving my network",
+              "network is here",
+              "network would be lost"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "lower cost of living",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-5",
+      "category": "mixed",
+      "input": {
+        "user": "I'm trying to decide between buying a house and putting that money into my business. Either way it feels like locking myself in.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "house vs investing in business",
+        "concern": [
+          "locking myself in either way",
+          "locked in either way",
+          "feeling locked in",
+          "either way locks me in",
+          "can't keep flexibility"
+        ],
+        "hope": null,
+        "question": "house or business investment"
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.55,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "house vs investing in business",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "locking myself in either way",
+              "locked in either way",
+              "feeling locked in",
+              "either way locks me in",
+              "can't keep flexibility"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "house or business investment",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-6",
+      "category": "mixed",
+      "input": {
+        "user": "My kid is struggling at school AND my parents need more help AND I just got assigned a huge project at work.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "everything stacking up at once (kid + parents + work project)",
+        "concern": [
+          "everything stacking up at once",
+          "too much at once",
+          "everything happening at once",
+          "kid and parents and work all at once",
+          "stacking up"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.52,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "everything stacking up at once (kid + parents + work project)",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "everything stacking up at once",
+              "too much at once",
+              "everything happening at once",
+              "kid and parents and work all at once",
+              "stacking up"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-1",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "I'm just so tired. Tired of all of it. Nothing makes sense anymore.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "exhaustion / emotional low",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.52,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "exhaustion / emotional low",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-2",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "I don't know what's wrong with me lately. I just feel off and I can't articulate it.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "feeling off without articulation",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.67,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "feeling off without articulation",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-3",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "Today was a lot. Just a lot. I don't even know where to start.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "overwhelmed",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 0.57,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "overwhelmed",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-4",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "It's been one of those weeks. You know what I mean?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "rough week",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "HTTP 402: {\"error\":{\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 4000 tokens, but can only afford 3877. To increase, visit https://openrouter.ai/settings/credits and add more credits\",\"code\":402,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_2zzm4iCN6vAyCtbbjJiiEinvkxZ\"}",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 2.66,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "rough week",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    }
+  ]
+}

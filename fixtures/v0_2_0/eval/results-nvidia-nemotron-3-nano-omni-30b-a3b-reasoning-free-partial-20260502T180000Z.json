@@ -1,0 +1,447 @@
+{
+  "meta": {
+    "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "url": "https://openrouter.ai/api/v1/chat/completions",
+    "started_at": "2026-05-02T17:55:15Z",
+    "killed_at": "2026-05-02T18:18Z",
+    "killed_reason": "process hung on case 59 (network connection stuck); killed after ~10 min stall",
+    "n_cases_attempted": 80,
+    "n_cases_completed": 58,
+    "completeness": "58/80"
+  },
+  "summary": {
+    "overall_accuracy_partial": 0.46120689655172414,
+    "api_error_rate_partial": 0.1896551724137931,
+    "per_category_accuracy_partial": {
+      "career": 0.265625,
+      "relationships": 0.5384615384615384,
+      "technical": 0.5227272727272727,
+      "abstract": 0.275,
+      "chitchat": 0.875
+    },
+    "per_category_n": {
+      "career": 16,
+      "relationships": 13,
+      "technical": 11,
+      "abstract": 10,
+      "chitchat": 8
+    },
+    "per_category_errors": {
+      "career": 5,
+      "relationships": 0,
+      "technical": 3,
+      "abstract": 2,
+      "chitchat": 1
+    },
+    "eval_gate_verdict": "INCOMPLETE -- eval truncated at 58/80 due to provider network stall on case 59. Partial accuracy 46.1% (well below 75% gate); 18.9% API error rate (5x normal). Provider degradation suspected (consecutive empty-content responses + 120s+ envelope-missing-content errors). Per plan, surface to Rodc with the 4 options: (a) switch dev to paid model, (b) revise extraction prompt + re-run, (c) accept temporary lower threshold + telemetry-driven calibration in Wave 2, (d) split-route: chat keeps free / extraction uses paid. Recommend re-running on a different day before deciding, since infrastructure could be transient.",
+    "all_10_conditions_pass": false
+  },
+  "cases_completed": [
+    {
+      "case_id": "career-1",
+      "category": "career",
+      "case_accuracy": 1.0,
+      "latency_s": 4.98,
+      "api_error": null
+    },
+    {
+      "case_id": "career-2",
+      "category": "career",
+      "case_accuracy": 0.0,
+      "latency_s": 47.59,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "career-3",
+      "category": "career",
+      "case_accuracy": 0.0,
+      "latency_s": 41.35,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "career-4",
+      "category": "career",
+      "case_accuracy": 0.5,
+      "latency_s": 3.27,
+      "api_error": null
+    },
+    {
+      "case_id": "career-5",
+      "category": "career",
+      "case_accuracy": 0.75,
+      "latency_s": 7.82,
+      "api_error": null
+    },
+    {
+      "case_id": "career-6",
+      "category": "career",
+      "case_accuracy": 0.25,
+      "latency_s": 7.56,
+      "api_error": null
+    },
+    {
+      "case_id": "career-7",
+      "category": "career",
+      "case_accuracy": 0.0,
+      "latency_s": 4.03,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "career-8",
+      "category": "career",
+      "case_accuracy": 0.0,
+      "latency_s": 42.04,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "career-9",
+      "category": "career",
+      "case_accuracy": 0.0,
+      "latency_s": 29.5,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "career-10",
+      "category": "career",
+      "case_accuracy": 0.25,
+      "latency_s": 11.85,
+      "api_error": null
+    },
+    {
+      "case_id": "career-11",
+      "category": "career",
+      "case_accuracy": 0.0,
+      "latency_s": 11.25,
+      "api_error": null
+    },
+    {
+      "case_id": "career-12",
+      "category": "career",
+      "case_accuracy": 0.25,
+      "latency_s": 7.36,
+      "api_error": null
+    },
+    {
+      "case_id": "career-13",
+      "category": "career",
+      "case_accuracy": 0.5,
+      "latency_s": 27.07,
+      "api_error": null
+    },
+    {
+      "case_id": "career-14",
+      "category": "career",
+      "case_accuracy": 0.0,
+      "latency_s": 20.07,
+      "api_error": null
+    },
+    {
+      "case_id": "career-15",
+      "category": "career",
+      "case_accuracy": 0.5,
+      "latency_s": 7.57,
+      "api_error": null
+    },
+    {
+      "case_id": "career-16",
+      "category": "career",
+      "case_accuracy": 0.25,
+      "latency_s": 5.49,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-1",
+      "category": "relationships",
+      "case_accuracy": 0.25,
+      "latency_s": 5.11,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-2",
+      "category": "relationships",
+      "case_accuracy": 0.75,
+      "latency_s": 2.83,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-3",
+      "category": "relationships",
+      "case_accuracy": 0.5,
+      "latency_s": 4.66,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-4",
+      "category": "relationships",
+      "case_accuracy": 0.75,
+      "latency_s": 4.13,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-5",
+      "category": "relationships",
+      "case_accuracy": 0.5,
+      "latency_s": 6.49,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-6",
+      "category": "relationships",
+      "case_accuracy": 0.25,
+      "latency_s": 5.9,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-7",
+      "category": "relationships",
+      "case_accuracy": 0.75,
+      "latency_s": 21.58,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-8",
+      "category": "relationships",
+      "case_accuracy": 0.5,
+      "latency_s": 4.02,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-9",
+      "category": "relationships",
+      "case_accuracy": 0.75,
+      "latency_s": 2.63,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-10",
+      "category": "relationships",
+      "case_accuracy": 0.5,
+      "latency_s": 4.51,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-11",
+      "category": "relationships",
+      "case_accuracy": 0.75,
+      "latency_s": 5.02,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-12",
+      "category": "relationships",
+      "case_accuracy": 0.25,
+      "latency_s": 10.97,
+      "api_error": null
+    },
+    {
+      "case_id": "relationships-13",
+      "category": "relationships",
+      "case_accuracy": 0.5,
+      "latency_s": 8.67,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-1",
+      "category": "technical",
+      "case_accuracy": 1.0,
+      "latency_s": 4.1,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-2",
+      "category": "technical",
+      "case_accuracy": 1.0,
+      "latency_s": 4.77,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-3",
+      "category": "technical",
+      "case_accuracy": 0.0,
+      "latency_s": 18.24,
+      "api_error": "json parse: Unterminated string starting at: line 1 column 45 (char 44): \\'{\"topic\": \"learning Rust or Go\", \"concern\": \"indecision about choice\\"
+    },
+    {
+      "case_id": "technical-4",
+      "category": "technical",
+      "case_accuracy": 1.0,
+      "latency_s": 3.0,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-5",
+      "category": "technical",
+      "case_accuracy": 0.0,
+      "latency_s": 21.04,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "technical-6",
+      "category": "technical",
+      "case_accuracy": 0.75,
+      "latency_s": 5.66,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-7",
+      "category": "technical",
+      "case_accuracy": 0.0,
+      "latency_s": 35.06,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "technical-8",
+      "category": "technical",
+      "case_accuracy": 0.75,
+      "latency_s": 4.79,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-9",
+      "category": "technical",
+      "case_accuracy": 0.5,
+      "latency_s": 3.63,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-10",
+      "category": "technical",
+      "case_accuracy": 0.5,
+      "latency_s": 5.94,
+      "api_error": null
+    },
+    {
+      "case_id": "technical-11",
+      "category": "technical",
+      "case_accuracy": 0.25,
+      "latency_s": 3.41,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-1",
+      "category": "abstract",
+      "case_accuracy": 0.75,
+      "latency_s": 5.52,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-2",
+      "category": "abstract",
+      "case_accuracy": 0.0,
+      "latency_s": 6.05,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-3",
+      "category": "abstract",
+      "case_accuracy": 0.0,
+      "latency_s": 3.48,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-4",
+      "category": "abstract",
+      "case_accuracy": 0.0,
+      "latency_s": 122.31,
+      "api_error": "envelope missing choices[0].message.content"
+    },
+    {
+      "case_id": "abstract-5",
+      "category": "abstract",
+      "case_accuracy": 0.75,
+      "latency_s": 5.43,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-6",
+      "category": "abstract",
+      "case_accuracy": 0.25,
+      "latency_s": 4.71,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-7",
+      "category": "abstract",
+      "case_accuracy": 0.5,
+      "latency_s": 9.55,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-8",
+      "category": "abstract",
+      "case_accuracy": 0.25,
+      "latency_s": 5.53,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-9",
+      "category": "abstract",
+      "case_accuracy": 0.25,
+      "latency_s": 4.33,
+      "api_error": null
+    },
+    {
+      "case_id": "abstract-10",
+      "category": "abstract",
+      "case_accuracy": 0.0,
+      "latency_s": 3.22,
+      "api_error": "no '{' found in content: "
+    },
+    {
+      "case_id": "chitchat-1",
+      "category": "chitchat",
+      "case_accuracy": 1.0,
+      "latency_s": 1.74,
+      "api_error": null
+    },
+    {
+      "case_id": "chitchat-2",
+      "category": "chitchat",
+      "case_accuracy": 1.0,
+      "latency_s": 2.51,
+      "api_error": null
+    },
+    {
+      "case_id": "chitchat-3",
+      "category": "chitchat",
+      "case_accuracy": 1.0,
+      "latency_s": 1.67,
+      "api_error": null
+    },
+    {
+      "case_id": "chitchat-4",
+      "category": "chitchat",
+      "case_accuracy": 1.0,
+      "latency_s": 1.5,
+      "api_error": null
+    },
+    {
+      "case_id": "chitchat-5",
+      "category": "chitchat",
+      "case_accuracy": 1.0,
+      "latency_s": 1.73,
+      "api_error": null
+    },
+    {
+      "case_id": "chitchat-6",
+      "category": "chitchat",
+      "case_accuracy": 1.0,
+      "latency_s": 2.3,
+      "api_error": null
+    },
+    {
+      "case_id": "chitchat-7",
+      "category": "chitchat",
+      "case_accuracy": 1.0,
+      "latency_s": 3.05,
+      "api_error": null
+    },
+    {
+      "case_id": "chitchat-8",
+      "category": "chitchat",
+      "case_accuracy": 0.0,
+      "latency_s": 120.71,
+      "api_error": "envelope missing choices[0].message.content"
+    }
+  ]
+}

@@ -28,6 +28,9 @@ app/
 Thumbs.db
 desktop.ini
 .vscode/
+
+# === Superpowers brainstorming workspace (mockups, state, sessions) ===
+.superpowers/
 .idea/
 *.swp
 *.swo

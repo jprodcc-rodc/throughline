@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#18181b" />
+  <meta name="color-scheme" content="dark" />
+
+  <title>Rodix — ChatGPT remembers your name. Rodix remembers your thinking.</title>
+  <meta name="description" content="Memory layer for AI chat. Cross-model. White-box. Yours. Rodix optimizes for continuity of thought — picking up where you actually left off." />
+
+  <!-- OpenGraph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Rodix — ChatGPT remembers your name. Rodix remembers your thinking." />
+  <meta property="og:description" content="Memory layer for AI chat. Cross-model. White-box. Yours." />
+  <meta property="og:image" content="/static/landing/screenshots/og-card.png" />
+  <meta property="og:url" content="https://rodix.app" />
+
+  <!-- Twitter card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rodix — ChatGPT remembers your name. Rodix remembers your thinking." />
+  <meta name="twitter:description" content="Memory layer for AI chat. Cross-model. White-box. Yours." />
+  <meta name="twitter:image" content="/static/landing/screenshots/og-card.png" />
+
+  <!-- Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+
+  <!-- Tokens + layout -->
+  <link rel="stylesheet" href="/static/landing/design-tokens.css" />
+</head>
+<body>
+
+  <a href="#main" class="skip-link">Skip to content</a>
+
+  <!-- ── Nav ─────────────────────────────────────────────────────────────── -->
+  <header class="nav" role="banner">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand" aria-label="Rodix home">Rodix</a>
+      <a href="#try" class="btn btn-primary nav-cta">Try the alpha</a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ── 1. Hero ───────────────────────────────────────────────────────── -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="container container-wide">
+        <h1 id="hero-heading">ChatGPT remembers your name.<br />Rodix remembers your thinking.</h1>
+
+        <p class="hero-subhead">
+          Rodix optimizes for continuity of thought &mdash; picking up where you actually left off.
+        </p>
+
+        <div class="hero-cta">
+          <a href="#try" class="btn btn-primary" id="try">Try the alpha &rarr;</a>
+          <a href="#manifesto" class="btn btn-link">Read the manifesto</a>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 2. The thing about thinking with AI ───────────────────────────── -->
+    <section aria-labelledby="problem-heading" class="reveal">
+      <div class="container">
+        <span class="eyebrow">The problem</span>
+        <h2 id="problem-heading">The thing about thinking with AI</h2>
+
+        <p class="lead">
+          You open ChatGPT. You re-explain what you were working on three weeks ago. You get a slightly different answer. You move on.
+        </p>
+
+        <p class="lead">
+          The tools work. The thinking doesn't compound. You'd worked through this same decision twice before and you know it, but the conversations are buried, the threads are tangled, and you can't reconstruct what you concluded without re-reading 80kb of chat. So you start over. And the next time, you start over again.
+        </p>
+
+        <p class="lead">
+          ChatGPT remembers your name. It remembers your job, your dietary preference, the way you like your code formatted. None of that is what's missing. What's missing is the spine of conversations &mdash; the ability to pick up where you actually left off, with the thinking intact, on the day you came back.
+        </p>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 3. What Rodix does ────────────────────────────────────────────── -->
+    <section aria-labelledby="what-heading" class="reveal">
+      <div class="container">
+        <span class="eyebrow">What Rodix does</span>
+        <h2 id="what-heading">Three things. That's it.</h2>
+
+        <div class="mechanism-list">
+          <article class="mechanism">
+            <h3>White-box thinking cards</h3>
+            <p>
+              Every meaningful exchange becomes one structured card with four named fields &mdash; topic, concern, hope, open question. You see every card. You edit it, delete it, trace it back to the conversation that produced it. No black-box tags. No iceberg of inferred labels. If Rodix got something wrong about you, the card is right there in the Vault &mdash; open, edit, save.
+            </p>
+          </article>
+
+          <article class="mechanism">
+            <h3>Same memory across every model you use</h3>
+            <p>
+              The cards live with you, not with the AI. Switch from Claude to GPT-5 to whatever wins next year &mdash; your memory comes with you. The model is interchangeable. That's the whole point.
+            </p>
+          </article>
+
+          <article class="mechanism">
+            <h3>Active recall &mdash; before the AI replies</h3>
+            <p>
+              Start a new conversation. Rodix searches your past cards, finds the prior thinking that connects, and surfaces it as a visible callout. Source-attributed, dated, dismissable. You skip the re-explaining tax. The AI gets your real history, not a vendor's compressed guess at who you are.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 4. For whom ───────────────────────────────────────────────────── -->
+    <section class="for-whom reveal" aria-labelledby="whom-heading">
+      <div class="container">
+        <span class="eyebrow">Who it's for</span>
+        <h2 id="whom-heading">If you've ever&hellip;</h2>
+
+        <p>
+          &hellip;re-explained a project to ChatGPT for the fifth time and felt the soul-tax. Used three AIs for different things and wished they shared a brain. Tried "AI memory" features and got mildly creeped out by what they assumed. Wanted a record of how your thinking evolved on something hard, not just the answers &mdash; you're the user.
+        </p>
+
+        <p class="anti-target">
+          If you ask AI "what's a good restaurant in Lisbon" twice a week and that's it, you don't need this. ChatGPT's fine.
+        </p>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 5. How it feels — comparison + 4-field card mockup ────────────── -->
+    <section aria-labelledby="feels-heading" class="reveal">
+      <div class="container container-wide">
+        <span class="eyebrow">How it feels</span>
+        <h2 id="feels-heading">Last Tuesday, an actual example.</h2>
+
+        <p class="lead">
+          You'd been turning over whether to keep building a side project for two months &mdash; talked to AI about it maybe a dozen times across two providers, plus a friend on a walk. You open Rodix and say <em>thinking again about whether to kill the side project.</em>
+        </p>
+
+        <p class="lead">
+          Three cards come back. You read them back-to-back. The pattern is suddenly obvious in a way it never was inside any single conversation.
+        </p>
+
+        <!-- 4-field card stack — the brand-recognizable visualization -->
+        <div class="card-stack" aria-label="Three example thinking cards from the same recurring topic">
+
+          <article class="card-mock">
+            <div class="card-mock-date">Sept 3</div>
+            <div class="card-mock-fields">
+              <div>
+                <span class="card-mock-field-label">Topic</span>
+                <span class="card-mock-field-value">Side project shutdown</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Concern</span>
+                <span class="card-mock-field-value">Sunk cost &mdash; 200 hours in</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Hope</span>
+                <span class="card-mock-field-value">Reclaim 6 hours/week</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Open</span>
+                <span class="card-mock-field-value">Is the metric "hours" or "joy"?</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card-mock">
+            <div class="card-mock-date">Sept 19</div>
+            <div class="card-mock-fields">
+              <div>
+                <span class="card-mock-field-label">Topic</span>
+                <span class="card-mock-field-value">Side project &mdash; signal check</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Concern</span>
+                <span class="card-mock-field-value">No paying user in 6 weeks</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Hope</span>
+                <span class="card-mock-field-value">One real signal would change the call</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Open</span>
+                <span class="card-mock-field-value">What signal would actually count?</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card-mock">
+            <div class="card-mock-date">Oct 4</div>
+            <div class="card-mock-fields">
+              <div>
+                <span class="card-mock-field-label">Topic</span>
+                <span class="card-mock-field-value">Side project &mdash; just-decide</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Concern</span>
+                <span class="card-mock-field-value">I'm avoiding the decision, not torn</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Hope</span>
+                <span class="card-mock-field-value">Reclaim the weeks, decide tonight</span>
+              </div>
+              <div>
+                <span class="card-mock-field-label">Open</span>
+                <span class="card-mock-field-value-empty card-mock-field-empty">&mdash;</span>
+              </div>
+            </div>
+          </article>
+
+        </div>
+
+        <p class="feels-caption">
+          The bar kept moving. Hours, then signal, then just-decide. The decision was about ten seconds away.
+        </p>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 6. The privacy thing ──────────────────────────────────────────── -->
+    <section class="privacy reveal" aria-labelledby="privacy-heading">
+      <div class="container">
+        <span class="eyebrow">The privacy thing</span>
+        <h2 id="privacy-heading">Honest about what we ship.</h2>
+
+        <p>
+          Server-side recall, by the way &mdash; so this is not zero-knowledge, and won't pretend to be. Encryption hardening lives on the post-launch roadmap. The actual ownership story is markdown export: one click, plaintext markdown files, four fields per card, dates and source links intact. Open them in Obsidian. Paste them into Notion. Throw them on a USB stick. You can leave any time, take everything with you, in a format your grandmother can open.
+        </p>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 7. Pricing ────────────────────────────────────────────────────── -->
+    <section aria-labelledby="pricing-heading" class="reveal">
+      <div class="container">
+        <span class="eyebrow">Pricing</span>
+        <h2 id="pricing-heading">Founder pricing for the first 100 users.</h2>
+
+        <div class="pricing-card">
+          <div class="pricing-amount">
+            $TODO<span class="pricing-period"> / month</span>
+          </div>
+          <p>or $TODO/year (about 30% off).</p>
+
+          <p>After the first 100, pricing goes up. Founder pricing is locked for those users for as long as they keep their subscription active.</p>
+
+          <p>Free tier: read-only &mdash; try the product, see your cards extract, see active recall fire. Active conversations and export are paid.</p>
+
+          <code class="todo-marker">TODO: replace with Tier 1 Task 4 final $X</code>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider" />
+
+    <!-- ── 8. FAQ ────────────────────────────────────────────────────────── -->
+    <section aria-labelledby="faq-heading" class="reveal">
+      <div class="container">
+        <span class="eyebrow">Questions</span>
+        <h2 id="faq-heading">Things people actually ask.</h2>
+
+        <div class="faq-list" role="region" aria-label="Frequently asked questions">
+
+          <details class="faq-item">
+            <summary>
+              <span>Why won't ChatGPT just ship this?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>They could ship pieces of it. White-box cards in Claude, markdown export in ChatGPT &mdash; those are weeks of engineering work for a frontier vendor. The piece they cannot ship is cross-model memory. If your Claude memory worked in GPT, you'd switch tools whenever a better model came out, and the lock-in is the LTV. Their business model contradicts the product you actually want. That's the whole bet.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>Is my data zero-knowledge?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>No. Server-side recall means Rodix's servers see your cards in plaintext at recall time. Encryption hardening &mdash; per-user keys, end-to-end &mdash; is on the post-launch roadmap, not Phase 1. The actual ownership story today is markdown export: you can leave any time, take everything with you. We won't promise zero-knowledge while shipping plaintext-at-rest. That would be a lie given the architecture.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>What happens if I switch to a different AI?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>Nothing changes on your end. The cards are stored on Rodix, not on the model. Switch from Claude to GPT-5 in settings &mdash; your vault is unchanged, your active recall keeps firing, your past thinking comes with you. That's why we built it this way.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>Why English speakers only? When will Chinese launch?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>Phase 1 is English-speaking international, no Chinese market, no EU. EU is geo-blocked at the auth layer (GDPR exposure on personal-thinking data). Chinese launch is post-Phase-1, no committed date. The voice discipline is harder in Chinese &mdash; the cultural pull toward sentimentality and adjective-stacking is denser, and getting it right matters more than getting it shipped.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>Can I export? In what format?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>One click, plaintext markdown. Each card is one file with frontmatter (date, topic) and the four fields rendered as readable sections. Open it in Obsidian, paste it into Notion, throw it on a USB stick. Not JSON. JSON is technically portable and practically opaque &mdash; your data on paper, not in your hands.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>What if I don't want a card created from a conversation?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>Settings has a switch to turn auto-extraction off entirely. You can also delete individual cards from the Vault tab; deleting also removes them from future recall. The switch should have been more visible from the first build &mdash; that's on me, and the next release moves it.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>How is this different from Mem.ai or Reflect?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>Mem and Reflect are notebooks with AI on top. Rodix is AI chat with memory &mdash; the chat is the primary surface, the cards are extracted from the conversation, recall fires inside the chat. You don't write notes; the thinking writes itself. A notebook is for capturing what you already know. Rodix is for working out what you don't know yet, and remembering across the working.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>Who's building this?</span>
+              <span class="faq-toggle" aria-hidden="true"></span>
+            </summary>
+            <div class="faq-answer">
+              <p>Solo, anonymous, working out of Asia, second half of a multi-year build. Public launch: weeks, not months.</p>
+              <p>(If anonymity is a deal-breaker for you, that's a fair flag &mdash; Rodix is handling personal-thinking data, and you should evaluate the founder the way you evaluate the product. Markdown export is the structural answer: leave any time, with everything, in a format anyone can read.)</p>
+            </div>
+          </details>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ───────────────────────────────────────────────────────────── -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+
+      <p class="footer-tagline">
+        <strong>Rodix</strong> &mdash; Memory layer for AI chat. Cross-model. White-box. Yours.
+      </p>
+
+      <nav class="footer-links" aria-label="Footer">
+        <a href="#try">Try the alpha</a>
+        <a href="#manifesto" id="manifesto">Read the manifesto</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="mailto:hi@rodix.app">Contact</a>
+      </nav>
+
+      <p class="footer-meta">
+        Built solo from Asia. Public launch: weeks, not months.
+      </p>
+
+      <p class="footer-sig">&mdash; Rodc</p>
+    </div>
+  </footer>
+
+  <!-- ────────────────────────────────────────────────────────────────────────
+       Minimal JS: IntersectionObserver-driven fade-in for .reveal blocks.
+       No third-party scripts. No analytics. No tracking. ~30 lines.
+       ──────────────────────────────────────────────────────────────────── -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Respect reduced-motion: skip the whole thing.
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var revealEls = document.querySelectorAll('.reveal');
+
+      if (reduced || !('IntersectionObserver' in window)) {
+        revealEls.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+
+      revealEls.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>

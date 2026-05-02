@@ -1,0 +1,71 @@
+# ChatGPT remembers your name. Rodix remembers your thinking.
+
+*Why I'm building a memory layer for AI chat — and why the people who already make AI can't.*
+
+---
+
+I'm a heavy AI user. ~2-3 hours a day, across ChatGPT, Claude, Gemini, plus a few more. Nothing impressive about that — I'm just one of the people who started using these tools as a primary thinking surface and never went back. I wasn't trying to build anything. I was trying to figure out what I thought about a few hard things in my own life.
+
+After a year of this, I noticed two things.
+
+The first one took me a while to name, because it didn't look like a problem. It looked like work. I'd open Claude on a Tuesday and spend forty minutes thinking through whether to take a job offer — concerns, hopes, the parts that didn't fit. Two weeks later I'd come back, want to continue, and the conversation would be buried. The threads were tangled. I couldn't reconstruct what I had concluded without re-reading 80kb of chat. So I'd just start over. Re-explain. Get a slightly different answer. The thinking didn't compound — it reset every time.
+
+I started keeping rough notes on the side, but the notes were always a worse version of what we'd already worked out together. I noticed I was paying a tax — re-explaining myself to the tool, every time, to get to the place we'd already been.
+
+The second thing I noticed was sharper, and it changed how I thought about the whole category. The "memory" features that were supposed to fix the first thing made it worse.
+
+Gemini decided I was a corporate secretary because I asked one factual question about the role. Then it kept opening replies with *"as a corporate secretary, you should..."* for weeks. There's no way to debug that. No source attribution. No real edit. ChatGPT's memory is the same shape — a few items it deigns to show you, plus an iceberg of inferred labels you'll never see.
+
+I sat with that for a while. The frustrating part wasn't that the system was wrong about me. It was that I had no way out of the wrong it had made. And once I saw that, I couldn't unsee what was actually being shipped: not "we remember you," but "we infer a label for you and apply it indefinitely." That was the moment I stopped thinking of bad memory as an engineering bug and started thinking of it as a structural choice.
+
+\* \* \*
+
+Here is the part I want to be careful about, because I do not want to be snarky about other companies. Snark would miss the point.
+
+The frontier vendors — OpenAI, Google, Anthropic — are not bad at memory because they are bad engineers. They are some of the best engineering teams alive. They are bad at memory because the kind of memory a user actually wants contradicts the business they actually run.
+
+ChatGPT shipped its memory feature as a few items the system deigns to show you, sitting on top of an iceberg of inferred labels you will never see, because surfacing the iceberg would mean admitting how much of the model's behavior is driven by guesses no one is allowed to audit. Gemini shipped persona inference because persona inference is what you do when the product is "we know you," not "you know you, we help recall." Claude projects shipped scoped, named, somewhat-editable memory — but bound to one vendor, because the entire premise of a frontier-model business is that you stay on the model.
+
+Three different companies. Three different teams. The same architectural choice, made the same way, for the same reason.
+
+The reason is simple enough that it sounds like a conspiracy theory until you sit with it for a minute. The lock-in is the LTV. If your Claude memory worked in GPT, you'd switch tools whenever a better model came out. So they keep memory locked, opaque, and uneditable — by design.
+
+This is not me being clever; it is the structural consequence of a business model that depends on you not leaving. Cross-model memory dissolves frontier-vendor LTV. White-box cards admit the user can see what the system thinks about them — and once they can see, they can correct, and once they can correct, the "we know you" frame collapses. Real markdown export means the data was actually yours. Active recall calibrated for trust rather than engagement minutes is unavailable to any team whose corporate metric tree rewards engagement minutes — which is all of them.
+
+The architectural commitments a user-aligned memory layer requires are, one by one, structurally incompatible with the products incumbents are actually selling. The bet is not that any single one is uncopyable — Anthropic could ship cards tomorrow if it wanted; OpenAI could ship export. The bet is that the *whole shape* — memory the user owns, model interchangeable, transparency by default, real export — is structurally unavailable to anyone whose business model depends on you not leaving.
+
+\* \* \*
+
+Rodix is the opposite of all four.
+
+Every meaningful exchange becomes one structured card with four named fields — topic, concern, hope, open question. You can read every card, edit it, delete it, see exactly which conversation produced it. The same memory works whether you're chatting with GPT-5, Claude, Gemini, or whatever wins next year. When you start a new conversation, Rodix searches your past cards before the AI generates, and surfaces relevant prior thinking as a visible recall callout — here is what you were wrestling with three weeks ago about this exact thing, here is the question you left open. Export is one click, plaintext markdown. Open it in Obsidian, paste it into Notion, throw it on a USB stick.
+
+Server-side recall, by the way — so this is not zero-knowledge, and won't pretend to be. Encryption hardening lives on the post-launch roadmap. The actual ownership story is markdown export.
+
+None of that is a feature list; it is a posture. The bet is that the memory belongs to the user, the model is interchangeable, and everything else falls out of that.
+
+What it feels like, in practice, is small. Last Tuesday I'd been turning over whether to keep building a side project for two months — talked to AI about it maybe a dozen times across two providers, plus my wife, plus a friend on a walk. I opened Rodix and said: *thinking again about whether to kill the side project.*
+
+Three cards came back, dated September 3, September 19, October 4.
+
+Reading them back-to-back, the pattern was suddenly obvious in a way it never was inside any single conversation. I kept moving the bar — September 3 it was hours, September 19 it was a signal, October 4 it was just-decide. I wasn't actually torn. I was avoiding the decision.
+
+I killed the project that night.
+
+(I might restart it next year. That's fine. Different decision.)
+
+That is the unlock, and it is not personalization, and it is not productivity. ChatGPT remembers your name; that is fine and useful and not what is missing. What is missing is the spine of conversations — the ability to pick up where you actually left off, with the thinking intact, on a hard thing, on the day you came back. Rodix optimizes for continuity of thought. Not the AI knowing more about you. Not faster answers. The specific human capacity restored is the one you had before AI existed and stopped having about a year after you started leaning on it: the ability to think about a hard problem over weeks, with the work compounding, instead of resetting every time.
+
+The AI underneath is whatever you choose. Rodix is the layer on top — the memory, the continuity, the receipts.
+
+\* \* \*
+
+If you've ever re-explained a project to ChatGPT for the fifth time and felt the soul-tax. Used three AIs for different things and wished they shared a brain. Tried "AI memory" features and got mildly creeped out by what they assumed. Wanted a record of how your thinking evolved on something hard, not just the answers — you're the user.
+
+If you ask AI "what's a good restaurant in Lisbon" twice a week and that's it, you don't need this. ChatGPT's fine.
+
+Solo, anonymous, working out of Asia, second half of a multi-year build. Public launch: weeks, not months.
+
+ChatGPT remembers your name. Rodix remembers your thinking.
+
+— Rodc

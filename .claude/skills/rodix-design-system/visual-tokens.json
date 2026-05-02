@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "name": "rodix-visual-tokens",
+  "version": "1.0.0",
+  "source": "docs/superpowers/brand/brand-book-v1.md §6 + 2026-05-01-rodix-brainstorm.md locked tokens",
+  "phase": "Phase 1 (desktop Web primary, mobile responsive); light mode is not Phase 1 scope",
+  "colors": {
+    "background": {
+      "value": "#18181b",
+      "name": "warm-dark",
+      "usage": "page background; intimate / private / late-night-thinking register"
+    },
+    "surface": {
+      "value": "#27272a",
+      "name": "surface",
+      "usage": "card backgrounds, modals, elevated panels"
+    },
+    "text-primary": {
+      "value": "#fafafa",
+      "usage": "body text, primary headings"
+    },
+    "text-secondary": {
+      "value": "#a1a1aa",
+      "usage": "metadata, timestamps, helper text, placeholder text"
+    },
+    "border": {
+      "value": "rgba(255,255,255,0.05)",
+      "usage": "subtle dividers; never decorative"
+    },
+    "accent-amber": {
+      "value": "#d97706",
+      "name": "amber",
+      "usage": "verification color — applied consistently to badges, recall callouts, source-card markers, sticky date headers, Card with Promise border. Never decorative.",
+      "anti-pattern": "Do NOT use Raycast's #ff5e1a — that orange invites copy-cat optics. Amber #d97706 is warmer than Linear's cool indigo (Explorer approachable, not aloof) and more grounded than Anthropic's pure greys."
+    },
+    "error": {
+      "value": "#ef4444",
+      "usage": "error states, destructive action confirmation"
+    },
+    "success": {
+      "value": "#22c55e",
+      "usage": "save confirmation; never celebration. Procedural, not festive."
+    }
+  },
+  "typography": {
+    "font-family": {
+      "value": "Inter, -apple-system, system-ui, sans-serif",
+      "rationale": "Inter is neutral, unspecific, global — matches the cross-model bet (no vendor flavor, no vertical signal). Sans-serif resists 4-field-card sentimentality drift."
+    },
+    "weights": [200, 300, 400, 600, 700],
+    "scale": {
+      "hero": {
+        "size": "clamp(2rem, 5vw, 3.5rem)",
+        "weight": 200,
+        "line-height": 1.1,
+        "usage": "landing page hero only; ≤ 12 English words"
+      },
+      "heading-1": {
+        "size": "1.5rem",
+        "weight": 600,
+        "line-height": 1.3,
+        "usage": "primary section headings"
+      },
+      "heading-2": {
+        "size": "1.25rem",
+        "weight": 600,
+        "line-height": 1.4,
+        "usage": "subsection headings, modal titles"
+      },
+      "body": {
+        "size": "1rem",
+        "weight": 400,
+        "line-height": 1.6,
+        "usage": "primary reading text, chat bubbles"
+      },
+      "small": {
+        "size": "0.875rem",
+        "weight": 400,
+        "line-height": 1.5,
+        "usage": "metadata, helper text, button labels"
+      },
+      "caption": {
+        "size": "0.75rem",
+        "weight": 400,
+        "line-height": 1.4,
+        "usage": "timestamps, footnote-level text"
+      }
+    }
+  },
+  "spacing": {
+    "base": "8px",
+    "scale": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px"
+    },
+    "card-padding-mobile": "8px 10px",
+    "card-padding-desktop": "16px 20px",
+    "section-gap-desktop": "32px",
+    "page-padding-desktop": "32px 48px"
+  },
+  "iconography": {
+    "library": "Lucide line",
+    "stroke-width": "1.5-1.8px",
+    "size-states": "16-18px",
+    "size-navigation": "22-24px",
+    "decoration-rule": "No emoji adornments. Lucide line icons replace emoji. Single exception: ⚡ in active-recall callout."
+  },
+  "components": {
+    "card-with-promise": {
+      "border-color": "accent-amber",
+      "border-width": "1px",
+      "border-radius": "8px",
+      "padding": "card-padding-desktop",
+      "background": "surface",
+      "fields": ["topic", "concern", "hope", "question"],
+      "field-labels-en": {
+        "topic": "What you're thinking about",
+        "concern": "What worries you / what's hard",
+        "hope": "What you want / where you're going",
+        "question": "What's still unresolved"
+      },
+      "null-rendering": "Empty fields render as blank — never 'N/A', never invented placeholder. Empty is correct (Decision 5)."
+    },
+    "chat-bubble-user": {
+      "background": "surface",
+      "text": "text-primary",
+      "padding": "12px 16px",
+      "border-radius": "12px",
+      "max-width": "70%",
+      "alignment": "right"
+    },
+    "chat-bubble-ai": {
+      "background": "transparent",
+      "text": "text-primary",
+      "padding": "12px 0",
+      "max-width": "85%",
+      "alignment": "left",
+      "no-bubble": "AI replies render bare — no surrounding bubble. Type-first hierarchy."
+    },
+    "recall-callout": {
+      "border-color": "accent-amber",
+      "border-width": "1px",
+      "border-style": "solid",
+      "background": "rgba(217,119,6,0.05)",
+      "icon": "⚡",
+      "header-en": "I brought this back",
+      "header-zh-locked": "⚡ 我把这个带回来了",
+      "header-zh-current-placeholder": "记忆提醒 · 话题相关",
+      "actions-zh-locked": ["用上了", "不相关", "已经想过", "跳过"],
+      "actions-zh-current-placeholder": ["记下了", "看了", "不相关", "忽略"],
+      "wave-2-deliverable": "Patching header + actions to locked copy is a Wave 2 deliverable on #active-recall-base."
+    },
+    "button-primary": {
+      "background": "accent-amber",
+      "text": "background",
+      "padding": "10px 16px",
+      "border-radius": "6px",
+      "weight": 600,
+      "label-max": "≤ 4 English words / ≤ 8 Chinese characters"
+    },
+    "button-ghost": {
+      "background": "transparent",
+      "text": "text-primary",
+      "border": "1px solid border",
+      "padding": "10px 16px",
+      "border-radius": "6px"
+    },
+    "loading-indicator": {
+      "label-en": "Usually 2-4 seconds",
+      "label-zh": "通常 2-4 秒",
+      "trigger": "Show only when load > 1.5s",
+      "tone": "Procedural, not celebratory"
+    },
+    "empty-state": {
+      "title-max": "≤ 8 words",
+      "tone": "One-line hint. Never encouragement walls. Never 'Get started!'",
+      "illustration": "None. Type-first."
+    }
+  },
+  "animation": {
+    "duration-fast": "120ms",
+    "duration-normal": "200ms",
+    "duration-slow": "320ms",
+    "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+    "rule": "Animations are functional (state transitions), never decorative. No bouncy springs, no celebration confetti."
+  },
+  "anti-patterns": {
+    "notion-3d-glass": "Resist Notion-AI's 3D glass effects — incompatible with Explorer anti-spin posture",
+    "granola-handwritten": "Resist Granola's handwritten warmth — drifts toward sentimentality",
+    "celebration-toasts": "No 🎉 / confetti / 'Great job!' on save events. Procedural feedback only.",
+    "map-iconography": "Explorer is a posture toward freedom, not a visual genre. No compass / map / journey iconography.",
+    "emoji-adornment": "Single exception is ⚡ in recall callout. No 🚀 / 🎉 / 🔥 / 🎯 / ✨ anywhere else.",
+    "raycast-orange": "#ff5e1a invites copy-cat optics. Use #d97706 amber instead."
+  }
+}

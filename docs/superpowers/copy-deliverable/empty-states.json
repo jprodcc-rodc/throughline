@@ -1,0 +1,12 @@
+{
+  "first_chat": "Type something you've actually been thinking about. Not a test — a real one. Cards will appear as you talk.",
+  "vault_empty": "Your cards will appear here as you talk to Rodix. We don't write them — your thinking does.",
+  "vault_search_no_results": "Nothing matches that search yet. Try a different phrase, or a topic you've thought about recently.",
+  "vault_filter_no_results": "No cards under that filter. Clear it to see everything, or try another topic.",
+  "import_zero_imported": "We didn't find anything to import. That's fine — start with a conversation, the vault grows from there.",
+  "recall_no_history": "No past cards to bring back yet. They'll surface as topics return across conversations.",
+  "first_insight_pending": "Threads need a few cards before they're visible. Keep going — usually around five on a topic.",
+  "export_nothing_to_export": "Nothing to export yet. Once cards exist, this button gives you markdown files — your hard drive, your call.",
+  "settings_no_recent_activity": "No recent activity. Telemetry is intentionally light here — we don't track engagement metrics.",
+  "search_idle": "Search across topics, concerns, hopes, and open questions. Your wording, not paraphrased."
+}

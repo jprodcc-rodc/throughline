@@ -1,0 +1,22 @@
+{
+  "api_timeout": "Took longer than expected. Try again — this happens occasionally.",
+  "api_unreachable": "Can't reach the AI provider right now. Your message stays in the box.",
+  "extraction_failed": "Couldn't extract a card from that message. The reply went through; nothing's lost.",
+  "extraction_rate_limited": "Extraction is rate-limited for the moment. Chat still works; cards resume shortly.",
+  "vault_sync_failed": "Sync hit a snag. Your changes are on this device — they'll catch up next time.",
+  "vault_load_failed": "Couldn't load the Vault. Refresh, or try again in a minute.",
+  "card_save_failed": "Edit didn't save. Your text is still in the field — try again.",
+  "card_delete_failed": "Delete didn't go through. The card is still here. Try again.",
+  "login_failed": "That didn't work. Check the email or try the magic link again.",
+  "magic_link_expired": "That link expired. Send a new one — they're good for 15 minutes.",
+  "session_expired": "Session expired. Sign in again to continue.",
+  "network_drop": "Lost the connection. Your message stays in the box until you try again.",
+  "rate_limit": "You're sending messages faster than the model can keep up. Pause briefly, retry.",
+  "quota_exceeded": "Hit the daily limit. Resets at midnight UTC. Premium tiers come post-launch.",
+  "upload_failed": "Upload didn't finish. Check the file size or try again.",
+  "upload_unsupported_type": "That file type isn't supported yet. Plaintext, markdown, and PDFs only for now.",
+  "export_failed": "Export didn't complete. Try again — the markdown files build server-side, so a retry usually works.",
+  "delete_account_failed": "Account deletion didn't go through. Email support@rodix.app and we'll handle it manually.",
+  "extraction_returned_empty": "No card from that one — the message didn't name a clear topic. The conversation is saved.",
+  "model_unavailable": "The configured model is unavailable right now. Falling back to the default; chat continues."
+}

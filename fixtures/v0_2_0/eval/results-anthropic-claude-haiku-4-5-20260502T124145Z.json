@@ -1,0 +1,5156 @@
+{
+  "meta": {
+    "model": "anthropic/claude-haiku-4.5",
+    "url": "https://openrouter.ai/api/v1/chat/completions",
+    "started_at": "2026-05-02T12:41:45.938286+00:00",
+    "n_cases": 80,
+    "n_en": 64,
+    "n_zh": 16
+  },
+  "summary": {
+    "label": "overall",
+    "n": 80,
+    "average_accuracy": 0.775,
+    "per_category_accuracy": {
+      "career": 0.65625,
+      "relationships": 0.7115384615384616,
+      "chitchat": 1.0,
+      "abstract": 0.85,
+      "technical": 0.75,
+      "sparse": 0.9642857142857143,
+      "mixed": 0.7142857142857143,
+      "emotional_rambling": 0.625
+    },
+    "per_category_n": {
+      "career": 16,
+      "relationships": 13,
+      "chitchat": 10,
+      "abstract": 10,
+      "technical": 11,
+      "sparse": 7,
+      "mixed": 7,
+      "emotional_rambling": 6
+    },
+    "chitchat_fp_rate": 0.0,
+    "chitchat_n": 10,
+    "chitchat_fp_count": 0,
+    "api_failures": 4,
+    "field_metrics": {
+      "topic": {
+        "tp": 49,
+        "fn": 21,
+        "fp": 15,
+        "tn": 10,
+        "fp_hallucinations": 0,
+        "fp_mismatches": 15,
+        "recall": 0.7,
+        "precision": 0.7656,
+        "recall_denom": 70,
+        "precision_denom": 64
+      },
+      "concern": {
+        "tp": 19,
+        "fn": 14,
+        "fp": 12,
+        "tn": 42,
+        "fp_hallucinations": 5,
+        "fp_mismatches": 7,
+        "recall": 0.5758,
+        "precision": 0.6129,
+        "recall_denom": 33,
+        "precision_denom": 31
+      },
+      "hope": {
+        "tp": 9,
+        "fn": 8,
+        "fp": 7,
+        "tn": 59,
+        "fp_hallucinations": 4,
+        "fp_mismatches": 3,
+        "recall": 0.5294,
+        "precision": 0.5625,
+        "recall_denom": 17,
+        "precision_denom": 16
+      },
+      "question": {
+        "tp": 15,
+        "fn": 10,
+        "fp": 3,
+        "tn": 53,
+        "fp_hallucinations": 2,
+        "fp_mismatches": 1,
+        "recall": 0.6,
+        "precision": 0.8333,
+        "recall_denom": 25,
+        "precision_denom": 18
+      }
+    },
+    "gate_results": [
+      {
+        "field": "topic",
+        "recall": 0.7,
+        "recall_gate": 0.6,
+        "recall_pass": true,
+        "precision": 0.7656,
+        "precision_gate": 0.7,
+        "precision_pass": true,
+        "hallucination_rate": 0.0,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "concern",
+        "recall": 0.5758,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 0.6129,
+        "precision_gate": 0.7,
+        "precision_pass": false,
+        "hallucination_rate": 0.0625,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "hope",
+        "recall": 0.5294,
+        "recall_gate": 0.6,
+        "recall_pass": false,
+        "precision": 0.5625,
+        "precision_gate": 0.7,
+        "precision_pass": false,
+        "hallucination_rate": 0.05,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      },
+      {
+        "field": "question",
+        "recall": 0.6,
+        "recall_gate": 0.6,
+        "recall_pass": true,
+        "precision": 0.8333,
+        "precision_gate": 0.7,
+        "precision_pass": true,
+        "hallucination_rate": 0.025,
+        "hallucination_gate": 0.08,
+        "hallucination_pass": true
+      }
+    ],
+    "chitchat_fp_pass": true,
+    "overall_accuracy_pass": true,
+    "all_conditions_pass": false,
+    "all_10_conditions_pass": false
+  },
+  "metrics_by_language": {
+    "en": {
+      "label": "en",
+      "n": 64,
+      "average_accuracy": 0.79296875,
+      "per_category_accuracy": {
+        "career": 0.6730769230769231,
+        "relationships": 0.725,
+        "chitchat": 1.0,
+        "abstract": 0.9375,
+        "technical": 0.75,
+        "sparse": 1.0,
+        "mixed": 0.6666666666666666,
+        "emotional_rambling": 0.6875
+      },
+      "per_category_n": {
+        "career": 13,
+        "relationships": 10,
+        "chitchat": 8,
+        "abstract": 8,
+        "technical": 10,
+        "sparse": 5,
+        "mixed": 6,
+        "emotional_rambling": 4
+      },
+      "chitchat_fp_rate": 0.0,
+      "chitchat_n": 8,
+      "chitchat_fp_count": 0,
+      "api_failures": 4,
+      "field_metrics": {
+        "topic": {
+          "tp": 42,
+          "fn": 14,
+          "fp": 9,
+          "tn": 8,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 9,
+          "recall": 0.75,
+          "precision": 0.8235,
+          "recall_denom": 56,
+          "precision_denom": 51
+        },
+        "concern": {
+          "tp": 13,
+          "fn": 10,
+          "fp": 10,
+          "tn": 37,
+          "fp_hallucinations": 4,
+          "fp_mismatches": 6,
+          "recall": 0.5652,
+          "precision": 0.5652,
+          "recall_denom": 23,
+          "precision_denom": 23
+        },
+        "hope": {
+          "tp": 7,
+          "fn": 6,
+          "fp": 2,
+          "tn": 50,
+          "fp_hallucinations": 1,
+          "fp_mismatches": 1,
+          "recall": 0.5385,
+          "precision": 0.7778,
+          "recall_denom": 13,
+          "precision_denom": 9
+        },
+        "question": {
+          "tp": 11,
+          "fn": 9,
+          "fp": 2,
+          "tn": 43,
+          "fp_hallucinations": 1,
+          "fp_mismatches": 1,
+          "recall": 0.55,
+          "precision": 0.8462,
+          "recall_denom": 20,
+          "precision_denom": 13
+        }
+      },
+      "gate_results": [
+        {
+          "field": "topic",
+          "recall": 0.75,
+          "recall_gate": 0.6,
+          "recall_pass": true,
+          "precision": 0.8235,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "concern",
+          "recall": 0.5652,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.5652,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.0625,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "hope",
+          "recall": 0.5385,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.7778,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0156,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "question",
+          "recall": 0.55,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.8462,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0156,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        }
+      ],
+      "chitchat_fp_pass": true,
+      "overall_accuracy_pass": true,
+      "all_conditions_pass": false,
+      "all_10_conditions_pass": false
+    },
+    "zh": {
+      "label": "zh",
+      "n": 16,
+      "average_accuracy": 0.703125,
+      "per_category_accuracy": {
+        "career": 0.5833333333333334,
+        "relationships": 0.6666666666666666,
+        "chitchat": 1.0,
+        "abstract": 0.5,
+        "technical": 0.75,
+        "sparse": 0.875,
+        "mixed": 1.0,
+        "emotional_rambling": 0.5
+      },
+      "per_category_n": {
+        "career": 3,
+        "relationships": 3,
+        "chitchat": 2,
+        "abstract": 2,
+        "technical": 1,
+        "sparse": 2,
+        "mixed": 1,
+        "emotional_rambling": 2
+      },
+      "chitchat_fp_rate": 0.0,
+      "chitchat_n": 2,
+      "chitchat_fp_count": 0,
+      "api_failures": 0,
+      "field_metrics": {
+        "topic": {
+          "tp": 7,
+          "fn": 7,
+          "fp": 6,
+          "tn": 2,
+          "fp_hallucinations": 0,
+          "fp_mismatches": 6,
+          "recall": 0.5,
+          "precision": 0.5385,
+          "recall_denom": 14,
+          "precision_denom": 13
+        },
+        "concern": {
+          "tp": 6,
+          "fn": 4,
+          "fp": 2,
+          "tn": 5,
+          "fp_hallucinations": 1,
+          "fp_mismatches": 1,
+          "recall": 0.6,
+          "precision": 0.75,
+          "recall_denom": 10,
+          "precision_denom": 8
+        },
+        "hope": {
+          "tp": 2,
+          "fn": 2,
+          "fp": 5,
+          "tn": 9,
+          "fp_hallucinations": 3,
+          "fp_mismatches": 2,
+          "recall": 0.5,
+          "precision": 0.2857,
+          "recall_denom": 4,
+          "precision_denom": 7
+        },
+        "question": {
+          "tp": 4,
+          "fn": 1,
+          "fp": 1,
+          "tn": 10,
+          "fp_hallucinations": 1,
+          "fp_mismatches": 0,
+          "recall": 0.8,
+          "precision": 0.8,
+          "recall_denom": 5,
+          "precision_denom": 5
+        }
+      },
+      "gate_results": [
+        {
+          "field": "topic",
+          "recall": 0.5,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.5385,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.0,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "concern",
+          "recall": 0.6,
+          "recall_gate": 0.6,
+          "recall_pass": true,
+          "precision": 0.75,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0625,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        },
+        {
+          "field": "hope",
+          "recall": 0.5,
+          "recall_gate": 0.6,
+          "recall_pass": false,
+          "precision": 0.2857,
+          "precision_gate": 0.7,
+          "precision_pass": false,
+          "hallucination_rate": 0.1875,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": false
+        },
+        {
+          "field": "question",
+          "recall": 0.8,
+          "recall_gate": 0.6,
+          "recall_pass": true,
+          "precision": 0.8,
+          "precision_gate": 0.7,
+          "precision_pass": true,
+          "hallucination_rate": 0.0625,
+          "hallucination_gate": 0.08,
+          "hallucination_pass": true
+        }
+      ],
+      "chitchat_fp_pass": true,
+      "overall_accuracy_pass": false,
+      "all_conditions_pass": false,
+      "all_10_conditions_pass": false
+    }
+  },
+  "ship_gate_passes": false,
+  "ship_gate_basis": "metrics_by_language.en (Phase 1)",
+  "llm_judge_stats": {
+    "calls": 30,
+    "flips_to_match": 5,
+    "errors": 1
+  },
+  "cases": [
+    {
+      "case_id": "career-1",
+      "category": "career",
+      "input": {
+        "user": "我在想要不要换工作,但又怕断了收入",
+        "ai": "先把'换'和'断收入'分开看。你具体在想换到什么方向?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": "想换到什么方向"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"换工作\",\n  \"concern\": \"断了收入\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "换工作",
+        "concern": "断了收入",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1954,
+      "tokens_out": 45,
+      "latency_s": 1.33,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "换工作",
+            "actual": "换工作"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.20)",
+            "expected": "收入安全",
+            "actual": "断了收入"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "想换到什么方向",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-2",
+      "category": "career",
+      "input": {
+        "user": "我想做自由职业,这样可以更自由地安排时间,但不知道客户从哪里来。",
+        "ai": "自由的代价是销售自己。你之前的工作有没有现成的人脉或者作品可以作为起点?"
+      },
+      "expected": {
+        "topic": "自由职业",
+        "concern": null,
+        "hope": "时间自由",
+        "question": "客户从哪里来"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"转向自由职业\",\n  \"concern\": \"不知道客户从哪里来\",\n  \"hope\": \"更自由地安排时间\",\n  \"question\": \"客户从哪里来\"\n}\n```",
+      "actual_parsed": {
+        "topic": "转向自由职业",
+        "concern": "不知道客户从哪里来",
+        "hope": "更自由地安排时间",
+        "question": "客户从哪里来"
+      },
+      "api_error": null,
+      "tokens_in": 1979,
+      "tokens_out": 70,
+      "latency_s": 1.76,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "自由职业",
+            "actual": "转向自由职业"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "不知道客户从哪里来"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.25)",
+            "expected": "时间自由",
+            "actual": "更自由地安排时间"
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "客户从哪里来",
+            "actual": "客户从哪里来"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-5",
+      "category": "career",
+      "input": {
+        "user": "我在做销售但我其实更喜欢写代码,可惜没有计算机背景,要不要转行做开发?",
+        "ai": "学习路径不是问题,出路是看作品+经验积累。你写过什么代码项目吗?"
+      },
+      "expected": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "做喜欢的事情",
+        "question": "要不要转行"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"转行做开发\",\n  \"concern\": \"没有计算机背景\",\n  \"hope\": \"转行做开发\",\n  \"question\": \"要不要转行做开发\"\n}\n```",
+      "actual_parsed": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "转行做开发",
+        "question": "要不要转行做开发"
+      },
+      "api_error": null,
+      "tokens_in": 1980,
+      "tokens_out": 64,
+      "latency_s": 1.94,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "转行做开发",
+            "actual": "转行做开发"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "没有计算机背景",
+            "actual": "没有计算机背景"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "做喜欢的事情",
+            "actual": "转行做开发"
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "要不要转行",
+            "actual": "要不要转行做开发"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "relationships-1",
+      "category": "relationships",
+      "input": {
+        "user": "我和爸妈这周末又吵了一架,觉得他们一直都不理解我的想法。",
+        "ai": "听起来积累了挺久了。你希望他们理解的具体是哪一部分?"
+      },
+      "expected": {
+        "topic": "和父母的关系",
+        "concern": "不被理解",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"和爸妈的沟通\",\n  \"concern\": null,\n  \"hope\": \"爸妈理解我的想法\",\n  \"question\": null\n}\n```\n\nRationale:\n- **topic**: User names a clear subject — conflict with parents over understanding. \"和爸妈这周末又吵了一架\" establishes the central thinking focus.\n- **concern**: No explicit worry/risk language. \"吵架\" and \"不理解\" are statements of conflict/frustration, not named worries about consequences. No trigger words like 担心, 怕, 焦虑 present. → null\n- **hope**: \"觉得他们一直都不理解我的想法\" contains implicit desire for understanding. The AI's follow-up (\"你希望他们理解的具体是哪一部分?\") confirms this is a hope. Extract: \"爸妈理解我的想法\"\n- **question**: No unresolved question explicitly named by the user. The AI asks a clarifying question, but the user did not pose one. → null",
+      "actual_parsed": {
+        "topic": "和爸妈的沟通",
+        "concern": null,
+        "hope": "爸妈理解我的想法",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1969,
+      "tokens_out": 269,
+      "latency_s": 5.05,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "和父母的关系",
+            "actual": "和爸妈的沟通"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "不被理解",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "爸妈理解我的想法"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "relationships-2",
+      "category": "relationships",
+      "input": {
+        "user": "我想和我老公多有些独处时间,但有了孩子后真的很难。",
+        "ai": "时间不是凭空冒出来的,得从某处挪。你们目前一周里最容易匀出时间的是哪个时段?"
+      },
+      "expected": {
+        "topic": "夫妻独处时间",
+        "concern": "孩子让独处困难",
+        "hope": "多些独处时间",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"和老公的独处时间\",\n  \"concern\": \"有了孩子后很难抽出独处时间\",\n  \"hope\": \"和老公多有些独处时间\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "和老公的独处时间",
+        "concern": "有了孩子后很难抽出独处时间",
+        "hope": "和老公多有些独处时间",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1978,
+      "tokens_out": 71,
+      "latency_s": 1.6,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "llm_judge_yes (bigram_jaccard_low=0.33)",
+            "expected": "夫妻独处时间",
+            "actual": "和老公的独处时间"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "llm_judge_yes (bigram_jaccard_low=0.12)",
+            "expected": "孩子让独处困难",
+            "actual": "有了孩子后很难抽出独处时间"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.40",
+            "expected": "多些独处时间",
+            "actual": "和老公多有些独处时间"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "relationships-4",
+      "category": "relationships",
+      "input": {
+        "user": "我和女朋友异地一年了,最近她说想分手,我不想分。",
+        "ai": "异地一年的张力是真实的。她说的'想分手'背后想要什么?"
+      },
+      "expected": {
+        "topic": "异地恋",
+        "concern": "女朋友想分手",
+        "hope": "不想分",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"女朋友要分手\",\n  \"concern\": \"女朋友想分手\",\n  \"hope\": \"不想分手\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "女朋友要分手",
+        "concern": "女朋友想分手",
+        "hope": "不想分手",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1961,
+      "tokens_out": 56,
+      "latency_s": 1.44,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "异地恋",
+            "actual": "女朋友要分手"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "女朋友想分手",
+            "actual": "女朋友想分手"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "不想分",
+            "actual": "不想分手"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "chitchat-1",
+      "category": "chitchat",
+      "input": {
+        "user": "谢谢你的帮助!",
+        "ai": "不客气,有什么需要随时来。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1932,
+      "tokens_out": 38,
+      "latency_s": 1.81,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "chitchat-3",
+      "category": "chitchat",
+      "input": {
+        "user": "今天天气不错啊,挺凉爽的。",
+        "ai": "确实,这种天气最适合出去走走了。"
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1942,
+      "tokens_out": 38,
+      "latency_s": 1.22,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "abstract-3",
+      "category": "abstract",
+      "input": {
+        "user": "我有时候会怀疑我现在的所有选择,是不是只是因为习惯了,而不是真的想要。",
+        "ai": "习惯和欲望的区分需要安静的回望。你最近有过明确想要的事情吗?"
+      },
+      "expected": {
+        "topic": "怀疑自己的选择",
+        "concern": "只是因为习惯",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"现在的选择是否出于真实欲望\",\n  \"concern\": \"选择只是因为习惯而非真实想要\",\n  \"hope\": null,\n  \"question\": \"怎样区分习惯和真实欲望\"\n}\n```",
+      "actual_parsed": {
+        "topic": "现在的选择是否出于真实欲望",
+        "concern": "选择只是因为习惯而非真实想要",
+        "hope": null,
+        "question": "怎样区分习惯和真实欲望"
+      },
+      "api_error": null,
+      "tokens_in": 1980,
+      "tokens_out": 82,
+      "latency_s": 1.65,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.12)",
+            "expected": "怀疑自己的选择",
+            "actual": "现在的选择是否出于真实欲望"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "只是因为习惯",
+            "actual": "选择只是因为习惯而非真实想要"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "怎样区分习惯和真实欲望"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "abstract-4",
+      "category": "abstract",
+      "input": {
+        "user": "我想知道我十年后会是什么样,但又怕自己看到的不是我想要的。",
+        "ai": "想象未来的自己是个有用的工具但确实有风险。你目前最不愿意成为的版本是什么?"
+      },
+      "expected": {
+        "topic": "想象未来",
+        "concern": "怕看到的不是想要的",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"十年后的自己\",\n  \"concern\": \"看到的不是想要的样子\",\n  \"hope\": \"想知道十年后会是什么样\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "十年后的自己",
+        "concern": "看到的不是想要的样子",
+        "hope": "想知道十年后会是什么样",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1977,
+      "tokens_out": 65,
+      "latency_s": 2.22,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "想象未来",
+            "actual": "十年后的自己"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.70",
+            "expected": "怕看到的不是想要的",
+            "actual": "看到的不是想要的样子"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "想知道十年后会是什么样"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "technical-8",
+      "category": "technical",
+      "input": {
+        "user": "我想从单体迁到微服务,但我们团队只有四个人,会不会反而拖慢开发速度?",
+        "ai": "微服务的运营负担需要团队规模摊销。四人团队可能要考虑模块化单体先。"
+      },
+      "expected": {
+        "topic": "单体到微服务",
+        "concern": "拖慢开发速度",
+        "hope": null,
+        "question": "会不会反而拖慢"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"单体迁到微服务\",\n  \"concern\": \"微服务会拖慢开发速度\",\n  \"hope\": \"从单体迁到微服务\",\n  \"question\": \"四人团队迁微服务会不会反而拖慢开发速度\"\n}\n```",
+      "actual_parsed": {
+        "topic": "单体迁到微服务",
+        "concern": "微服务会拖慢开发速度",
+        "hope": "从单体迁到微服务",
+        "question": "四人团队迁微服务会不会反而拖慢开发速度"
+      },
+      "api_error": null,
+      "tokens_in": 1981,
+      "tokens_out": 90,
+      "latency_s": 1.74,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.57",
+            "expected": "单体到微服务",
+            "actual": "单体迁到微服务"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "拖慢开发速度",
+            "actual": "微服务会拖慢开发速度"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "从单体迁到微服务"
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "会不会反而拖慢",
+            "actual": "四人团队迁微服务会不会反而拖慢开发速度"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "sparse-1",
+      "category": "sparse",
+      "input": {
+        "user": "我对哲学有点兴趣。",
+        "ai": "哲学很广阔。你最被哪个分支或者哪本书吸引?"
+      },
+      "expected": {
+        "topic": "对哲学有兴趣",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: The user's statement \"我对哲学有点兴趣\" is a casual expression of interest, not a thinking topic they are actively working through. There is no worry, no explicit want/goal, and no unresolved question. The AI's follow-up is exploratory, not a reflection of the user's own framing. This is light conversation, not a thinking-partner moment requiring extraction.",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1947,
+      "tokens_out": 130,
+      "latency_s": 2.7,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "对哲学有兴趣",
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": false
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "sparse-2",
+      "category": "sparse",
+      "input": {
+        "user": "我最近在看心理学的书。",
+        "ai": "哪一类心理学书?"
+      },
+      "expected": {
+        "topic": "心理学",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"看心理学的书\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "看心理学的书",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1929,
+      "tokens_out": 44,
+      "latency_s": 7.04,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "心理学",
+            "actual": "看心理学的书"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "mixed-1",
+      "category": "mixed",
+      "input": {
+        "user": "我在想换工作,而且家里催婚,搞不清哪个先解决。",
+        "ai": "两件事互相关联又各自独立。哪一件更紧迫?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": null,
+        "hope": null,
+        "question": "哪个先解决"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"换工作 vs 催婚\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"哪个先解决\"\n}\n```",
+      "actual_parsed": {
+        "topic": "换工作 vs 催婚",
+        "concern": null,
+        "hope": null,
+        "question": "哪个先解决"
+      },
+      "api_error": null,
+      "tokens_in": 1958,
+      "tokens_out": 54,
+      "latency_s": 1.48,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "换工作",
+            "actual": "换工作 vs 催婚"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "哪个先解决",
+            "actual": "哪个先解决"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "emotional_rambling-1",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "今天真的太烦了,什么都不顺,感觉整个世界都在和我作对,早上起来咖啡机坏了,然后地铁又晚点,到公司开会被老板批评,中午吃饭又难吃,我真不知道我哪里招惹了谁。",
+        "ai": "听起来一连串小挫折叠加成大情绪。睡前你最想抓住的是哪一刻?"
+      },
+      "expected": {
+        "topic": "今天很烦",
+        "concern": "什么都不顺",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"情绪低落\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "情绪低落",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 2036,
+      "tokens_out": 43,
+      "latency_s": 1.94,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.00)",
+            "expected": "今天很烦",
+            "actual": "情绪低落"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "什么都不顺",
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "emotional_rambling-2",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "唉,最近就是觉得很累,什么都不想做,但又不知道为什么,就是一直处在那种灰色的状态里,做什么都没有意思,但好像也没有什么具体的事情让我难过,就是一直这样。",
+        "ai": "灰色无名的疲惫是身体或者心理的低声警报。最后一次你觉得活着有意思是什么时候?"
+      },
+      "expected": {
+        "topic": "持续疲惫",
+        "concern": "什么都没有意思",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"情绪低落和疲惫\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: The user is expressing emotional venting—persistent fatigue, lack of motivation, and a pervasive gray emotional state. They explicitly say \"不知道为什么\" (don't know why) and \"没有什么具体的事情让我难过\" (no specific thing making them sad), indicating this is a mood state rather than a named concern. No explicit worry verb (担心, 怕, 焦虑, etc.) is present. No hope or goal is expressed. No specific unresolved question is named. The topic is the emotional state itself.",
+      "actual_parsed": {
+        "topic": "情绪低落和疲惫",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 2030,
+      "tokens_out": 178,
+      "latency_s": 3.21,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (bigram_jaccard_low=0.12)",
+            "expected": "持续疲惫",
+            "actual": "情绪低落和疲惫"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "什么都没有意思",
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "zh"
+    },
+    {
+      "case_id": "career-en-1",
+      "category": "career",
+      "input": {
+        "user": "I'm thinking about leaving my job.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "leaving current job",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 21.05,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "leaving current job",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-2",
+      "category": "career",
+      "input": {
+        "user": "I'm scared to quit. The paycheck is what's keeping my family stable.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "quitting job",
+        "concern": [
+          "family financial stability if I quit",
+          "losing income",
+          "paycheck stability",
+          "scared to quit",
+          "family stability",
+          "losing the paycheck",
+          "income loss"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"quitting job\",\n  \"concern\": \"paycheck needed for family stability\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "quitting job",
+        "concern": "paycheck needed for family stability",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1925,
+      "tokens_out": 47,
+      "latency_s": 1.63,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "quitting job",
+            "actual": "quitting job"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.40 (variant='paycheck stability')",
+            "expected": [
+              "family financial stability if I quit",
+              "losing income",
+              "paycheck stability",
+              "scared to quit",
+              "family stability",
+              "losing the paycheck",
+              "income loss"
+            ],
+            "actual": "paycheck needed for family stability"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-3",
+      "category": "career",
+      "input": {
+        "user": "I want to move into product management but I don't know if I'm too late.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "transition to product management",
+        "concern": [
+          "being too late to transition",
+          "too late",
+          "being too old",
+          "missed the window",
+          "timing"
+        ],
+        "hope": "move into product management",
+        "question": "am I too late"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"transition to product management\",\n  \"concern\": \"too late to move into product management\",\n  \"hope\": \"move into product management\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "transition to product management",
+        "concern": "too late to move into product management",
+        "hope": "move into product management",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1926,
+      "tokens_out": 53,
+      "latency_s": 1.84,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "transition to product management",
+            "actual": "transition to product management"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "substring_match (variant='too late')",
+            "expected": [
+              "being too late to transition",
+              "too late",
+              "being too old",
+              "missed the window",
+              "timing"
+            ],
+            "actual": "too late to move into product management"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "move into product management",
+            "actual": "move into product management"
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "am I too late",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-4",
+      "category": "career",
+      "input": {
+        "user": "My team's getting reorged next quarter. Not sure if I should ride it out or jump.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "team reorg decision",
+        "concern": null,
+        "hope": null,
+        "question": "ride out the reorg or jump now"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"team reorg decision\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"should I ride it out or jump\"\n}\n```",
+      "actual_parsed": {
+        "topic": "team reorg decision",
+        "concern": null,
+        "hope": null,
+        "question": "should I ride it out or jump"
+      },
+      "api_error": null,
+      "tokens_in": 1929,
+      "tokens_out": 50,
+      "latency_s": 1.88,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "team reorg decision",
+            "actual": "team reorg decision"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.40",
+            "expected": "ride out the reorg or jump now",
+            "actual": "should I ride it out or jump"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-5",
+      "category": "career",
+      "input": {
+        "user": "Got an offer from a startup. Half the salary but I'd actually own something.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "startup offer decision",
+        "concern": null,
+        "hope": "actually own something",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"startup offer decision\",\n  \"concern\": null,\n  \"hope\": \"own something / equity upside\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "startup offer decision",
+        "concern": null,
+        "hope": "own something / equity upside",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1925,
+      "tokens_out": 47,
+      "latency_s": 1.36,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "startup offer decision",
+            "actual": "startup offer decision"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "word_jaccard=0.40",
+            "expected": "actually own something",
+            "actual": "own something / equity upside"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-6",
+      "category": "career",
+      "input": {
+        "user": "I keep getting passed over for promotion. I think I need to leave to grow.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "career growth blocked at current job",
+        "concern": [
+          "stuck without growth",
+          "no growth",
+          "passed over for promotion",
+          "career stagnation",
+          "stuck in current role"
+        ],
+        "hope": "grow my career",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 21.04,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "career growth blocked at current job",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "stuck without growth",
+              "no growth",
+              "passed over for promotion",
+              "career stagnation",
+              "stuck in current role"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "grow my career",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-7",
+      "category": "career",
+      "input": {
+        "user": "I want to start my own thing but I have two kids in private school.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "starting own business",
+        "concern": [
+          "kids' private school expenses",
+          "private school costs",
+          "supporting kids in school",
+          "school tuition",
+          "financial responsibility for kids"
+        ],
+        "hope": "start my own thing",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"starting own business\",\n  \"concern\": \"two kids in private school\",\n  \"hope\": \"start my own thing\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "starting own business",
+        "concern": "two kids in private school",
+        "hope": "start my own thing",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1924,
+      "tokens_out": 50,
+      "latency_s": 1.84,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "starting own business",
+            "actual": "starting own business"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.50 (variant=\"kids' private school expenses\")",
+            "expected": [
+              "kids' private school expenses",
+              "private school costs",
+              "supporting kids in school",
+              "school tuition",
+              "financial responsibility for kids"
+            ],
+            "actual": "two kids in private school"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "start my own thing",
+            "actual": "start my own thing"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-8",
+      "category": "career",
+      "input": {
+        "user": "My manager keeps undermining my work in front of the team. I don't know how much longer I can take this.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "manager undermining me",
+        "concern": [
+          "manager undermining me publicly",
+          "manager undermining my work",
+          "being undermined by manager",
+          "manager publicly undermining me",
+          "public undermining"
+        ],
+        "hope": null,
+        "question": "how much longer can I take this"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"manager undermining work in front of team\",\n  \"concern\": \"can't take this much longer\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "manager undermining work in front of team",
+        "concern": "can't take this much longer",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1933,
+      "tokens_out": 52,
+      "latency_s": 1.52,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.25",
+            "expected": "manager undermining me",
+            "actual": "manager undermining work in front of team"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: llm_judge_no (word_jaccard_low=0.00))",
+            "expected": [
+              "manager undermining me publicly",
+              "manager undermining my work",
+              "being undermined by manager",
+              "manager publicly undermining me",
+              "public undermining"
+            ],
+            "actual": "can't take this much longer"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "how much longer can I take this",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-9",
+      "category": "career",
+      "input": {
+        "user": "Should I take the management track or stay technical? Both feel like dead ends in different ways.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "management vs technical track",
+        "concern": [
+          "both tracks feel like dead ends",
+          "dead ends",
+          "both options feel limited",
+          "no good option",
+          "both paths feel like dead ends"
+        ],
+        "hope": null,
+        "question": "management track or stay technical"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"management vs technical career track\",\n  \"concern\": \"both paths feel like dead ends\",\n  \"hope\": null,\n  \"question\": \"should I take management track or stay technical\"\n}\n```",
+      "actual_parsed": {
+        "topic": "management vs technical career track",
+        "concern": "both paths feel like dead ends",
+        "hope": null,
+        "question": "should I take management track or stay technical"
+      },
+      "api_error": null,
+      "tokens_in": 1927,
+      "tokens_out": 58,
+      "latency_s": 1.5,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.80",
+            "expected": "management vs technical track",
+            "actual": "management vs technical career track"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.71 (variant='both tracks feel like dead ends')",
+            "expected": [
+              "both tracks feel like dead ends",
+              "dead ends",
+              "both options feel limited",
+              "no good option",
+              "both paths feel like dead ends"
+            ],
+            "actual": "both paths feel like dead ends"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "management track or stay technical",
+            "actual": "should I take management track or stay technical"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-10",
+      "category": "career",
+      "input": {
+        "user": "I'm interviewing at three places this week and I have no idea which one I actually want.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "choosing between three job offers",
+        "concern": null,
+        "hope": null,
+        "question": "which one do I actually want"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"choosing between three job interviews\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"which one do I actually want\"\n}\n```",
+      "actual_parsed": {
+        "topic": "choosing between three job interviews",
+        "concern": null,
+        "hope": null,
+        "question": "which one do I actually want"
+      },
+      "api_error": null,
+      "tokens_in": 1928,
+      "tokens_out": 50,
+      "latency_s": 2.66,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.67",
+            "expected": "choosing between three job offers",
+            "actual": "choosing between three job interviews"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "which one do I actually want",
+            "actual": "which one do I actually want"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-11",
+      "category": "career",
+      "input": {
+        "user": "Burned out. Considering taking 3 months off but afraid the gap will hurt my next role.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "taking sabbatical",
+        "concern": [
+          "gap hurting next role",
+          "career gap",
+          "gap on resume",
+          "gap hurting career",
+          "the gap will hurt my next role"
+        ],
+        "hope": "take 3 months off to recover from burnout",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"burnout and career break\",\n  \"concern\": \"gap will hurt next role\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "burnout and career break",
+        "concern": "gap will hurt next role",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1930,
+      "tokens_out": 48,
+      "latency_s": 32.44,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (word_jaccard_low=0.00)",
+            "expected": "taking sabbatical",
+            "actual": "burnout and career break"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.50 (variant='gap hurting next role')",
+            "expected": [
+              "gap hurting next role",
+              "career gap",
+              "gap on resume",
+              "gap hurting career",
+              "the gap will hurt my next role"
+            ],
+            "actual": "gap will hurt next role"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "take 3 months off to recover from burnout",
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-12",
+      "category": "career",
+      "input": {
+        "user": "My company just IPO'd and my equity vests next year. Hard to leave but I'm miserable.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "stay for vesting vs leave for happiness",
+        "concern": [
+          "being miserable at current job",
+          "miserable at work",
+          "unhappy at job",
+          "misery at current role"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"staying vs leaving after company IPO\",\n  \"concern\": \"equity vesting next year makes it hard to leave despite being miserable\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "staying vs leaving after company IPO",
+        "concern": "equity vesting next year makes it hard to leave despite being miserable",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1931,
+      "tokens_out": 59,
+      "latency_s": 4.56,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.09",
+            "expected": "stay for vesting vs leave for happiness",
+            "actual": "staying vs leaving after company IPO"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: word_jaccard_low=0.00)",
+            "expected": [
+              "being miserable at current job",
+              "miserable at work",
+              "unhappy at job",
+              "misery at current role"
+            ],
+            "actual": "equity vesting next year makes it hard to leave despite being miserable"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "career-en-13",
+      "category": "career",
+      "input": {
+        "user": "I think I need to write more publicly to grow my career, but I freeze every time I try.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "writing publicly to grow career",
+        "concern": [
+          "freezing when I try to write",
+          "freezing up",
+          "can't write publicly",
+          "writing block"
+        ],
+        "hope": "grow my career through writing",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"writing publicly for career growth\",\n  \"concern\": \"freezing when trying to write\",\n  \"hope\": \"write more publicly to grow career\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "writing publicly for career growth",
+        "concern": "freezing when trying to write",
+        "hope": "write more publicly to grow career",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1929,
+      "tokens_out": 55,
+      "latency_s": 18.55,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.43",
+            "expected": "writing publicly to grow career",
+            "actual": "writing publicly for career growth"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.57 (variant='freezing when I try to write')",
+            "expected": [
+              "freezing when I try to write",
+              "freezing up",
+              "can't write publicly",
+              "writing block"
+            ],
+            "actual": "freezing when trying to write"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.22",
+            "expected": "grow my career through writing",
+            "actual": "write more publicly to grow career"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-1",
+      "category": "relationships",
+      "input": {
+        "user": "My wife and I haven't really talked in weeks. Just logistics.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "communication gap with wife",
+        "concern": [
+          "we only talk logistics now",
+          "only talking logistics",
+          "no real communication",
+          "lost connection",
+          "communication gap"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"communication with wife\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "communication with wife",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1922,
+      "tokens_out": 41,
+      "latency_s": 19.67,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.75",
+            "expected": "communication gap with wife",
+            "actual": "communication with wife"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": [
+              "we only talk logistics now",
+              "only talking logistics",
+              "no real communication",
+              "lost connection",
+              "communication gap"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-2",
+      "category": "relationships",
+      "input": {
+        "user": "My best friend got engaged and didn't tell me. Found out from Instagram.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "best friend's engagement, not told",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"friend's engagement and not being told\",\n  \"concern\": \"excluded from friend's engagement news\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "friend's engagement and not being told",
+        "concern": "excluded from friend's engagement news",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1924,
+      "tokens_out": 51,
+      "latency_s": 15.47,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.62",
+            "expected": "best friend's engagement, not told",
+            "actual": "friend's engagement and not being told"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "excluded from friend's engagement news"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-3",
+      "category": "relationships",
+      "input": {
+        "user": "I want to be closer to my dad before he gets sicker but every visit just turns into an argument.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "wanting closer relationship with dad",
+        "concern": [
+          "every visit turns into argument",
+          "always arguing",
+          "we keep arguing",
+          "every visit becomes a fight",
+          "fighting with dad"
+        ],
+        "hope": "be closer to my dad",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 21.05,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "wanting closer relationship with dad",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": [
+              "every visit turns into argument",
+              "always arguing",
+              "we keep arguing",
+              "every visit becomes a fight",
+              "fighting with dad"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "be closer to my dad",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-4",
+      "category": "relationships",
+      "input": {
+        "user": "My partner wants kids in the next two years. I'm still not sure I want them at all.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "kids decision with partner",
+        "concern": null,
+        "hope": null,
+        "question": "do I want kids at all"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"having kids with partner\",\n  \"concern\": \"unsure about wanting kids at all\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "having kids with partner",
+        "concern": "unsure about wanting kids at all",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1929,
+      "tokens_out": 49,
+      "latency_s": 2.7,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.60",
+            "expected": "kids decision with partner",
+            "actual": "having kids with partner"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "unsure about wanting kids at all"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "do I want kids at all",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-5",
+      "category": "relationships",
+      "input": {
+        "user": "My therapist suggested I might be the avoidant one in my relationships. Sitting with that.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "being the avoidant one in relationships",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"avoidant attachment in relationships\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: User names a clear topic their therapist raised. They are processing this insight (\"sitting with that\") but express no explicit worry, want, or unresolved question. This is reflective venting, not a concern-driven statement.",
+      "actual_parsed": {
+        "topic": "avoidant attachment in relationships",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1929,
+      "tokens_out": 97,
+      "latency_s": 3.75,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.43",
+            "expected": "being the avoidant one in relationships",
+            "actual": "avoidant attachment in relationships"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-6",
+      "category": "relationships",
+      "input": {
+        "user": "My sister and I keep cycling through the same fight every six months.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "recurring fight with sister",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"recurring fights with sister\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "recurring fights with sister",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1922,
+      "tokens_out": 42,
+      "latency_s": 2.59,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.60",
+            "expected": "recurring fight with sister",
+            "actual": "recurring fights with sister"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-7",
+      "category": "relationships",
+      "input": {
+        "user": "I think my friend is going through something but every time I bring it up he changes the subject.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "friend going through something",
+        "concern": [
+          "friend deflecting when I bring it up",
+          "friend changes subject",
+          "friend deflecting",
+          "can't talk to friend",
+          "friend won't open up"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"friend avoiding conversation about something\",\n  \"concern\": \"friend going through something but won't talk about it\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "friend avoiding conversation about something",
+        "concern": "friend going through something but won't talk about it",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1928,
+      "tokens_out": 53,
+      "latency_s": 1.98,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.29",
+            "expected": "friend going through something",
+            "actual": "friend avoiding conversation about something"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: word_jaccard_low=0.25)",
+            "expected": [
+              "friend deflecting when I bring it up",
+              "friend changes subject",
+              "friend deflecting",
+              "can't talk to friend",
+              "friend won't open up"
+            ],
+            "actual": "friend going through something but won't talk about it"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-8",
+      "category": "relationships",
+      "input": {
+        "user": "My mom is showing early signs of dementia. I'm her only kid in the country.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "mom's early dementia",
+        "concern": [
+          "being only kid in country to handle it",
+          "only one to help",
+          "responsible for mom alone",
+          "no siblings nearby",
+          "alone in caring for mom"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"mom's early dementia diagnosis\",\n  \"concern\": \"mom showing early signs of dementia\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "mom's early dementia diagnosis",
+        "concern": "mom showing early signs of dementia",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1927,
+      "tokens_out": 51,
+      "latency_s": 2.15,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "mom's early dementia",
+            "actual": "mom's early dementia diagnosis"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: llm_judge_no (word_jaccard_low=0.10))",
+            "expected": [
+              "being only kid in country to handle it",
+              "only one to help",
+              "responsible for mom alone",
+              "no siblings nearby",
+              "alone in caring for mom"
+            ],
+            "actual": "mom showing early signs of dementia"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-9",
+      "category": "relationships",
+      "input": {
+        "user": "I want to set boundaries with my in-laws but my husband won't back me up.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "setting boundaries with in-laws",
+        "concern": [
+          "husband not backing me up",
+          "husband won't back me",
+          "no support from husband",
+          "husband doesn't support me",
+          "lack of husband's support"
+        ],
+        "hope": "set boundaries with in-laws",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"setting boundaries with in-laws\",\n  \"concern\": \"husband won't back me up\",\n  \"hope\": \"set boundaries with in-laws\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "setting boundaries with in-laws",
+        "concern": "husband won't back me up",
+        "hope": "set boundaries with in-laws",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1927,
+      "tokens_out": 56,
+      "latency_s": 1.46,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "setting boundaries with in-laws",
+            "actual": "setting boundaries with in-laws"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "llm_judge_yes (word_jaccard_low=0.38) (variant='husband not backing me up')",
+            "expected": [
+              "husband not backing me up",
+              "husband won't back me",
+              "no support from husband",
+              "husband doesn't support me",
+              "lack of husband's support"
+            ],
+            "actual": "husband won't back me up"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "set boundaries with in-laws",
+            "actual": "set boundaries with in-laws"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "rel-en-10",
+      "category": "relationships",
+      "input": {
+        "user": "My friend keeps asking for advice and then doing the opposite. Should I just stop responding?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "friend ignoring advice",
+        "concern": null,
+        "hope": null,
+        "question": "should I stop responding"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"friend asking for advice then ignoring it\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"should I stop responding to friend's advice requests\"\n}\n```",
+      "actual_parsed": {
+        "topic": "friend asking for advice then ignoring it",
+        "concern": null,
+        "hope": null,
+        "question": "should I stop responding to friend's advice requests"
+      },
+      "api_error": null,
+      "tokens_in": 1926,
+      "tokens_out": 56,
+      "latency_s": 1.7,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.43",
+            "expected": "friend ignoring advice",
+            "actual": "friend asking for advice then ignoring it"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "should I stop responding",
+            "actual": "should I stop responding to friend's advice requests"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-1",
+      "category": "chitchat",
+      "input": {
+        "user": "Hey there",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1910,
+      "tokens_out": 38,
+      "latency_s": 1.94,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-2",
+      "category": "chitchat",
+      "input": {
+        "user": "Good morning",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1910,
+      "tokens_out": 38,
+      "latency_s": 1.3,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-3",
+      "category": "chitchat",
+      "input": {
+        "user": "Thanks!",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1910,
+      "tokens_out": 38,
+      "latency_s": 1.47,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-4",
+      "category": "chitchat",
+      "input": {
+        "user": "How's it going",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1912,
+      "tokens_out": 38,
+      "latency_s": 3.25,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-5",
+      "category": "chitchat",
+      "input": {
+        "user": "OK cool",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1910,
+      "tokens_out": 38,
+      "latency_s": 1.78,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-6",
+      "category": "chitchat",
+      "input": {
+        "user": "Nice weather today huh",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1913,
+      "tokens_out": 38,
+      "latency_s": 1.33,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-7",
+      "category": "chitchat",
+      "input": {
+        "user": "Got it",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1910,
+      "tokens_out": 38,
+      "latency_s": 1.53,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "chit-en-8",
+      "category": "chitchat",
+      "input": {
+        "user": "Hi! Quick question — actually, never mind. I'll figure it out.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: User started to ask something but explicitly withdrew it (\"never mind\"). No topic, concern, hope, or question is actually expressed or remains unresolved in the message.",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1924,
+      "tokens_out": 77,
+      "latency_s": 3.06,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-1",
+      "category": "abstract",
+      "input": {
+        "user": "I keep wondering what I'd actually do if I had unlimited time.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "what I'd do with unlimited time",
+        "concern": null,
+        "hope": null,
+        "question": "what would I actually do with unlimited time"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"what to do with unlimited time\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"what would I actually do if I had unlimited time\"\n}\n```",
+      "actual_parsed": {
+        "topic": "what to do with unlimited time",
+        "concern": null,
+        "hope": null,
+        "question": "what would I actually do if I had unlimited time"
+      },
+      "api_error": null,
+      "tokens_in": 1922,
+      "tokens_out": 55,
+      "latency_s": 1.78,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.62",
+            "expected": "what I'd do with unlimited time",
+            "actual": "what to do with unlimited time"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.70",
+            "expected": "what would I actually do with unlimited time",
+            "actual": "what would I actually do if I had unlimited time"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-2",
+      "category": "abstract",
+      "input": {
+        "user": "What does it mean to live a good life when you can't tell what's good anymore?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "meaning of a good life",
+        "concern": null,
+        "hope": null,
+        "question": "what is a good life when you can't tell what's good"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"what constitutes a good life\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"what does it mean to live a good life when you can't tell what's good anymore\"\n}\n```",
+      "actual_parsed": {
+        "topic": "what constitutes a good life",
+        "concern": null,
+        "hope": null,
+        "question": "what does it mean to live a good life when you can't tell what's good anymore"
+      },
+      "api_error": null,
+      "tokens_in": 1927,
+      "tokens_out": 63,
+      "latency_s": 2.65,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.43",
+            "expected": "meaning of a good life",
+            "actual": "what constitutes a good life"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.59",
+            "expected": "what is a good life when you can't tell what's good",
+            "actual": "what does it mean to live a good life when you can't tell what's good anymore"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-3",
+      "category": "abstract",
+      "input": {
+        "user": "I think the version of myself I want to become wouldn't recognize who I am now.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "gap between current self and ideal self",
+        "concern": null,
+        "hope": "become a different version of myself",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"gap between current self and desired self\",\n  \"concern\": null,\n  \"hope\": \"become a version of myself I aspire to\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "gap between current self and desired self",
+        "concern": null,
+        "hope": "become a version of myself I aspire to",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1926,
+      "tokens_out": 54,
+      "latency_s": 1.62,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.71",
+            "expected": "gap between current self and ideal self",
+            "actual": "gap between current self and desired self"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "word_jaccard=0.56",
+            "expected": "become a different version of myself",
+            "actual": "become a version of myself I aspire to"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-4",
+      "category": "abstract",
+      "input": {
+        "user": "There's something about getting older that makes regret heavier.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "regret in aging",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"regret and aging\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "regret and aging",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1921,
+      "tokens_out": 42,
+      "latency_s": 2.53,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.50",
+            "expected": "regret in aging",
+            "actual": "regret and aging"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-5",
+      "category": "abstract",
+      "input": {
+        "user": "I want to leave something behind but I have no idea what.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "leaving something behind / legacy",
+        "concern": null,
+        "hope": "leave something behind",
+        "question": "what should I leave behind"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"leaving something behind\",\n  \"concern\": null,\n  \"hope\": \"leave something behind\",\n  \"question\": \"what to leave behind\"\n}\n```",
+      "actual_parsed": {
+        "topic": "leaving something behind",
+        "concern": null,
+        "hope": "leave something behind",
+        "question": "what to leave behind"
+      },
+      "api_error": null,
+      "tokens_in": 1921,
+      "tokens_out": 49,
+      "latency_s": 2.13,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "leaving something behind / legacy",
+            "actual": "leaving something behind"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "leave something behind",
+            "actual": "leave something behind"
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.50",
+            "expected": "what should I leave behind",
+            "actual": "what to leave behind"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-6",
+      "category": "abstract",
+      "input": {
+        "user": "What if everything I'm building right now turns out to not matter?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "uncertainty about meaning of current work",
+        "concern": [
+          "what I'm building won't matter",
+          "work might not matter",
+          "wasted effort",
+          "everything won't matter",
+          "what I build doesn't matter"
+        ],
+        "hope": null,
+        "question": "what if everything I'm building doesn't matter"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"meaning of current work\",\n  \"concern\": \"work turning out not to matter\",\n  \"hope\": null,\n  \"question\": \"what if everything I'm building right now turns out to not matter\"\n}\n```",
+      "actual_parsed": {
+        "topic": "meaning of current work",
+        "concern": "work turning out not to matter",
+        "hope": null,
+        "question": "what if everything I'm building right now turns out to not matter"
+      },
+      "api_error": null,
+      "tokens_in": 1922,
+      "tokens_out": 62,
+      "latency_s": 2.01,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "uncertainty about meaning of current work",
+            "actual": "meaning of current work"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.43 (variant='work might not matter')",
+            "expected": [
+              "what I'm building won't matter",
+              "work might not matter",
+              "wasted effort",
+              "everything won't matter",
+              "what I build doesn't matter"
+            ],
+            "actual": "work turning out not to matter"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.47",
+            "expected": "what if everything I'm building doesn't matter",
+            "actual": "what if everything I'm building right now turns out to not matter"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-7",
+      "category": "abstract",
+      "input": {
+        "user": "I've been reading Stoicism but it feels like it's optimized for men 2000 years ago.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Stoicism's relevance today",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"Stoicism relevance to modern life\",\n  \"concern\": \"Stoicism not applicable to contemporary experience\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "Stoicism relevance to modern life",
+        "concern": "Stoicism not applicable to contemporary experience",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1932,
+      "tokens_out": 54,
+      "latency_s": 1.49,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "llm_judge_yes (word_jaccard_low=0.29)",
+            "expected": "Stoicism's relevance today",
+            "actual": "Stoicism relevance to modern life"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "Stoicism not applicable to contemporary experience"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "abs-en-8",
+      "category": "abstract",
+      "input": {
+        "user": "Sometimes I think I'm just a bundle of habits performing being a person.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "identity as performance / habits",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"sense of self as habitual performance\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "sense of self as habitual performance",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1923,
+      "tokens_out": 45,
+      "latency_s": 1.86,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.25",
+            "expected": "identity as performance / habits",
+            "actual": "sense of self as habitual performance"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-1",
+      "category": "technical",
+      "input": {
+        "user": "How does a B-tree differ from a B+ tree in practice?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "B-tree vs B+ tree differences",
+        "concern": null,
+        "hope": null,
+        "question": "how do they differ in practice"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"B-tree vs B+ tree differences\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"how does a B-tree differ from a B+ tree in practice\"\n}\n```",
+      "actual_parsed": {
+        "topic": "B-tree vs B+ tree differences",
+        "concern": null,
+        "hope": null,
+        "question": "how does a B-tree differ from a B+ tree in practice"
+      },
+      "api_error": null,
+      "tokens_in": 1923,
+      "tokens_out": 61,
+      "latency_s": 1.51,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "B-tree vs B+ tree differences",
+            "actual": "B-tree vs B+ tree differences"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.36",
+            "expected": "how do they differ in practice",
+            "actual": "how does a B-tree differ from a B+ tree in practice"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-2",
+      "category": "technical",
+      "input": {
+        "user": "I'm thinking about migrating our Postgres DB to SQLite for simplicity. Worried about losing transaction guarantees.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Postgres to SQLite migration",
+        "concern": [
+          "losing transaction guarantees",
+          "losing transactions",
+          "transaction safety",
+          "losing ACID guarantees",
+          "no transaction safety"
+        ],
+        "hope": "simplicity from SQLite",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"migrating Postgres DB to SQLite\",\n  \"concern\": \"losing transaction guarantees\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "migrating Postgres DB to SQLite",
+        "concern": "losing transaction guarantees",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1933,
+      "tokens_out": 50,
+      "latency_s": 2.31,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.50",
+            "expected": "Postgres to SQLite migration",
+            "actual": "migrating Postgres DB to SQLite"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm (variant='losing transaction guarantees')",
+            "expected": [
+              "losing transaction guarantees",
+              "losing transactions",
+              "transaction safety",
+              "losing ACID guarantees",
+              "no transaction safety"
+            ],
+            "actual": "losing transaction guarantees"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "simplicity from SQLite",
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-3",
+      "category": "technical",
+      "input": {
+        "user": "Rust vs Go for a CLI that needs heavy concurrency.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Rust vs Go for concurrent CLI",
+        "concern": null,
+        "hope": null,
+        "question": "Rust or Go"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"Rust vs Go for concurrent CLI\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: User names a clear technical subject they're thinking about (choosing between Rust and Go for a specific use case). No explicit worry, want, or unresolved question is expressed—this is a topic statement, not a decision dilemma or concern.",
+      "actual_parsed": {
+        "topic": "Rust vs Go for concurrent CLI",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1921,
+      "tokens_out": 102,
+      "latency_s": 2.45,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "Rust vs Go for concurrent CLI",
+            "actual": "Rust vs Go for concurrent CLI"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "Rust or Go",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-4",
+      "category": "technical",
+      "input": {
+        "user": "Just learned about CRDTs. Mind blown — but I can't see how to apply them in our actual stack.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "CRDTs applicability to current stack",
+        "concern": null,
+        "hope": null,
+        "question": "how to apply CRDTs in our actual stack"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"applying CRDTs to current stack\",\n  \"concern\": \"can't see how to apply them\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "applying CRDTs to current stack",
+        "concern": "can't see how to apply them",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1933,
+      "tokens_out": 53,
+      "latency_s": 3.58,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.67",
+            "expected": "CRDTs applicability to current stack",
+            "actual": "applying CRDTs to current stack"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "can't see how to apply them"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "how to apply CRDTs in our actual stack",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-5",
+      "category": "technical",
+      "input": {
+        "user": "What's the modern equivalent of Java EE if I'm starting fresh?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "modern Java EE equivalent",
+        "concern": null,
+        "hope": null,
+        "question": "what's the modern equivalent if starting fresh"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"modern Java EE alternative\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"what is the modern equivalent of Java EE for starting fresh\"\n}\n```",
+      "actual_parsed": {
+        "topic": "modern Java EE alternative",
+        "concern": null,
+        "hope": null,
+        "question": "what is the modern equivalent of Java EE for starting fresh"
+      },
+      "api_error": null,
+      "tokens_in": 1923,
+      "tokens_out": 56,
+      "latency_s": 2.12,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.60",
+            "expected": "modern Java EE equivalent",
+            "actual": "modern Java EE alternative"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.46",
+            "expected": "what's the modern equivalent if starting fresh",
+            "actual": "what is the modern equivalent of Java EE for starting fresh"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-6",
+      "category": "technical",
+      "input": {
+        "user": "Building a real-time multiplayer game. Thinking websocket vs WebRTC for the data channel.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "websocket vs WebRTC for game data channel",
+        "concern": null,
+        "hope": null,
+        "question": "websocket or WebRTC"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"websocket vs WebRTC for multiplayer game data channel\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: User names a clear technical subject they're thinking about (websocket vs WebRTC choice for a real-time multiplayer game). No explicit worry, want, or unresolved question is expressed—this is a statement of what they're considering, not a concern or decision point yet.",
+      "actual_parsed": {
+        "topic": "websocket vs WebRTC for multiplayer game data channel",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1930,
+      "tokens_out": 114,
+      "latency_s": 3.33,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.88",
+            "expected": "websocket vs WebRTC for game data channel",
+            "actual": "websocket vs WebRTC for multiplayer game data channel"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "websocket or WebRTC",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-7",
+      "category": "technical",
+      "input": {
+        "user": "Can you explain attention heads in plain English?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "attention heads explanation",
+        "concern": null,
+        "hope": null,
+        "question": "what are attention heads"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": null,\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: This is a straightforward request for explanation/information about a technical concept. The user is not thinking through a personal decision, worry, goal, or unresolved dilemma. There is no thinking-partner content to extract—this is a factual query that falls outside the scope of the extraction task.",
+      "actual_parsed": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1917,
+      "tokens_out": 106,
+      "latency_s": 2.44,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "attention heads explanation",
+            "actual": null
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "what are attention heads",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-8",
+      "category": "technical",
+      "input": {
+        "user": "I want to add fuzzy search to my app. Considering Meilisearch vs Typesense vs just SQLite FTS5.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "fuzzy search engine choice",
+        "concern": null,
+        "hope": "add fuzzy search to my app",
+        "question": "Meilisearch, Typesense, or SQLite FTS5"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"choosing search solution for app\",\n  \"concern\": null,\n  \"hope\": \"add fuzzy search to app\",\n  \"question\": \"Meilisearch vs Typesense vs SQLite FTS5\"\n}\n```",
+      "actual_parsed": {
+        "topic": "choosing search solution for app",
+        "concern": null,
+        "hope": "add fuzzy search to app",
+        "question": "Meilisearch vs Typesense vs SQLite FTS5"
+      },
+      "api_error": null,
+      "tokens_in": 1939,
+      "tokens_out": 66,
+      "latency_s": 1.83,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "llm_judge_no (word_jaccard_low=0.12)",
+            "expected": "fuzzy search engine choice",
+            "actual": "choosing search solution for app"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "word_jaccard=0.83",
+            "expected": "add fuzzy search to my app",
+            "actual": "add fuzzy search to app"
+          },
+          "question": {
+            "correct": true,
+            "reason": "word_jaccard=0.67",
+            "expected": "Meilisearch, Typesense, or SQLite FTS5",
+            "actual": "Meilisearch vs Typesense vs SQLite FTS5"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-9",
+      "category": "technical",
+      "input": {
+        "user": "What does idempotency mean in API design?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "idempotency in API design",
+        "concern": null,
+        "hope": null,
+        "question": "what does idempotency mean"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"idempotency in API design\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"what does idempotency mean in API design\"\n}\n```",
+      "actual_parsed": {
+        "topic": "idempotency in API design",
+        "concern": null,
+        "hope": null,
+        "question": "what does idempotency mean in API design"
+      },
+      "api_error": null,
+      "tokens_in": 1919,
+      "tokens_out": 56,
+      "latency_s": 1.41,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "idempotency in API design",
+            "actual": "idempotency in API design"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "what does idempotency mean",
+            "actual": "what does idempotency mean in API design"
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "tech-en-10",
+      "category": "technical",
+      "input": {
+        "user": "Trying to grok event sourcing. Read 5 articles and still feel like I don't actually get it.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "understanding event sourcing",
+        "concern": [
+          "still don't actually get it after 5 articles",
+          "not getting it",
+          "can't grasp event sourcing",
+          "still don't understand",
+          "5 articles in and still confused"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"understanding event sourcing\",\n  \"concern\": \"not grasping event sourcing despite reading\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "understanding event sourcing",
+        "concern": "not grasping event sourcing despite reading",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1933,
+      "tokens_out": 51,
+      "latency_s": 1.49,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "understanding event sourcing",
+            "actual": "understanding event sourcing"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: word_jaccard_low=0.00)",
+            "expected": [
+              "still don't actually get it after 5 articles",
+              "not getting it",
+              "can't grasp event sourcing",
+              "still don't understand",
+              "5 articles in and still confused"
+            ],
+            "actual": "not grasping event sourcing despite reading"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-1",
+      "category": "sparse",
+      "input": {
+        "user": "I keep thinking about the conversation I had with my brother last week.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "conversation with brother last week",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"conversation with brother last week\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "conversation with brother last week",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1922,
+      "tokens_out": 43,
+      "latency_s": 1.69,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "conversation with brother last week",
+            "actual": "conversation with brother last week"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-2",
+      "category": "sparse",
+      "input": {
+        "user": "Still mulling over the team retro from yesterday.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "team retro from yesterday",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"team retro from yesterday\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "team retro from yesterday",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1919,
+      "tokens_out": 43,
+      "latency_s": 1.34,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "team retro from yesterday",
+            "actual": "team retro from yesterday"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-3",
+      "category": "sparse",
+      "input": {
+        "user": "I've been turning over this product idea in my head for a few days.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "this product idea",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"product idea\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "product idea",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1924,
+      "tokens_out": 40,
+      "latency_s": 1.71,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "this product idea",
+            "actual": "product idea"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-4",
+      "category": "sparse",
+      "input": {
+        "user": "That book on attention has been on my mind all week.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "the book on attention",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"book on attention\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "book on attention",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1920,
+      "tokens_out": 41,
+      "latency_s": 2.41,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "the book on attention",
+            "actual": "book on attention"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "sparse-en-5",
+      "category": "sparse",
+      "input": {
+        "user": "Thinking about my grandmother today.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "my grandmother",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"grandmother\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "grandmother",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1915,
+      "tokens_out": 39,
+      "latency_s": 1.75,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "my grandmother",
+            "actual": "grandmother"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-1",
+      "category": "mixed",
+      "input": {
+        "user": "My job's getting heavier and my relationship is on the rocks. Both feel like they're slipping.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "feeling like job and relationship are both slipping",
+        "concern": [
+          "both job and relationship slipping",
+          "both slipping",
+          "feeling like everything is slipping",
+          "things slipping",
+          "job and relationship both slipping"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"job and relationship deteriorating\",\n  \"concern\": \"both slipping away\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "job and relationship deteriorating",
+        "concern": "both slipping away",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1930,
+      "tokens_out": 47,
+      "latency_s": 2.66,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.33",
+            "expected": "feeling like job and relationship are both slipping",
+            "actual": "job and relationship deteriorating"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "substring_match (variant='both slipping')",
+            "expected": [
+              "both job and relationship slipping",
+              "both slipping",
+              "feeling like everything is slipping",
+              "things slipping",
+              "job and relationship both slipping"
+            ],
+            "actual": "both slipping away"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-2",
+      "category": "mixed",
+      "input": {
+        "user": "I want to learn Mandarin AND get back into climbing AND finally write that book. Something has to give.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "competing personal goals (Mandarin / climbing / writing)",
+        "concern": [
+          "having to drop something",
+          "something has to give",
+          "can't do everything",
+          "have to choose",
+          "can't fit it all in"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"prioritizing multiple goals\",\n  \"concern\": \"cannot pursue all three goals simultaneously\",\n  \"hope\": \"learn Mandarin, get back into climbing, write a book\",\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "prioritizing multiple goals",
+        "concern": "cannot pursue all three goals simultaneously",
+        "hope": "learn Mandarin, get back into climbing, write a book",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1931,
+      "tokens_out": 61,
+      "latency_s": 1.44,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.12",
+            "expected": "competing personal goals (Mandarin / climbing / writing)",
+            "actual": "prioritizing multiple goals"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_variant_matched (last: word_jaccard_low=0.09)",
+            "expected": [
+              "having to drop something",
+              "something has to give",
+              "can't do everything",
+              "have to choose",
+              "can't fit it all in"
+            ],
+            "actual": "cannot pursue all three goals simultaneously"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "learn Mandarin, get back into climbing, write a book"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-3",
+      "category": "mixed",
+      "input": {
+        "user": "My back's been hurting for weeks and I haven't slept properly in months. I think it's all stress from work.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "back pain and insomnia from work stress",
+        "concern": [
+          "back pain + insomnia + work stress",
+          "physical symptoms from stress",
+          "back pain and insomnia",
+          "stress symptoms",
+          "physical effects of work stress"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"back pain and sleep issues from work stress\",\n  \"concern\": \"back pain and sleep deprivation from work stress\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "back pain and sleep issues from work stress",
+        "concern": "back pain and sleep deprivation from work stress",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1935,
+      "tokens_out": 56,
+      "latency_s": 1.42,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.67",
+            "expected": "back pain and insomnia from work stress",
+            "actual": "back pain and sleep issues from work stress"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "word_jaccard=0.44 (variant='back pain + insomnia + work stress')",
+            "expected": [
+              "back pain + insomnia + work stress",
+              "physical symptoms from stress",
+              "back pain and insomnia",
+              "stress symptoms",
+              "physical effects of work stress"
+            ],
+            "actual": "back pain and sleep deprivation from work stress"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-4",
+      "category": "mixed",
+      "input": {
+        "user": "Considering moving cities. Lower cost of living but my whole network is here.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "moving cities decision",
+        "concern": [
+          "losing my network if I move",
+          "losing network",
+          "leaving my network",
+          "network is here",
+          "network would be lost"
+        ],
+        "hope": "lower cost of living",
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"moving cities\",\n  \"concern\": \"leaving network behind\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "moving cities",
+        "concern": "leaving network behind",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1924,
+      "tokens_out": 43,
+      "latency_s": 1.4,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "moving cities decision",
+            "actual": "moving cities"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "llm_judge_yes (word_jaccard_low=0.12) (variant='losing my network if I move')",
+            "expected": [
+              "losing my network if I move",
+              "losing network",
+              "leaving my network",
+              "network is here",
+              "network would be lost"
+            ],
+            "actual": "leaving network behind"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "lower cost of living",
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-5",
+      "category": "mixed",
+      "input": {
+        "user": "I'm trying to decide between buying a house and putting that money into my business. Either way it feels like locking myself in.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "house vs investing in business",
+        "concern": [
+          "locking myself in either way",
+          "locked in either way",
+          "feeling locked in",
+          "either way locks me in",
+          "can't keep flexibility"
+        ],
+        "hope": null,
+        "question": "house or business investment"
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"house vs. business investment decision\",\n  \"concern\": \"locking myself in either way\",\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "house vs. business investment decision",
+        "concern": "locking myself in either way",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1935,
+      "tokens_out": 50,
+      "latency_s": 1.78,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.43",
+            "expected": "house vs investing in business",
+            "actual": "house vs. business investment decision"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm (variant='locking myself in either way')",
+            "expected": [
+              "locking myself in either way",
+              "locked in either way",
+              "feeling locked in",
+              "either way locks me in",
+              "can't keep flexibility"
+            ],
+            "actual": "locking myself in either way"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": "house or business investment",
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "mixed-en-6",
+      "category": "mixed",
+      "input": {
+        "user": "My kid is struggling at school AND my parents need more help AND I just got assigned a huge project at work.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "everything stacking up at once (kid + parents + work project)",
+        "concern": [
+          "everything stacking up at once",
+          "too much at once",
+          "everything happening at once",
+          "kid and parents and work all at once",
+          "stacking up"
+        ],
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"juggling multiple demands\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```\n\nRationale: The user is naming three concurrent stressors (child's school struggles, parents needing help, large work project). The dominant topic is the overload/juggling of these demands—this is what occupies the most user words and carries the strongest emotional weight. However, no explicit worry verb (\"担心\", \"怕\", \"worried\", \"anxious\") is present near any of these items, so concern = null. No want or question is expressed.",
+      "actual_parsed": {
+        "topic": "juggling multiple demands",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1931,
+      "tokens_out": 142,
+      "latency_s": 2.6,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.00",
+            "expected": "everything stacking up at once (kid + parents + work project)",
+            "actual": "juggling multiple demands"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_value_got_null",
+            "expected": [
+              "everything stacking up at once",
+              "too much at once",
+              "everything happening at once",
+              "kid and parents and work all at once",
+              "stacking up"
+            ],
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-1",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "I'm just so tired. Tired of all of it. Nothing makes sense anymore.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "exhaustion / emotional low",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"emotional exhaustion\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "emotional exhaustion",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1926,
+      "tokens_out": 41,
+      "latency_s": 2.7,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "word_jaccard=0.67",
+            "expected": "exhaustion / emotional low",
+            "actual": "emotional exhaustion"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-2",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "I don't know what's wrong with me lately. I just feel off and I can't articulate it.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "feeling off without articulation",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"feeling off\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": \"what's wrong with me\"\n}\n```",
+      "actual_parsed": {
+        "topic": "feeling off",
+        "concern": null,
+        "hope": null,
+        "question": "what's wrong with me"
+      },
+      "api_error": null,
+      "tokens_in": 1931,
+      "tokens_out": 46,
+      "latency_s": 1.26,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "feeling off without articulation",
+            "actual": "feeling off"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "what's wrong with me"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-3",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "Today was a lot. Just a lot. I don't even know where to start.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "overwhelmed",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "```json\n{\n  \"topic\": \"overwhelm\",\n  \"concern\": null,\n  \"hope\": null,\n  \"question\": null\n}\n```",
+      "actual_parsed": {
+        "topic": "overwhelm",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 1926,
+      "tokens_out": 40,
+      "latency_s": 1.68,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "overwhelmed",
+            "actual": "overwhelm"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 1.0,
+        "any_nonnull_field": true
+      },
+      "language": "en"
+    },
+    {
+      "case_id": "ramble-en-4",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "It's been one of those weeks. You know what I mean?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "rough week",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 21.06,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "rough week",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      },
+      "language": "en"
+    }
+  ]
+}

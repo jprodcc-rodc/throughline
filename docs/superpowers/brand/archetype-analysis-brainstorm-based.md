@@ -1,0 +1,80 @@
+# Rodix Brand Archetype Analysis
+
+**Author:** brand-archetype-analyst (Phase 3 subagent)
+**Date:** 2026-05-03
+**Inputs cited:** brainstorm 2026-05-01 · product test scenarios v1.3 · `rodix_system.md` v1.3 · `claim_extractor.md` · `APP_STRATEGY_2026-04-29.md` · `research-notes.md`
+**Use:** Foundation document for brand-voice-extractor and brand-position-strategist subagents (Phase 3 downstream).
+
+---
+
+## 1. Primary archetype: **Sage**
+
+The defining quality is wisdom — to understand, analyze, and illuminate without rescuing the user from their own thinking. Rodix is, in archetype terms, *the thinking partner who illuminates patterns the thinker themselves didn't see, while refusing to do the thinking for them*. Every operational decision in the inputs converges on this.
+
+**Evidence 1 — the explicitly banned voice is Caregiver voice, not Sage voice.** The system prompt and the test scenarios share a tightly-aligned banlist of phrases: "我在这里", "我陪你", "慢慢说", "我在认真听", "无论是什么问题", "你想说说看吗", and any "I'm here for you" English equivalent (`rodix_system.md` Forbidden anti-patterns; `product-test-scenarios.md` C-1). These are precisely the comfort-language of the Caregiver archetype. The ban is not stylistic preference — it is product identity. The system prompt frames the rule operationally: *"The user came here to think out loud, not to be soothed. Treat each message as a thought worth interrogating, not a feeling to validate."* That sentence alone disqualifies Caregiver and selects Sage: the user is treated as a capable thinker whose thinking deserves engagement, not a wounded subject whose feelings deserve cushioning.
+
+**Evidence 2 — `claim_extractor.md`'s CORE DIRECTIVE codifies Sage epistemic humility as a product principle.** The extractor's first rule is *"null is the default, not the failure case"* and *"Filling a field with invention is a CRITICAL FAILURE."* The economic framing is even sharper: *"The cost of returning null when something exists: user sees less in their Vault for one card. The cost of returning invented content: user sees their thinking misrepresented and loses trust in the entire product. The first cost is recoverable. The second is not."* This is Sage discipline operationalized in code — wisdom is not the production of more output, it is the refusal to fabricate. The Magician archetype invents; the Caregiver embellishes to comfort; the Sage says "I don't know" and means it. Rodix the product literally returns `null` rather than make something up. That is not a stylistic choice — it is the archetype expressed at the data layer.
+
+**Evidence 3 — Rodc's signed-off design observation locks the archetype at the surface level.** The brainstorm doc records Rodc's reaction to the `#8` Card-with-Promise mockup: *"不是'哇'是'信任',看着像 Linear / Notion 那种克制成熟产品"* — which the document then promotes to a brand-tier rule: *"Rodix 设计调性 = trust-evoking > wow-evoking(Linear/Notion-grade 克制 > 闪亮 demo)。所有后续 UI 决策保持这个调性 baseline"* (brainstorm `#8` spec). "克制成熟" (restrained maturity) and the trust-over-wow polarity are the Sage's natural register. The Magician's register is wow. The Caregiver's register is warmth. The Hero's register is triumph. None of those map to "克制成熟". Sage maps cleanly: the wise mentor is recognizable precisely because they *don't* perform — they assume the listener is capable of receiving understatement.
+
+**Evidence 4 — the Round 3+ conversation discipline is Sage cognitive shape, not Caregiver emotional support.** `rodix_system.md` and product test scenario S-CHAT-6 jointly specify that by Round 3 the AI must *stop* asking follow-ups and pivot to reflection / synthesis / perspective: *"A single observation is more valuable than another question."* The forbidden anti-pattern is "infinite follow-up loop" — three rounds of "what worries you" without reflection. This rule is incompatible with the Caregiver archetype, which would default to *more* listening, *more* reassurance, *more* "tell me about it." Sage instead names the pattern, quotes the user's own words back ("`看地球`是个安静的画面 — 你刚说没担心,这是不是恰好是你最想从太空带回来的?"), pushes on contradictions, and offers perspective. That is the Sage's signature move: synthesis of what is already on the table, not extraction of more material. The S-CHAT-6 scenario was added specifically because a live walk caught the AI drifting toward Caregiver-like passive listening — and the fix was to make the prompt *more Sage-like*, not less.
+
+---
+
+## 2. Secondary archetype: **Explorer** (color, not core)
+
+Explorer modulates the Sage primary in two specific places without redefining it: (a) the locked tagline `[PRODUCT_NAME] 不绑定任何 AI 公司——你的 memory 跨任何模型` (brainstorm doc, signed-off as Brand 叙事资产) and (b) the strategic positioning *"AI memory infrastructure ... 跨设备 / 跨 model / 主动 memory"* (`APP_STRATEGY_2026-04-29.md` §1.2). The Explorer note is *autonomy from AI vendor capture* — the user's thinking is portable, the user is not locked into one AI company, the user's vault is theirs to export. This is Explorer's "independence" quality, not Explorer's "discovery" quality. Rodix is not asking the user to wander or seek; it is *protecting the user's freedom to leave*. Explorer here is a posture toward the platform ecosystem (refuse vendor lock-in, support BYOK, export-as-promise), not a posture toward the user's interior life. The user-facing relationship stays Sage; the platform-facing stance is Explorer. If this color were elevated to primary, it would push Rodix toward a tools/utilities register (think 1Password, Obsidian) — wrong for a thinking-partner product. Kept as secondary, it strengthens the Sage primary by signalling that the wisdom is genuinely yours, not rented.
+
+---
+
+## 3. Three archetypes explicitly rejected
+
+### Rejected: Caregiver
+
+Caregiver is the most dangerous wrong-fit archetype for Rodix because the *use cases* invite it. The product test scenarios cover career anxiety, relationships, emotional rambling, abstract thinking, technical questions — the relationships and emotional categories especially read like Caregiver territory in any other AI product. A naïve reading would say: "users come here at vulnerable moments; the product should hold them." But Rodc has decided the opposite, and the evidence is overwhelming. The C-1 banned-phrase list (`product-test-scenarios.md`) is a direct catalog of Caregiver opening moves: "我在这里" (presence-as-comfort), "慢慢说" (pacing reassurance), "我陪你" (companionship promise), "我在认真听" (attentiveness signal), "无论是什么问题" (unconditional acceptance). Each is the Caregiver register and each is banned. The system prompt's directive *"not to be soothed"* and *"not a feeling to validate"* is not subtext — it is product policy. The competitor research note also flags this explicitly: *"Granola's 'playful' tonal register is too light for Rodix... Granola's 'we got you!' warmth"* is named as the wrong reference (`research-notes.md` §5 + Anti-patterns). Rodix is for the user who has already decided they want to *think*, not for the user who wants to be held. Caregiver risks (martyrdom, codependence) are exactly the failure modes Rodc is engineering away from.
+
+### Rejected: Magician
+
+Magician is the lazy default for AI products — *transform your scattered thoughts into clarity!* — and Rodix declines it precisely because Rodc has named the cliché. The brainstorm explicitly rates "wow" reactions as *lower* long-term value than "trust" reactions: *"trust-evoking > wow-evoking ... Linear/Notion-grade 克制 > 闪亮 demo"*. A Magician-archetype product would lean into "watch your messy thinking become beautiful 4-field cards!" and would describe recall as "magic" or "uncanny." Rodix's `#8` spec instead replaces the engineering word "surface" with the relational word "带回来" (bring back) — relational, not magical (brainstorm `#8` micro-adjustment 1). The recall trigger label is *"⚡ 我把这个带回来了"*, framed as a kept promise (the lightning bolt is the only flourish, and even that is the only piece of decoration in a system that explicitly bans emoji adornments — see brainstorm Visual System: "没有 emoji 装饰"). Most decisively: `claim_extractor.md` makes invention itself a *critical failure*. Magicians invent. Sages return null. The product literally cannot be Magician at the architectural level. Magician's risk profile (manipulation, charlatanry) is the exact failure mode the null-is-default rule is engineered to prevent.
+
+### Rejected: Creator
+
+Creator is plausible because Rodix sits inside creative-knowledge work — career decisions, relationship reflection, life direction, technical thinking. A Creator-archetype reading would frame Rodix as *"the workspace where your best ideas are made,"* echoing Notion's positioning. This is rejected for two reasons. First, the strategic doc is explicit that Rodix is *not* a workspace: the IA-C lock states *"Rodix 是 'AI chat with memory',不是 'memory app with chat' ... 用户来 Rodix 是因为 ChatGPT 体验不够好,不是因为想要 vault 系统"* (brainstorm IA section). The user is not coming to *make things*; they are coming to *be heard with memory*. Second, the user — not Rodix — is the creator in the relationship. Rodix witnesses, extracts, recalls; it does not co-author. The 4-field card (topic / concern / hope / question) is a faithful mirror of what the user said, not a generative artifact. The product research notes reinforce this: Notion's *"agents keep work moving 24/7"* / *"while you sleep"* framing is named as an explicit anti-pattern for Rodix — *"Rodix is presence-based, not absence-based. The user is *thinking* with Rodix in real-time, not delegating thinking to it"* (`research-notes.md` Anti-patterns §1). Creator's failure modes (perfectionism, paralysis) are also wrong for what Rodix is trying to enable: *more* thinking, not *better-finished* thinking.
+
+---
+
+## 4. Implications
+
+**Visual identity.** Sage maps cleanly onto the locked palette — `#18181b` warm dark background, `#d97706` amber accent, Inter, Lucide line icons (1.5-1.8px stroke), no emoji adornments, no celebration flourishes. Amber is the right Sage color: warmer than Linear's cool indigo (Sage is approachable, not academic), more grounded than Anthropic's pure greys (Sage holds the user's attention; pure greyscale risks aloofness). The decoration discipline ("没有 emoji 装饰") and the choice of Lucide line icons over filled illustrations reinforce Sage's "克制" register. Typography should resist the Granola-style handwritten warmth and the Notion-style 3D glass — both are emotional flourishes incompatible with Sage clarity. Whitespace should expand at moments of reflection (Sage thinking-room), not contract toward density (Hero's energy).
+
+**Voice / cadence / register.** The Sage register that Rodix has already specified: 2-4 sentences default, direct/specific/curious, treat the user as capable, no sycophancy, no filler clauses, no hedge-padding, say "I don't know" plainly when applicable. The `rodix_system.md` voice section is already a fully-formed Sage voice spec. To extend: the Sage opens by *engaging*, not by *acknowledging* — instead of "That's a tough question" (Caregiver acknowledgment) or "Great question!" (sycophancy), open with the specific observation or follow-up question itself. Quote the user's own concrete words back to them when reflecting (Round 2-3 protocol). When the AI has nothing to add, prefer silence — a single observation is more valuable than another question.
+
+**Messaging / hero copy moves.** Per the research notes, Anthropic + Linear are the closest tonal references — both Sage-archetype brands. Hero copy must be ≤ 12 words, subheadline ≤ 30 words. Anti-buzzword discipline (no "powerful," "robust," "delightful," "10x," "transform," "supercharge"). The locked tagline `[PRODUCT_NAME] 不绑定任何 AI 公司——你的 memory 跨任何模型` is on-archetype: it states a position (Sage/Explorer color), not a feeling. Mechanism framing should follow `claim_extractor.md`'s register: state what the system does and does not do, plainly, without overclaim. *"Rodix remembers what you said. It does not invent."* That sentence is the Sage register applied to launch copy.
+
+**Customer relationship — how Rodix should make users feel.** Not soothed. Not impressed. Not productive. *Heard, on their own terms, by something that doesn't flatter them.* The successful Rodix moment is the user thinking, "huh, I didn't realize I'd said that twice — and now I'm seeing the connection." That is the Sage's gift: handing the user back their own thinking, sharpened. The user should feel intelligent, not impressed; clear, not comforted; respected, not served. Trust accumulates through consistency of restraint, not through demonstrations of capability.
+
+---
+
+## 5. Anti-implications (avoid drift)
+
+The Sage archetype does NOT mean *academic, cold, aloof, or unapproachable*. Those are Sage's failure modes (the ivory-tower / detachment risk listed in the archetype reference). Rodix must remain warm enough that an emotionally-rambling user feels safe continuing — but the warmth comes from *attention to specifics*, not from companionship phrases. "I noticed you said `looking at Earth` — what shifted just then?" is warm Sage. "I'm here for you" is a Caregiver bandage that Rodix has explicitly banned.
+
+Sage does NOT mean *technical / jargon-heavy / expert-flavored*. Anthropic-style Sage is procedural and matter-of-fact, but not opaque. Rodix should never become condescending or assume the user wants a lecture. The amber/Inter/dark visual system is friendlier than full-grayscale Anthropic precisely to soften Sage toward the personal-thinking domain.
+
+Sage does NOT mean *therapy / coaching / life-advice authority*. Rodix has no clinical voice. It does not diagnose, prescribe, or assert wisdom-from-above. The Sage here is *Socratic-companion*, not *guru*: the gift is sharper questions and faithful mirroring, not pronouncements. The Round 3+ rule ("offer a perspective, even if it's just naming the tension you see") is the upper bound of how assertive Sage-Rodix gets.
+
+Sage does NOT mean *no warmth, no human voice*. The forbidden phrases are the *empty* warmth phrases. Specific warmth — quoting the user's words, engaging with the concrete thing they just said, naming a pattern with care — is *more* Sage, not less. The product can be moving without being mushy.
+
+---
+
+## 6. Type-A escalation note
+
+**No escalation needed.** Rodc's stated framing — "thinking partner" — already implies Sage, and this analysis confirms rather than contradicts it. The system prompt's first line (*"You are Rodix — a thinking partner and memory keeper, not a generic chatbot"*) is a Sage thesis sentence.
+
+**One nuance worth flagging for Phase 3 downstream subagents (voice-extractor, position-strategist):** "thinking partner" is read by *most* AI products as Caregiver-flavored ("I'll be here while you think it through" — soft, accompanying, supportive). Rodix's "thinking partner" is specifically Sage-flavored (interrogative, restrained, treats user as capable, refuses invention). The phrase is shared with competitors, the archetype underneath is not. Brand voice and positioning copy should make the Sage flavor *visible at the surface* so prospective users do not mistake Rodix for "a kinder ChatGPT" — that misclassification would attract Caregiver-seeking users who will then experience the C-1 banned-phrase ban as coldness. Suggest the marketing copy lean explicitly on the "interrogating, not soothing" / "treats your message as a thought worth examining" framing from `rodix_system.md` to pre-select Sage-receptive users.
+
+This is not an escalation — it is a **handoff note**: Rodc's intuition is correct; downstream brand work must operationalize *which kind* of thinking partner Rodix is, because the phrase alone is ambiguous in the AI product market.
+
+---
+
+*End archetype-analysis.md. Phase 3 brand-archetype-analyst output complete. Hand off to brand-voice-extractor + brand-position-strategist.*

@@ -1,0 +1,1188 @@
+{
+  "meta": {
+    "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "url": "https://openrouter.ai/api/v1/chat/completions",
+    "started_at": "2026-05-02T10:11:18.782618+00:00",
+    "n_cases": 20
+  },
+  "summary": {
+    "average_accuracy": 0.3375,
+    "per_category_accuracy": {
+      "career": 0.34375,
+      "relationships": 0.3125
+    },
+    "chitchat_fp_rate": 0.0,
+    "chitchat_n": 0,
+    "chitchat_fp_count": 0,
+    "api_failures": 5,
+    "passes_60_threshold": false,
+    "field_metrics": {
+      "topic": {
+        "tp": 6,
+        "fn": 14,
+        "fp": 9,
+        "tn": 0,
+        "fp_hallucinations": 0,
+        "fp_mismatches": 9,
+        "recall": 0.3,
+        "precision": 0.4,
+        "recall_denom": 20,
+        "precision_denom": 15
+      },
+      "concern": {
+        "tp": 6,
+        "fn": 10,
+        "fp": 9,
+        "tn": 0,
+        "fp_hallucinations": 4,
+        "fp_mismatches": 5,
+        "recall": 0.375,
+        "precision": 0.4,
+        "recall_denom": 16,
+        "precision_denom": 15
+      },
+      "hope": {
+        "tp": 2,
+        "fn": 7,
+        "fp": 9,
+        "tn": 5,
+        "fp_hallucinations": 6,
+        "fp_mismatches": 3,
+        "recall": 0.2222,
+        "precision": 0.1818,
+        "recall_denom": 9,
+        "precision_denom": 11
+      },
+      "question": {
+        "tp": 5,
+        "fn": 5,
+        "fp": 6,
+        "tn": 9,
+        "fp_hallucinations": 1,
+        "fp_mismatches": 5,
+        "recall": 0.5,
+        "precision": 0.4545,
+        "recall_denom": 10,
+        "precision_denom": 11
+      }
+    },
+    "gate_results": [
+      {
+        "field": "topic",
+        "recall": 0.3,
+        "recall_gate": 0.9,
+        "recall_pass": false,
+        "precision": 0.4,
+        "precision_gate": 0.8,
+        "precision_pass": false
+      },
+      {
+        "field": "concern",
+        "recall": 0.375,
+        "recall_gate": 0.8,
+        "recall_pass": false,
+        "precision": 0.4,
+        "precision_gate": 0.85,
+        "precision_pass": false
+      },
+      {
+        "field": "hope",
+        "recall": 0.2222,
+        "recall_gate": 0.8,
+        "recall_pass": false,
+        "precision": 0.1818,
+        "precision_gate": 0.85,
+        "precision_pass": false
+      },
+      {
+        "field": "question",
+        "recall": 0.5,
+        "recall_gate": 0.75,
+        "recall_pass": false,
+        "precision": 0.4545,
+        "precision_gate": 0.8,
+        "precision_pass": false
+      }
+    ],
+    "chitchat_fp_pass": true,
+    "overall_accuracy_pass": false,
+    "all_10_conditions_pass": false
+  },
+  "cases": [
+    {
+      "case_id": "career-1",
+      "category": "career",
+      "input": {
+        "user": "我在想要不要换工作,但又怕断了收入",
+        "ai": "先把'换'和'断收入'分开看。你具体在想换到什么方向?"
+      },
+      "expected": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": "想换到什么方向"
+      },
+      "actual_raw": "{\"topic\": \"换工作\", \"concern\": \"收入安全\", \"hope\": null, \"question\": \"是否要换工作\"}",
+      "actual_parsed": {
+        "topic": "换工作",
+        "concern": "收入安全",
+        "hope": null,
+        "question": "是否要换工作"
+      },
+      "api_error": null,
+      "tokens_in": 661,
+      "tokens_out": 431,
+      "latency_s": 6.71,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "换工作",
+            "actual": "换工作"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "收入安全",
+            "actual": "收入安全"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "想换到什么方向",
+            "actual": "是否要换工作"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-2",
+      "category": "career",
+      "input": {
+        "user": "我想做自由职业,这样可以更自由地安排时间,但不知道客户从哪里来。",
+        "ai": "自由的代价是销售自己。你之前的工作有没有现成的人脉或者作品可以作为起点?"
+      },
+      "expected": {
+        "topic": "自由职业",
+        "concern": null,
+        "hope": "时间自由",
+        "question": "客户从哪里来"
+      },
+      "actual_raw": "{\"topic\": \"自由职业\", \"concern\": \"客户来源不明\", \"hope\": \"时间自由\", \"question\": \"客户从哪来\"}",
+      "actual_parsed": {
+        "topic": "自由职业",
+        "concern": "客户来源不明",
+        "hope": "时间自由",
+        "question": "客户从哪来"
+      },
+      "api_error": null,
+      "tokens_in": 675,
+      "tokens_out": 460,
+      "latency_s": 5.3,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "自由职业",
+            "actual": "自由职业"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "客户来源不明"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "时间自由",
+            "actual": "时间自由"
+          },
+          "question": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.50",
+            "expected": "客户从哪里来",
+            "actual": "客户从哪来"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-3",
+      "category": "career",
+      "input": {
+        "user": "I'm considering leaving my senior eng role to start my own thing. Salary cut would be brutal but I want to build something I own.",
+        "ai": "Building something you own is a strong pull. What's the runway you'd have if revenue is zero for 12 months?"
+      },
+      "expected": {
+        "topic": "leaving senior eng role / starting own thing",
+        "concern": "salary cut",
+        "hope": "build something I own",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "no '{' found in content: ''",
+      "tokens_in": 677,
+      "tokens_out": 111,
+      "latency_s": 2.16,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "leaving senior eng role / starting own thing",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "salary cut",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "build something I own",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      }
+    },
+    {
+      "case_id": "career-4",
+      "category": "career",
+      "input": {
+        "user": "我手上有两个 offer,一个稳定大厂一个小创业公司,纠结要不要去创业公司。",
+        "ai": "稳定 vs 学习曲线之争。这两个 offer 你实际看重的是不同的东西吗?"
+      },
+      "expected": {
+        "topic": "两个 offer 选择",
+        "concern": null,
+        "hope": null,
+        "question": "要不要去创业公司"
+      },
+      "actual_raw": "{\"topic\": \"创业公司\", \"concern\": \"收入稳定\", \"hope\": \"想要简化\", \"question\": \"要不要创业\"}",
+      "actual_parsed": {
+        "topic": "创业公司",
+        "concern": "收入稳定",
+        "hope": "想要简化",
+        "question": "要不要创业"
+      },
+      "api_error": null,
+      "tokens_in": 682,
+      "tokens_out": 668,
+      "latency_s": 8.19,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "两个 offer 选择",
+            "actual": "创业公司"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "收入稳定"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "想要简化"
+          },
+          "question": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.38",
+            "expected": "要不要去创业公司",
+            "actual": "要不要创业"
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-5",
+      "category": "career",
+      "input": {
+        "user": "我在做销售但我其实更喜欢写代码,可惜没有计算机背景,要不要转行做开发?",
+        "ai": "学习路径不是问题,出路是看作品+经验积累。你写过什么代码项目吗?"
+      },
+      "expected": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "做喜欢的事情",
+        "question": "要不要转行"
+      },
+      "actual_raw": "{\"topic\": \"转行做开发\", \"concern\": \"没有计算机背景\", \"hope\": \"写代码\", \"question\": \"要不要转行\"}",
+      "actual_parsed": {
+        "topic": "转行做开发",
+        "concern": "没有计算机背景",
+        "hope": "写代码",
+        "question": "要不要转行"
+      },
+      "api_error": null,
+      "tokens_in": 684,
+      "tokens_out": 750,
+      "latency_s": 8.83,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "转行做开发",
+            "actual": "转行做开发"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "没有计算机背景",
+            "actual": "没有计算机背景"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "做喜欢的事情",
+            "actual": "写代码"
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "要不要转行",
+            "actual": "要不要转行"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-6",
+      "category": "career",
+      "input": {
+        "user": "我做这行已经十五年了,但现在四十岁觉得已经看到天花板,想做些不一样的事。",
+        "ai": "天花板感是个清晰信号。你想到哪种'不一样的事'是你最近反复在想的?"
+      },
+      "expected": {
+        "topic": "中年职业转换",
+        "concern": "看到天花板",
+        "hope": "做不一样的事",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "no '{' found in content: ''",
+      "tokens_in": 685,
+      "tokens_out": 753,
+      "latency_s": 11.35,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "中年职业转换",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "看到天花板",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "做不一样的事",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      }
+    },
+    {
+      "case_id": "career-7",
+      "category": "career",
+      "input": {
+        "user": "公司要我搬去新城市,搬还是不搬?家里反对。",
+        "ai": "家里的反对是什么具体的担心?这往往是关键。"
+      },
+      "expected": {
+        "topic": "搬城市",
+        "concern": "家里反对",
+        "hope": null,
+        "question": "搬还是不搬"
+      },
+      "actual_raw": "{\"topic\": \"搬去新城市\", \"concern\": \"家里反对\", \"hope\": null, \"question\": \"搬还是不搬\"}",
+      "actual_parsed": {
+        "topic": "搬去新城市",
+        "concern": "家里反对",
+        "hope": null,
+        "question": "搬还是不搬"
+      },
+      "api_error": null,
+      "tokens_in": 664,
+      "tokens_out": 258,
+      "latency_s": 5.37,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.20",
+            "expected": "搬城市",
+            "actual": "搬去新城市"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "家里反对",
+            "actual": "家里反对"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "搬还是不搬",
+            "actual": "搬还是不搬"
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-8",
+      "category": "career",
+      "input": {
+        "user": "感觉这份工作每天都在重复,没什么成就感,但工资还行。",
+        "ai": "重复感和工资稳定是常见的取舍。你想要的成就感是来自哪种类型的工作?"
+      },
+      "expected": {
+        "topic": "工作满意度",
+        "concern": "缺乏成就感",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>",
+      "tokens_in": null,
+      "tokens_out": null,
+      "latency_s": 3.31,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "工作满意度",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "缺乏成就感",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      }
+    },
+    {
+      "case_id": "career-9",
+      "category": "career",
+      "input": {
+        "user": "我升任经理半年了,完全不会管人,觉得我可能不适合做管理。",
+        "ai": "管理是一种技能,不是天赋。具体哪一面让你觉得不适合?"
+      },
+      "expected": {
+        "topic": "做管理",
+        "concern": "不适合做管理",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"升任经理\", \"concern\": \"不适合管理\", \"hope\": null, \"question\": null}",
+      "actual_parsed": {
+        "topic": "升任经理",
+        "concern": "不适合管理",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 671,
+      "tokens_out": 371,
+      "latency_s": 4.18,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "做管理",
+            "actual": "升任经理"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.50",
+            "expected": "不适合做管理",
+            "actual": "不适合管理"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-10",
+      "category": "career",
+      "input": {
+        "user": "I want to take a sabbatical for six months to travel and reset, but I'm afraid I won't be employable when I come back.",
+        "ai": "Sabbatical anxiety is real but usually overblown. What kind of role would you target on return?"
+      },
+      "expected": {
+        "topic": "sabbatical",
+        "concern": "won't be employable",
+        "hope": "travel and reset",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "no '{' found in content: ''",
+      "tokens_in": 675,
+      "tokens_out": 58,
+      "latency_s": 1.38,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "sabbatical",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "won't be employable",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "travel and reset",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      }
+    },
+    {
+      "case_id": "career-11",
+      "category": "career",
+      "input": {
+        "user": "我刚毕业不知道该选大公司还是创业公司起步,大公司锻炼少但稳定。",
+        "ai": "起点选择没有绝对答案。你毕业后的目标是积累什么?"
+      },
+      "expected": {
+        "topic": "毕业选择第一份工作",
+        "concern": "大公司锻炼少",
+        "hope": "稳定",
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"大公司或创业公司\", \"concern\": \"成长受限\", \"hope\": \"更好成长\", \"question\": \"选大公司还是创业公司\"}",
+      "actual_parsed": {
+        "topic": "大公司或创业公司",
+        "concern": "成长受限",
+        "hope": "更好成长",
+        "question": "选大公司还是创业公司"
+      },
+      "api_error": null,
+      "tokens_in": 674,
+      "tokens_out": 788,
+      "latency_s": 6.44,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "毕业选择第一份工作",
+            "actual": "大公司或创业公司"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "大公司锻炼少",
+            "actual": "成长受限"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "稳定",
+            "actual": "更好成长"
+          },
+          "question": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "选大公司还是创业公司"
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-12",
+      "category": "career",
+      "input": {
+        "user": "I keep getting passed over for promotions even though my reviews are strong. I don't know what I'm missing.",
+        "ai": "Strong reviews + no promotion is often about visibility, not performance. Who's advocating for you?"
+      },
+      "expected": {
+        "topic": "未获晋升",
+        "concern": null,
+        "hope": null,
+        "question": "what I'm missing"
+      },
+      "actual_raw": "{\"topic\": \"promotion\", \"concern\": \"promotion denial\", \"hope\": \"promotion clarity\", \"question\": \"what's missing for promotion\"}",
+      "actual_parsed": {
+        "topic": "promotion",
+        "concern": "promotion denial",
+        "hope": "promotion clarity",
+        "question": "what's missing for promotion"
+      },
+      "api_error": null,
+      "tokens_in": 664,
+      "tokens_out": 569,
+      "latency_s": 8.35,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "未获晋升",
+            "actual": "promotion"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "promotion denial"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "promotion clarity"
+          },
+          "question": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.29",
+            "expected": "what I'm missing",
+            "actual": "what's missing for promotion"
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-13",
+      "category": "career",
+      "input": {
+        "user": "我的行业最近裁员潮,我现在还在,但下一波可能轮到我,要不要主动找工作?",
+        "ai": "主动找比被动等更有筹码。你现在的市场价大概什么水平?"
+      },
+      "expected": {
+        "topic": "裁员风险下找工作",
+        "concern": "下一波可能轮到我",
+        "hope": null,
+        "question": "要不要主动找工作"
+      },
+      "actual_raw": "{\"topic\": \"找工作\", \"concern\": \"被裁员\", \"hope\": \"保持职位\", \"question\": \"是否主动找工作\"}",
+      "actual_parsed": {
+        "topic": "找工作",
+        "concern": "被裁员",
+        "hope": "保持职位",
+        "question": "是否主动找工作"
+      },
+      "api_error": null,
+      "tokens_in": 680,
+      "tokens_out": 599,
+      "latency_s": 7.56,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "裁员风险下找工作",
+            "actual": "找工作"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "下一波可能轮到我",
+            "actual": "被裁员"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "保持职位"
+          },
+          "question": {
+            "correct": true,
+            "reason": "bigram_jaccard=0.44",
+            "expected": "要不要主动找工作",
+            "actual": "是否主动找工作"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-14",
+      "category": "career",
+      "input": {
+        "user": "我是一个相对小众的领域(医疗器械软件),想换行但不确定我的经验能转到哪。",
+        "ai": "小众但深入的经验可以撬动相邻领域。你最熟悉的具体能力是什么?"
+      },
+      "expected": {
+        "topic": "小众行业转行",
+        "concern": "经验难迁移",
+        "hope": null,
+        "question": "经验能转到哪"
+      },
+      "actual_raw": "{\"topic\":\"职业转换\", \"concern\": \"经验转化不确定\", \"hope\": \"找到新方向\", \"question\": \"经验能转到哪里\"}",
+      "actual_parsed": {
+        "topic": "职业转换",
+        "concern": "经验转化不确定",
+        "hope": "找到新方向",
+        "question": "经验能转到哪里"
+      },
+      "api_error": null,
+      "tokens_in": 688,
+      "tokens_out": 715,
+      "latency_s": 6.81,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.14",
+            "expected": "小众行业转行",
+            "actual": "职业转换"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.11",
+            "expected": "经验难迁移",
+            "actual": "经验转化不确定"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "找到新方向"
+          },
+          "question": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "经验能转到哪",
+            "actual": "经验能转到哪里"
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-15",
+      "category": "career",
+      "input": {
+        "user": "我做副业写作两年了,有点收入但不够稳定,要不要全职做这个?",
+        "ai": "副业过渡到全职最关键的是收入下限。你目前最低保证收入是多少?"
+      },
+      "expected": {
+        "topic": "副业转全职",
+        "concern": "收入不稳定",
+        "hope": null,
+        "question": "要不要全职做"
+      },
+      "actual_raw": "{\"topic\": \"写作副业全职\", \"concern\": \"收入不稳\", \"hope\": \"全职写作\", \"question\": \"是否全职写作\"}",
+      "actual_parsed": {
+        "topic": "写作副业全职",
+        "concern": "收入不稳",
+        "hope": "全职写作",
+        "question": "是否全职写作"
+      },
+      "api_error": null,
+      "tokens_in": 678,
+      "tokens_out": 630,
+      "latency_s": 6.19,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.29",
+            "expected": "副业转全职",
+            "actual": "写作副业全职"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "收入不稳定",
+            "actual": "收入不稳"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "全职写作"
+          },
+          "question": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.11",
+            "expected": "要不要全职做",
+            "actual": "是否全职写作"
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "career-16",
+      "category": "career",
+      "input": {
+        "user": "我最近做事完全没有动力,这份工作以前我喜欢的,现在每天都很累。",
+        "ai": "突然失去动力通常是某个变化触发的。最近三个月有什么变化吗?"
+      },
+      "expected": {
+        "topic": "工作动力丧失",
+        "concern": "每天都很累",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "{\"topic\":\"工作\",\"concern\":\"缺乏动力\",\"hope\":null,\"question\":null}",
+      "actual_parsed": {
+        "topic": "工作",
+        "concern": "缺乏动力",
+        "hope": null,
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 675,
+      "tokens_out": 386,
+      "latency_s": 4.92,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "工作动力丧失",
+            "actual": "工作"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.00",
+            "expected": "每天都很累",
+            "actual": "缺乏动力"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.75,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "relationships-1",
+      "category": "relationships",
+      "input": {
+        "user": "我和爸妈这周末又吵了一架,觉得他们一直都不理解我的想法。",
+        "ai": "听起来积累了挺久了。你希望他们理解的具体是哪一部分?"
+      },
+      "expected": {
+        "topic": "和父母的关系",
+        "concern": "不被理解",
+        "hope": null,
+        "question": null
+      },
+      "actual_raw": "{\"topic\":\"和爸妈的关系\",\"concern\":\"不被理解\",\"hope\":\"希望被理解\",\"question\":null}",
+      "actual_parsed": {
+        "topic": "和爸妈的关系",
+        "concern": "不被理解",
+        "hope": "希望被理解",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 670,
+      "tokens_out": 650,
+      "latency_s": 4.54,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.25",
+            "expected": "和父母的关系",
+            "actual": "和爸妈的关系"
+          },
+          "concern": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "不被理解",
+            "actual": "不被理解"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "希望被理解"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "relationships-2",
+      "category": "relationships",
+      "input": {
+        "user": "我想和我老公多有些独处时间,但有了孩子后真的很难。",
+        "ai": "时间不是凭空冒出来的,得从某处挪。你们目前一周里最容易匀出时间的是哪个时段?"
+      },
+      "expected": {
+        "topic": "夫妻独处时间",
+        "concern": "孩子让独处困难",
+        "hope": "多些独处时间",
+        "question": null
+      },
+      "actual_raw": "{\"topic\": \"和老公独处\", \"concern\": \"孩子时间不足\", \"hope\": \"更多独处\", \"question\": null}",
+      "actual_parsed": {
+        "topic": "和老公独处",
+        "concern": "孩子时间不足",
+        "hope": "更多独处",
+        "question": null
+      },
+      "api_error": null,
+      "tokens_in": 678,
+      "tokens_out": 570,
+      "latency_s": 7.33,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.12",
+            "expected": "夫妻独处时间",
+            "actual": "和老公独处"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.10",
+            "expected": "孩子让独处困难",
+            "actual": "孩子时间不足"
+          },
+          "hope": {
+            "correct": false,
+            "reason": "bigram_jaccard_low=0.14",
+            "expected": "多些独处时间",
+            "actual": "更多独处"
+          },
+          "question": {
+            "correct": true,
+            "reason": "both_null",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.25,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "relationships-3",
+      "category": "relationships",
+      "input": {
+        "user": "My friend group has drifted apart since college. I miss the closeness but I don't know if it's worth forcing reunions when everyone is busy.",
+        "ai": "Drift is normal but sometimes a single thoughtful invite restarts things. What did you used to actually do together that mattered?"
+      },
+      "expected": {
+        "topic": "friend group drift",
+        "concern": null,
+        "hope": "the closeness",
+        "question": "is it worth forcing reunions"
+      },
+      "actual_raw": "{\"topic\": \"friend group drift\", \"concern\": \"forcing reunions\", \"hope\": \"restore closeness\", \"question\": \"whether to force reunions\"}",
+      "actual_parsed": {
+        "topic": "friend group drift",
+        "concern": "forcing reunions",
+        "hope": "restore closeness",
+        "question": "whether to force reunions"
+      },
+      "api_error": null,
+      "tokens_in": 678,
+      "tokens_out": 1102,
+      "latency_s": 13.34,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": true,
+            "reason": "exact_after_norm",
+            "expected": "friend group drift",
+            "actual": "friend group drift"
+          },
+          "concern": {
+            "correct": false,
+            "reason": "expected_null_got_value",
+            "expected": null,
+            "actual": "forcing reunions"
+          },
+          "hope": {
+            "correct": true,
+            "reason": "substring_match",
+            "expected": "the closeness",
+            "actual": "restore closeness"
+          },
+          "question": {
+            "correct": false,
+            "reason": "word_jaccard_low=0.12",
+            "expected": "is it worth forcing reunions",
+            "actual": "whether to force reunions"
+          }
+        },
+        "case_accuracy": 0.5,
+        "any_nonnull_field": true
+      }
+    },
+    {
+      "case_id": "relationships-4",
+      "category": "relationships",
+      "input": {
+        "user": "我和女朋友异地一年了,最近她说想分手,我不想分。",
+        "ai": "异地一年的张力是真实的。她说的'想分手'背后想要什么?"
+      },
+      "expected": {
+        "topic": "异地恋",
+        "concern": "女朋友想分手",
+        "hope": "不想分",
+        "question": null
+      },
+      "actual_raw": "",
+      "actual_parsed": null,
+      "api_error": "no '{' found in content: ''",
+      "tokens_in": 669,
+      "tokens_out": 418,
+      "latency_s": 5.79,
+      "score": {
+        "by_field": {
+          "topic": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "异地恋",
+            "actual": null
+          },
+          "concern": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "女朋友想分手",
+            "actual": null
+          },
+          "hope": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": "不想分",
+            "actual": null
+          },
+          "question": {
+            "correct": false,
+            "reason": "no_output",
+            "expected": null,
+            "actual": null
+          }
+        },
+        "case_accuracy": 0.0,
+        "any_nonnull_field": false
+      }
+    }
+  ]
+}

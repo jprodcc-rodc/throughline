@@ -1,0 +1,22 @@
+{
+  "card_topic_field": "What you're thinking about",
+  "card_concern_field": "What worries you / what's hard",
+  "card_hope_field": "What you want / where you go",
+  "card_question_field": "What's still unresolved",
+  "card_source_link": "Open the conversation",
+  "card_edit": "Edit this field",
+  "card_delete": "Delete this card",
+  "vault_filter_topic": "Filter by topic",
+  "vault_filter_date": "Filter by date range",
+  "vault_search": "Search across all fields",
+  "recall_callout": "A past card relevant to this",
+  "recall_relevant": "Mark as relevant",
+  "recall_not_relevant": "Mark as not relevant",
+  "recall_skip": "Skip — don't bring back",
+  "settings_export": "One click → markdown files",
+  "settings_delete_account": "30-day deletion SLA",
+  "settings_extraction_toggle": "Pause card extraction",
+  "chat_send": "Send (Enter)",
+  "chat_new_conversation": "Start fresh — new context",
+  "first_insight_dismiss": "Not now — skip this thread"
+}
