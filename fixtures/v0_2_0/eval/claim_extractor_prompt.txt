@@ -44,18 +44,18 @@ EXTRACTION RULES PER FIELD
 
 EXAMPLES (FEW-SHOT)
 
-Example 1 (emotional_rambling — typical hallucination trap):
-Input: "今天好累啊,什么都不想做,感觉一切都没意义"
+Example 1 (emotional_rambling — typical hallucination trap, English):
+Input: "I'm so drained today, nothing feels meaningful anymore"
 Output:
 {
-  "topic": "情绪低落",
+  "topic": "emotional low",
   "concern": null,
   "hope": null,
   "question": null
 }
-Rationale: User is venting. No specific worry named ("一切没意义" is mood, not concern). No want named. No question. Fill with topic = the emotional state itself.
+Rationale: User is venting. No specific worry named ("nothing feels meaningful" is mood, not concern). No want named. No question. Fill with topic = the emotional state itself.
 
-Example 2 (sparse — dominant topic only):
+Example 2 (sparse — dominant topic only, Chinese):
 Input: "最近一直在想 Python 性能优化的事"
 Output:
 {
@@ -66,29 +66,29 @@ Output:
 }
 Rationale: Topic is clear. No worry, want, or question expressed.
 
-Example 3 (mixed-topic — tie-break by word count + emotional charge):
-Input: "我最近一直纠结要不要换工作,工资稳定但业务在收缩,加上跟同事关系也不太好,感觉每天都很累"
+Example 3 (mixed-topic — tie-break by word count + emotional charge, English):
+Input: "I keep going back and forth on whether to leave my job, the salary's stable but the business is shrinking, plus things with my coworker are off, just feel exhausted"
 Output:
 {
-  "topic": "换工作决策",
-  "concern": "业务收缩 + 跟同事关系不好 + 持续疲惫",
+  "topic": "leaving job decision",
+  "concern": "shrinking business + coworker tension + exhaustion",
   "hope": null,
   "question": null
 }
-Rationale: 换工作 occupies more user words AND has stronger emotional charge ("纠结") than 同事关系. Concern aggregates all three named worries. No explicit want or question.
+Rationale: "leaving my job" occupies more user words AND has stronger emotional charge ("going back and forth") than coworker tension. Concern aggregates the three named worries. No explicit want or question.
 
-Example 4 (career — full extraction):
-Input: "我想换到产品方向,但担心年龄大了进去吃亏,不知道现在转型还来不来得及"
+Example 4 (career — full extraction, English):
+Input: "I want to move into product, but I'm worried I'm too old to make the switch — not sure if it's still possible at this point"
 Output:
 {
-  "topic": "转型到产品方向",
-  "concern": "年龄大转型吃亏",
-  "hope": "换到产品方向",
-  "question": "现在转型还来不来得及"
+  "topic": "transition to product",
+  "concern": "too old to switch",
+  "hope": "move into product",
+  "question": "is transition still possible at this point"
 }
 Rationale: All four fields explicitly expressed.
 
-Example 5 (relationship — concern only):
+Example 5 (relationship concern only, Chinese):
 Input: "我妈最近总打电话来,她身体不太好,我有点担心"
 Output:
 {
@@ -99,8 +99,8 @@ Output:
 }
 Rationale: User names mother's health as topic. Worry is explicit. No hope or question expressed.
 
-Example 6 (chitchat — all null):
-Input: "你好啊"
+Example 6 (chitchat — all null, English):
+Input: "Hey there"
 Output:
 {
   "topic": null,

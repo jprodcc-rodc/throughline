@@ -168,8 +168,18 @@ def call_model(
 
 
 def parse_4field(content: str) -> tuple[dict | None, str | None]:
-    """Tolerant parser. Strips markdown fences, finds first JSON object,
-    accepts only the 4 expected keys. Returns (dict|None, err|None)."""
+    """Tolerant parser. Strips markdown fences, then extracts the first
+    balanced `{...}` block (which handles BOTH leading prose — reasoning
+    models — AND trailing prose — few-shot 'Rationale:' lines bleeding
+    past the JSON in v2/v3 prompts). Accepts only the 4 expected keys.
+    Returns (dict|None, err|None).
+
+    2026-05-02 fix: previously the parser only did the balanced-block
+    walk when content did NOT start with '{', falling back to a plain
+    json.loads on full content otherwise. That broke when the model
+    emitted JSON-then-Rationale-prose (4/80 v2 false-positive API
+    failures). The walk now always runs.
+    """
     s = content.strip()
     if s.startswith("```"):
         # Drop opening fence (```json or ```)
@@ -179,27 +189,38 @@ def parse_4field(content: str) -> tuple[dict | None, str | None]:
         if s.endswith("```"):
             s = s[:-3]
         s = s.strip()
-    # Some reasoning models emit thinking before the JSON; grab the
-    # first balanced { ... } block.
-    if not s.startswith("{"):
-        # Find first '{' and walk to matching '}'.
-        first = s.find("{")
-        if first == -1:
-            return None, f"no '{{' found in content: {content[:200]!r}"
-        depth = 0
-        end = -1
-        for i in range(first, len(s)):
-            ch = s[i]
-            if ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    end = i
-                    break
-        if end == -1:
-            return None, f"unbalanced braces in content: {content[:200]!r}"
-        s = s[first : end + 1]
+    # Always extract first balanced {...} block. String-literal aware
+    # so quoted '{' / '}' chars inside JSON values don't mis-count.
+    first = s.find("{")
+    if first == -1:
+        return None, f"no '{{' found in content: {content[:200]!r}"
+    depth = 0
+    end = -1
+    in_str = False
+    escape = False
+    for i in range(first, len(s)):
+        ch = s[i]
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+    if end == -1:
+        return None, f"unbalanced braces in content: {content[:200]!r}"
+    s = s[first : end + 1]
 
     try:
         obj = json.loads(s)
@@ -391,6 +412,166 @@ def score_case(expected: dict, actual: dict | None) -> dict:
     }
 
 
+# ---------- summary helpers (per-language reporting per Rodc directive 2026-05-02) ----------
+
+
+_GATES = {
+    "topic":    {"recall": 0.90, "precision": 0.80},
+    "concern":  {"recall": 0.80, "precision": 0.85},
+    "hope":     {"recall": 0.80, "precision": 0.85},
+    "question": {"recall": 0.75, "precision": 0.80},
+}
+
+
+def _detect_case_language(case: dict) -> str:
+    """Return 'en' or 'zh' for a case. Uses the explicit `language` tag
+    if present (set by the rebalance script), otherwise auto-detects by
+    presence of any CJK char in user/ai text."""
+    lang = case.get("language")
+    if lang in ("en", "zh"):
+        return lang
+    text = (case.get("input") or {}).get("user", "") + " "
+    text += (case.get("input") or {}).get("ai", "")
+    return "zh" if re.search(r"[一-鿿]", text) else "en"
+
+
+def compute_summary(rs: list[dict], label: str) -> dict | None:
+    """Compute the full asymmetric metric set for a results subset.
+    Returns None when rs is empty (caller skips the block)."""
+    n = len(rs)
+    if n == 0:
+        return None
+    avg_acc = sum(r["score"]["case_accuracy"] for r in rs) / n
+    by_category: dict[str, list[float]] = {}
+    chitchat_results: list[dict] = []
+    for r in rs:
+        cat = r["category"]
+        by_category.setdefault(cat, []).append(r["score"]["case_accuracy"])
+        if cat == "chitchat":
+            chitchat_results.append(r)
+    cat_avg = {c: sum(xs) / len(xs) for c, xs in by_category.items() if xs}
+    cat_n = {c: len(xs) for c, xs in by_category.items()}
+    chitchat_n = len(chitchat_results)
+    chitchat_fp = sum(
+        1 for r in chitchat_results if r["score"]["any_nonnull_field"]
+    )
+    fp_rate = chitchat_fp / chitchat_n if chitchat_n else 0.0
+    api_failures = sum(1 for r in rs if r["api_error"])
+
+    field_metrics: dict[str, dict] = {}
+    for field in ("topic", "concern", "hope", "question"):
+        tp = fn = fp = tn = 0
+        fp_hall = fp_mis = 0
+        for r in rs:
+            bf = r["score"]["by_field"][field]
+            e = bf["expected"]; a = bf["actual"]; ok = bf["correct"]
+            if e is None and a is None:
+                tn += 1
+            elif e is None and a is not None:
+                fp += 1
+                fp_hall += 1
+            elif e is not None and a is None:
+                fn += 1
+            else:
+                if ok:
+                    tp += 1
+                else:
+                    fp += 1
+                    fp_mis += 1
+                    fn += 1
+        rd = tp + fn
+        pd = tp + fp
+        recall = (tp / rd) if rd > 0 else 1.0
+        precision = (tp / pd) if pd > 0 else 1.0
+        field_metrics[field] = {
+            "tp": tp, "fn": fn, "fp": fp, "tn": tn,
+            "fp_hallucinations": fp_hall, "fp_mismatches": fp_mis,
+            "recall": round(recall, 4), "precision": round(precision, 4),
+            "recall_denom": rd, "precision_denom": pd,
+        }
+
+    gate_results: list[dict] = []
+    for field, gate in _GATES.items():
+        m = field_metrics[field]
+        gate_results.append({
+            "field": field,
+            "recall": m["recall"],
+            "recall_gate": gate["recall"],
+            "recall_pass": m["recall"] >= gate["recall"],
+            "precision": m["precision"],
+            "precision_gate": gate["precision"],
+            "precision_pass": m["precision"] >= gate["precision"],
+        })
+    chit_pass = fp_rate <= 0.05
+    overall_pass = avg_acc >= 0.75
+    all_pass = (
+        all(g["recall_pass"] and g["precision_pass"] for g in gate_results)
+        and chit_pass and overall_pass
+    )
+    return {
+        "label": label,
+        "n": n,
+        "average_accuracy": avg_acc,
+        "per_category_accuracy": cat_avg,
+        "per_category_n": cat_n,
+        "chitchat_fp_rate": fp_rate,
+        "chitchat_n": chitchat_n,
+        "chitchat_fp_count": chitchat_fp,
+        "api_failures": api_failures,
+        "field_metrics": field_metrics,
+        "gate_results": gate_results,
+        "chitchat_fp_pass": chit_pass,
+        "overall_accuracy_pass": overall_pass,
+        "all_10_conditions_pass": all_pass,
+    }
+
+
+def print_summary(s: dict, header: str, *, ship_gate_active: bool) -> None:
+    """Print the summary block for one bucket."""
+    print("\n" + "=" * 60)
+    gate_note = (
+        " [SHIP GATE — blocking]" if ship_gate_active
+        else " [monitor only]"
+    )
+    print(f"{header}  n={s['n']}{gate_note}")
+    print(f"Average accuracy: {s['average_accuracy'] * 100:.1f}%")
+    if s["per_category_accuracy"]:
+        print("Per-category:")
+        for cat, v in s["per_category_accuracy"].items():
+            print(f"  {cat}: {v * 100:.1f}% (n={s['per_category_n'][cat]})")
+    print()
+    print("Per-field precision/recall (asymmetric gate v1.3):")
+    for gr in s["gate_results"]:
+        rm = "PASS" if gr["recall_pass"] else "FAIL"
+        pm = "PASS" if gr["precision_pass"] else "FAIL"
+        print(
+            f"  {gr['field']:8s} "
+            f"recall={gr['recall'] * 100:5.1f}% "
+            f"(gate ≥{gr['recall_gate'] * 100:.0f}% [{rm}])  "
+            f"precision={gr['precision'] * 100:5.1f}% "
+            f"(gate ≥{gr['precision_gate'] * 100:.0f}% [{pm}])"
+        )
+    fpm = "PASS" if s["chitchat_fp_pass"] else "FAIL"
+    print(f"  chitchat FP rate: {s['chitchat_fp_rate'] * 100:.1f}% "
+          f"(gate ≤5% [{fpm}])")
+    om = "PASS" if s["overall_accuracy_pass"] else "FAIL"
+    print(f"  overall accuracy: {s['average_accuracy'] * 100:.1f}% "
+          f"(gate ≥75% [{om}])")
+    print()
+    print("Per-field hallucination breakdown (FP type):")
+    for field in ("topic", "concern", "hope", "question"):
+        m = s["field_metrics"][field]
+        print(
+            f"  {field:8s} "
+            f"hallucinations={m['fp_hallucinations']} "
+            f"(expected null, got value)  "
+            f"mismatches={m['fp_mismatches']} (both non-null but wrong)"
+        )
+    print(f"API failures: {s['api_failures']}/{s['n']}")
+    verdict = "PASS" if s["all_10_conditions_pass"] else "FAIL"
+    print(f"ALL 10 CONDITIONS: {verdict}")
+
+
 # ---------- main ----------
 
 
@@ -470,153 +651,53 @@ def main(argv: list[str] | None = None) -> int:
         if i < len(cases) and args.sleep > 0:
             time.sleep(args.sleep)
 
-    # ---------- aggregate ----------
+    # ---------- aggregate (per-language per Rodc directive 2026-05-02) ----------
+    # Tag each result with language so per-bucket grouping works.
+    # Honors the explicit `language` field on the eval case if set,
+    # otherwise auto-detects via CJK presence.
+    for r, c in zip(results, cases):
+        r["language"] = c.get("language") or _detect_case_language(c)
+
+    en_results = [r for r in results if r["language"] == "en"]
+    zh_results = [r for r in results if r["language"] == "zh"]
     total = len(results)
-    avg_acc = sum(r["score"]["case_accuracy"] for r in results) / total if total else 0.0
-    by_category: dict[str, list[float]] = {}
-    chitchat_results: list[dict] = []
-    for r in results:
-        cat = r["category"]
-        by_category.setdefault(cat, []).append(r["score"]["case_accuracy"])
-        if cat == "chitchat":
-            chitchat_results.append(r)
 
-    cat_avg = {cat: sum(xs) / len(xs) for cat, xs in by_category.items() if xs}
-    chitchat_n = len(chitchat_results)
-    chitchat_fp = sum(1 for r in chitchat_results if r["score"]["any_nonnull_field"])
-    fp_rate = chitchat_fp / chitchat_n if chitchat_n else 0.0
-    api_failures = sum(1 for r in results if r["api_error"])
+    # ---------- compute summaries (overall + per-language) ----------
+    summary_overall = compute_summary(results, "overall")
+    summary_en = compute_summary(en_results, "en")
+    summary_zh = compute_summary(zh_results, "zh")
 
-    # ---------- per-field precision / recall (v1.3 asymmetric gate) ----------
-    # Definitions per plan §"Asymmetric accuracy gate":
-    # - For each field F (topic / concern / hope / question):
-    #   - Recall = TP / (TP + FN) where the population is cases with
-    #     `expected[F] != null`. TP = field-match correct (per
-    #     field_match() heuristic). FN = expected non-null, actual
-    #     null OR mismatch.
-    #   - Precision = TP / (TP + FP) where the population is cases
-    #     where `actual[F] != null`. FP = "actual non-null but
-    #     expected was null" (the anti-hallucination check) OR
-    #     "actual non-null AND expected non-null but mismatch".
-    # - Substring-vs-exact heuristic in field_match() is documented
-    #   for reproducibility.
-    field_metrics: dict[str, dict] = {}
-    for field in ("topic", "concern", "hope", "question"):
-        # Counts:
-        # tp_total: extracted-and-matched
-        # fn_total: expected non-null, missed (null actual or mismatch)
-        # fp_total: actual non-null but expected null (hallucination)
-        #          OR actual non-null + expected non-null + mismatch
-        # tn_total: both null
-        tp_total = 0
-        fn_total = 0
-        fp_total = 0
-        tn_total = 0
-        # FP breakdown: hallucination (actual non-null, expected null)
-        # vs mismatch (actual non-null, expected non-null, no match)
-        fp_hallucinations = 0
-        fp_mismatches = 0
-        for r in results:
-            bf = r["score"]["by_field"][field]
-            expected = bf["expected"]
-            actual = bf["actual"]
-            correct = bf["correct"]
-            if expected is None and actual is None:
-                tn_total += 1
-            elif expected is None and actual is not None:
-                # Hallucination — gate's primary precision concern.
-                fp_total += 1
-                fp_hallucinations += 1
-            elif expected is not None and actual is None:
-                fn_total += 1
-            else:
-                # Both non-null
-                if correct:
-                    tp_total += 1
-                else:
-                    # Both non-null, no match → FP for precision
-                    # (extracted something, but wrong) AND FN for
-                    # recall (didn't capture the expected).
-                    fp_total += 1
-                    fp_mismatches += 1
-                    fn_total += 1
-        # Recall denom = number of cases with expected non-null
-        recall_denom = tp_total + fn_total
-        precision_denom = tp_total + fp_total
-        recall = (tp_total / recall_denom) if recall_denom > 0 else 1.0
-        precision = (tp_total / precision_denom) if precision_denom > 0 else 1.0
-        field_metrics[field] = {
-            "tp": tp_total,
-            "fn": fn_total,
-            "fp": fp_total,
-            "tn": tn_total,
-            "fp_hallucinations": fp_hallucinations,
-            "fp_mismatches": fp_mismatches,
-            "recall": round(recall, 4),
-            "precision": round(precision, 4),
-            "recall_denom": recall_denom,
-            "precision_denom": precision_denom,
-        }
-
-    # Asymmetric gate per plan §"Asymmetric accuracy gate" v1.3:
-    GATES = {
-        "topic":    {"recall": 0.90, "precision": 0.80},
-        "concern":  {"recall": 0.80, "precision": 0.85},
-        "hope":     {"recall": 0.80, "precision": 0.85},
-        "question": {"recall": 0.75, "precision": 0.80},
-    }
-    gate_results: list[dict] = []
-    for field, gate in GATES.items():
-        m = field_metrics[field]
-        gate_results.append({
-            "field": field,
-            "recall": m["recall"],
-            "recall_gate": gate["recall"],
-            "recall_pass": m["recall"] >= gate["recall"],
-            "precision": m["precision"],
-            "precision_gate": gate["precision"],
-            "precision_pass": m["precision"] >= gate["precision"],
-        })
-    chitchat_fp_pass = fp_rate <= 0.05
-    overall_acc_pass = avg_acc >= 0.75
-
-    print("\n" + "=" * 60)
-    print(f"Average accuracy: {avg_acc * 100:.1f}%")
-    print("Per-category:")
-    for cat, v in cat_avg.items():
-        print(f"  {cat}: {v * 100:.1f}% (n={len(by_category[cat])})")
-    print()
-    print("Per-field precision/recall (asymmetric gate v1.3):")
-    for gr in gate_results:
-        rec_mark = "PASS" if gr["recall_pass"] else "FAIL"
-        prec_mark = "PASS" if gr["precision_pass"] else "FAIL"
-        print(
-            f"  {gr['field']:8s} "
-            f"recall={gr['recall'] * 100:5.1f}% (gate ≥{gr['recall_gate'] * 100:.0f}% [{rec_mark}])  "
-            f"precision={gr['precision'] * 100:5.1f}% (gate ≥{gr['precision_gate'] * 100:.0f}% [{prec_mark}])"
-        )
-    fp_mark = "PASS" if chitchat_fp_pass else "FAIL"
-    print(f"  chitchat FP rate: {fp_rate * 100:.1f}% (gate ≤5% [{fp_mark}])")
-    overall_mark = "PASS" if overall_acc_pass else "FAIL"
-    print(f"  overall accuracy: {avg_acc * 100:.1f}% (gate ≥75% [{overall_mark}])")
-    print()
-    print("Per-field hallucination breakdown (FP type):")
-    for field in ("topic", "concern", "hope", "question"):
-        m = field_metrics[field]
-        print(
-            f"  {field:8s} "
-            f"hallucinations={m['fp_hallucinations']} (expected null, got value)  "
-            f"mismatches={m['fp_mismatches']} (both non-null but wrong)"
+    # ---------- print: overall + per-language buckets ----------
+    if summary_overall:
+        print_summary(
+            summary_overall,
+            "OVERALL (combined EN + ZH)",
+            ship_gate_active=False,
         )
     print()
-    print(f"API failures: {api_failures}/{total}")
-    # Summary verdict: all 10 conditions
-    all_gates = (
-        all(gr["recall_pass"] and gr["precision_pass"] for gr in gate_results)
-        and chitchat_fp_pass
-        and overall_acc_pass
+    print("*" * 60)
+    print("SHIP GATE = English bucket only (per Rodc directive 2026-05-02)")
+    print("Phase 1 launches international English; Chinese metrics are")
+    print("monitored for Phase 2 prep but do NOT block ship.")
+    print("*" * 60)
+    if summary_en:
+        print_summary(
+            summary_en,
+            "ENGLISH BUCKET (Phase 1 ship gate)",
+            ship_gate_active=True,
+        )
+    else:
+        print("\n(no English cases in this eval — ship-gate skipped)")
+    if summary_zh:
+        print_summary(
+            summary_zh,
+            "CHINESE BUCKET (Phase 2 monitor)",
+            ship_gate_active=False,
+        )
+
+    ship_gate_passes = bool(
+        summary_en and summary_en["all_10_conditions_pass"]
     )
-    print("\nALL 10 CONDITIONS:", "PASS" if all_gates else "FAIL")
 
     # ---------- write outputs ----------
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -631,22 +712,16 @@ def main(argv: list[str] | None = None) -> int:
                     "url": url,
                     "started_at": started_at.isoformat(),
                     "n_cases": total,
+                    "n_en": len(en_results),
+                    "n_zh": len(zh_results),
                 },
-                "summary": {
-                    "average_accuracy": avg_acc,
-                    "per_category_accuracy": cat_avg,
-                    "chitchat_fp_rate": fp_rate,
-                    "chitchat_n": chitchat_n,
-                    "chitchat_fp_count": chitchat_fp,
-                    "api_failures": api_failures,
-                    "passes_60_threshold": avg_acc >= 0.60,
-                    # v1.3 asymmetric gate:
-                    "field_metrics": field_metrics,
-                    "gate_results": gate_results,
-                    "chitchat_fp_pass": chitchat_fp_pass,
-                    "overall_accuracy_pass": overall_acc_pass,
-                    "all_10_conditions_pass": all_gates,
+                "summary": summary_overall,
+                "metrics_by_language": {
+                    "en": summary_en,
+                    "zh": summary_zh,
                 },
+                "ship_gate_passes": ship_gate_passes,
+                "ship_gate_basis": "metrics_by_language.en (Phase 1)",
                 "cases": results,
             },
             ensure_ascii=False,
@@ -655,7 +730,9 @@ def main(argv: list[str] | None = None) -> int:
         encoding="utf-8",
     )
     print(f"\nResults: {out_path}")
-    return 0
+    # Exit 0 only if the ship-gate (English bucket) passes. Mirrors the
+    # exit-code convention in run_intent_eval.py.
+    return 0 if ship_gate_passes else 2
 
 
 if __name__ == "__main__":

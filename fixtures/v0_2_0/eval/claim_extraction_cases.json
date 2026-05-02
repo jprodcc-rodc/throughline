@@ -2,14 +2,37 @@
   "_meta": {
     "schema": "4-field claim extraction (topic / concern / hope / question)",
     "spec": "docs/superpowers/specs/web-product-design.md §5.5 + docs/superpowers/plans/2026-05-01-claim-extraction.md",
-    "categories": ["career", "relationships", "technical", "abstract", "chitchat", "mixed", "sparse", "emotional_rambling"],
+    "categories": [
+      "career",
+      "relationships",
+      "technical",
+      "abstract",
+      "chitchat",
+      "mixed",
+      "sparse",
+      "emotional_rambling"
+    ],
     "n_cases": 80,
-    "language_mix": "Chinese-primary (matching maintainer's vault) with English cases for diversity",
+    "language_mix": "English-primary (Phase 1 international launch). 80% EN / 20% ZH. Mixed-language deferred to Phase 2.",
     "distribution": {
-      "core_60": {"career": 16, "relationships": 13, "technical": 11, "abstract": 10, "chitchat": 10},
-      "boundary_20": {"mixed": 7, "sparse": 7, "emotional_rambling": 6}
+      "core": {
+        "career": 16,
+        "relationships": 13,
+        "chitchat": 10,
+        "abstract": 10,
+        "technical": 11
+      },
+      "boundary": {
+        "mixed": 7,
+        "sparse": 7,
+        "emotional_rambling": 6
+      },
+      "by_language": {
+        "en": 64,
+        "zh": 16
+      }
     },
-    "version": "v1.3 — bumped 14 → 80 per plan §Task 11 push back 2"
+    "version": "v1.6 — rebalance English-first per Rodc directive 2026-05-02"
   },
   "cases": [
     {
@@ -24,7 +47,8 @@
         "concern": "收入安全",
         "hope": null,
         "question": "想换到什么方向"
-      }
+      },
+      "language": "zh"
     },
     {
       "id": "career-2",
@@ -38,35 +62,8 @@
         "concern": null,
         "hope": "时间自由",
         "question": "客户从哪里来"
-      }
-    },
-    {
-      "id": "career-3",
-      "category": "career",
-      "input": {
-        "user": "I'm considering leaving my senior eng role to start my own thing. Salary cut would be brutal but I want to build something I own.",
-        "ai": "Building something you own is a strong pull. What's the runway you'd have if revenue is zero for 12 months?"
       },
-      "expected": {
-        "topic": "leaving senior eng role / starting own thing",
-        "concern": "salary cut",
-        "hope": "build something I own",
-        "question": null
-      }
-    },
-    {
-      "id": "career-4",
-      "category": "career",
-      "input": {
-        "user": "我手上有两个 offer,一个稳定大厂一个小创业公司,纠结要不要去创业公司。",
-        "ai": "稳定 vs 学习曲线之争。这两个 offer 你实际看重的是不同的东西吗?"
-      },
-      "expected": {
-        "topic": "两个 offer 选择",
-        "concern": null,
-        "hope": null,
-        "question": "要不要去创业公司"
-      }
+      "language": "zh"
     },
     {
       "id": "career-5",
@@ -80,161 +77,8 @@
         "concern": "没有计算机背景",
         "hope": "做喜欢的事情",
         "question": "要不要转行"
-      }
-    },
-    {
-      "id": "career-6",
-      "category": "career",
-      "input": {
-        "user": "我做这行已经十五年了,但现在四十岁觉得已经看到天花板,想做些不一样的事。",
-        "ai": "天花板感是个清晰信号。你想到哪种'不一样的事'是你最近反复在想的?"
       },
-      "expected": {
-        "topic": "中年职业转换",
-        "concern": "看到天花板",
-        "hope": "做不一样的事",
-        "question": null
-      }
-    },
-    {
-      "id": "career-7",
-      "category": "career",
-      "input": {
-        "user": "公司要我搬去新城市,搬还是不搬?家里反对。",
-        "ai": "家里的反对是什么具体的担心?这往往是关键。"
-      },
-      "expected": {
-        "topic": "搬城市",
-        "concern": "家里反对",
-        "hope": null,
-        "question": "搬还是不搬"
-      }
-    },
-    {
-      "id": "career-8",
-      "category": "career",
-      "input": {
-        "user": "感觉这份工作每天都在重复,没什么成就感,但工资还行。",
-        "ai": "重复感和工资稳定是常见的取舍。你想要的成就感是来自哪种类型的工作?"
-      },
-      "expected": {
-        "topic": "工作满意度",
-        "concern": "缺乏成就感",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "career-9",
-      "category": "career",
-      "input": {
-        "user": "我升任经理半年了,完全不会管人,觉得我可能不适合做管理。",
-        "ai": "管理是一种技能,不是天赋。具体哪一面让你觉得不适合?"
-      },
-      "expected": {
-        "topic": "做管理",
-        "concern": "不适合做管理",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "career-10",
-      "category": "career",
-      "input": {
-        "user": "I want to take a sabbatical for six months to travel and reset, but I'm afraid I won't be employable when I come back.",
-        "ai": "Sabbatical anxiety is real but usually overblown. What kind of role would you target on return?"
-      },
-      "expected": {
-        "topic": "sabbatical",
-        "concern": "won't be employable",
-        "hope": "travel and reset",
-        "question": null
-      }
-    },
-    {
-      "id": "career-11",
-      "category": "career",
-      "input": {
-        "user": "我刚毕业不知道该选大公司还是创业公司起步,大公司锻炼少但稳定。",
-        "ai": "起点选择没有绝对答案。你毕业后的目标是积累什么?"
-      },
-      "expected": {
-        "topic": "毕业选择第一份工作",
-        "concern": "大公司锻炼少",
-        "hope": "稳定",
-        "question": null
-      }
-    },
-    {
-      "id": "career-12",
-      "category": "career",
-      "input": {
-        "user": "I keep getting passed over for promotions even though my reviews are strong. I don't know what I'm missing.",
-        "ai": "Strong reviews + no promotion is often about visibility, not performance. Who's advocating for you?"
-      },
-      "expected": {
-        "topic": "未获晋升",
-        "concern": null,
-        "hope": null,
-        "question": "what I'm missing"
-      }
-    },
-    {
-      "id": "career-13",
-      "category": "career",
-      "input": {
-        "user": "我的行业最近裁员潮,我现在还在,但下一波可能轮到我,要不要主动找工作?",
-        "ai": "主动找比被动等更有筹码。你现在的市场价大概什么水平?"
-      },
-      "expected": {
-        "topic": "裁员风险下找工作",
-        "concern": "下一波可能轮到我",
-        "hope": null,
-        "question": "要不要主动找工作"
-      }
-    },
-    {
-      "id": "career-14",
-      "category": "career",
-      "input": {
-        "user": "我是一个相对小众的领域(医疗器械软件),想换行但不确定我的经验能转到哪。",
-        "ai": "小众但深入的经验可以撬动相邻领域。你最熟悉的具体能力是什么?"
-      },
-      "expected": {
-        "topic": "小众行业转行",
-        "concern": "经验难迁移",
-        "hope": null,
-        "question": "经验能转到哪"
-      }
-    },
-    {
-      "id": "career-15",
-      "category": "career",
-      "input": {
-        "user": "我做副业写作两年了,有点收入但不够稳定,要不要全职做这个?",
-        "ai": "副业过渡到全职最关键的是收入下限。你目前最低保证收入是多少?"
-      },
-      "expected": {
-        "topic": "副业转全职",
-        "concern": "收入不稳定",
-        "hope": null,
-        "question": "要不要全职做"
-      }
-    },
-    {
-      "id": "career-16",
-      "category": "career",
-      "input": {
-        "user": "我最近做事完全没有动力,这份工作以前我喜欢的,现在每天都很累。",
-        "ai": "突然失去动力通常是某个变化触发的。最近三个月有什么变化吗?"
-      },
-      "expected": {
-        "topic": "工作动力丧失",
-        "concern": "每天都很累",
-        "hope": null,
-        "question": null
-      }
+      "language": "zh"
     },
     {
       "id": "relationships-1",
@@ -248,7 +92,8 @@
         "concern": "不被理解",
         "hope": null,
         "question": null
-      }
+      },
+      "language": "zh"
     },
     {
       "id": "relationships-2",
@@ -262,21 +107,8 @@
         "concern": "孩子让独处困难",
         "hope": "多些独处时间",
         "question": null
-      }
-    },
-    {
-      "id": "relationships-3",
-      "category": "relationships",
-      "input": {
-        "user": "My friend group has drifted apart since college. I miss the closeness but I don't know if it's worth forcing reunions when everyone is busy.",
-        "ai": "Drift is normal but sometimes a single thoughtful invite restarts things. What did you used to actually do together that mattered?"
       },
-      "expected": {
-        "topic": "friend group drift",
-        "concern": null,
-        "hope": "the closeness",
-        "question": "is it worth forcing reunions"
-      }
+      "language": "zh"
     },
     {
       "id": "relationships-4",
@@ -290,427 +122,8 @@
         "concern": "女朋友想分手",
         "hope": "不想分",
         "question": null
-      }
-    },
-    {
-      "id": "relationships-5",
-      "category": "relationships",
-      "input": {
-        "user": "我和闺蜜十年了,最近她结婚后就疏远了,我说什么她都不太回。",
-        "ai": "婚后转向是友情转折点的常见现象。你们之前最自然在一起的事情是什么?"
       },
-      "expected": {
-        "topic": "和闺蜜疏远",
-        "concern": "她不太回",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "relationships-6",
-      "category": "relationships",
-      "input": {
-        "user": "我女儿上高中了,什么都不和我说,我担心是不是我哪里做错了。",
-        "ai": "高中独立期的疏离常被误读为关系破裂。她和别人比如同学、爸爸有共享日常吗?"
-      },
-      "expected": {
-        "topic": "和高中女儿疏远",
-        "concern": "我哪里做错了",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "relationships-7",
-      "category": "relationships",
-      "input": {
-        "user": "我老公总是把工作放在家庭前面,这样下去不行,我想和他谈一次但又怕吵起来。",
-        "ai": "怕吵但必须谈是个常见困境。你最理想的对话是怎样的?"
-      },
-      "expected": {
-        "topic": "和老公的冲突",
-        "concern": "怕吵起来",
-        "hope": "谈一次",
-        "question": null
-      }
-    },
-    {
-      "id": "relationships-8",
-      "category": "relationships",
-      "input": {
-        "user": "我搬到新城市半年了,还是没什么朋友,周末特别孤独。",
-        "ai": "新城市六个月孤独感是常见的曲线低点。你尝试过哪种社交方式?"
-      },
-      "expected": {
-        "topic": "新城市社交困难",
-        "concern": "孤独",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "relationships-9",
-      "category": "relationships",
-      "input": {
-        "user": "I'm considering ending my relationship of 5 years. We're stable but I don't feel any spark anymore.",
-        "ai": "Stable + no spark is one of the hardest patterns to read. What's the version of the relationship you'd want?"
-      },
-      "expected": {
-        "topic": "ending 5-year relationship",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "relationships-10",
-      "category": "relationships",
-      "input": {
-        "user": "我妈妈一直催我结婚,我才28岁,但她说她那时候已经有孩子了。",
-        "ai": "代际期望差异是个长跑议题。你目前对结婚这件事自己想得清楚吗?"
-      },
-      "expected": {
-        "topic": "妈妈催婚",
-        "concern": "代际期望压力",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "relationships-11",
-      "category": "relationships",
-      "input": {
-        "user": "我交往了三个月的对象昨天突然说想要更多空间,我不知道这是不是分手前兆。",
-        "ai": "'更多空间'有时是真信号有时是缓冲带。她最近有什么具体的变化吗?"
-      },
-      "expected": {
-        "topic": "对象想要更多空间",
-        "concern": "可能是分手前兆",
-        "hope": null,
-        "question": "是不是分手前兆"
-      }
-    },
-    {
-      "id": "relationships-12",
-      "category": "relationships",
-      "input": {
-        "user": "我哥哥借了我十万,半年了一直没还,问他他就说快了快了,我又不想撕破脸。",
-        "ai": "家人借钱+不还是经典两难。十万对你目前的现金流是必须收回吗?"
-      },
-      "expected": {
-        "topic": "哥哥借钱不还",
-        "concern": "不想撕破脸",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "relationships-13",
-      "category": "relationships",
-      "input": {
-        "user": "我和老婆一年没有亲密了,我们还是好朋友,但我不知道这样下去对不对。",
-        "ai": "好朋友模式可以稳定但不一定是双方都想要的。你们谈过这个吗?"
-      },
-      "expected": {
-        "topic": "夫妻亲密关系",
-        "concern": "一年没有亲密",
-        "hope": null,
-        "question": "这样下去对不对"
-      }
-    },
-    {
-      "id": "technical-1",
-      "category": "technical",
-      "input": {
-        "user": "我想把 Postgres 换成 SQLite 让部署简单一点,但又担心丢掉事务的保证。",
-        "ai": "SQLite 其实有事务,只是并发写有限。你这个项目的写入量大概是什么规模?"
-      },
-      "expected": {
-        "topic": "Postgres 换 SQLite",
-        "concern": "丢掉事务保证",
-        "hope": "部署简单",
-        "question": null
-      }
-    },
-    {
-      "id": "technical-2",
-      "category": "technical",
-      "input": {
-        "user": "I want to migrate this Postgres DB to SQLite for simplicity but I'm worried about losing transaction guarantees.",
-        "ai": "That's a reasonable trade-off to think through. What scale of writes are you handling?"
-      },
-      "expected": {
-        "topic": "Postgres to SQLite migration",
-        "concern": "losing transaction guarantees",
-        "hope": "simplicity",
-        "question": null
-      }
-    },
-    {
-      "id": "technical-3",
-      "category": "technical",
-      "input": {
-        "user": "Should I learn Rust or Go for systems work? I keep going back and forth.",
-        "ai": "Both are solid. What's the project you'd actually use it on?"
-      },
-      "expected": {
-        "topic": "Rust vs Go",
-        "concern": null,
-        "hope": null,
-        "question": "Rust or Go for systems work"
-      }
-    },
-    {
-      "id": "technical-4",
-      "category": "technical",
-      "input": {
-        "user": "我想用 Kubernetes 做部署但是 cluster 维护成本是不是太高了?",
-        "ai": "K8s 学习曲线和维护负担是真的。你的服务规模目前怎样?"
-      },
-      "expected": {
-        "topic": "Kubernetes 部署",
-        "concern": "维护成本高",
-        "hope": null,
-        "question": "维护成本是不是太高"
-      }
-    },
-    {
-      "id": "technical-5",
-      "category": "technical",
-      "input": {
-        "user": "我们的 API 在高并发的时候会卡死,我怀疑是 N+1 查询,但 profile 看不出来。",
-        "ai": "卡死且 profile 看不出来,通常是连接池或者锁等待。生产的连接池配置是多少?"
-      },
-      "expected": {
-        "topic": "API 高并发卡死",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "technical-6",
-      "category": "technical",
-      "input": {
-        "user": "I'm considering migrating from React to Solid for performance. Any reason this is a bad idea for a 50k LOC codebase?",
-        "ai": "Solid is fast but the ecosystem is smaller. What's the perf bottleneck you're trying to fix?"
-      },
-      "expected": {
-        "topic": "React to Solid migration",
-        "concern": null,
-        "hope": "performance",
-        "question": "any reason this is a bad idea"
-      }
-    },
-    {
-      "id": "technical-7",
-      "category": "technical",
-      "input": {
-        "user": "我在选择给前端做框架,React vs Vue vs Solid,主要是想要小项目快迭代。",
-        "ai": "小项目+快迭代场景, ecosystem 重要性大于性能。你团队现在熟悉哪个?"
-      },
-      "expected": {
-        "topic": "前端框架选择",
-        "concern": null,
-        "hope": "快迭代",
-        "question": null
-      }
-    },
-    {
-      "id": "technical-8",
-      "category": "technical",
-      "input": {
-        "user": "我想从单体迁到微服务,但我们团队只有四个人,会不会反而拖慢开发速度?",
-        "ai": "微服务的运营负担需要团队规模摊销。四人团队可能要考虑模块化单体先。"
-      },
-      "expected": {
-        "topic": "单体到微服务",
-        "concern": "拖慢开发速度",
-        "hope": null,
-        "question": "会不会反而拖慢"
-      }
-    },
-    {
-      "id": "technical-9",
-      "category": "technical",
-      "input": {
-        "user": "I keep hearing about LLM-driven dev tools but I'm not sure if they actually save time or just shift it.",
-        "ai": "Empirically the answer is workflow-dependent. What's your typical task type?"
-      },
-      "expected": {
-        "topic": "LLM dev tools",
-        "concern": null,
-        "hope": "save time",
-        "question": "save time or just shift it"
-      }
-    },
-    {
-      "id": "technical-10",
-      "category": "technical",
-      "input": {
-        "user": "我想从 OpenAI API 切到本地 Ollama,主要是隐私考虑,但本地模型质量真的够吗?",
-        "ai": "Ollama 上的中等模型对一般任务足够,边缘任务还是有差距。你具体跑什么任务?"
-      },
-      "expected": {
-        "topic": "OpenAI 切到 Ollama",
-        "concern": "本地模型质量",
-        "hope": "隐私",
-        "question": "本地模型质量够吗"
-      }
-    },
-    {
-      "id": "technical-11",
-      "category": "technical",
-      "input": {
-        "user": "我想给 SaaS 引入计费,选 Stripe 还是 Lemon Squeezy?后者好像处理税务更简单。",
-        "ai": "税务确实是 LS 的卖点。你的目标市场国家是哪些?"
-      },
-      "expected": {
-        "topic": "Stripe vs Lemon Squeezy",
-        "concern": null,
-        "hope": "简化税务",
-        "question": "选哪个"
-      }
-    },
-    {
-      "id": "abstract-1",
-      "category": "abstract",
-      "input": {
-        "user": "我最近一直在想,人生的意义到底是什么?如果只是工作和消费的循环,好像没什么意思。",
-        "ai": "这个问题很多人想过,可能不会有 final answer。具体什么时刻让你觉得'没什么意思'?"
-      },
-      "expected": {
-        "topic": "人生意义",
-        "concern": "工作消费循环没意思",
-        "hope": null,
-        "question": "人生意义是什么"
-      }
-    },
-    {
-      "id": "abstract-2",
-      "category": "abstract",
-      "input": {
-        "user": "I want to live a more intentional life — less reactive, less scrolling, more aimed at things that matter. But I don't even know what 'matters' to me yet.",
-        "ai": "That's the harder half. What's something you've done in the past year that didn't feel like it mattered, even though you spent real time on it?"
-      },
-      "expected": {
-        "topic": "intentional life",
-        "concern": "reactive / scrolling",
-        "hope": "aimed at things that matter",
-        "question": "what matters to me"
-      }
-    },
-    {
-      "id": "abstract-3",
-      "category": "abstract",
-      "input": {
-        "user": "我有时候会怀疑我现在的所有选择,是不是只是因为习惯了,而不是真的想要。",
-        "ai": "习惯和欲望的区分需要安静的回望。你最近有过明确想要的事情吗?"
-      },
-      "expected": {
-        "topic": "怀疑自己的选择",
-        "concern": "只是因为习惯",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "abstract-4",
-      "category": "abstract",
-      "input": {
-        "user": "我想知道我十年后会是什么样,但又怕自己看到的不是我想要的。",
-        "ai": "想象未来的自己是个有用的工具但确实有风险。你目前最不愿意成为的版本是什么?"
-      },
-      "expected": {
-        "topic": "想象未来",
-        "concern": "怕看到的不是想要的",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "abstract-5",
-      "category": "abstract",
-      "input": {
-        "user": "I keep thinking about death lately. Not in a dark way, just realizing I have less time than I thought.",
-        "ai": "Mortality awareness can be productive when it shifts priorities. What's something you've been postponing?"
-      },
-      "expected": {
-        "topic": "thinking about death",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "abstract-6",
-      "category": "abstract",
-      "input": {
-        "user": "我觉得自己一直在表演,在所有人面前都不是真正的我,但'真正的我'到底是什么也不清楚。",
-        "ai": "表演感和未知的真我是同一个状态的两面。你最放松的时候是和谁在一起?"
-      },
-      "expected": {
-        "topic": "真实自我",
-        "concern": "一直在表演",
-        "hope": null,
-        "question": "真正的我是什么"
-      }
-    },
-    {
-      "id": "abstract-7",
-      "category": "abstract",
-      "input": {
-        "user": "成功对我到底意味着什么?有钱?有名?自由?我现在一个都没有,但又不知道应该追哪个。",
-        "ai": "三个目标的优先级会随生命阶段变。你现在最缺哪一个?"
-      },
-      "expected": {
-        "topic": "成功的定义",
-        "concern": null,
-        "hope": null,
-        "question": "成功对我意味着什么"
-      }
-    },
-    {
-      "id": "abstract-8",
-      "category": "abstract",
-      "input": {
-        "user": "我想知道我是不是太执着于结果而忽略了过程,但又觉得没有结果的过程也没什么意义。",
-        "ai": "结果和过程的张力是哲学问题也是实践问题。你做事时哪一刻最享受?"
-      },
-      "expected": {
-        "topic": "过程和结果",
-        "concern": "执着于结果",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "abstract-9",
-      "category": "abstract",
-      "input": {
-        "user": "I want to be remembered for something but I don't know what I want to be remembered for.",
-        "ai": "Want-to-be-remembered without a clear what is a useful starting point. Who do you currently most admire?"
-      },
-      "expected": {
-        "topic": "legacy",
-        "concern": null,
-        "hope": "to be remembered",
-        "question": "what to be remembered for"
-      }
-    },
-    {
-      "id": "abstract-10",
-      "category": "abstract",
-      "input": {
-        "user": "我在思考时间到底是真实的还是错觉,是连续的还是离散的,这种问题让我有时候很迷茫。",
-        "ai": "形而上学问题对日常的影响是有限但持续的。你在哪种时刻特别想这些?"
-      },
-      "expected": {
-        "topic": "时间的本质",
-        "concern": "迷茫",
-        "hope": null,
-        "question": null
-      }
+      "language": "zh"
     },
     {
       "id": "chitchat-1",
@@ -724,21 +137,8 @@
         "concern": null,
         "hope": null,
         "question": null
-      }
-    },
-    {
-      "id": "chitchat-2",
-      "category": "chitchat",
-      "input": {
-        "user": "Thanks, that's helpful! Have a good one.",
-        "ai": "You too, take care."
       },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
+      "language": "zh"
     },
     {
       "id": "chitchat-3",
@@ -752,105 +152,83 @@
         "concern": null,
         "hope": null,
         "question": null
-      }
+      },
+      "language": "zh"
     },
     {
-      "id": "chitchat-4",
-      "category": "chitchat",
+      "id": "abstract-3",
+      "category": "abstract",
       "input": {
-        "user": "嗯嗯",
-        "ai": "好的。"
+        "user": "我有时候会怀疑我现在的所有选择,是不是只是因为习惯了,而不是真的想要。",
+        "ai": "习惯和欲望的区分需要安静的回望。你最近有过明确想要的事情吗?"
       },
       "expected": {
-        "topic": null,
+        "topic": "怀疑自己的选择",
+        "concern": "只是因为习惯",
+        "hope": null,
+        "question": null
+      },
+      "language": "zh"
+    },
+    {
+      "id": "abstract-4",
+      "category": "abstract",
+      "input": {
+        "user": "我想知道我十年后会是什么样,但又怕自己看到的不是我想要的。",
+        "ai": "想象未来的自己是个有用的工具但确实有风险。你目前最不愿意成为的版本是什么?"
+      },
+      "expected": {
+        "topic": "想象未来",
+        "concern": "怕看到的不是想要的",
+        "hope": null,
+        "question": null
+      },
+      "language": "zh"
+    },
+    {
+      "id": "technical-8",
+      "category": "technical",
+      "input": {
+        "user": "我想从单体迁到微服务,但我们团队只有四个人,会不会反而拖慢开发速度?",
+        "ai": "微服务的运营负担需要团队规模摊销。四人团队可能要考虑模块化单体先。"
+      },
+      "expected": {
+        "topic": "单体到微服务",
+        "concern": "拖慢开发速度",
+        "hope": null,
+        "question": "会不会反而拖慢"
+      },
+      "language": "zh"
+    },
+    {
+      "id": "sparse-1",
+      "category": "sparse",
+      "input": {
+        "user": "我对哲学有点兴趣。",
+        "ai": "哲学很广阔。你最被哪个分支或者哪本书吸引?"
+      },
+      "expected": {
+        "topic": "对哲学有兴趣",
         "concern": null,
         "hope": null,
         "question": null
-      }
+      },
+      "language": "zh"
     },
     {
-      "id": "chitchat-5",
-      "category": "chitchat",
+      "id": "sparse-2",
+      "category": "sparse",
       "input": {
-        "user": "好的,知道了",
-        "ai": "好。"
+        "user": "我最近在看心理学的书。",
+        "ai": "哪一类心理学书?"
       },
       "expected": {
-        "topic": null,
+        "topic": "心理学",
         "concern": null,
         "hope": null,
         "question": null
-      }
-    },
-    {
-      "id": "chitchat-6",
-      "category": "chitchat",
-      "input": {
-        "user": "ok cool",
-        "ai": "Got it."
       },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "chitchat-7",
-      "category": "chitchat",
-      "input": {
-        "user": "早上好",
-        "ai": "早。"
-      },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "chitchat-8",
-      "category": "chitchat",
-      "input": {
-        "user": "晚安",
-        "ai": "晚安,好梦。"
-      },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "chitchat-9",
-      "category": "chitchat",
-      "input": {
-        "user": "今天午饭吃什么好呢哈哈",
-        "ai": "看看冰箱里有什么呢。"
-      },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "chitchat-10",
-      "category": "chitchat",
-      "input": {
-        "user": "Hey what's up",
-        "ai": "Hi, how can I help?"
-      },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
+      "language": "zh"
     },
     {
       "id": "mixed-1",
@@ -865,191 +243,8 @@
         "hope": null,
         "question": "哪个先解决"
       },
-      "notes": "Multi-topic: 换工作 + 催婚. Annotator picks dominant; either topic acceptable but hope/concern should reflect the user's expressed framing of each."
-    },
-    {
-      "id": "mixed-2",
-      "category": "mixed",
-      "input": {
-        "user": "我又想搬到新城市,又想攒钱买房,这两个目标好像冲突。",
-        "ai": "搬城市常见的现金压力。你目前一个月能攒多少?"
-      },
-      "expected": {
-        "topic": "搬城市",
-        "concern": "攒钱目标冲突",
-        "hope": "搬到新城市",
-        "question": null
-      }
-    },
-    {
-      "id": "mixed-3",
-      "category": "mixed",
-      "input": {
-        "user": "I want to start a family but also feel like my career is just hitting its stride. I keep flip-flopping.",
-        "ai": "Career and family timing is one of life's hardest puzzles. What's your partner's view?"
-      },
-      "expected": {
-        "topic": "family vs career",
-        "concern": null,
-        "hope": "start a family",
-        "question": null
-      }
-    },
-    {
-      "id": "mixed-4",
-      "category": "mixed",
-      "input": {
-        "user": "我老婆希望我多陪孩子,我老板希望我多加班,我希望能够安静地写写自己想写的东西。",
-        "ai": "三方拉扯的情况下,哪个是你最不能妥协的?"
-      },
-      "expected": {
-        "topic": "三方时间冲突",
-        "concern": null,
-        "hope": "安静地写自己想写的东西",
-        "question": null
-      }
-    },
-    {
-      "id": "mixed-5",
-      "category": "mixed",
-      "input": {
-        "user": "我想搞副业,但又怕被公司发现,还想休息一下,这些都搅在一起。",
-        "ai": "三层目标的冲突。你哪个最近最影响你睡眠?"
-      },
-      "expected": {
-        "topic": "副业 vs 休息 vs 合规",
-        "concern": "怕被公司发现",
-        "hope": "想搞副业",
-        "question": null
-      }
-    },
-    {
-      "id": "mixed-6",
-      "category": "mixed",
-      "input": {
-        "user": "我有时候想全职做开源,有时候想做创业,有时候又想就老老实实上班,完全不知道哪个是真的我想要的。",
-        "ai": "三个版本都听起来像你的一部分。最近三个月你哪一个做得最多?"
-      },
-      "expected": {
-        "topic": "职业方向选择",
-        "concern": null,
-        "hope": null,
-        "question": "哪个是真的我想要的"
-      }
-    },
-    {
-      "id": "mixed-7",
-      "category": "mixed",
-      "input": {
-        "user": "I want to learn Mandarin AND start a side project AND get back into running. I always start everything at once and finish nothing.",
-        "ai": "Three goals with same start date = high failure pattern. Which one would help you most this quarter?"
-      },
-      "expected": {
-        "topic": "multiple new goals",
-        "concern": "finish nothing",
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "sparse-1",
-      "category": "sparse",
-      "input": {
-        "user": "我对哲学有点兴趣。",
-        "ai": "哲学很广阔。你最被哪个分支或者哪本书吸引?"
-      },
-      "expected": {
-        "topic": "对哲学有兴趣",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "sparse-2",
-      "category": "sparse",
-      "input": {
-        "user": "我最近在看心理学的书。",
-        "ai": "哪一类心理学书?"
-      },
-      "expected": {
-        "topic": "心理学",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "sparse-3",
-      "category": "sparse",
-      "input": {
-        "user": "I've been thinking about chess.",
-        "ai": "Playing or watching?"
-      },
-      "expected": {
-        "topic": "chess",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "sparse-4",
-      "category": "sparse",
-      "input": {
-        "user": "我有点想学吉他。",
-        "ai": "为什么是吉他不是其他?"
-      },
-      "expected": {
-        "topic": "学吉他",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "sparse-5",
-      "category": "sparse",
-      "input": {
-        "user": "最近天气变冷了,我开始想跑步的事情。",
-        "ai": "天冷反而是开始跑步的好时机。你之前跑过吗?"
-      },
-      "expected": {
-        "topic": "跑步",
-        "concern": null,
-        "hope": null,
-        "question": null
-      }
-    },
-    {
-      "id": "sparse-6",
-      "category": "sparse",
-      "input": {
-        "user": "感觉这本书还行。",
-        "ai": "什么书?"
-      },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      },
-      "notes": "Underspecified — 'this book' has no referent the extractor can capture. Annotator: all null is correct (don't make up topic)."
-    },
-    {
-      "id": "sparse-7",
-      "category": "sparse",
-      "input": {
-        "user": "I've been doing some thinking.",
-        "ai": "About what specifically?"
-      },
-      "expected": {
-        "topic": null,
-        "concern": null,
-        "hope": null,
-        "question": null
-      },
-      "notes": "Underspecified — 'thinking about something' without an object. All null is correct."
+      "notes": "Multi-topic: 换工作 + 催婚. Annotator picks dominant; either topic acceptable but hope/concern should reflect the user's expressed framing of each.",
+      "language": "zh"
     },
     {
       "id": "emotional_rambling-1",
@@ -1064,7 +259,8 @@
         "hope": null,
         "question": null
       },
-      "notes": "Emotional rambling: low information density, coarse topic acceptable, must NOT manufacture concrete concern beyond what was said."
+      "notes": "Emotional rambling: low information density, coarse topic acceptable, must NOT manufacture concrete concern beyond what was said.",
+      "language": "zh"
     },
     {
       "id": "emotional_rambling-2",
@@ -1078,63 +274,972 @@
         "concern": "什么都没有意思",
         "hope": null,
         "question": null
-      }
+      },
+      "language": "zh"
     },
     {
-      "id": "emotional_rambling-3",
-      "category": "emotional_rambling",
+      "id": "career-en-1",
+      "category": "career",
       "input": {
-        "user": "我刚刚在路上看到一个小孩在哭,我突然就想起我小时候我妈妈也是这样不理我,然后想到我现在也是这样对我儿子,我就觉得我这一辈子是不是就是在重复这种模式。",
-        "ai": "代际模式的觉察是改变的起点。你最希望停止重复的具体瞬间是什么?"
+        "user": "I'm thinking about leaving my job.",
+        "ai": ""
       },
       "expected": {
-        "topic": "代际重复模式",
-        "concern": "重复同样的模式",
+        "topic": "leaving current job",
+        "concern": null,
         "hope": null,
         "question": null
-      }
+      },
+      "language": "en"
     },
     {
-      "id": "emotional_rambling-4",
-      "category": "emotional_rambling",
+      "id": "career-en-2",
+      "category": "career",
       "input": {
-        "user": "I just feel kind of lost lately, you know? Like nothing is bad exactly but nothing is great either, I'm doing all the things you're supposed to do but I don't know what I'm doing them for anymore.",
-        "ai": "Functional but unmoored is one of the harder middles. When did you last feel like things had a direction?"
+        "user": "I'm scared to quit. The paycheck is what's keeping my family stable.",
+        "ai": ""
       },
       "expected": {
-        "topic": "feeling lost",
-        "concern": "nothing is great",
+        "topic": "quitting job",
+        "concern": "family financial stability if I quit",
         "hope": null,
         "question": null
-      }
+      },
+      "language": "en"
     },
     {
-      "id": "emotional_rambling-5",
-      "category": "emotional_rambling",
+      "id": "career-en-3",
+      "category": "career",
       "input": {
-        "user": "今天和老婆吵架了,具体也不是什么大事,就是早上她说了一句什么我没听清楚回错了,然后她就说我不重视她,然后我就说她敏感,然后就吵起来了,现在我也不知道我们俩到底是怎么回事,有时候真的觉得很累。",
-        "ai": "吵架升级常常和真正的议题没什么关系。你和她最近最长的、不吵的对话是关于什么的?"
+        "user": "I want to move into product management but I don't know if I'm too late.",
+        "ai": ""
       },
       "expected": {
-        "topic": "和老婆吵架",
-        "concern": "觉得很累",
-        "hope": null,
-        "question": null
-      }
+        "topic": "transition to product management",
+        "concern": "being too late to transition",
+        "hope": "move into product management",
+        "question": "am I too late"
+      },
+      "language": "en"
     },
     {
-      "id": "emotional_rambling-6",
-      "category": "emotional_rambling",
+      "id": "career-en-4",
+      "category": "career",
       "input": {
-        "user": "我妈昨天打电话说她的腰不舒服,我让她去医院她又说没事,我又不能强迫她,但她要是真出什么事情我又会自责一辈子,这种事情真的让我没办法专心工作。",
-        "ai": "亲人的健康焦虑很消耗专注力。她有没有信任的医生?"
+        "user": "My team's getting reorged next quarter. Not sure if I should ride it out or jump.",
+        "ai": ""
       },
       "expected": {
-        "topic": "妈妈健康",
-        "concern": "她要是真出什么事我会自责一辈子",
+        "topic": "team reorg decision",
+        "concern": null,
+        "hope": null,
+        "question": "ride out the reorg or jump now"
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-5",
+      "category": "career",
+      "input": {
+        "user": "Got an offer from a startup. Half the salary but I'd actually own something.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "startup offer decision",
+        "concern": null,
+        "hope": "actually own something",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-6",
+      "category": "career",
+      "input": {
+        "user": "I keep getting passed over for promotion. I think I need to leave to grow.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "career growth blocked at current job",
+        "concern": "stuck without growth",
+        "hope": "grow my career",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-7",
+      "category": "career",
+      "input": {
+        "user": "I want to start my own thing but I have two kids in private school.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "starting own business",
+        "concern": "kids' private school expenses",
+        "hope": "start my own thing",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-8",
+      "category": "career",
+      "input": {
+        "user": "My manager keeps undermining my work in front of the team. I don't know how much longer I can take this.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "manager undermining me",
+        "concern": "manager undermining me publicly",
+        "hope": null,
+        "question": "how much longer can I take this"
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-9",
+      "category": "career",
+      "input": {
+        "user": "Should I take the management track or stay technical? Both feel like dead ends in different ways.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "management vs technical track",
+        "concern": "both tracks feel like dead ends",
+        "hope": null,
+        "question": "management track or stay technical"
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-10",
+      "category": "career",
+      "input": {
+        "user": "I'm interviewing at three places this week and I have no idea which one I actually want.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "choosing between three job offers",
+        "concern": null,
+        "hope": null,
+        "question": "which one do I actually want"
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-11",
+      "category": "career",
+      "input": {
+        "user": "Burned out. Considering taking 3 months off but afraid the gap will hurt my next role.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "taking sabbatical",
+        "concern": "gap hurting next role",
+        "hope": "take 3 months off to recover from burnout",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-12",
+      "category": "career",
+      "input": {
+        "user": "My company just IPO'd and my equity vests next year. Hard to leave but I'm miserable.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "stay for vesting vs leave for happiness",
+        "concern": "being miserable at current job",
         "hope": null,
         "question": null
-      }
+      },
+      "language": "en"
+    },
+    {
+      "id": "career-en-13",
+      "category": "career",
+      "input": {
+        "user": "I think I need to write more publicly to grow my career, but I freeze every time I try.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "writing publicly to grow career",
+        "concern": "freezing when I try to write",
+        "hope": "grow my career through writing",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-1",
+      "category": "relationships",
+      "input": {
+        "user": "My wife and I haven't really talked in weeks. Just logistics.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "communication gap with wife",
+        "concern": "we only talk logistics now",
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-2",
+      "category": "relationships",
+      "input": {
+        "user": "My best friend got engaged and didn't tell me. Found out from Instagram.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "best friend's engagement, not told",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-3",
+      "category": "relationships",
+      "input": {
+        "user": "I want to be closer to my dad before he gets sicker but every visit just turns into an argument.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "wanting closer relationship with dad",
+        "concern": "every visit turns into argument",
+        "hope": "be closer to my dad",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-4",
+      "category": "relationships",
+      "input": {
+        "user": "My partner wants kids in the next two years. I'm still not sure I want them at all.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "kids decision with partner",
+        "concern": null,
+        "hope": null,
+        "question": "do I want kids at all"
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-5",
+      "category": "relationships",
+      "input": {
+        "user": "My therapist suggested I might be the avoidant one in my relationships. Sitting with that.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "being the avoidant one in relationships",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-6",
+      "category": "relationships",
+      "input": {
+        "user": "My sister and I keep cycling through the same fight every six months.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "recurring fight with sister",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-7",
+      "category": "relationships",
+      "input": {
+        "user": "I think my friend is going through something but every time I bring it up he changes the subject.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "friend going through something",
+        "concern": "friend deflecting when I bring it up",
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-8",
+      "category": "relationships",
+      "input": {
+        "user": "My mom is showing early signs of dementia. I'm her only kid in the country.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "mom's early dementia",
+        "concern": "being only kid in country to handle it",
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-9",
+      "category": "relationships",
+      "input": {
+        "user": "I want to set boundaries with my in-laws but my husband won't back me up.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "setting boundaries with in-laws",
+        "concern": "husband not backing me up",
+        "hope": "set boundaries with in-laws",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "rel-en-10",
+      "category": "relationships",
+      "input": {
+        "user": "My friend keeps asking for advice and then doing the opposite. Should I just stop responding?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "friend ignoring advice",
+        "concern": null,
+        "hope": null,
+        "question": "should I stop responding"
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-1",
+      "category": "chitchat",
+      "input": {
+        "user": "Hey there",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-2",
+      "category": "chitchat",
+      "input": {
+        "user": "Good morning",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-3",
+      "category": "chitchat",
+      "input": {
+        "user": "Thanks!",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-4",
+      "category": "chitchat",
+      "input": {
+        "user": "How's it going",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-5",
+      "category": "chitchat",
+      "input": {
+        "user": "OK cool",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-6",
+      "category": "chitchat",
+      "input": {
+        "user": "Nice weather today huh",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-7",
+      "category": "chitchat",
+      "input": {
+        "user": "Got it",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "chit-en-8",
+      "category": "chitchat",
+      "input": {
+        "user": "Hi! Quick question — actually, never mind. I'll figure it out.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": null,
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-1",
+      "category": "abstract",
+      "input": {
+        "user": "I keep wondering what I'd actually do if I had unlimited time.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "what I'd do with unlimited time",
+        "concern": null,
+        "hope": null,
+        "question": "what would I actually do with unlimited time"
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-2",
+      "category": "abstract",
+      "input": {
+        "user": "What does it mean to live a good life when you can't tell what's good anymore?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "meaning of a good life",
+        "concern": null,
+        "hope": null,
+        "question": "what is a good life when you can't tell what's good"
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-3",
+      "category": "abstract",
+      "input": {
+        "user": "I think the version of myself I want to become wouldn't recognize who I am now.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "gap between current self and ideal self",
+        "concern": null,
+        "hope": "become a different version of myself",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-4",
+      "category": "abstract",
+      "input": {
+        "user": "There's something about getting older that makes regret heavier.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "regret in aging",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-5",
+      "category": "abstract",
+      "input": {
+        "user": "I want to leave something behind but I have no idea what.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "leaving something behind / legacy",
+        "concern": null,
+        "hope": "leave something behind",
+        "question": "what should I leave behind"
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-6",
+      "category": "abstract",
+      "input": {
+        "user": "What if everything I'm building right now turns out to not matter?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "uncertainty about meaning of current work",
+        "concern": "what I'm building won't matter",
+        "hope": null,
+        "question": "what if everything I'm building doesn't matter"
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-7",
+      "category": "abstract",
+      "input": {
+        "user": "I've been reading Stoicism but it feels like it's optimized for men 2000 years ago.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Stoicism's relevance today",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "abs-en-8",
+      "category": "abstract",
+      "input": {
+        "user": "Sometimes I think I'm just a bundle of habits performing being a person.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "identity as performance / habits",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-1",
+      "category": "technical",
+      "input": {
+        "user": "How does a B-tree differ from a B+ tree in practice?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "B-tree vs B+ tree differences",
+        "concern": null,
+        "hope": null,
+        "question": "how do they differ in practice"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-2",
+      "category": "technical",
+      "input": {
+        "user": "I'm thinking about migrating our Postgres DB to SQLite for simplicity. Worried about losing transaction guarantees.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Postgres to SQLite migration",
+        "concern": "losing transaction guarantees",
+        "hope": "simplicity from SQLite",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-3",
+      "category": "technical",
+      "input": {
+        "user": "Rust vs Go for a CLI that needs heavy concurrency.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "Rust vs Go for concurrent CLI",
+        "concern": null,
+        "hope": null,
+        "question": "Rust or Go"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-4",
+      "category": "technical",
+      "input": {
+        "user": "Just learned about CRDTs. Mind blown — but I can't see how to apply them in our actual stack.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "CRDTs applicability to current stack",
+        "concern": null,
+        "hope": null,
+        "question": "how to apply CRDTs in our actual stack"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-5",
+      "category": "technical",
+      "input": {
+        "user": "What's the modern equivalent of Java EE if I'm starting fresh?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "modern Java EE equivalent",
+        "concern": null,
+        "hope": null,
+        "question": "what's the modern equivalent if starting fresh"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-6",
+      "category": "technical",
+      "input": {
+        "user": "Building a real-time multiplayer game. Thinking websocket vs WebRTC for the data channel.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "websocket vs WebRTC for game data channel",
+        "concern": null,
+        "hope": null,
+        "question": "websocket or WebRTC"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-7",
+      "category": "technical",
+      "input": {
+        "user": "Can you explain attention heads in plain English?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "attention heads explanation",
+        "concern": null,
+        "hope": null,
+        "question": "what are attention heads"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-8",
+      "category": "technical",
+      "input": {
+        "user": "I want to add fuzzy search to my app. Considering Meilisearch vs Typesense vs just SQLite FTS5.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "fuzzy search engine choice",
+        "concern": null,
+        "hope": "add fuzzy search to my app",
+        "question": "Meilisearch, Typesense, or SQLite FTS5"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-9",
+      "category": "technical",
+      "input": {
+        "user": "What does idempotency mean in API design?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "idempotency in API design",
+        "concern": null,
+        "hope": null,
+        "question": "what does idempotency mean"
+      },
+      "language": "en"
+    },
+    {
+      "id": "tech-en-10",
+      "category": "technical",
+      "input": {
+        "user": "Trying to grok event sourcing. Read 5 articles and still feel like I don't actually get it.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "understanding event sourcing",
+        "concern": "still don't actually get it after 5 articles",
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "sparse-en-1",
+      "category": "sparse",
+      "input": {
+        "user": "I keep thinking about the conversation I had with my brother last week.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "conversation with brother last week",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "sparse-en-2",
+      "category": "sparse",
+      "input": {
+        "user": "Still mulling over the team retro from yesterday.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "team retro from yesterday",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "sparse-en-3",
+      "category": "sparse",
+      "input": {
+        "user": "I've been turning over this product idea in my head for a few days.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "this product idea",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "sparse-en-4",
+      "category": "sparse",
+      "input": {
+        "user": "That book on attention has been on my mind all week.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "the book on attention",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "sparse-en-5",
+      "category": "sparse",
+      "input": {
+        "user": "Thinking about my grandmother today.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "my grandmother",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "mixed-en-1",
+      "category": "mixed",
+      "input": {
+        "user": "My job's getting heavier and my relationship is on the rocks. Both feel like they're slipping.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "feeling like job and relationship are both slipping",
+        "concern": "both job and relationship slipping",
+        "hope": null,
+        "question": null
+      },
+      "notes": "tie genuine — bundled framing, treat as one combined topic per user's own framing",
+      "language": "en"
+    },
+    {
+      "id": "mixed-en-2",
+      "category": "mixed",
+      "input": {
+        "user": "I want to learn Mandarin AND get back into climbing AND finally write that book. Something has to give.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "competing personal goals (Mandarin / climbing / writing)",
+        "concern": "having to drop something",
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "mixed-en-3",
+      "category": "mixed",
+      "input": {
+        "user": "My back's been hurting for weeks and I haven't slept properly in months. I think it's all stress from work.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "back pain and insomnia from work stress",
+        "concern": "back pain + insomnia + work stress",
+        "hope": null,
+        "question": null
+      },
+      "notes": "user explicitly attributes physical symptoms to work — treat as one bundled topic",
+      "language": "en"
+    },
+    {
+      "id": "mixed-en-4",
+      "category": "mixed",
+      "input": {
+        "user": "Considering moving cities. Lower cost of living but my whole network is here.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "moving cities decision",
+        "concern": "losing my network if I move",
+        "hope": "lower cost of living",
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "mixed-en-5",
+      "category": "mixed",
+      "input": {
+        "user": "I'm trying to decide between buying a house and putting that money into my business. Either way it feels like locking myself in.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "house vs investing in business",
+        "concern": "locking myself in either way",
+        "hope": null,
+        "question": "house or business investment"
+      },
+      "language": "en"
+    },
+    {
+      "id": "mixed-en-6",
+      "category": "mixed",
+      "input": {
+        "user": "My kid is struggling at school AND my parents need more help AND I just got assigned a huge project at work.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "everything stacking up at once (kid + parents + work project)",
+        "concern": "everything stacking up at once",
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "ramble-en-1",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "I'm just so tired. Tired of all of it. Nothing makes sense anymore.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "exhaustion / emotional low",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "notes": "pure venting, no specific concern/hope/question named",
+      "language": "en"
+    },
+    {
+      "id": "ramble-en-2",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "I don't know what's wrong with me lately. I just feel off and I can't articulate it.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "feeling off without articulation",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "notes": "meta-confusion is not a specific question; 'feeling off' is not a specific concern",
+      "language": "en"
+    },
+    {
+      "id": "ramble-en-3",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "Today was a lot. Just a lot. I don't even know where to start.",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "overwhelmed",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
+    },
+    {
+      "id": "ramble-en-4",
+      "category": "emotional_rambling",
+      "input": {
+        "user": "It's been one of those weeks. You know what I mean?",
+        "ai": ""
+      },
+      "expected": {
+        "topic": "rough week",
+        "concern": null,
+        "hope": null,
+        "question": null
+      },
+      "language": "en"
     }
   ]
 }
