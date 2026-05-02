@@ -1,6 +1,7 @@
 # `#claim-extraction` — Implementation Plan
 
-> **Status (2026-05-01):** v1.3 — Rodc + 外部 Opus reviewed, 4 push backs incorporated, **approved for implementer dispatch** per protocol §5.5. Implementer prerequisite: `#intent-classifier` eval gate GREEN first.
+> **Status (2026-05-02):** v1.4 — Tasks 1-14 implementer DONE 2026-05-02. Eval gate FAIL on nvidia free (33.8% overall, hope recall 22%, API fail 25%) → Rodc directive (a)+(d): Step 1 = isolation eval on Haiku 4.5, Step 2 = split-route ship if Haiku passes / prompt rewrite if not. v1.4 adds Post-launch P2 follow-up for Task 14 log-grep verification at Rodc dogfood. Tasks 15 (Rodc 5-round dogfood) parallel with Step 1 eval.
+> v1.3 (2026-05-01): Rodc + 外部 Opus reviewed, 4 push backs incorporated, approved for dispatch. Implementer prerequisite: #intent-classifier eval gate GREEN (which landed 2026-05-02 92% / 97.5% / 100% / 88%).
 > **For agentic workers:** Use `superpowers:test-driven-development` per task. Then `superpowers:subagent-driven-development` extended with `docs/superpowers/skills/scenario-verification.md`.
 > **App/ gitignored** — `app/shared/extraction/` + `app/web/server.py` + `app/web/static/app.js` modifications do NOT go to git. Skip the per-task `Commit ...` lines for those files. `fixtures/` artifacts (eval set + runner) DO commit.
 
@@ -288,6 +289,10 @@ Manual annotation: ~30-60 min additional for the 20 boundary cases (1.5h - 2h to
 5. ✓ 桌面横向利用率:N/A
 6. ✓ Mobile responsive:N/A(backend)
 7. ✓ Empty state:由 `#3a` 4-tier cold start cover
+
+## Post-launch follow-ups (P2)
+
+- **Task 14 alpha-observability log-grep verification** (added 2026-05-02 per Rodc directive): Task 14 done-criterion includes "Vault badge 增长在 alpha 测试中可观察" — but the unit + integration tests cover the *mechanism* (claim_persisted log line + bumpVaultBadge frontend trigger), not the *live-log signal*. **At Task 15 Rodc 5-round dogfood**, in addition to subjective per-round PASS / WEAK / FAIL judgments, Rodc greps the server stderr / log file for `claim_persisted message_id=` lines and confirms one fires per thoughtful turn. This closes the alpha-observability done-criterion gap. **Not blocking ship** — but the done-condition isn't fully met without this manual log-grep step. If automated, becomes part of `INFRA 4` test infra investments.
 
 ## References
 
