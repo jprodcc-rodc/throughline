@@ -51,6 +51,8 @@ Beyond data: Rodc surfaced `-dix` ending as *settled-for* outcome (preferred Rod
 
 **Both "rename to Rodspan" and "Rodix retains" were defensible reads of the data per memo §7.** Rodc Type-A picked rename + Path A. This spec executes that decision.
 
+**Additional architectural decision locked 2026-05-04 (post-F2 surfacing):** Rodspan SaaS + throughline OSS adopt the **Open Core model**. Throughline OSS (public, MIT) is the algorithm canon (mcp_server, throughline_cli, MCP server interface, single-user CLI). Rodspan SaaS (private rodspan-app repo) is the commercial product layer (UI, auth, billing, multi-user, cloud sync, premium memory features, polished UX). Rodspan SaaS imports throughline OSS as algorithm canon via sibling-repo PYTHONPATH (conftest.py mechanism). Three commitments accepted (see §15). This is the permanent architecture, not an interim arrangement.
+
 ### §0.5 Out of scope for this spec
 
 - Re-debating the name (locked)
@@ -67,17 +69,15 @@ Beyond data: Rodc surfaced `-dix` ending as *settled-for* outcome (preferred Rod
 
 Two gates. **Gate 1 (TM) MUST pass before any rename action.** Gate 2 (pron test) is OPTIONAL per Rodc preference.
 
-### §1.0 Mandatory pre-Gate-1 step: backup tag
+### §1.0 Pre-rename backup tags (DONE 2026-05-03 + 2026-05-04)
 
-Before ANY rename or validation action, CC creates a git tag:
+Two backup tags exist on origin remotes for rollback per §6 Risk 1/2/6/8.
 
-```bash
-cd C:/Users/Jprod/code/throughline
-git tag pre-rename-backup-2026-05-03
-git push origin pre-rename-backup-2026-05-03
-```
+**Tag 1 — throughline (public OSS):** `pre-rename-backup-2026-05-03` at commit `40c51af`. Captures docs/, audit artifacts, Wave 1c handoffs, dogfood verify, this spec, all OSS code (mcp_server/, throughline_cli/, fixtures/, etc.). Excludes app/ tree (gitignored at the time, since migrated to rodspan-app). Pushed to github.com/jprodcc-rodc/throughline.
 
-This protects rollback per §6 Risk 1/2/6. If CC cannot push (no remote configured), local tag suffices — but surface to Rodc to verify backup is offsite or replicated.
+**Tag 2 — rodspan-app (private SaaS):** `pre-rename-backup-2026-05-04-rodspan-app` at commit `4fbda2f`. Captures app/ tree before conftest.py was added. Pushed to github.com/jprodcc-rodc/rodspan-app.
+
+Both tags are authoritative restore points. §A.1-A.5 + A.7-A.9 + Tier B + Tier C rollback uses Tag 1 (throughline). §A.6 rollback uses Tag 2 (rodspan-app post conftest.py commit 573a7ff).
 
 ### §1.1 Gate 1 — TM clearance (DIY without lawyer)
 
@@ -262,6 +262,12 @@ This file is `voice-guide.md` §5's reference oracle. Per voice-guide, friends-i
 | `docs/superpowers/legal/legal-review-notes.md` | Find-replace |
 
 #### A.6 — System prompt + code core (HIGHEST risk subset)
+
+**CRITICAL: §A.6 runs in `C:/Users/Jprod/code/rodspan-app/` (private repo), NOT in `C:/Users/Jprod/code/throughline/`.** Per Open Core split (§4.4) on 2026-05-04, app/ tree migrated to private rodspan-app. Throughline/ no longer contains app/ files. CC must `cd C:/Users/Jprod/code/rodspan-app/` before any §A.6 file action.
+
+**Pre-rename baseline (regression target): 645 passed, 2 skipped, 0 failed** (measured in rodspan-app at commit 573a7ff with conftest.py providing throughline sibling import). Run pytest after every file change in §A.6 — if pass count drops, immediately `git revert` the commit.
+
+**Backup tag for rollback:** `pre-rename-backup-2026-05-04-rodspan-app` at commit 4fbda2f (pushed to origin private repo). This tag captures app/ tree state before conftest.py was added; the conftest.py commit 573a7ff is the actual §A.6 starting point.
 
 Wave 1c shipped on Rodix prompt strings. Rename must NOT regress test suite.
 
@@ -587,9 +593,9 @@ CC procedure:
 4. Run full test suite immediately
 5. If ANY test fails that wasn't failing pre-rename, this is regression — `git revert` and surface
 
-### §4.4 — OSS throughline / Rodspan SaaS relationship (per Q1=D)
+### §4.4 — OSS throughline / Rodspan SaaS relationship (RESOLVED 2026-05-04)
 
-**Per Q1=D: Rodc has NOT yet decided the long-term relationship between OSS throughline and Rodspan SaaS.** Spec lock for now:
+**Per Q1=D Type-A 2026-05-04 (post-F2 architectural surfacing): Open Core model locked.** OSS throughline continues as algorithm canon, maintained as long as Rodspan SaaS is active commercial product. Rodspan SaaS imports throughline as sibling-repo PYTHONPATH dependency. See §15 for layer rules and three commitments. Spec configuration:
 
 - throughline OSS repo at `https://github.com/jprodcc-rodc/throughline` continues to exist, public
 - Rodspan SaaS uses code from this repo (currently)
@@ -717,13 +723,14 @@ Manual ops complete iff:
 **Mitigation:** Spec acknowledges this risk upfront in §1.1.
 
 ### Risk 8 — Env var / DB schema / cookie / API path rename has unanticipated breakage
-**Trigger:** §A.6 grep audit surfaces "rodix" in env var / DB / cookie / API path; Rodc unblocks rename; some external dependency Rodc forgot about breaks.
+**Trigger:** §A.6 grep audit (in rodspan-app/) surfaces "rodix" in env var / DB / cookie / API path; Rodc unblocks rename; some external dependency Rodc forgot about breaks.
 **Response:**
-1. CC `git revert` the breaking commit.
-2. Rodc identifies the dependency and either updates it or signals to keep the rodix-named identifier as legacy alias.
-3. Both options (update vs alias) are valid. Spec does not pre-decide.
+1. CC `git revert` the breaking commit in rodspan-app (NOT throughline — §A.6 runs in rodspan-app per Open Core split).
+2. If breakage cascades to throughline (very unlikely since throughline algorithm canon does not contain "rodix" branding), `git revert` in throughline separately.
+3. Rodc identifies the dependency and either updates it or signals to keep the rodix-named identifier as legacy alias.
+4. Both options (update vs alias) are valid. Spec does not pre-decide.
 
-**Mitigation:** §A.6 explicitly surfaces these classes of rename to Rodc rather than blind-renaming.
+**Mitigation:** §A.6 explicitly surfaces these classes of rename to Rodc rather than blind-renaming. rodspan-app backup tag pre-rename-backup-2026-05-04-rodspan-app at 4fbda2f provides clean restore point.
 
 ---
 
@@ -1049,7 +1056,15 @@ When Rodspan launches publicly on HN / Twitter / blog, the relationship to OSS t
 
 Different choices have different effects on HN reception, brand authenticity, OSS community goodwill. Rodc strategic decision.
 
-### §13.4 — Path B revisit trigger
+### §13.4 — (D) decouple option — CANCELLED 2026-05-04
+
+Earlier draft of this spec (pre-Open-Core lock) included option (D) as a post-launch task: rewrite Rodspan app/ to not depend on throughline OSS root packages (mcp_server, throughline_cli). This option is now **cancelled** per Open Core architectural lock 2026-05-04.
+
+**Reason for cancellation:** Open Core model treats sibling-repo dependency as permanent architecture, not technical debt. Throughline OSS continues as algorithm canon while Rodspan SaaS is active commercial product. Decoupling would break the model's algorithm-flow benefit (improvements in OSS automatically flow to SaaS).
+
+**If Open Core is later abandoned** (e.g., Rodspan acquired by buyer wanting clean separation), (D) can be re-considered as part of architectural transition. Until then, do NOT execute (D).
+
+### §13.5 — Path B revisit trigger
 
 Path A is locked 2026-05-03. **If** Phase 1 alpha telemetry shows:
 - ICP mismatch with Cherry Studio user base (e.g., users want hosted LLM, not BYO-API)
@@ -1060,7 +1075,7 @@ Then Rodc may revisit Path B. **This would re-open brand-name decision** — Rod
 
 Spec does NOT pre-resolve this. Surface as standing risk for post-launch evaluation.
 
-### §13.5 — Rodc / Rodspan handle relationship + AI co-authorship (Gap 15 + Gap 16)
+### §13.6 — Rodc / Rodspan handle relationship + AI co-authorship (Gap 15 + Gap 16)
 
 Twitter:
 - `@rodc` = founder voice, narrative, dev-log
@@ -1084,5 +1099,69 @@ Total expected calendar: ~5–7 days for rename code/docs work + LLC paperwork +
 Total cost out-of-pocket: ~$500 (rename + LLC + domain + sunk Rodix Porkbun). §12 work may add cost (designer, hosting subscriptions) — separately budgeted.
 
 No lawyer cost (replaced by Opus + CC TM sweep, with documented residual risk in §6 Risk 1).
+
+## §15 Open Core architectural commitments (LOCKED 2026-05-04)
+
+Three commitments Rodc accepted as part of Open Core model lock. These are durable architectural decisions, not preferences. Future fresh Opus + CC sessions must enforce these commitments when reviewing code / spec / strategy decisions.
+
+### §15.1 — Commitment 1: Throughline OSS maintained while Rodspan is active
+
+Throughline OSS receives 5-10 hours/month maintenance: issue triage, critical bug fixes, dependency updates, docs readability. This commitment holds as long as Rodspan SaaS is an **active commercial product** (alpha / beta / production with paying or trial users).
+
+**Sunset path if Rodspan ends:** If Rodspan ends due to commercial failure, burnout, acquisition, or pivot, throughline enters sunset evaluation. Four honorable exits:
+
+(a) Archive on GitHub — most common; README updated to "no longer maintained" + recommend alternatives if any.
+
+(b) Transfer maintainership — if active OSS contributor exists who wants to take over.
+
+(c) Continue as personal side-project — if Rodc personally invested, low priority (1-2h/month).
+
+(d) Fork algorithm into successor project — if Rodc continues memory-related work elsewhere.
+
+None of (a)/(b)/(c)/(d) constitutes abandonment. All preserve user trust appropriately for the situation.
+
+**Dormancy clarification:** If Rodspan goes dormant (low usage but technically alive — e.g., 50 users, low growth, no incident in months), throughline maintenance reduces to 1-3h/month critical-only. Dormancy lasting >6 months triggers sunset evaluation.
+
+### §15.2 — Commitment 2: Layer boundary strict execution
+
+Every code change requires explicit decision: OSS or SaaS layer? Ambiguous cases default to OSS (algorithm canon).
+
+**Anti-pattern to resist:** "I'll put it in SaaS for now and figure out later." This is how Open Core models break. Rodc + CC must decide layer at write-time.
+
+**Layer rules table:**
+
+| Code type | Layer |
+|---|---|
+| Memory algorithm improvement (drift detection, recall scoring, etc.) | OSS throughline |
+| Claim schema evolution | OSS throughline |
+| LLM provider routing / adapter | OSS throughline |
+| MCP server interface | OSS throughline |
+| User-facing UI / UX components | Private rodspan-app |
+| Authentication / billing / subscription | Private rodspan-app |
+| Multi-user / team / collaboration features | Private rodspan-app |
+| Cloud sync infrastructure | Private rodspan-app |
+| Analytics / observability / SaaS metrics | Private rodspan-app |
+| Premium memory features (recall+, dashboards) | Private rodspan-app |
+| Cherry-Studio-aware design / brand UX | Private rodspan-app |
+| Marketing / brand artifacts | Private rodspan-app |
+
+**Rule of thumb for ambiguous cases:** "If a hypothetical other OSS user wanting throughline self-host would also benefit from this code → OSS. If only Rodspan SaaS paying customers would → SaaS."
+
+### §15.3 — Commitment 3: Algorithm improvements default to OSS
+
+Algorithm improvements (drift detection, Claim schema, recall scoring, provider adaptation) default to OSS throughline, even if motivated only by Rodspan SaaS needs.
+
+**Reasoning:** Schema/algorithm is canon. Forking canon between OSS and SaaS = model collapse. The cost of giving away an improvement to OSS users (free-rider concern) is far less than the cost of forking canon (architectural debt + decoupling work + diverging behavior).
+
+**Exception:** SaaS-specific algorithm tuning (e.g., latency optimizations only relevant to hosted multi-user setups) may stay in SaaS layer. But schema definitions, core algorithms, and provider routing → always OSS.
+
+### §15.4 — Enforcement during this rename and onward
+
+During §A rename execution and all subsequent Wave 2+ work:
+
+- CC must surface to Rodc when making decisions that affect layer assignment.
+- Fresh Opus must validate proposed changes against Layer rules table (§15.2).
+- Rodc Type-A on edge cases; default to OSS for ambiguity.
+- Quarterly review (or per-Wave): audit recent commits for layer violations; rebalance if needed.
 
 Spec is complete. Hand off to fresh Opus.
