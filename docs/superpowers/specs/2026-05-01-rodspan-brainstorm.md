@@ -1,4 +1,4 @@
-# Rodix Brainstorm — Session Log
+# Rodspan Brainstorm — Session Log
 
 **Date**: 2026-05-01
 **Status**: In progress (brainstorming skill, clarifying questions phase)
@@ -13,7 +13,7 @@
 |---|---|---|---|
 | 创始人网名 | Rodc | Stable | personal ID |
 | 产品名(临时代号) | throughline | Stable until `#r-name-final` | code / internal spec / docs |
-| 产品名(候选最终) | Rodix | **Candidate, NOT yet locked** | nothing yet — only after `#r-name-final` resolves |
+| 产品名(候选最终) | Rodspan | **Candidate, NOT yet locked** | nothing yet — only after `#r-name-final` resolves |
 | 公司名 | TBD | depends on `#r-company` | — |
 
 **Discipline**: All user-facing copy (mockups / UI / website / email / errors) uses `[PRODUCT_NAME]` placeholder. Internal code stays `throughline_*`. Global replace `[PRODUCT_NAME]` → final name happens at the moment `#r-name-final` resolves.
@@ -72,8 +72,8 @@ The app pivot strategy is **B-重**: server-side vault with at-rest encryption (
 
 **Locked product framing** (governs all future related decisions):
 
-> Rodix 是 "AI chat with memory",不是 "memory app with chat"。
-> 用户来 Rodix 是因为 ChatGPT 体验不够好,不是因为想要 vault 系统。
+> Rodspan 是 "AI chat with memory",不是 "memory app with chat"。
+> 用户来 Rodspan 是因为 ChatGPT 体验不够好,不是因为想要 vault 系统。
 > Top tabs 的 hierarchy(Chat default、Vault discoverable)精确反映这个定位。
 
 A · Always-on Vault Rail 是 "compromise"(平庸两全)、B · Vault-First Home 是 "产品野心叙事"但 alpha 阶段不可验证 + 心智冲击大。C 是产品策略对,不只是工程友好。
@@ -120,11 +120,11 @@ A · Always-on Vault Rail 是 "compromise"(平庸两全)、B · Vault-First Home
 
 | # | 当前 mockup | 改成 | 理由 |
 |---|---|---|---|
-| 1 | "下次相关时会主动 surface ↗" | "下次提到这些任一项,我会主动带回来 ↗"(英文:"I'll bring this back when relevant ↗") | 移除工程词 "surface",换成关系性叙事"带回来",跟 Rodix brand 调性一致 |
+| 1 | "下次相关时会主动 surface ↗" | "下次提到这些任一项,我会主动带回来 ↗"(英文:"I'll bring this back when relevant ↗") | 移除工程词 "surface",换成关系性叙事"带回来",跟 Rodspan brand 调性一致 |
 | 2 | "VAULT BROUGHT THIS BACK"(英文 caps) | "⚡ 我把这个带回来了"(英文:"⚡ I brought this back") | 中文产品里英文 caps 突兀;"带回来"跟 promise 措辞形成承诺-兑现呼应,双重 recall 信号 |
 | 3 | 4 按钮当前显示 3 个(记下了 / 不相关 / 忽略),且"记下了"跟"已记下"语义重叠 | 4 按钮改:**用上了 / 不相关 / 已经想过 / 跳过** | 4 维度对应不同 telemetry 信号:用上了=action triggered, 不相关=extraction 错误, 已经想过=user resolved, 跳过=neutral non-engage。喂 #recall-quality 阈值校准 loop |
 
-**Rodc 的反应观察(2026-05-01)**:"不是'哇'是'信任',看着像 Linear / Notion 那种克制成熟产品"。这比 wow 反应对长期价值更高。**Rodix 设计调性 = trust-evoking > wow-evoking**(Linear/Notion-grade 克制 > 闪亮 demo)。所有后续 UI 决策保持这个调性 baseline。
+**Rodc 的反应观察(2026-05-01)**:"不是'哇'是'信任',看着像 Linear / Notion 那种克制成熟产品"。这比 wow 反应对长期价值更高。**Rodspan 设计调性 = trust-evoking > wow-evoking**(Linear/Notion-grade 克制 > 闪亮 demo)。所有后续 UI 决策保持这个调性 baseline。
 
 **移动端**: Card 全宽 stack,padding 收紧到 8px 10px,4 字段保持纵向 list。Recall 卡同样全宽,4 按钮在 <360px 屏可换行。
 
@@ -162,7 +162,7 @@ A · Always-on Vault Rail 是 "compromise"(平庸两全)、B · Vault-First Home
 
 | # | 微调 | 实施动作 |
 |---|---|---|
-| 1 | 副标题硬编码"Rodix"违反 §5.5 | 改成 `[PRODUCT_NAME]` 占位,#r-name-final 解决时全局替换 |
+| 1 | 副标题硬编码"Rodspan"违反 §5.5 | 改成 `[PRODUCT_NAME]` 占位,#r-name-final 解决时全局替换 |
 | 2 | OpenRouter 卡片描述跟副标题重复 | 改成 `不需要 OpenAI / Anthropic 账号,3 分钟拿到 key 后通用 30+ 模型`,聚焦 OpenRouter 自身 |
 | 3 | Skip 路径产品逻辑 | 锁定 = (a) skip 只跳本步不跳出 onboarding,chat 入口提示"先配 AI 才能聊" |
 | 4 | Sign-off checklist 加一项 | 新增"OpenRouter 卡片描述跟副标题不重复"为常规检查项 |
@@ -171,7 +171,7 @@ A · Always-on Vault Rail 是 "compromise"(平庸两全)、B · Vault-First Home
 - 当前 server (3497-) 服务文件:14 屏 1 处违规已 catch + P1 修复
 - 历史 stale 文件(3441-/3472-):不再服务,archive
 - Session doc 内引用:全是 §5.5.1 允许的内部讨论性使用,不算违规
-- **新纪律**:CC 下次推 mockup 前主动 `grep "Rodix"` 巡检,有违规先修再推
+- **新纪律**:CC 下次推 mockup 前主动 `grep "Rodspan"` 巡检,有违规先修再推
 
 **Brand 叙事资产(候选 tagline)**:
 - `[PRODUCT_NAME] 不绑定任何 AI 公司——你的 memory 跨任何模型`
@@ -388,14 +388,14 @@ Rodc: `#r-company` · `#r-domain` · `#r-social` · `#r-name-final`
 ## Brainstorm artifacts location
 
 - **Visual companion mockups**: `.superpowers/brainstorm/3441-1777602959/content/`
-  - `01-design-language.html` — original visual style options (now stale, before Rodix rename)
-  - `02-design-language-rodix.html` — Rodix rename applied
+  - `01-design-language.html` — original visual style options (now stale, before Rodspan rename)
+  - `02-design-language-rodix.html` — Rodspan rename applied
   - `03-font-direction.html` — Inter vs IBM Plex Sans → Inter locked
   - `04-info-architecture.html` — IA A/B/C → A locked
   - `05-what-i-just-saved.html` — initial #8 options
   - `06-settings-panel.html` — #1a A/B/C → A locked
   - `07-what-i-just-saved-revisit.html` — #8 with attribute table → A locked
-  - `08-onboarding-shape.html` — Onboarding (with stale "Rodix" hardcode)
+  - `08-onboarding-shape.html` — Onboarding (with stale "Rodspan" hardcode)
   - `09-onboarding-shape-placeholder.html` — Onboarding with `[PRODUCT_NAME]` (correct) → B locked
   - `10-cards-list.html` — `#3a` cards list (in flight)
 - **Server**: `http://localhost:54754` (running in background, 30-min idle timeout)
@@ -414,14 +414,14 @@ Rodc: `#r-company` · `#r-domain` · `#r-social` · `#r-name-final`
 1. **Rodc decides `#3a` form** → unblocks remaining brainstorm
 2. **`#5` visual polish + `#9a` 历史导入解析 brainstormed** → all visual decisions locked
 3. **Two spec docs written** at `docs/superpowers/specs/`:
-   - `web-product-design.md` (Rodix app — 14 sub-items + done criteria)
-   - `marketing-site-design.md` (Rodix marketing site — 10 modules + structure)
+   - `web-product-design.md` (Rodspan app — 14 sub-items + done criteria)
+   - `marketing-site-design.md` (Rodspan marketing site — 10 modules + structure)
 4. **Spec self-review** → user review → approval
 5. **Invoke `writing-plans` skill** → implementation plan with item codes + priority + dependencies
 
 ## Now-unblocked Rodc items (per `#r-name-final` candidate)
 
-These can be started in parallel even before `#r-name-final` formally resolves (assuming Rodix sticks):
+These can be started in parallel even before `#r-name-final` formally resolves (assuming Rodspan sticks):
 
 - `#r-domain`: check availability for rodix.ai / .com / .io / .app
 - `#r-social`: claim @rodix / @rodix_ai / GitHub `rodix-app`

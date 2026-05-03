@@ -1,4 +1,4 @@
-# Rodix Product Test Scenarios
+# Rodspan Product Test Scenarios
 
 > **For agentic workers:** This is the canonical user-journey verification list. Run relevant scenarios at end of every task / wave / before any "done" claim. If a scenario fails: trigger fix dispatch, do NOT mark task complete. This document is version-controlled — CC may extend, Rodc reviews.
 
@@ -47,7 +47,7 @@ These conventions inform all scenarios. Violations of any are **automatic failur
 
 ### C-1: Tone & language
 
-- AI **never** uses these phrases (Rodix is a thinking partner, not a generic empathetic chatbot):
+- AI **never** uses these phrases (Rodspan is a thinking partner, not a generic empathetic chatbot):
   - "我在这里"
   - "我陪你"
   - "慢慢说"
@@ -266,7 +266,7 @@ C-4 控制 user intent 路由。AI response 质量是**独立维度**:
 **Setup**: 已完成 onboarding · 进入 Chat tab · 对话历史为空(localStorage `throughline.app.conversation.v1` 为空 / `Onboarding.reset()` 后回访 / `startNewConversation` 后)
 
 **应该看到**(Wave 1b target):
-- **居中 brand anchor**:`Rodix` 56px (desktop) / 40px (mobile),Inter 600 字重(after `#r-name-final` lock + `#rename-user-facing`)
+- **居中 brand anchor**:`Rodspan` 56px (desktop) / 40px (mobile),Inter 600 字重(after `#r-name-final` lock + `#rename-user-facing`)
 - **Tagline**:一句话简介,14px,`--text-secondary` 颜色,max-width 480px(Rodc 后续 lock 精确文案)
 - **3-4 个 sample prompt cards**:左对齐文本,深 surface 背景,hover 时琥珀 border + soft bg
   - 点击 → **prefill composer**(NOT 自动发送)
@@ -1007,4 +1007,4 @@ cause: scenario 没覆盖到这个 user journey
 
 ---
 
-*Rodix Product Test Scenarios · CC self-verification reference · Rodc spot-check reference*
+*Rodspan Product Test Scenarios · CC self-verification reference · Rodc spot-check reference*
