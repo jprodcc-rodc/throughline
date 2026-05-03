@@ -1,15 +1,15 @@
-# Rodix Web Product Design Spec
+# Rodspan Web Product Design Spec
 
 **Status**: Brainstorm signed-off 2026-05-01. Implementation-ready (P1 launch).
-**Authority**: This is the canonical spec for the Rodix web product (chat + vault). Companion: `marketing-site-design.md`. Source of decisions: `2026-05-01-rodix-brainstorm.md` (session log).
+**Authority**: This is the canonical spec for the Rodspan web product (chat + vault). Companion: `marketing-site-design.md`. Source of decisions: `2026-05-01-rodspan-brainstorm.md` (session log).
 **Governing protocol**: `~/Downloads/throughline-collaboration-protocol.md` v1.4.
 
 ---
 
 ## 1. Product framing
 
-> Rodix 是 "AI chat with memory",**不是** "memory app with chat"。
-> 用户来 Rodix 是因为 ChatGPT 体验不够好,不是因为想要 vault 系统。
+> Rodspan 是 "AI chat with memory",**不是** "memory app with chat"。
+> 用户来 Rodspan 是因为 ChatGPT 体验不够好,不是因为想要 vault 系统。
 
 This framing governs every design decision — chat is the primary canvas, vault is the differentiated layer. Information architecture (top tabs with Chat default), visual hierarchy, and feature priorities all derive from this.
 
@@ -21,10 +21,10 @@ This framing governs every design decision — chat is the primary canvas, vault
 
 Per protocol §5.5.1:
 - **临时代号**: `throughline` — 内部代码 / module / vault path / env vars / 内部文档
-- **候选最终**: `Rodix` — 候选 brand,**未最终敲定**(等 `#r-name-final` 正式 resolve)
+- **候选最终**: `Rodspan` — 候选 brand,**未最终敲定**(等 `#r-name-final` 正式 resolve)
 - **placeholder**: `[PRODUCT_NAME]` — 所有用户可见文案(UI 字符串 / 网站 / 邮件 / 错误消息)
 
-Rule: **don't hardcode "Rodix" or "throughline" in user-facing copy**. The moment `#r-name-final` resolves → global replace `[PRODUCT_NAME]` → final name.
+Rule: **don't hardcode "Rodspan" or "throughline" in user-facing copy**. The moment `#r-name-final` resolves → global replace `[PRODUCT_NAME]` → final name.
 
 Internal code retains `throughline_*` until `#rename-internal` (P2, post-launch) executes the migration.
 
@@ -163,7 +163,7 @@ Internal code retains `throughline_*` until `#rename-internal` (P2, post-launch)
 **Setup signal**:`conversation.length === 0`(localStorage `throughline.app.conversation.v1` 为空数组或缺失)。
 
 **Layout**(消息流容器内,垂直居中):
-1. **Brand anchor**:大字 `Rodix`(56px desktop / 40px mobile,Inter 600 字重,letter-spacing -0.02em)
+1. **Brand anchor**:大字 `Rodspan`(56px desktop / 40px mobile,Inter 600 字重,letter-spacing -0.02em)
 2. **Tagline**:一句话(14px,`--text-secondary`,max-width 480px),Wave 1a placeholder = `AI chat with memory · Your memory crosses every model`,Rodc 后续 lock 精确文案
 3. **Sample prompt cards**(3-4 张,纵向 stack,max-width 480px):
    - Wave 1a placeholder copy(Rodc 后续 lock):
@@ -324,7 +324,7 @@ Layer 2(桌面 native, Phase 2): true local-first vault on user's machine。
 
 ## 9. References
 
-- Brainstorm session log: `2026-05-01-rodix-brainstorm.md`
+- Brainstorm session log: `2026-05-01-rodspan-brainstorm.md`
 - Marketing site spec: `marketing-site-design.md`
 - Collab protocol: `~/Downloads/throughline-collaboration-protocol.md` v1.4
 - UX skill: `~/Downloads/SKILL-ux-design-judgment.md`

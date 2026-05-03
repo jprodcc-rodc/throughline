@@ -1,4 +1,6 @@
-# Task — Rodix Brand Name Strategic Audit + Exhaustive Brainstorm
+# Task — Rodspan Brand Name Strategic Audit + Exhaustive Brainstorm
+
+> **Note 2026-05-04:** This task spec was the input that produced the Rodspan rename. Original references to Rodix as benchmark are preserved in audit artifacts at `docs/superpowers/branding/name-audit/`. The audit memo at `docs/superpowers/branding/name-audit/00-RECOMMENDATION-MEMO.md` recommends Rodspan (locked 2026-05-03 by Rodc); see also `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for the rename execution spec.
 
 > **Recipient:** CC (Claude Code, fresh session strongly recommended)
 > **Author:** External Opus, written from the perspective of a senior brand
@@ -22,7 +24,7 @@
 - During Rodc's autonomous shift (this is independent strategic work, not
   ops integration)
 - If Rodc has not yet reviewed strategic-memo from autonomous shift
-- If Rodc has explicitly committed to Rodix and closed the question
+- If Rodc has explicitly committed to Rodspan and closed the question
 
 ### When to run
 
@@ -57,16 +59,16 @@ Output goes to `docs/superpowers/branding/name-audit/`.
 
 ## SECTION 1 — Why this task exists (strategic context)
 
-### The naming question is not "is Rodix OK?"
+### The naming question is not "is Rodspan OK?"
 
 The real question is structural:
 
-> "Given Rodix's strategic ambition (cross-model memory layer, anti-vendor
+> "Given Rodspan's strategic ambition (cross-model memory layer, anti-vendor
 > stance, founder-driven brand, $X pricing, English-international Phase 1
 > with EU expansion possible Phase 2-3), what naming choice maximizes
 > 5-year strategic optionality and brand defensibility?"
 
-Rodix the current name has **known frictions**:
+Rodspan the current name has **known frictions**:
 
 1. **Switzerland TM #677580** in software class
    - Current mitigation: geo-block EU
@@ -77,44 +79,44 @@ Rodix the current name has **known frictions**:
      phonetic in posts
    - Strategic cost: low-grade brand friction at every introduction
 3. **Coined word weight**
-   - "Rodix" carries no inherent meaning
+   - "Rodspan" carries no inherent meaning
    - Strategic cost: brand must earn meaning from scratch over years
 4. **Founder anchor strength** (an asset, not friction)
-   - Rod- (Rodc) → Rodix is real founder fingerprint
+   - Rod- (Rodc) → Rodspan is real founder fingerprint
 
 ### The core trade-off
 
-- **Coined names** (Rodix, Mem, Notion-coined-from-Latin) = blank slate,
+- **Coined names** (Rodspan, Mem, Notion-coined-from-Latin) = blank slate,
   brand-able, high TM defensibility, low immediate resonance
 - **Real word names** (Linear, Reflect, Granola) = instant resonance,
   weaker TM defensibility, harder to clear in 2026 saturated market
 - **Hybrid names** (portmanteaux, Latin-rooted) = middle ground, harder
   to nail
 
-Rodix is currently in the coined category. The audit must evaluate:
+Rodspan is currently in the coined category. The audit must evaluate:
 
-1. Is Rodix the strongest candidate **within the coined category**?
-2. Does any **real-word or hybrid candidate** clearly beat coined Rodix
+1. Is Rodspan the strongest candidate **within the coined category**?
+2. Does any **real-word or hybrid candidate** clearly beat coined Rodspan
    on multiple strategic dimensions?
 
 ### Outcome shapes
 
 Three valid outcomes from this audit. Each carries strategic value:
 
-- **Outcome A: Rodix confirmed.** 75 candidates evaluated, no clear winner
-  emerges. Rodc proceeds with Rodix with full evidence base. The audit
+- **Outcome A: Rodspan confirmed.** 75 candidates evaluated, no clear winner
+  emerges. Rodc proceeds with Rodspan with full evidence base. The audit
   itself becomes part of the brand's intellectual provenance ("we did the
   rigorous work").
-- **Outcome B: Marginal improvement found.** 1-2 candidates beat Rodix on
+- **Outcome B: Marginal improvement found.** 1-2 candidates beat Rodspan on
   1-3 dimensions but don't dominate overall. Rodc decides based on
   strategic priorities (cost vs upside, risk vs status quo).
-- **Outcome C: Strong winner found.** 1 candidate dominates Rodix on 4+
+- **Outcome C: Strong winner found.** 1 candidate dominates Rodspan on 4+
   dimensions. Rodc seriously considers rename (cost: 4-6h ops + 2-4h
   brand book v2).
 
 CC's job is to truth-track which outcome the evidence supports. Not bias
 toward novelty. Not bias toward inertia. Bias toward **best strategic
-position for Rodix-the-product over the next 5 years**.
+position for Rodspan-the-product over the next 5 years**.
 
 ---
 
@@ -122,7 +124,7 @@ position for Rodix-the-product over the next 5 years**.
 
 ### 2.1 — Strategic naming criteria (the 14 dimensions)
 
-Every candidate (including Rodix as benchmark) gets evaluated against
+Every candidate (including Rodspan as benchmark) gets evaluated against
 these 14 dimensions. This is the spine of the audit. Every dimension is
 scored 1-5, with reasoning.
 
@@ -140,19 +142,19 @@ scored 1-5, with reasoning.
 6. **Spellability from sound** (can a stranger spell it correctly when
    heard?)
 7. **Cross-cultural phonetic safety** (no rude meaning in EN/ES/FR/DE/
-   ZH-Mandarin/JA — Rodix's plausible markets)
+   ZH-Mandarin/JA — Rodspan's plausible markets)
 8. **Sound symbolism / phonosemantics** (does the sound feel like the
    product? E.g., hard consonants for sharp/precise; soft for warm/safe)
 
 #### Strategic / brand dimensions
 
-9. **Archetype fit** (vs Rodix's archetype from brand-book-v1.md)
+9. **Archetype fit** (vs Rodspan's archetype from brand-book-v1.md)
 10. **Voice fit** (does it pair naturally with Rodc's friends-intro
     voice — short paragraphs, parentheticals, anti-marketing?)
 11. **Category positioning** (does it signal "thinking partner" vs "AI
     productivity tool" vs "note app"? Where does it land?)
 12. **5-year strategic coherence** (in 2031 when LLMs are commodity, does
-    this name still describe what Rodix is?)
+    this name still describe what Rodspan is?)
 13. **Defensibility / uniqueness** (how hard is it for a competitor to
     create brand confusion? high uniqueness = low confusion risk)
 14. **Founder + acquisition fit** (does it work in HN post titles, Twitter
@@ -194,13 +196,13 @@ ground, anchor
 Latin/Greek: dominus, proprius, custos, fundus, radix
 
 **Axis 6 — Spine of conversation / through-line semantic field**
-(closest to Rodix's actual mechanism — explicit in friends-intro)
+(closest to Rodspan's actual mechanism — explicit in friends-intro)
 Words and roots: through, across, between, after, since, after-, post-,
 over-, mid-, span
 Latin/Greek: trans-, inter-, per-, mediam
 
 **Axis 7 — Founder anchor (Rod- / Rodc-derived)**
-Rodc's pseudonym. The current Rodix uses this. Generate 10 alternatives
+Rodc's pseudonym. The current Rodspan uses this. Generate 10 alternatives
 keeping the Rod- anchor with different suffixes:
 Rodway, Rodspan, Rodline, Rodweave, Rodanchor, Rodtrail, Rodare, Rodare,
 Rodvale, Rodtide
@@ -220,7 +222,7 @@ list. Anything failing is silently dropped, not added with a flag.
    Heptabase / Notion / Linear / Granola / Vellum / Spine / Throughline
    etc. are pre-eliminated)
 7. No phonetic adjacency to slurs or rude words in EN/ES/FR/DE
-8. Compatible with Rodix's archetype (don't generate "Quirkpop" if
+8. Compatible with Rodspan's archetype (don't generate "Quirkpop" if
    archetype is Sage)
 
 ### 2.4 — Output of Section 2 (after brainstorm phase)
@@ -253,7 +255,7 @@ Format:
 [... all 7 axes ...]
 
 ## After dedup: 75 unique candidates.
-## Plus benchmark: Rodix (current).
+## Plus benchmark: Rodspan (current).
 ## Total in pool: 76.
 ```
 
@@ -266,7 +268,7 @@ strategic evaluation. Run efficiently — most candidates will fail Gate 1.
 
 ### Gate 1 — Domain check
 
-For each candidate (76 total including Rodix benchmark):
+For each candidate (76 total including Rodspan benchmark):
 
 - `{name}.app` — primary
 - `{name}.com` — premium check
@@ -342,7 +344,7 @@ Format:
 # Operational Gate Verification — Generated 2026-XX-XX
 
 ## Summary
-- 76 candidates entered (75 + Rodix benchmark)
+- 76 candidates entered (75 + Rodspan benchmark)
 - N passed all 4 gates → "Operationally clear"
 - N passed 3/4 → "Maybe (1 issue)"
 - N eliminated → "OUT"
@@ -363,12 +365,12 @@ Format:
 [... per candidate ...]
 
 ## Operationally Clear list (advance to Section 4 strategic eval)
-- Rodix
+- Rodspan
 - Stranda
 - [list of N candidates passing all 4 gates]
 ```
 
-Expected outcome: 8-20 candidates pass all 4 gates. Rodix should pass
+Expected outcome: 8-20 candidates pass all 4 gates. Rodspan should pass
 (known clean except Switzerland TM in software class — note this honestly,
 not flag-OUT since it's acknowledged + mitigated).
 
@@ -420,7 +422,7 @@ For each candidate, produce a **scorecard**.
 - Soft consonants (l, m, n) = warm/calm
 - Front vowels (i, e) = small/sharp/quick
 - Back vowels (o, u) = large/slow/heavy
-- Does the sound match Rodix's archetype + product feel?
+- Does the sound match Rodspan's archetype + product feel?
 - Score reasoning: [...]
 
 ### Strategic / Brand (Dimensions 9-14)
@@ -439,25 +441,25 @@ For each candidate, produce a **scorecard**.
 - Score reasoning: [...]
 
 **11. Category positioning** — score 1-5
-- Where does this name place Rodix in the market?
+- Where does this name place Rodspan in the market?
   - "AI productivity tool" (low strategic value)
   - "AI memory tool" (cliché in 2026)
-  - "Thinking partner" (Rodix's chosen position)
+  - "Thinking partner" (Rodspan's chosen position)
   - "Knowledge tool" (broader, less differentiated)
   - Other: [...]
 - Score reasoning: [...]
 
 **12. 5-year coherence** — score 1-5
-- In 2031 when LLMs are commodity, does this name describe what Rodix
+- In 2031 when LLMs are commodity, does this name describe what Rodspan
   is? Or does it lock into a 2026 vintage?
-- Stress-test: imagine Rodix in 2031 with active recall + 4 fields
+- Stress-test: imagine Rodspan in 2031 with active recall + 4 fields
   remaining the core mechanism. Does the name still fit?
 - Score reasoning: [...]
 
 **13. Defensibility / uniqueness** — score 1-5
 - How hard is it for a competitor to create brand confusion?
 - Generic real word (e.g. "Recall") = low defensibility
-- Distinctive coined word (e.g. "Rodix") = high defensibility
+- Distinctive coined word (e.g. "Rodspan") = high defensibility
 - Score reasoning: [...]
 
 **14. Founder + acquisition fit** — score 1-5
@@ -474,9 +476,9 @@ For each candidate, produce a **scorecard**.
 - Top 3 strengths: [list]
 - Top 3 weaknesses: [list]
 
-### vs Rodix benchmark
-- Beats Rodix on: [list of dimensions]
-- Loses to Rodix on: [list of dimensions]
+### vs Rodspan benchmark
+- Beats Rodspan on: [list of dimensions]
+- Loses to Rodspan on: [list of dimensions]
 - Net verdict: [clearly better / marginal / worse]
 ```
 
@@ -491,9 +493,9 @@ All Operationally Clear candidates' full scorecards.
 ## SECTION 5 — Top 5 deep-dossier finalists
 
 After Section 4, identify the top 5 candidates by **composite strategic
-score**. Rodix is automatically included as benchmark (so 5 total =
-Rodix + 4 alternatives if they exist, or 5 alternatives if they all
-clearly beat Rodix).
+score**. Rodspan is automatically included as benchmark (so 5 total =
+Rodspan + 4 alternatives if they exist, or 5 alternatives if they all
+clearly beat Rodspan).
 
 For each finalist, produce a **mini brand-book** dossier.
 
@@ -539,7 +541,7 @@ For each: does it land? does it feel natural?
 - Social handle: @{name}
 
 ## Strategic positioning
-- Where this name positions Rodix in the market vs Mem / Reflect / Tana
+- Where this name positions Rodspan in the market vs Mem / Reflect / Tana
   / Notion / Granola / Vellum
 - What competitors will struggle to claim
 - What competitors might still claim despite this name
@@ -553,7 +555,7 @@ For each: does it land? does it feel natural?
 - Acquisition risks (if specific channels resist this name)
 
 ## 5-year strategic test
-Imagine Rodix as {Name} in 2031:
+Imagine Rodspan as {Name} in 2031:
 - 50,000 paid users
 - LLM commodity environment
 - 5 cross-model providers integrated
@@ -564,7 +566,7 @@ Does {Name} still describe the product?
 Does it still feel like Rodc's brand?
 Has it accumulated meaning, or fought against headwinds?
 
-## Rename cost analysis (if not Rodix)
+## Rename cost analysis (if not Rodspan)
 If chosen, the rename impact:
 - Friends-intro: 5 minutes find-replace
 - Tonight-instructions.md: 5 minutes find-replace
@@ -579,7 +581,7 @@ If chosen, the rename impact:
 - Total: 4-7 hours (CC autonomous + Rodc review)
 
 ## Founder ownership test
-Rodc's anonymous founder identity is "Rodc". Current product = Rodix
+Rodc's anonymous founder identity is "Rodc". Current product = Rodspan
 (Rodc + ix). For this finalist:
 - Does the name still feel founder-fingerprinted?
 - Is the founder anchor important to keep, or can the product name
@@ -629,7 +631,7 @@ recommendation)
 
 | Candidate | Op | Lng | Strat | Total | Notes |
 |---|---|---|---|---|---|
-| Rodix | 18/20 | 12/16 | 25/35 | 55/71 | TM-Switzerland known |
+| Rodspan | 18/20 | 12/16 | 25/35 | 55/71 | TM-Switzerland known |
 | {Name 2} | 19/20 | 14/16 | 28/35 | 61/71 | beats on category + 5yr |
 | {Name 3} | ... | ... | ... | ... | ... |
 
@@ -670,15 +672,15 @@ to founder. 1500-2500 words.
 
 ## TL;DR (3 sentences)
 
-[Verdict in 3 sentences. Either: "Rodix is the strongest option after
+[Verdict in 3 sentences. Either: "Rodspan is the strongest option after
 exhaustive evaluation. Keep it." OR "Candidate X is significantly
 stronger on N dimensions. Recommend rename for Phase 1." OR "Top 2
-candidates marginally outperform Rodix; decision is judgment call.
+candidates marginally outperform Rodspan; decision is judgment call.
 See Section 4 for trade-offs."]
 
 ## 1. The strategic question and how I framed it
 
-[Restate the strategic question (not "is Rodix OK"). Establish that 14
+[Restate the strategic question (not "is Rodspan OK"). Establish that 14
 dimensions × 76 candidates is the truth-tracking framework, not vibes.]
 
 ## 2. Methodology
@@ -689,29 +691,29 @@ EU TM check is best-effort, not lawyer-grade.]
 
 ## 3. What the data says
 
-[2-3 paragraphs. The actual finding. If Rodix wins, why. If a candidate
+[2-3 paragraphs. The actual finding. If Rodspan wins, why. If a candidate
 wins, why. Specific numbers from decision matrix.]
 
 ## 4. The top 3 candidates compared
 
-[Side-by-side comparison of top 3 (including Rodix as benchmark).
+[Side-by-side comparison of top 3 (including Rodspan as benchmark).
 Tabular if useful.]
 
 ## 5. Rename economics (if relevant)
 
-[If a candidate beats Rodix, what's the cost of switching? Time
+[If a candidate beats Rodspan, what's the cost of switching? Time
 estimate. Brand momentum loss. Founder identity shift.]
 
 ## 6. The recommendation
 
-[Specific action. "Keep Rodix" OR "Rename to {X}" OR "Rodc judgment
-call between Rodix and {X} based on EU expansion priority"]
+[Specific action. "Keep Rodspan" OR "Rename to {X}" OR "Rodc judgment
+call between Rodspan and {X} based on EU expansion priority"]
 
-## 7. What this audit changed about understanding Rodix
+## 7. What this audit changed about understanding Rodspan
 
-[Even if Rodix wins, the audit produces meta-insights. E.g., "Rodix's
-strength is uniqueness in a saturated market" or "Rodix's pronunciation
-risk is real but mitigatable" or "Rodix is suboptimal for EU but
+[Even if Rodspan wins, the audit produces meta-insights. E.g., "Rodspan's
+strength is uniqueness in a saturated market" or "Rodspan's pronunciation
+risk is real but mitigatable" or "Rodspan is suboptimal for EU but
 geo-block strategy holds."]
 
 ## 8. Limitations and unknowns
@@ -770,25 +772,25 @@ This task has 3 known biases CC must actively resist.
 
 ### Bias 1: Novelty bias (find-a-winner)
 
-CC's natural tendency: produce a "better than Rodix" answer because that
+CC's natural tendency: produce a "better than Rodspan" answer because that
 feels like a successful task.
 
 **Mitigation:**
-- Default outcome is "Rodix remains best" unless clear evidence
-- Section 4 scorecards include "vs Rodix" comparison
-- Section 7 memo TL;DR can — and should, if true — say "Rodix wins"
-- A 12h audit producing "Rodix is best after rigorous evaluation" is
+- Default outcome is "Rodspan remains best" unless clear evidence
+- Section 4 scorecards include "vs Rodspan" comparison
+- Section 7 memo TL;DR can — and should, if true — say "Rodspan wins"
+- A 12h audit producing "Rodspan is best after rigorous evaluation" is
   full-credit success
 
 ### Bias 2: Inertia bias (find-a-reason-to-keep)
 
-The opposite. CC privileges Rodix because it's incumbent.
+The opposite. CC privileges Rodspan because it's incumbent.
 
 **Mitigation:**
-- Rodix is scored against the same 14 dimensions as all 75 candidates
-- Rodix's known issues (pronunciation, Switzerland TM) are honestly
+- Rodspan is scored against the same 14 dimensions as all 75 candidates
+- Rodspan's known issues (pronunciation, Switzerland TM) are honestly
   reflected in scores
-- Section 5 dossier for Rodix is written with same critical lens as
+- Section 5 dossier for Rodspan is written with same critical lens as
   other finalists
 
 ### Bias 3: Vibe bias (sound matters too much)
@@ -843,9 +845,9 @@ docs/superpowers/branding/name-audit/
 
 ### Type C — Surface immediately
 
-- If Rodix's scorecard reveals a Gate failure CC didn't expect
-- If the top 5 finalists are all marginally weaker than Rodix
-- If the top 5 finalists all dominate Rodix on multiple dimensions
+- If Rodspan's scorecard reveals a Gate failure CC didn't expect
+- If the top 5 finalists are all marginally weaker than Rodspan
+- If the top 5 finalists all dominate Rodspan on multiple dimensions
   (suggests rename is high-value)
 - If 75 candidates is producing < 5 op-clear (suggests 2026 saturation
   is even worse than estimated)
@@ -853,7 +855,7 @@ docs/superpowers/branding/name-audit/
 ### Type D — Quality red flag
 
 - If CC notices itself padding scores to find a "winner"
-- If CC notices itself padding scores to keep Rodix winning
+- If CC notices itself padding scores to keep Rodspan winning
 - If composite scoring produces a robust winner that CC doesn't trust
   (sound check: read aloud, does it feel right?)
 
@@ -864,13 +866,13 @@ docs/superpowers/branding/name-audit/
 CC, you are running this audit as a senior brand architect would. That
 means:
 
-1. **Truth above novelty.** A 12h audit producing "Rodix wins on rigorous
+1. **Truth above novelty.** A 12h audit producing "Rodspan wins on rigorous
    evaluation" is full-credit work. Do not invent alternatives that
    don't earn their place.
 
 2. **Specificity over abstraction.** Don't write "this name has good
    archetype fit." Write "this name's hard-consonant onset and trochaic
-   stress pattern reinforces Rodix's Sage archetype's clarity-and-
+   stress pattern reinforces Rodspan's Sage archetype's clarity-and-
    precision register."
 
 3. **Conviction in recommendation.** The memo's TL;DR is a 3-sentence
@@ -896,14 +898,14 @@ decision affects every downstream asset: landing, marketing, video,
 docs, social, GitHub, domain, Twitter, support, brand book. A wrong
 name compounds friction. A right name compounds momentum.
 
-Rodc has invested significant work in Rodix. The audit's job is not to
+Rodc has invested significant work in Rodspan. The audit's job is not to
 respect that investment — it's to surface whether that investment is
 the right place for the next 5 years. Sunk cost should not anchor
 forward decisions.
 
-If after 12 hours the verdict is "Rodix is the best option discovered,"
+If after 12 hours the verdict is "Rodspan is the best option discovered,"
 that is a strong, defensible answer. If the verdict is "candidate X
-beats Rodix on N dimensions," that is also a strong answer.
+beats Rodspan on N dimensions," that is also a strong answer.
 
 What matters is **rigor + truth + clear recommendation**.
 
