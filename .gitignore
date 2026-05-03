@@ -77,6 +77,8 @@ dist/
 # === Platform-specific ===
 # Claude Code local settings (per-user, never shared)
 .claude/settings.local.json
+# Claude Code runtime lock files (never commit)
+.claude/*.lock
 
 # === mkdocs site build artefacts ===
 # Docs synced from repo-root by .github/scripts/sync_docs.sh for
