@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan. This file is a historical record from prior to the rename and retains the original "Rodix" name as written at the time. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context.
+
 # Tier 3 Handoff — 2026-05-03
 
 **Tier 3 status:** Selective COMPLETE / Task 15 IN FLIGHT (Hour ~9.5 of 30-hour shift)

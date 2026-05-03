@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan. This file is a historical record from prior to the rename and retains the original "Rodix" name as written at the time. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context.
+
 # Tier 0 Handoff — 2026-05-03
 
 **Tier 0 status:** COMPLETE (Hour ~5 of 30-hour shift)

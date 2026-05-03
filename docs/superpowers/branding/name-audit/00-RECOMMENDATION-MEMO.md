@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan per this audit memo's recommendation. Two corrections to note alongside the rename: (a) product category framing was clarified post-audit to **LLM chat client** (Cherry Studio / LobeChat / TypingMind category), not "memory layer" — this is the corrected framing carried forward in `docs/superpowers/brand/brand-book-v1.md` §1 etymology + §3; the audit's +25% Rodspan-vs-Rodix margin holds under the corrected framing. (b) Open Core architecture locked 2026-05-04: Rodspan SaaS in private rodspan-app repo + throughline OSS as algorithm canon (sibling-repo PYTHONPATH dependency). Audit data conclusions hold; framing reasoning underneath strengthened. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` §0.4 + §15 for context.
+
 # Strategic Naming Recommendation Memo
 
 **To:** Rodc

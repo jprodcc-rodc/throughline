@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan. This file is a historical record from prior to the rename and retains the original "Rodix" name as written at the time. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context.
+
 # Reusable Working Patterns — Tonight Shift
 
 **Use:** Input for next-session Working Mode Internalization task. Append-only, 1-2 sentence flags. Don't extract to skill yet.

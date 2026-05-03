@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan. This file is a historical record from prior to the rename and retains the original "Rodix" name as written at the time. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context.
+
 # Wave 1c Tier Handoff — 2026-05-03
 
 > **Status:** PHASE 1 (spec + Type-A lock) complete · PHASE 2 (4-file implementation) complete · PHASE 3 (5 real-API rounds) complete with WEAK PASS · STOP 3 verdict written. Awaiting Rodc go/no-go on Phase 1 alpha launch readiness.

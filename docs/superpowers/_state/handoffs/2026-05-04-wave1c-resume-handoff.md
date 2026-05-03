@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan. This file is a historical record from prior to the rename and retains the original "Rodix" name as written at the time. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context.
+
 # Wave 1c PHASE 2+3 Resume Handoff
 
 > **Audience:** Fresh-context CC session resuming Wave 1c work after Rodc /clear.

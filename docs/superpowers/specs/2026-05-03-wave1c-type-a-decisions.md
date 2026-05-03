@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan. This file is a historical record from prior to the rename and retains the original "Rodix" name as written at the time. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context.
+
 # Wave 1c — Type-A Decisions Awaiting Rodc
 
 **Status:** **FINAL — locked 2026-05-03 by Rodc.** All 7 confirmed: 1=1C, 2=2B, 3=3C, 4=4B (48h), 5=5C, 6=6B, 7=7C. Document preserved for rationale/alternatives audit.

@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan; Open Core locked (Rodspan SaaS in private rodspan-app repo + throughline OSS as algorithm canon, sibling-repo PYTHONPATH dependency). This file is a historical record from prior to the rename. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context. Original "Rodix" references below retained as written at the time.
+
 # Rodc Context — Persistent State File
 
 > **Purpose:** Cross-session context for any AI session (CC / External Opus /

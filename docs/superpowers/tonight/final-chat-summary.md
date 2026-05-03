@@ -1,3 +1,5 @@
+> **Note 2026-05-04:** Brand renamed Rodix → Rodspan. This file is a historical record from prior to the rename and retains the original "Rodix" name as written at the time. See `docs/superpowers/tasks/rodix-to-rodspan-rename.md` for context.
+
 ═══════════════════════════════════════════════════
 TONIGHT'S SHIFT COMPLETE — Hour ~11 of 30
 ═══════════════════════════════════════════════════
