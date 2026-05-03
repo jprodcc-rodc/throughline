@@ -18,7 +18,7 @@
 | Visual signature (one sentence) | Clean minimal UI screenshots with **actual product interfaces and code diffs** front-and-center, emphasizing substance over design theater. |
 | Microcopy specimens | "On it! I've received your request" (agent voice — conversational, ownership-taking). "Thought for 5s" (honest, shows reasoning, not magic). "No results found" (no corporate softening). |
 
-**Rodix learning:** Linear's anti-buzzword discipline is the operational template. The "show, don't sell" pattern — let the product UI itself be the demo — fits Rodix's "trust-evoking > wow-evoking" baseline (per brainstorm doc).
+**Rodspan learning:** Linear's anti-buzzword discipline is the operational template. The "show, don't sell" pattern — let the product UI itself be the demo — fits Rodspan's "trust-evoking > wow-evoking" baseline (per brainstorm doc).
 
 ---
 
@@ -35,7 +35,7 @@
 | How technical depth is communicated | "Developer docs," "Model details," "Responsible Scaling Policy" links peer-level with marketing — technical accountability *as* brand equity. |
 | Tone on sensitive topics | Matter-of-fact and procedural ("Core views on AI safety," "Claude's Constitution") rather than reassuring; ethics as operational infrastructure, not virtue-signaling. |
 
-**Rodix learning:** Anthropic is the **closest tonal match** for Rodix per Rodc's "trust-evoking > wow-evoking" baseline. The "thoughtful friction over friction-free" stance matches Rodix's claim_extractor.md philosophy (null is correct, invention is critical failure). Borrow: matter-of-fact tone on sensitive topics, sparse hero copy, technical-detail-as-trust-equity.
+**Rodspan learning:** Anthropic is the **closest tonal match** for Rodspan per Rodc's "trust-evoking > wow-evoking" baseline. The "thoughtful friction over friction-free" stance matches Rodspan's claim_extractor.md philosophy (null is correct, invention is critical failure). Borrow: matter-of-fact tone on sensitive topics, sparse hero copy, technical-detail-as-trust-equity.
 
 ---
 
@@ -52,7 +52,7 @@
 | Onboarding promise | Eliminate repetitive work; consolidate fragmented tools into single platform. |
 | Illustration style | Minimalist iconography with soft gradient fills, geometric shapes (circles/squares/triangles) suggesting interconnected systems. |
 
-**Rodix learning:** Notion's "agents-as-coworkers" framing is opposite Rodix's positioning. Rodix is intimate / single-user / private — not a "workspace." Useful as **anti-pattern**: do NOT borrow "while you sleep" or "agents keep work moving" — those imply automation/replacement. Rodix is presence/companionship-of-thinking, not task-execution-while-absent.
+**Rodspan learning:** Notion's "agents-as-coworkers" framing is opposite Rodspan's positioning. Rodspan is intimate / single-user / private — not a "workspace." Useful as **anti-pattern**: do NOT borrow "while you sleep" or "agents keep work moving" — those imply automation/replacement. Rodspan is presence/companionship-of-thinking, not task-execution-while-absent.
 
 ---
 
@@ -69,7 +69,7 @@
 | Mechanism explanation | Outcome-first ("makes them awesome") then mechanism (transcription + AI enhancement). Post-meeting value before technical capability. |
 | Founder-voice signals | Absent from homepage. Heavy reliance on third-party validation (Friedman, Hoover, Rauch testimonials) — brand on product reputation, not founder personality. |
 
-**Rodix learning:** Granola's "augment, not replace" framing is partially borrowable — Rodix is "thinking partner" (augments thinking, doesn't replace thinker). But Granola's "playful" tonal register is too light for Rodix's "thoughtful conversation" subject matter. The **handwritten-accents-suggest-human-touch** visual cue is worth considering for Rodix Card UI (already amber + serif possible).
+**Rodspan learning:** Granola's "augment, not replace" framing is partially borrowable — Rodspan is "thinking partner" (augments thinking, doesn't replace thinker). But Granola's "playful" tonal register is too light for Rodspan's "thoughtful conversation" subject matter. The **handwritten-accents-suggest-human-touch** visual cue is worth considering for Rodspan Card UI (already amber + serif possible).
 
 ---
 
@@ -86,7 +86,7 @@
 | Transparency communication | Public GitHub repo, self-hosted availability, "Open Startup" initiative in footer, published changelog. |
 | Founder narrative | Not explicitly visible on homepage. Leadership through customer testimonials rather than founder story. |
 
-**Rodix learning:** Cal.com's open-source-transparency-as-brand is interesting but **not directly applicable to Rodix** (Rodix is intimate-personal-data — open-sourcing the product would invite scrutiny but not trust the way Cal.com's scheduling-data-flow does). Borrow only the "indie + transparent" stance: Rodc-as-founder-name + visible team-of-one + honest about phase / limitations.
+**Rodspan learning:** Cal.com's open-source-transparency-as-brand is interesting but **not directly applicable to Rodspan** (Rodspan is intimate-personal-data — open-sourcing the product would invite scrutiny but not trust the way Cal.com's scheduling-data-flow does). Borrow only the "indie + transparent" stance: Rodc-as-founder-name + visible team-of-one + honest about phase / limitations.
 
 ---
 
@@ -103,22 +103,22 @@
 7. **Footer is voice-consistent** — they don't switch to formal corporate tone in the legal/links area.
 8. **Technical credibility is brand equity** — those who include developer-docs / open-source / research links use them peer-level, not buried.
 
-### Anti-patterns Rodix should avoid
+### Anti-patterns Rodspan should avoid
 
-1. **"While you sleep" / "agents keep working" framing (Notion).** Rodix is presence-based, not absence-based. The user is *thinking* with Rodix in real-time, not delegating thinking to it.
+1. **"While you sleep" / "agents keep working" framing (Notion).** Rodspan is presence-based, not absence-based. The user is *thinking* with Rodspan in real-time, not delegating thinking to it.
 2. **"Awesome" / "magical" / "delightful" (any).** Rodc has explicitly said "trust-evoking > wow-evoking" (brainstorm doc 2026-05-01).
-3. **Founder absence (Granola).** Granola hides behind testimonials. Rodix is single-founder indie — Rodc's voice should be visible (founder essay, HN post, Twitter thread). Not heroic-founder, but specifically-Rodc.
-4. **Ecosystem-of-features hero (Notion).** Rodix is one specific mechanism (extract → vault → recall). Avoid platformer language.
-5. **Transactional / utility tone (Cal.com).** Rodix is for thinking, not for completing tasks faster.
+3. **Founder absence (Granola).** Granola hides behind testimonials. Rodspan is single-founder indie — Rodc's voice should be visible (founder essay, HN post, Twitter thread). Not heroic-founder, but specifically-Rodc.
+4. **Ecosystem-of-features hero (Notion).** Rodspan is one specific mechanism (extract → vault → recall). Avoid platformer language.
+5. **Transactional / utility tone (Cal.com).** Rodspan is for thinking, not for completing tasks faster.
 
 ### Recommended primary borrowing target
 
 **Anthropic + Linear, in that order.**
 
-- **Anthropic** because: "substantive over hype-driven", "thoughtful friction over friction-free", whitespace + sparse text + matter-of-fact tone on sensitive topics. Closest match to Rodix's "克制成熟产品" + "trust-evoking > wow-evoking" + claim_extractor.md null-is-correct philosophy.
+- **Anthropic** because: "substantive over hype-driven", "thoughtful friction over friction-free", whitespace + sparse text + matter-of-fact tone on sensitive topics. Closest match to Rodspan's "克制成熟产品" + "trust-evoking > wow-evoking" + claim_extractor.md null-is-correct philosophy.
 - **Linear** as secondary because: anti-buzzword operational discipline, "show don't sell" via product UI screenshots, microcopy honesty ("Thought for 5s", "No results found").
 
-These two are the closest tonal matches. Rodix should NOT borrow Granola's playful tone, Notion's automation framing, or Cal.com's transparent-marketplace stance.
+These two are the closest tonal matches. Rodspan should NOT borrow Granola's playful tone, Notion's automation framing, or Cal.com's transparent-marketplace stance.
 
 ### Three specific patterns to embed in voice-guide
 
