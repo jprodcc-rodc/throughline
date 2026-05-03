@@ -1088,6 +1088,62 @@ HN / founder essay / Twitter bio attribution:
 
 Rodc strategic decision; not blocking.
 
+### §13.7 — Brand artifacts stage-2 review (NEW 2026-05-04)
+
+**Trigger:** §A.2 friends-intro lock + §A.3 marketing first draft complete.
+
+**Owner:** Rodc + CC (Rodc Type-A on edge cases).
+
+**Estimated effort:** 2-3h CC + 1-2h Rodc review.
+
+**Scope:** Cross-reference review of 8 brand foundation files + 15 marketing files for:
+- Internal consistency (no contradictions between sections of same file)
+- External consistency (no contradictions across brand + marketing + user copy)
+- Path A framing applied uniformly across all files
+- Open Core mention placed appropriately (not over-promoted, not missing)
+- Voice oracle (post-§A.2 lock) reflected accurately in voice samples and marketing copy
+- Cherry Studio competitor framing consistent
+
+**Output:** surface inconsistencies + Rodc Type-A decisions + commit fixes per file.
+
+**Why this is needed:** Initial §A.1 + §A.3 rename pass is per-file, not cross-file. Stage-2 review catches drift between files that emerged because rewrites happened independently.
+
+### §13.8 — Voice-guide update from real dogfood signal (NEW 2026-05-04)
+
+**Trigger:** Rodc self-dogfood 5 rounds complete + friend dogfood feedback in.
+
+**Owner:** Rodc + CC.
+
+**Estimated effort:** 1-2h.
+
+**Scope:** voice-guide.md §5 sample passages may need update if real-API responses under Rodspan rename diverge from documented voice. Particularly relevant if LLM voice shifts post-rename per spec §4.1 LLM self-reference manual review.
+
+**Why this is needed:** Wave 1c verified system prompts under Rodix branding. After rename, LLM may self-identify differently. Real dogfood reveals if voice samples in voice-guide need update to match actual post-rename behavior.
+
+### §13.9 — Visual identity integration (NEW 2026-05-04)
+
+**Trigger:** §12.1 logo / visual identity decided (separate launch-blocking task).
+
+**Owner:** Rodc + CC.
+
+**Estimated effort:** 1-2h.
+
+**Scope:** brand-book §4 archetype + voice-guide §5 voice samples + design-system skill files updated to reference new visual identity. Microcopy patterns may need updates reflecting visual register.
+
+**Why this is needed:** Rodspan currently has no logo / wordmark / visual identity (Rodix didn't either per handoff). After §12.1 decides visual identity, brand artifacts must be updated to reference it consistently.
+
+### §13.10 — Competitor positioning integration (NEW 2026-05-04)
+
+**Trigger:** §12.5 competitor-positioning.md drafted (separate launch-blocking task).
+
+**Owner:** Rodc + CC.
+
+**Estimated effort:** 1h.
+
+**Scope:** position-strategy.md updated to reference competitor-positioning.md as authoritative source. brand-book §3 positioning section verified against new competitor analysis. Marketing copy verified against competitor framing.
+
+**Why this is needed:** Currently position-strategy.md and brand-book §3 reference Cherry Studio / LobeChat / TypingMind generically. Once competitor-positioning.md exists with detailed analysis, brand artifacts should reference that source rather than duplicate analysis.
+
 ---
 
 ## §14 End of spec
