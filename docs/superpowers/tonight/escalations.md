@@ -46,8 +46,18 @@ Severity reasoning:
 ═══════════════════════════════════════════════════════════
 
 ═══════════════════════════════════════════════════════════
-ESCALATION #2 — task-0a — high
+ESCALATION #2 — task-0a — high — **RESOLVED 2026-05-03**
 ═══════════════════════════════════════════════════════════
+
+**Resolution:** Wave 1c shipped 2026-05-03. Crisis-content protocol live as of Phase 1 alpha. All 7 Type-As locked by Rodc:
+- Type-A 1 (1C two-pattern split: 1D-default + 1C-demarcated)
+- Type-A 2 (2B balanced classifier sensitivity, 0.7 threshold)
+- Type-A 3 (3C "Heavier than fields. (Topic line above is what you said.)")
+- Type-A 4 (4B 48h first-insight suppression)
+- Type-A 5 (5C `RODIX_DEV_SKIP_SAFETY=1` env-var bypass)
+- Type-A 6 (6B English + Mandarin keyword scope)
+- Type-A 7 (7C fail-with-flag retry-once → conservative-on-keyword default)
+Implementation surfaces: classifier.py SAFETY class + safety_classifier.md + claim_extractor.md v3.2 + rodix_system.md v1.4 + chat_claims.is_safety v5 schema + vault rendering branch. Spec: `docs/superpowers/specs/2026-05-03-wave1c.md`. Type-A doc: `docs/superpowers/specs/2026-05-03-wave1c-type-a-decisions.md`.
 
 When: 2026-05-03T~02:30Z (Hour ~2)
 Task: 0a Brand Foundation Document — §7b crisis-content protocol gap
@@ -89,8 +99,15 @@ Severity reasoning:
 ═══════════════════════════════════════════════════════════
 
 ═══════════════════════════════════════════════════════════
-ESCALATION #12 — task-1.5-phase-B — HIGH (NEW unidentified failure mode)
+ESCALATION #12 — task-1.5-phase-B — HIGH (NEW unidentified failure mode) — **RESOLVED 2026-05-03**
 ═══════════════════════════════════════════════════════════
+
+**Resolution:** Wave 1c shipped 2026-05-03. Both Failure Mode A (over-extraction on emotional content) and Failure Mode B (AI-reply contamination) addressed via:
+- claim_extractor.md v3.2 Rule R1 (user-text-only constraint) + Rule R2 (crisis-content null rule) + Examples 9 (Sarah Day-15) + 10 (Daniel Day-10)
+- Classifier safety pre-check (`IntentClass.SAFETY`) ensures crisis-content messages route through R2 force-null path
+- Vault rendering soft empty state hides force-nulled rows (Type-A 3)
+- Phase 1 alpha launch dependency satisfied: Wave 1b + Wave 1c ship together
+PHASE 3 verification of the 5 verbatim cases (Sarah / Emma / Mike / Daniel / bilingual) follows in this same shift.
 
 When: 2026-05-03T~10:30Z (Hour ~10.5)
 Task: Tier 1.5 Phase B sample-verify — extraction failure mode

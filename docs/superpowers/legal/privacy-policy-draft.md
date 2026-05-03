@@ -161,7 +161,7 @@ Rodix is built for thinking, not for therapy. It is not a substitute for profess
 
 If a conversation contains language indicating risk of harm to yourself or to others, our system is designed to surface crisis resources — in the United States, the 988 Suicide & Crisis Lifeline (call or text 988) and the Crisis Text Line (text HOME to 741741). For other regions we will surface local equivalents where we can identify them. Rodix is not a substitute for any of these resources.
 
-**[TODO: this clause documents intent. Implementation of the crisis-content protocol — keyword detection, response pattern, register on the way out — is planned for Wave 1c per brand-book §7b. Anti-spin discipline (brand-book §7 Decision 6): we cannot claim full crisis-detection until Wave 1c ships. Before publication, this clause should either (a) ship with Wave 1c implementation in place, or (b) be revised to describe more accurately the Phase 1 alpha behaviour. See `legal-decisions.md` and Escalation #2.]**
+The Wave 1c crisis-content protocol (active as of Phase 1 alpha launch, 2026-05-03) operates as follows: a deterministic keyword check runs against each user message; when an existential-exhaustion or suicidal-ideation phrase fires (English + Mandarin Phase-1 scope), an LLM-judgment layer disambiguates genuine crisis adjacency from philosophical or caregiving-context use. On a positive judgment, the AI reply surfaces 988 once (late in the reply, framed as offer not press, with preemptive self-demarcation honored via "if that shifts" framing). The Vault captures the heavy moment as topic-only — concern/hope/question fields are forced to null and rendered as a soft empty state — rather than paraphrasing user distress into clinical language. The protocol is non-bypassable in production; a `RODIX_DEV_SKIP_SAFETY` flag exists for development only and is documented in the founder dogfood notes.
 
 We do not contact emergency services or other authorities on a user's behalf except where required by law (such as mandatory-reporting obligations in some jurisdictions). We comply with applicable law.
 
@@ -204,7 +204,7 @@ We restate, in plain language, the things this policy does *not* claim:
 - **We do not claim end-to-end encryption.** Server-side recall requires the server to read your vault. Wave 3 will encrypt at rest; that is hardening, not zero-knowledge.
 - **We do not claim zero data retention with our AI provider.** Anthropic's default API retention is 30 days for abuse monitoring. Whether Rodix is enrolled in their Zero Data Retention programme is being verified at the time of this draft. **[TODO: confirm before publishing.]**
 - **We do not claim to be a therapy product, a medical-advice product, a legal-advice product, or a financial-advice product.** Rodix is a thinking partner. Treat the AI's replies as a thinking partner would speak — not as professional advice.
-- **We do not claim full crisis-detection at Phase 1 alpha.** Wave 1c implementation has not yet shipped. The clause in Section 14 documents intent and resources, not yet-shipped behaviour.
+- **We do not claim full crisis-detection.** The Wave 1c protocol (active as of Phase 1 alpha) is a keyword + LLM-judgment classifier with a documented threshold and known false-negative profile. It biases toward catching real crisis (lower confidence threshold than other classes) but is not a clinical tool. Section 14 describes what the protocol actually does at the chat-reply, extraction, and Vault layers; it does not claim coverage of every crisis-adjacent expression.
 
 We are honest about these limits because the alternative is marketing copy that does not match the architecture, and we would rather lose a sale than ship a sentence we cannot defend.
 
@@ -217,5 +217,5 @@ We are honest about these limits because the alternative is marketing copy that 
 - *[ ] Anthropic ZDR status (Sections 5, 12, 20).*
 - *[ ] Cookie list final review (Section 9).*
 - *[ ] DPO contact decision (Section 19).*
-- *[ ] Crisis-content protocol Wave 1c implementation status (Section 14).*
+- *[x] Crisis-content protocol Wave 1c implementation status (Section 14) — RESOLVED 2026-05-03 by Wave 1c ship.*
 - *[ ] Lawyer review of Sections 6, 7, 11, 17 (cross-border + Art. 9 + retention).*
