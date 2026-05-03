@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "name": "rodix-visual-tokens",
+  "name": "rodspan-visual-tokens",
   "version": "1.0.0",
-  "source": "docs/superpowers/brand/brand-book-v1.md §6 + 2026-05-01-rodix-brainstorm.md locked tokens",
+  "source": "docs/superpowers/brand/brand-book-v1.md §6 + 2026-05-01-rodspan-brainstorm.md locked tokens",
   "phase": "Phase 1 (desktop Web primary, mobile responsive); light mode is not Phase 1 scope",
   "colors": {
     "background": {

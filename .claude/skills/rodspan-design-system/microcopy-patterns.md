@@ -1,12 +1,12 @@
-# Rodix Microcopy Patterns
+# Rodspan Microcopy Patterns
 
 The 3 microcopy surfaces (errors / empty states / tooltips) ship today in `app/web/static/copy/{errors,empty-states,tooltips}.json`. This guide documents the pattern so future copy stays consistent — and so the JSON files themselves remain the audit trail.
 
 ---
 
-## The Rodix microcopy formula
+## The Rodspan microcopy formula
 
-Every Rodix microcopy string should pass three filters:
+Every Rodspan microcopy string should pass three filters:
 
 1. **Terse.** Error messages: 2 short paragraphs max — what failed + what user can do next + recovery affordance. Empty state titles: ≤ 8 words. Toasts: ≤ 60 characters. Tooltips: name the thing in one fragment.
 2. **Anti-spin.** Don't over-claim. Don't soft-hedge. Volunteer the limit when it's structurally honest. ("The reply went through; nothing's lost.")
@@ -64,12 +64,12 @@ Three short fragments. Names the boundary, names when it lifts, names the future
 
 `{ name what's missing } + { name why it's correct or what causes it } + { what the user can do, never coaxing }`
 
-Empty states are a high-leverage Rodix surface. Most products fill empty states with encouragement walls (*"Get started! Create your first project!"*). Rodix uses them to teach mechanism — null is correct (Decision 5), and the empty state is honest about that.
+Empty states are a high-leverage Rodspan surface. Most products fill empty states with encouragement walls (*"Get started! Create your first project!"*). Rodspan uses them to teach mechanism — null is correct (Decision 5), and the empty state is honest about that.
 
 ### Examples (sourced from shipped `empty-states.json`)
 
 **1. Vault empty (most-photographed empty state):**
-> *"Your cards will appear here as you talk to Rodix. We don't write them — your thinking does."*
+> *"Your cards will appear here as you talk to Rodspan. We don't write them — your thinking does."*
 
 The negation does positioning work. *"We don't write them — your thinking does."* This is the 4-fold-bet brand stance compressed to two sentences. Inline em-dash carries the honesty.
 
@@ -81,7 +81,7 @@ The negation does positioning work. *"We don't write them — your thinking does
 **3. Vault search no results:**
 > *"Nothing matches that search yet. Try a different phrase, or a topic you've thought about recently."*
 
-*"Yet"* is an honest qualifier — short, definite. *"A topic you've thought about recently"* is brand-coherent: Rodix indexes thinking, not entities.
+*"Yet"* is an honest qualifier — short, definite. *"A topic you've thought about recently"* is brand-coherent: Rodspan indexes thinking, not entities.
 
 **4. Recall no history:**
 > *"No past cards to bring back yet. They'll surface as topics return across conversations."*
@@ -91,7 +91,7 @@ The verb is "bring back" — Decision 3 locked. Mechanism named (topics return a
 **5. Settings telemetry empty:**
 > *"No recent activity. Telemetry is intentionally light here — we don't track engagement metrics."*
 
-Volunteers a brand commitment (Decision 7 — no engagement metrics). Anti-spin in operation: most products would hide this; Rodix names it.
+Volunteers a brand commitment (Decision 7 — no engagement metrics). Anti-spin in operation: most products would hide this; Rodspan names it.
 
 ### Anti-patterns (don't ship)
 
@@ -108,7 +108,7 @@ Volunteers a brand commitment (Decision 7 — no engagement metrics). Anti-spin 
 
 `{ name the thing in one fragment, no verb required }`
 
-Tooltips are the simplest Rodix surface and the easiest to over-explain. Rule: name what the control does, not why the user should care. Voice register is descriptive, not promotional.
+Tooltips are the simplest Rodspan surface and the easiest to over-explain. Rule: name what the control does, not why the user should care. Voice register is descriptive, not promotional.
 
 ### Examples (sourced from shipped `tooltips.json`)
 
@@ -118,7 +118,7 @@ Tooltips are the simplest Rodix surface and the easiest to over-explain. Rule: n
 - *"What you want / where you're going"* (hope)
 - *"What's still unresolved"* (question)
 
-Plain-language definitions of the 4 fields. The card is the most-photographed Rodix object; these labels are what new users learn the schema by.
+Plain-language definitions of the 4 fields. The card is the most-photographed Rodspan object; these labels are what new users learn the schema by.
 
 **2. Recall callout actions:**
 - *"Mark as relevant"* (recall_relevant)
@@ -129,7 +129,7 @@ Imperative form, short. *"Skip — don't bring back"* uses the locked verb "brin
 
 **3. Settings controls:**
 - *"One click → markdown files"* (settings_export) — names the affordance, names the output format. Per Decision 4, real export = markdown.
-- *"30-day deletion SLA"* (settings_delete_account) — anti-spin specificity. Most products say "Delete account"; Rodix says when it actually completes.
+- *"30-day deletion SLA"* (settings_delete_account) — anti-spin specificity. Most products say "Delete account"; Rodspan says when it actually completes.
 - *"Pause card extraction"* (settings_extraction_toggle) — names what the toggle does, not why ("Take control!").
 
 **4. Chat actions:**
@@ -139,7 +139,7 @@ Imperative form, short. *"Skip — don't bring back"* uses the locked verb "brin
 ### Anti-patterns (don't ship)
 
 - *"Click here to send your message!"* — Verbose, exclamation, no mechanism.
-- *"This will permanently delete your account. This action cannot be undone."* — Theatrical, panic-inducing. Rodix says: *"30-day deletion SLA"* (concrete, anti-dramatic).
+- *"This will permanently delete your account. This action cannot be undone."* — Theatrical, panic-inducing. Rodspan says: *"30-day deletion SLA"* (concrete, anti-dramatic).
 - *"Save your beautiful insights to markdown!"* — Adjective-stack ("beautiful"), exclamation, generic SaaS register.
 
 ---
@@ -150,7 +150,7 @@ Walk this decision tree before writing new microcopy:
 
 ```
 Is the surface speaking AS the AI character mid-conversation?
-├─ Yes → Sage layer. Use rodix_system.md voice. (Only the recall callout falls here.)
+├─ Yes → Sage layer. Use rodspan_system.md voice. (Only the recall callout falls here.)
 └─ No → Explorer layer. All other microcopy. Continue:
 
 Does it explain a system state that failed or is empty?
@@ -170,6 +170,6 @@ Before adding to `errors.json` / `empty-states.json` / `tooltips.json`:
 3. Does it have an exclamation mark? Friends-intro uses zero. Rewrite.
 4. Does it open with *"Oops!"* / *"Sorry,"* / *"Great!"* / *"Of course!"*? Strip.
 5. Does it apologize? Errors should name what failed and what didn't, not perform contrition. Rewrite as anti-spin.
-6. Does it coax the user (*"Get started!"* / *"Try our..."* / *"Discover..."*)? Strip — Rodix sends unfit users away, doesn't pull fit users in with marketing.
+6. Does it coax the user (*"Get started!"* / *"Try our..."* / *"Discover..."*)? Strip — Rodspan sends unfit users away, doesn't pull fit users in with marketing.
 
 If any check fails, return to `voice-guide.md` §6 and apply the 5-question checklist.

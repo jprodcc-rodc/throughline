@@ -1,6 +1,6 @@
-# Rodix Component Patterns
+# Rodspan Component Patterns
 
-Sketches + props + voice-coherence notes for the canonical Rodix UI surfaces. Visual tokens live in `visual-tokens.json`. Voice rules live in `voice-guide.md`.
+Sketches + props + voice-coherence notes for the canonical Rodspan UI surfaces. Visual tokens live in `visual-tokens.json`. Voice rules live in `voice-guide.md`.
 
 ---
 
@@ -34,11 +34,11 @@ That's a different decision than killing it on hours alone.
 
 **Props:** `{ content: string, timestamp: ISO, model: string, is_streaming?: boolean }`
 **Visual:** background transparent (no bubble), text-primary, padding `12px 0`, max-width `85%`, left-aligned. Type-first hierarchy.
-**Voice-coherence:** Sage layer (per `app/web/prompts/rodix_system.md`). Round 1 ask · Round 2 maybe · Round 3+ stop asking and reflect. Quote user's actual words back ("200 hours in" / "joy"). 2-4 sentences default. Never "Of course!" / "Great question!" openers.
+**Voice-coherence:** Sage layer (per `app/web/prompts/rodspan_system.md`). Round 1 ask · Round 2 maybe · Round 3+ stop asking and reflect. Quote user's actual words back ("200 hours in" / "joy"). 2-4 sentences default. Never "Of course!" / "Great question!" openers.
 
 ---
 
-## 3. Card with Promise (the canonical Rodix object)
+## 3. Card with Promise (the canonical Rodspan object)
 
 ```
 ┌────────────────────────────────────────────── Sept 3 · GPT-5 ┐
@@ -70,7 +70,7 @@ That's a different decision than killing it on hours alone.
 - hope → *"What you want / where you're going"*
 - question → *"What's still unresolved"*
 
-The card is the most-photographed object in Rodix marketing. Treat it like a museum specimen — never decorate, never animate on hover beyond a 1px border-color shift.
+The card is the most-photographed object in Rodspan marketing. Treat it like a museum specimen — never decorate, never animate on hover beyond a 1px border-color shift.
 
 ---
 
@@ -97,7 +97,7 @@ The card is the most-photographed object in Rodix marketing. Treat it like a mus
 
 **Props:** `{ cards: Card[], date_groups: { date: ISO, cards: Card[] }[], search_query?: string, filter?: { topic?: string, date_range?: [ISO, ISO] } }`
 **Visual:** sticky date headers in amber accent (small caps, `0.75rem`, weight 600). Card list items use surface background, no border (border is reserved for full Card with Promise detail). One-line summary: topic + condensed concern · hope.
-**Empty state:** `"Your cards will appear here as you talk to Rodix. We don't write them — your thinking does."` (sourced from `empty-states.json`)
+**Empty state:** `"Your cards will appear here as you talk to Rodspan. We don't write them — your thinking does."` (sourced from `empty-states.json`)
 **Voice-coherence:** the Vault is a top-tab equal to Chat (Decision 1). Never bury it in a settings page. Search field placeholder: *"Search across topics, concerns, hopes, and open questions. Your wording, not paraphrased."*
 
 ---
@@ -138,7 +138,7 @@ Full Card with Promise component (see §3) rendered at `max-width: 640px` center
 ```
 
 **Props:** `{ recalled_card: Card, recall_type: 'topic'|'stance_drift'|'loose_end'|'decision_precedent', confidence: number, action_callbacks: { used, irrelevant, already_thought, skip } }`
-**Visual:** amber `#d97706` border, faint amber tint background `rgba(217,119,6,0.05)`. The `⚡` glyph is the SINGLE permitted emoji in Rodix. It is the kept-promise signature.
+**Visual:** amber `#d97706` border, faint amber tint background `rgba(217,119,6,0.05)`. The `⚡` glyph is the SINGLE permitted emoji in Rodspan. It is the kept-promise signature.
 **Locked copy:** header `⚡ 我把这个带回来了` / English `⚡ I brought this back`. Action buttons `用上了 / 不相关 / 已经想过 / 跳过`.
 **Wave 1b reality:** current implementation renders placeholder `记忆提醒 · 话题相关` with `记下了 / 看了 / 不相关 / 忽略`. Patching to locked copy is a Wave 2 deliverable on `#active-recall-base`.
 **Voice layer:** This speaks AS the AI character (Sage layer). First-person mid-conversation. The verb is "bring back" / "带回来" — never "surface", never "personalize".
@@ -161,7 +161,7 @@ Full Card with Promise component (see §3) rendered at `max-width: 640px` center
 │   Pause card extraction. Chat continues.                   │
 │                                                            │
 │  Recall sensitivity      [Default ▾]                       │
-│   How often Rodix brings past cards back.                  │
+│   How often Rodspan brings past cards back.                  │
 │                                                            │
 │  ───────────────────────────────────────────────────────   │
 │                                                            │
@@ -193,7 +193,7 @@ Phase 1 device priority is desktop Web primary; mobile responsive does just enou
 ┌─────────────────────────────────────────────────────────────┐
 │  Step 1 of 3                                                │
 │                                                             │
-│  ChatGPT remembers your name. Rodix remembers your          │
+│  ChatGPT remembers your name. Rodspan remembers your          │
 │  thinking.                                                  │
 │                                                             │
 │  Type something you've actually been thinking about.        │
@@ -244,7 +244,7 @@ Phase 1 device priority is desktop Web primary; mobile responsive does just enou
 ```
 
 **Voice-coherence:**
-- Step 1 quotes friends-intro hero verbatim. No "Welcome to Rodix!" preamble.
+- Step 1 quotes friends-intro hero verbatim. No "Welcome to Rodspan!" preamble.
 - Step 1 first-chat hint is sourced from `empty-states.json` (`"Type something you've actually been thinking about. Not a test — a real one. Cards will appear as you talk."`).
 - Step 2 names the 4 fields, names null-default ("we never invent"), names the 3 user controls (edit / delete / open source).
 - Step 3 names cross-model + markdown + the architectural honesty (server-side today, encryption on roadmap). This is the brand stance compressed to onboarding scale.
@@ -284,6 +284,6 @@ Phase 1 device priority is desktop Web primary; mobile responsive does just enou
 
 ## Routing rule reminder
 
-The recall callout is the only component that speaks AS the AI character (Sage layer). Everything else — error states, empty states, settings copy, tooltips, onboarding, marketing — is Rodc-presenting-Rodix → Explorer layer.
+The recall callout is the only component that speaks AS the AI character (Sage layer). Everything else — error states, empty states, settings copy, tooltips, onboarding, marketing — is Rodc-presenting-Rodspan → Explorer layer.
 
 When in doubt, write Explorer. The AI character has its system prompt as enforcement.

@@ -1,4 +1,4 @@
-# Rodix Voice Guide (operational)
+# Rodspan Voice Guide (operational)
 
 Condensed from `docs/superpowers/brand/voice-guide.md` v2. Use this for day-to-day copy work; return to the full voice guide for edge cases or when a passage fails the checklist and you can't tell why.
 
@@ -21,7 +21,7 @@ Condensed from `docs/superpowers/brand/voice-guide.md` v2. Use this for day-to-d
 Friends-intro paragraphs are 1-3 sentences. The negation list does its work as four hammered fragments — *"Black-box tags. Wrong, and you can't fix it. Locked to one vendor. Not actually yours."* — because each is a complete claim, not a soft transition. Compound sentences earn their length by carrying real specificity.
 
 - **Verbatim:** *"Three things. That's it."*
-- **Anti:** *"Rodix offers three core capabilities, each designed to work seamlessly with the others to give you a comprehensive thinking environment."*
+- **Anti:** *"Rodspan offers three core capabilities, each designed to work seamlessly with the others to give you a comprehensive thinking environment."*
 
 ### Principle 2 — Parenthetical-as-honesty (most distinctive)
 
@@ -33,11 +33,11 @@ Parentheticals qualify, soften, or undo a strong claim *without retreating from 
 
 ### Principle 3 — Negation as positioning
 
-Position by what Rodix is *not*. The pitch opens with the four-fold negative critique of incumbents *before* Rodix's four positives. Negation is not snark — it is position. Use when defining against a real adjacent thing the reader already knows (ChatGPT memory / Gemini personalization / journaling apps).
+Position by what Rodspan is *not*. The pitch opens with the four-fold negative critique of incumbents *before* Rodspan's four positives. Negation is not snark — it is position. Use when defining against a real adjacent thing the reader already knows (ChatGPT memory / Gemini personalization / journaling apps).
 
-- **Verbatim:** *"Not 'better AI.' The AI underneath is whatever you choose. Rodix is the layer on top — the memory, the continuity, the receipts."*
-- **Verbatim:** *"ChatGPT remembers your name. Rodix remembers your thinking."*
-- **Anti:** *"Rodix is the only AI memory platform that truly understands you, going beyond simple personalization to deliver real continuity."* (Generic SaaS positive-only positioning.)
+- **Verbatim:** *"Not 'better AI.' The AI underneath is whatever you choose. Rodspan is the layer on top — the memory, the continuity, the receipts."*
+- **Verbatim:** *"ChatGPT remembers your name. Rodspan remembers your thinking."*
+- **Anti:** *"Rodspan is the only AI memory platform that truly understands you, going beyond simple personalization to deliver real continuity."* (Generic SaaS positive-only positioning.)
 
 ### Principle 4 — Specific over abstract, always
 
@@ -72,11 +72,11 @@ Qualifiers like "might", "fine", "weeks, not months" don't soften — they sharp
 
 1. **Don't dramatize founder status.** Violating: *"After years of late nights, building from passion and conviction, I'm finally ready to share what we've created."* (LinkedIn founder-coach. Friends-intro: *"Solo, anonymous, working out of Asia, second half of a multi-year build."* Four facts, no mythology.)
 2. **Don't celebrate own product moves with adjective stacks.** Violating: *"We've built a beautiful, intuitive, powerful memory layer that seamlessly transforms how you think."*
-3. **Don't open with sycophancy in any language.** Violating: *"Great question! That's exactly the kind of thinking Rodix is built for!"* / *"好问题!"*
+3. **Don't open with sycophancy in any language.** Violating: *"Great question! That's exactly the kind of thinking Rodspan is built for!"* / *"好问题!"*
 4. **Don't say "I'm here for you" / "我在这里" / "I'll keep you company" / "我陪你" / "Take your time" / "慢慢说" / "I hear you" / "I get it" / "That sounds really hard" / "无论是什么".** Therapist-speak in any language.
 5. **Don't use process verbs that hide mechanism — "leverage" / "harness" / "unlock" / "supercharge" / "transform" / "surface" / "facilitate" / "utilize" / "enable".** ("surface" was specifically rejected in brainstorm `#8` micro-adj 2 in favor of "bring back" / "带回来".)
 6. **Don't soft-hedge time or status.** Violating: *"We're working diligently to bring you the best possible experience — stay tuned!"*
-7. **Don't over-qualify into mush — parentheticals add information, they don't subtract conviction.** Violating: *"Rodix is the best (well, we think so, and we're always open to feedback!) memory layer for AI chat."*
+7. **Don't over-qualify into mush — parentheticals add information, they don't subtract conviction.** Violating: *"Rodspan is the best (well, we think so, and we're always open to feedback!) memory layer for AI chat."*
 
 ---
 
@@ -97,7 +97,7 @@ Qualifiers like "might", "fine", "weeks, not months" don't soften — they sharp
 See `sample-passages.md` for full versions. Short reference here:
 
 - **Sample 1 — Chat error message:** *"Extraction didn't run on your last message. The reply itself went through fine — only the card-saving step failed. If what you said was worth keeping, retry below. If it was passing chat, skip it; nothing's lost either way."*
-- **Sample 2 — Marketing tagline + supporting subhead:** *"ChatGPT remembers your name. Rodix remembers your thinking. Every meaningful exchange becomes a card you can read, edit, and take with you — topic, concern, hope, open question. Same memory across every model you use; one click, markdown export, your hard drive."*
+- **Sample 2 — Marketing tagline + supporting subhead:** *"ChatGPT remembers your name. Rodspan remembers your thinking. Every meaningful exchange becomes a card you can read, edit, and take with you — topic, concern, hope, open question. Same memory across every model you use; one click, markdown export, your hard drive."*
 - **Sample 3 — Support email reply:** opens *"Fair flag."*; mechanism named without softening; *"That's on me, and the next release moves it"* owns design gap; founder signature *"— Rodc"*.
 
 ---
@@ -110,7 +110,7 @@ Five yes/no questions. Two are friends-intro-pattern-specific. Walk all five bef
 If a long paragraph has neither, ask whether the strong claim should be honestly qualified — that's where a parenthetical belongs. If the parenthetical hedges instead of adding information ("(or so we think)"), kill it.
 
 **Q2 — Does any negation appear, and is it positioning a specific neighbor?**
-Rodix copy that defines itself only by positives is missing the friends-intro structural move. Find the adjacent thing the reader already knows and define against it explicitly.
+Rodspan copy that defines itself only by positives is missing the friends-intro structural move. Find the adjacent thing the reader already knows and define against it explicitly.
 
 **Q3 — Does the copy quote, name, or count a specific thing — the user's word, an actual number, a sentence-quote, a date, a duration?**
 If the copy could be search-and-replaced into another product without changing meaning, it fails.
@@ -119,17 +119,17 @@ If the copy could be search-and-replaced into another product without changing m
 Read aloud. Wrong-answer tells: triple-clause padding, "Let's unpack this together," self-explaining metaphors, exclamation marks, "transform" / "amazing" / "delightful" / "journey." Right-answer tells: short paragraphs, parenthetical or em-dash carrying weight, willingness to admit a limit, no founder mythology.
 
 **Q5 — Would the unfit user be sent away clearly, or coaxed?**
-If a piece of copy reads like it's trying to convert a casual user — "anyone can benefit from better thinking!" — it's not Rodix voice. Rodix voice says: *"ChatGPT's fine."*
+If a piece of copy reads like it's trying to convert a casual user — "anyone can benefit from better thinking!" — it's not Rodspan voice. Rodspan voice says: *"ChatGPT's fine."*
 
 ---
 
-## 7. Distinguishing Rodix from neighbors
+## 7. Distinguishing Rodspan from neighbors
 
-- **Rodix vs generic SaaS.** Generic SaaS ladders feature → benefit → outcome with adjective stacks ("powerful, beautiful, intuitive") and process verbs ("leverage", "transform", "unlock"). Rodix names mechanism directly ("topic, concern, hope, open question — four fields per card") and uses negation as positioning. Generic SaaS sells; Rodix declares.
-- **Rodix vs Anthropic voice.** Both principled, deliberate, willing to surface limits. Divergence: scale + intimacy. Anthropic addresses civilizational scale with institutional "we"; Rodix addresses individual scale with personal "I". Borrow matter-of-fact tone; don't borrow institutional "we" or civilizational framing.
-- **Rodix vs therapist-speak.** Therapist-speak labels emotions, declares presence, paces the user. Friends-intro shows the alternative: actual attention. Engage with the specific noun the user used, not the emotion you imagine.
-- **Rodix vs ChatGPT default.** ChatGPT default is *eager-to-help, padded, sycophantic*. Rodix is the inverse: declarative, brief, willing to leave silence, willing to send wrong-fit users away.
-- **Rodix vs LinkedIn founder-coach.** Founder-coach dramatizes ("I had a profound realization"), recruits readers into a movement, converts every observation into thought-leadership with a takeaway. Rodix leaves the decision as itself: *"I killed the project that night. (I might restart it next year. That's fine. Different decision.)"* No takeaway extracted.
+- **Rodspan vs generic SaaS.** Generic SaaS ladders feature → benefit → outcome with adjective stacks ("powerful, beautiful, intuitive") and process verbs ("leverage", "transform", "unlock"). Rodspan names mechanism directly ("topic, concern, hope, open question — four fields per card") and uses negation as positioning. Generic SaaS sells; Rodspan declares.
+- **Rodspan vs Anthropic voice.** Both principled, deliberate, willing to surface limits. Divergence: scale + intimacy. Anthropic addresses civilizational scale with institutional "we"; Rodspan addresses individual scale with personal "I". Borrow matter-of-fact tone; don't borrow institutional "we" or civilizational framing.
+- **Rodspan vs therapist-speak.** Therapist-speak labels emotions, declares presence, paces the user. Friends-intro shows the alternative: actual attention. Engage with the specific noun the user used, not the emotion you imagine.
+- **Rodspan vs ChatGPT default.** ChatGPT default is *eager-to-help, padded, sycophantic*. Rodspan is the inverse: declarative, brief, willing to leave silence, willing to send wrong-fit users away.
+- **Rodspan vs LinkedIn founder-coach.** Founder-coach dramatizes ("I had a profound realization"), recruits readers into a movement, converts every observation into thought-leadership with a takeaway. Rodspan leaves the decision as itself: *"I killed the project that night. (I might restart it next year. That's fine. Different decision.)"* No takeaway extracted.
 
 ---
 
@@ -137,7 +137,7 @@ If a piece of copy reads like it's trying to convert a casual user — "anyone c
 
 Friends-intro is English. Frontend copy is Chinese. Transfer notes:
 
-- **Specific + parenthetical-as-honesty + negation-as-positioning:** transfer cleanly. *"ChatGPT 记得你的名字。Rodix 记得你的思考。"* preserves the negation structure.
+- **Specific + parenthetical-as-honesty + negation-as-positioning:** transfer cleanly. *"ChatGPT 记得你的名字。Rodspan 记得你的思考。"* preserves the negation structure.
 - **Anti-spin:** Chinese product copy has stronger pull toward 客气 / 委婉 register. Resist. Honest qualifier equivalent: *"正式发布:几周内,不是几个月"*.
 - **Refuses-to-dramatize:** hardest to transfer. Chinese product writing is denser with celebratory adjectives ("强大的", "卓越的") and movement language ("革命性", "颠覆性"). Aggressively cut. Chinese equivalent of the closing parenthetical: *"那晚我把那个 side project 停了。(明年可能会重启,无所谓,到时候是另一个决定。)"*
 
