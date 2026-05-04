@@ -1227,4 +1227,90 @@ During §A rename execution and all subsequent Wave 2+ work:
 - Rodc Type-A on edge cases; default to OSS for ambiguity.
 - Quarterly review (or per-Wave): audit recent commits for layer violations; rebalance if needed.
 
+## §16 Polish Checklist Framework (NEW 2026-05-04 PM)
+
+Five-tier explicit checklist for product launch readiness. Designed to replace "gut feel polish" + "friend dogfood validation" with explicit binary gates suited to Rodc's actual situation (Asperger's, anonymous solo founder, CC-simulated dogfood, cold acquisition strategy).
+
+**Three step-back checkpoints** between tiers prevent hyperfocus drift (Asperger's-aware framework design):
+- Checkpoint 1: After Tier 1 ✅, before Tier 2 starts
+- Checkpoint 2: After Tier 3 ✅, before Tier 4 starts
+- Checkpoint 3: Tier 5 itself contains friends-intro re-read
+
+### §16.1 Tier 1 — Functional correctness (binary)
+
+- [ ] pytest 645/2/0 maintained in rodspan-app
+- [ ] wave1c phase3 verify ≥ 4/5 PASS (Emma WEAK acceptable until P0 fix; target 5/5 PASS post-fix)
+- [ ] Wave 1c.1 calibration backlog cleared: P0 marker-echo + P0 Emma classifier + P2 Mike paraphrase
+- [ ] §A.6 grep audit 8 surfaces resolved (5 renamed + 3 keep documented)
+- [ ] No "Rodix" string in user-facing surfaces (excluding archived files + Tier C historical + grep-audit-keeps)
+- [ ] Recall callout copy upgraded from placeholder (`记忆提醒 · 话题相关` + `记下了 / 看了 / 不相关 / 忽略`) to brainstorm #8 locked (`⚡ 我把这个带回来了` + `用上了 / 不相关 / 已经想过 / 跳过`)
+
+### §16.2 Tier 1 → Tier 2 step-back checkpoint
+
+After Tier 1 ✅, BEFORE Tier 2 starts: Rodc 30 min, no product touch.
+
+Read: `docs/marketing/rodspan-friends-intro.md` (locked) + `brand-book-v1.md` §1 hero pitch + position-strategy.md §3 architectural bets
+
+Question to self: **"Tier 2 user-flow polish necessary, or perfectionism?"**
+
+If "perfectionism" → skip Tier 2, jump Tier 3. (Rodc should be honest with self here.)
+If "necessary" → proceed Tier 2.
+
+### §16.3 Tier 2 — User-flow integrity (CC simulated test gate)
+
+- [ ] CC simulates 5 personas running 5-7 turns each: Emma / Mike / Sara / Cherry Studio veteran / HN cold visitor
+- [ ] Each persona expected outcome verified (recall fires correctly / safety classifier fires correctly / extraction creates correct cards / etc.)
+- [ ] Onboarding flow walkthrough: CC simulates new user, counts steps from landing → first chat. Target ≤ 8 steps (Rodc can revisit if 16 steps untenable per current state)
+- [ ] Multi-provider switch test: CC simulates user switching from Claude to GPT mid-conversation, verifies memory preserved + recall still fires
+
+### §16.4 Tier 3 — Brand consistency (CC + Rodc audit)
+
+- [ ] CC greps codebase + docs for any remaining "Rodix" strings (excluding archived files + Tier C historical + documented keeps)
+- [ ] CC verifies brand-book §1 hero pitch present in: landing page / Twitter bio / GitHub README / first-message in chat
+- [ ] CC verifies banned phrases (English + Chinese per brand-book §5 don'ts) not appearing in any user-facing string
+- [ ] Rodc reviews 5 Tier-2 simulated persona outputs (~45 min Rodc focused)
+
+### §16.5 Tier 3 → Tier 4 step-back checkpoint
+
+After Tier 3 ✅, BEFORE Tier 4 starts: Rodc 30 min, no product touch.
+
+Read: `docs/marketing/rodspan-friends-intro.md` (locked) + sample current product UI screenshots (Vault tab, Chat with active recall fired, settings)
+
+Question to self: **"Does product currently REPRESENT what friends-intro promises? If not, should I change product or change friends-intro?"**
+
+If product doesn't represent promise → product needs more polish, do NOT start Tier 4 yet
+If friends-intro over-promises what product can deliver → either revise friends-intro or upgrade product
+If both align → proceed Tier 4
+
+### §16.6 Tier 4 — Cold acquisition readiness (Rodc judgment + CC draft)
+
+- [ ] Landing page exists at rodspan.app
+- [ ] HN "Show HN: Rodspan" post draft exists (CC drafts + Rodc edits)
+- [ ] Reddit r/selfhosted + r/LocalLLaMA + r/ChatGPT post drafts exist (CC drafts + Rodc edits)
+- [ ] Twitter founder thread draft exists (10-15 tweets, CC drafts + Rodc edits)
+- [ ] Product Hunt assets prep (logo + screenshots + tagline + description)
+- [ ] Privacy Policy live (Termly generated, hosted at rodspan.app/privacy)
+- [ ] Visual identity finalized (logo / wordmark / color)
+- [ ] Hosting setup (Cloudflare Pages or similar)
+- [ ] Wyoming LLC filed
+- [ ] @rodspan handles claimed (Twitter / GitHub)
+- [ ] hi@rodspan.app email forwarding set up
+
+### §16.7 Tier 5 — Final go/no-go (Rodc only)
+
+- [ ] Rodc tests product end-to-end alone (5 sessions across 1 week with real own use)
+- [ ] Rodc reviews verification report + brand artifacts + marketing copy 1 final pass
+- [ ] **Rodc re-reads friends-intro, verifies it still represents how Rodc wants product positioned. If drift detected → strategic review HALT, do not launch.**
+- [ ] Rodc decides launch date (no further polish, fire button)
+
+### §16.8 Why this framework exists
+
+Replaces 2 inherited assumptions with explicit binary gates:
+
+1. **"Friend dogfood will validate"** — Rodc does not have a viable friend cohort for product testing (anonymous solo founder, asks Asperger's-aware not to socially burden friends). CC simulated personas + Rodc self-test is the operative validation model.
+
+2. **"You'll know it's ready when it feels ready"** — Asperger's-aware risk: hyperfocus on detail at expense of strategic step-back; difficulty distinguishing "good enough" vs "needs more". Three step-back checkpoints between tiers force strategic re-evaluation against friends-intro (the Rodc self-reflection lens, see §A.2 reframe).
+
+Diminishing-return cap: after Tier 1-3 ✅, additional polish is perfectionism. Tier 4 starts cold acquisition prep regardless of subjective polish feel.
+
 Spec is complete. Hand off to fresh Opus.
