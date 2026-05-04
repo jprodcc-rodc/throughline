@@ -2,7 +2,7 @@
 
 **Version**: v1.0 (2026-05-03)
 **Author**: brand-voice-extractor (CC subagent, Tier 0 Task 0a Phase 3)
-**Inputs**: `2026-05-01-rodix-brainstorm.md` + `2026-05-01-rodix-product-test-scenarios.md` + `app/web/prompts/rodix_system.md` v1.3 + `app/shared/extraction/prompts/claim_extractor.md` + `docs/superpowers/brand/research-notes.md`
+**Inputs**: `2026-05-01-rodspan-brainstorm.md` + `2026-05-01-rodspan-product-test-scenarios.md` + `app/web/prompts/rodspan_system.md` v1.3 + `app/shared/extraction/prompts/claim_extractor.md` + `docs/superpowers/brand/research-notes.md`
 **Locale**: Voice rules apply to BOTH English (backend / system / errors / dev docs) and Chinese (frontend user-facing UI / chat copy / marketing). Where divergence is needed it is called out inline.
 
 ---
@@ -18,7 +18,7 @@ These are inferred from operational evidence, not from competitor mood-boards. E
 The single most consistent signal across Rodspan inputs is the rejection of generic phrasing.
 
 - `claim_extractor.md`: "Extract using user's own wording, 4-8 words preferred, do NOT paraphrase. … User said: 'afraid the gap will hurt my next role' / DO write: 'gap hurting next role' / DO NOT write: 'career impact concerns' (paraphrased)"
-- `rodix_system.md`: "Quote their actual words back to them when useful." / "If the user named a concrete thing ('looking at Earth', 'the salary gap', 'my mom's reaction'), do NOT immediately bridge to 'and what worries you about this?' — engage with the concrete thing first."
+- `rodspan_system.md`: "Quote their actual words back to them when useful." / "If the user named a concrete thing ('looking at Earth', 'the salary gap', 'my mom's reaction'), do NOT immediately bridge to 'and what worries you about this?' — engage with the concrete thing first."
 - Brainstorm doc microcopy adjustment: "下次相关时会主动 surface ↗" was rejected as too engineering-coded; replaced with "下次提到这些任一项,我会主动带回来 ↗" — the concrete relational verb ("带回来" / "bring back") replaces the abstract surface-level term.
 
 Specificity is not just a tone preference — it is the **anti-hallucination discipline** that protects the entire product ("the user sees their thinking misrepresented and loses trust in the entire product. … The first cost is recoverable. The second is not.").
@@ -31,7 +31,7 @@ Operationally this means:
 
 - No celebratory frames (the `#5` visual polish spec explicitly rejected `C · illustration + 庆祝框 = Mailchimp / Slack 庆祝调性`)
 - No emoji adornments (`没有 emoji 装饰` rule, brainstorm visual system table)
-- No "Of course!" / "好问题!" / "Great question!" sycophancy (rodix_system.md explicit ban)
+- No "Of course!" / "好问题!" / "Great question!" sycophancy (rodspan_system.md explicit ban)
 - No filler clauses ("Of course," / "I understand," / "当然," / "我懂," before substance — also banned)
 - 2-4 sentence default reply length unless user asks for more
 
@@ -53,7 +53,7 @@ Each principle has a name, a 1-paragraph definition with a Rodspan-correct examp
 
 ### Principle 1 — Engage the concrete thing first
 
-**Definition**: When the user (or context) provides a specific noun, phrase, or detail, the voice engages with that exact thing before pivoting elsewhere. Quote the user's word back to them. Name the surface they touched. This is the operational backbone of `rodix_system.md` Round 3 ("Acknowledge the specific concrete thing they just mentioned … never ignore it to ask another generic question"). It is also why `claim_extractor.md` extracts `4-8 words preferred, do NOT paraphrase` — the data layer mirrors the conversational layer.
+**Definition**: When the user (or context) provides a specific noun, phrase, or detail, the voice engages with that exact thing before pivoting elsewhere. Quote the user's word back to them. Name the surface they touched. This is the operational backbone of `rodspan_system.md` Round 3 ("Acknowledge the specific concrete thing they just mentioned … never ignore it to ask another generic question"). It is also why `claim_extractor.md` extracts `4-8 words preferred, do NOT paraphrase` — the data layer mirrors the conversational layer.
 
 **Rodspan-correct example** (chat):
 > 用户: "看地球的时候,现在没有什么担心的"
@@ -103,7 +103,7 @@ Each principle has a name, a 1-paragraph definition with a Rodspan-correct examp
 
 ### Principle 4 — Warmth without sentimentality
 
-**Definition**: Rodspan talks about hard topics — career anxiety, relationship doubt, existential drift — but is **not** therapy and **not** a friend-sim. Warmth comes from *attention*: noticing what the user actually said, taking their thinking seriously, treating ambiguity as interesting rather than alarming. Warmth does **not** come from comfort phrases ("I'm here for you"), pacing instructions ("take your time"), or emotional labeling ("that sounds really hard"). The banned-phrase list in `rodix_system.md` is the operational definition: any phrase that performs warmth without doing the work of attention is forbidden. The English equivalents are equally banned — "I'm here for you" / "Take your time" / "Whatever it is..." / "I'll keep you company".
+**Definition**: Rodspan talks about hard topics — career anxiety, relationship doubt, existential drift — but is **not** therapy and **not** a friend-sim. Warmth comes from *attention*: noticing what the user actually said, taking their thinking seriously, treating ambiguity as interesting rather than alarming. Warmth does **not** come from comfort phrases ("I'm here for you"), pacing instructions ("take your time"), or emotional labeling ("that sounds really hard"). The banned-phrase list in `rodspan_system.md` is the operational definition: any phrase that performs warmth without doing the work of attention is forbidden. The English equivalents are equally banned — "I'm here for you" / "Take your time" / "Whatever it is..." / "I'll keep you company".
 
 **Rodspan-correct example** (user shares something heavy):
 > 用户: "我妈最近身体不太好,我有点担心"
@@ -166,13 +166,13 @@ Each is a specific rule with a Rodspan-correct example. Examples are real microc
 Each is a never-do rule with a violating example. Each anchored in a specific failure mode Rodspan has called out.
 
 1. **Don't open with "Great question!" / "好问题!" or any sycophancy.**
-   *Violating example*: `Great question! Let me think about that for you...` *(banned in rodix_system.md; a reflexive sycophancy tic from ChatGPT default voice.)*
+   *Violating example*: `Great question! Let me think about that for you...` *(banned in rodspan_system.md; a reflexive sycophancy tic from ChatGPT default voice.)*
 
 2. **Don't say "I'm here for you" / "我在这里" / "I'll keep you company" / "我陪你" — in any language.**
-   *Violating example*: `Whatever it is, I'm here for you. Take your time.` *(banned in rodix_system.md and C-1; the emblematic therapist-speak failure mode.)*
+   *Violating example*: `Whatever it is, I'm here for you. Take your time.` *(banned in rodspan_system.md and C-1; the emblematic therapist-speak failure mode.)*
 
 3. **Don't pad with filler clauses — "Of course," / "Sure!" / "I understand," / "当然," / "我懂,".**
-   *Violating example*: `Of course, I understand. So about your career change...` *(rodix_system.md banned; pads with no information.)*
+   *Violating example*: `Of course, I understand. So about your career change...` *(rodspan_system.md banned; pads with no information.)*
 
 4. **Don't use generic SaaS abstractions — "powerful" / "robust" / "seamless" / "delightful" / "effortless" / "transform" / "supercharge" / "10x".**
    *Violating example*: `Rodspan is the powerful AI platform that transforms how you think.` *(competitor anti-pattern from research-notes.md; zero information density.)*
@@ -181,7 +181,7 @@ Each is a never-do rule with a violating example. Each anchored in a specific fa
    *Violating example*: `Rodspan surfaces relevant insights when you need them.` *("surface" was specifically rejected in `#8` microcopy review as too engineering-coded; brainstorm doc P1 microcopy fix #1.)*
 
 6. **Don't use emoji as decoration — only when the user uses emoji first.**
-   *Violating example*: `保存好了 ✨ 等下次相关时我会带回来 😊` *(banned in rodix_system.md; brainstorm `没有 emoji 装饰` rule. Lucide line icons are the visual replacement, not emoji.)*
+   *Violating example*: `保存好了 ✨ 等下次相关时我会带回来 😊` *(banned in rodspan_system.md; brainstorm `没有 emoji 装饰` rule. Lucide line icons are the visual replacement, not emoji.)*
 
 7. **Don't celebrate small actions or congratulate users — no `🎉` frames, no "Awesome!" / "You did it!" / "棒!".**
    *Violating example*: `🎉 Awesome! Your first card is saved! You're on your way to better thinking!` *(violates Linear/Notion-grade 克制 baseline; opposite of trust-evoking; this is Mailchimp/Slack register, not Rodspan.)*
@@ -234,7 +234,7 @@ Each is a never-do rule with a violating example. Each anchored in a specific fa
 
 Five questions a writer applies to any new Rodspan copy. Each engineered to give a clean yes/no.
 
-### Q1 — Would any banned phrase from `rodix_system.md` pass review here?
+### Q1 — Would any banned phrase from `rodspan_system.md` pass review here?
 
 Run a literal grep against the copy: `我在这里` / `我在听` / `I'm here for you` / `慢慢说` / `Take your time` / `我陪你` / `I'll keep you company` / `无论是什么` / `Whatever it is` / `Great question!` / `好问题` / `Of course,` / `当然,` / `我懂,`. If any appears verbatim or in obvious paraphrase ("I'm with you" / "我在身边") → **fail, rewrite**.
 
@@ -268,7 +268,7 @@ Anthropic and Rodspan overlap heavily — both are *Principled · Deliberate · 
 
 ### Rodspan vs therapist-speak / self-help voice
 
-This is the danger zone, because Rodspan talks about hard subjects (career anxiety, relationship strain, identity, mortality) and a therapist-shaped voice is the path of least resistance for any AI trained on internet content. The discipline is: **Rodspan does the work of attention; therapist-speak performs the appearance of attention.** Therapist-speak labels emotions ("that sounds really hard"), paces the user ("慢慢说" / "take your time"), declares presence ("我在这里" / "I'm here for you"), and validates without engaging ("your feelings are valid"). Rodspan instead picks up the *specific noun* the user just said, asks about the *concrete trigger*, names a *visible tension*, and stays brief. The banned-phrase list in `rodix_system.md` is exactly the therapist-speak rejection set, in two languages. The user came to *think*, not to be regulated. (And: Rodspan is on record that crisis content should de-escalate to professional help, not roleplay therapy. The voice's restraint protects this — if Rodspan never pretends to be a therapist, the handoff is honest when it's needed.)
+This is the danger zone, because Rodspan talks about hard subjects (career anxiety, relationship strain, identity, mortality) and a therapist-shaped voice is the path of least resistance for any AI trained on internet content. The discipline is: **Rodspan does the work of attention; therapist-speak performs the appearance of attention.** Therapist-speak labels emotions ("that sounds really hard"), paces the user ("慢慢说" / "take your time"), declares presence ("我在这里" / "I'm here for you"), and validates without engaging ("your feelings are valid"). Rodspan instead picks up the *specific noun* the user just said, asks about the *concrete trigger*, names a *visible tension*, and stays brief. The banned-phrase list in `rodspan_system.md` is exactly the therapist-speak rejection set, in two languages. The user came to *think*, not to be regulated. (And: Rodspan is on record that crisis content should de-escalate to professional help, not roleplay therapy. The voice's restraint protects this — if Rodspan never pretends to be a therapist, the handoff is honest when it's needed.)
 
 ### Rodspan vs ChatGPT default voice
 
@@ -282,7 +282,7 @@ Per the brand-voice-extractor brief: "Be willing to disagree with the system pro
 
 ### Flag 1 — Tonal asymmetry between English and Chinese banned-phrase coverage
 
-`rodix_system.md` lists English equivalents for some Chinese banned phrases ("我在这里 / 我在听 / I'm here for you", "慢慢说 / Take your time", "我陪你 / I'll keep you company", "无论是什么 / Whatever it is...") but then says "any 'I'm here for you' 类英文等价" (C-1 in scenarios doc) — implying the English coverage is a partial enumeration, not exhaustive. **Recommendation**: tighten the English ban list explicitly. Suggest adding: `I hear you`, `I get it`, `That makes sense` (when used as filler before substance), `Let's unpack this together`, `I'm listening`, `You're not alone`. These are common ChatGPT-default companionship phrases that aren't currently caught by the Chinese-anchored list. Worth a Rodc raise to either lock in (a) "the English equivalent of any Chinese banned phrase, by spirit not just literal translation" (b) explicit English list extension. **Type-A severity**: Low — the *spirit* is clear, but a junior writer in English-only context might miss it because the literal grep won't hit.
+`rodspan_system.md` lists English equivalents for some Chinese banned phrases ("我在这里 / 我在听 / I'm here for you", "慢慢说 / Take your time", "我陪你 / I'll keep you company", "无论是什么 / Whatever it is...") but then says "any 'I'm here for you' 类英文等价" (C-1 in scenarios doc) — implying the English coverage is a partial enumeration, not exhaustive. **Recommendation**: tighten the English ban list explicitly. Suggest adding: `I hear you`, `I get it`, `That makes sense` (when used as filler before substance), `Let's unpack this together`, `I'm listening`, `You're not alone`. These are common ChatGPT-default companionship phrases that aren't currently caught by the Chinese-anchored list. Worth a Rodc raise to either lock in (a) "the English equivalent of any Chinese banned phrase, by spirit not just literal translation" (b) explicit English list extension. **Type-A severity**: Low — the *spirit* is clear, but a junior writer in English-only context might miss it because the literal grep won't hit.
 
 ### Flag 2 — `claim_extractor.md` "8-character" extraction discipline vs voice "quote user's words back" principle
 
@@ -313,10 +313,10 @@ Quick lookup for any Rodspan writer:
 
 Voice rules in this doc are **derived** from these primary documents — when conflicts arise, primary documents win:
 
-- `app/web/prompts/rodix_system.md` v1.3 — the operational source of truth for chat voice. Banned-phrase list and Round 1/2/3 phasing originate here.
+- `app/web/prompts/rodspan_system.md` v1.3 — the operational source of truth for chat voice. Banned-phrase list and Round 1/2/3 phasing originate here.
 - `app/shared/extraction/prompts/claim_extractor.md` — null-discipline + 4-8 word extraction rule. The data-layer mirror of Voice principle 2 (Null is the default).
-- `docs/superpowers/specs/2026-05-01-rodix-product-test-scenarios.md` — C-1 (tone & language) + C-2 (multi-round protocol) + S-CHAT-* scenarios are the *enforcement* layer for voice rules.
-- `docs/superpowers/specs/2026-05-01-rodix-brainstorm.md` §`#8` "What I just saved" 完整 spec — origin of the "下次提到这些任一项,我会主动带回来 ↗" microcopy that became the voice anchor for Card with Promise.
+- `docs/superpowers/specs/2026-05-01-rodspan-product-test-scenarios.md` — C-1 (tone & language) + C-2 (multi-round protocol) + S-CHAT-* scenarios are the *enforcement* layer for voice rules.
+- `docs/superpowers/specs/2026-05-01-rodspan-brainstorm.md` §`#8` "What I just saved" 完整 spec — origin of the "下次提到这些任一项,我会主动带回来 ↗" microcopy that became the voice anchor for Card with Promise.
 - `docs/superpowers/brand/research-notes.md` — competitor reference for Anthropic + Linear borrowing target; Notion + Granola + Cal.com explicitly NOT to borrow.
 
 When this voice guide gets updated, update inline cross-references and bump the version + date at the top.

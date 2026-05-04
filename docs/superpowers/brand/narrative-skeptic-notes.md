@@ -3,7 +3,7 @@
 **Date:** 2026-05-03
 **Reviewer:** narrative-skeptic subagent (Task 0b Phase 3)
 **Target:** `docs/superpowers/brand/founder-narrative-arc-draft.md` v1
-**Source-canonical voice:** `~/Downloads/rodix-friends-intro.md` body (lines 153–378)
+**Source-canonical voice:** `~/Downloads/rodspan-friends-intro.md` body (lines 153–378)
 **Position spine:** `docs/superpowers/brand/position-strategy.md` v2 + `voice-guide.md` v2.0
 
 ---

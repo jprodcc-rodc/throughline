@@ -3,7 +3,7 @@
 **Title:** ChatGPT remembers your name. Rodspan remembers your thinking.
 **Subtitle:** Why I'm building a memory layer for AI chat — and why the people who already make AI can't.
 
-**Status:** Draft v1 (2026-05-03). Author: founder-narrative-architect subagent (Task 0b Phase 2). Source-canonical voice: `~/Downloads/rodix-friends-intro.md` body. Position spine: `docs/superpowers/brand/position-strategy.md` v2 + `brand-book-v1.md` v2 (friends-intro-canonical). Defensibility frame: architecture-lead per brand book §8 — see `docs/superpowers/tonight/escalations.md` Escalation #3 for the resolved Type-A on essay structure (Part 1 founder-lead by definition; Parts 2, 3, Closing architecture-lead).
+**Status:** Draft v1 (2026-05-03). Author: founder-narrative-architect subagent (Task 0b Phase 2). Source-canonical voice: `~/Downloads/rodspan-friends-intro.md` body. Position spine: `docs/superpowers/brand/position-strategy.md` v2 + `brand-book-v1.md` v2 (friends-intro-canonical). Defensibility frame: architecture-lead per brand book §8 — see `docs/superpowers/tonight/escalations.md` Escalation #3 for the resolved Type-A on essay structure (Part 1 founder-lead by definition; Parts 2, 3, Closing architecture-lead).
 
 ---
 
@@ -43,6 +43,6 @@ If you've ever re-explained a project to ChatGPT for the fifth time and felt the
 
 - **Video script (60-90 sec voiceover):** Origin paragraph 1 + paragraph 3 (Gemini moment) + Resolution paragraph 1 (side-project example) + Closing in full. Skip Tension entirely — visual content of the Gemini moment + the Sept 3 / Sept 19 / Oct 4 cards on screen carries the structural argument without narration. ~150-200 words spoken. Pace: slow. Pauses on the dates and on "I killed the project that night."
 
-- **Support email signature:** just the canonical short pitch. *"ChatGPT remembers your name. Rodspan remembers your thinking. — Rodc, building Rodspan solo from Asia / rodix.app"* (signature already used in voice-guide §5 sample 3 verbatim where appropriate).
+- **Support email signature:** just the canonical short pitch. *"ChatGPT remembers your name. Rodspan remembers your thinking. — Rodc, building Rodspan solo from Asia / rodspan.app"* (signature already used in voice-guide §5 sample 3 verbatim where appropriate).
 
 - **Landing page hero subhead:** Resolution paragraph 2 first two sentences, compressed: *"Rodspan optimizes for continuity of thought — picking up where you actually left off. Not personalization. Not productivity. The specific human capacity restored is the one you had before AI, and stopped having about a year after you started leaning on it."* (Verify against voice-guide §B word-count ceiling: subheadline ≤ 30 words. The longer version above is 47 words; for hero use, compress to first sentence only — *"Rodspan optimizes for continuity of thought — picking up where you actually left off."* — 15 words.)
