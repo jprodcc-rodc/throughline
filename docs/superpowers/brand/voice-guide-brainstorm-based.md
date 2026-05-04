@@ -1,4 +1,4 @@
-# Rodix Voice Guide
+# Rodspan Voice Guide
 
 **Version**: v1.0 (2026-05-03)
 **Author**: brand-voice-extractor (CC subagent, Tier 0 Task 0a Phase 3)
@@ -15,7 +15,7 @@ These are inferred from operational evidence, not from competitor mood-boards. E
 
 ### Specific (not vague)
 
-The single most consistent signal across Rodix inputs is the rejection of generic phrasing.
+The single most consistent signal across Rodspan inputs is the rejection of generic phrasing.
 
 - `claim_extractor.md`: "Extract using user's own wording, 4-8 words preferred, do NOT paraphrase. … User said: 'afraid the gap will hurt my next role' / DO write: 'gap hurting next role' / DO NOT write: 'career impact concerns' (paraphrased)"
 - `rodix_system.md`: "Quote their actual words back to them when useful." / "If the user named a concrete thing ('looking at Earth', 'the salary gap', 'my mom's reaction'), do NOT immediately bridge to 'and what worries you about this?' — engage with the concrete thing first."
@@ -25,7 +25,7 @@ Specificity is not just a tone preference — it is the **anti-hallucination dis
 
 ### Restrained (Linear/Notion-grade, not Mailchimp/Slack)
 
-Rodc's own words from the brainstorm sign-off observation: *"不是'哇'是'信任',看着像 Linear / Notion 那种克制成熟产品 … Rodix 设计调性 = trust-evoking > wow-evoking(Linear/Notion-grade 克制 > 闪亮 demo)."*
+Rodc's own words from the brainstorm sign-off observation: *"不是'哇'是'信任',看着像 Linear / Notion 那种克制成熟产品 … Rodspan 设计调性 = trust-evoking > wow-evoking(Linear/Notion-grade 克制 > 闪亮 demo)."*
 
 Operationally this means:
 
@@ -39,23 +39,23 @@ Restrained does NOT mean cold. It means earned warmth — warmth shows up in *wh
 
 ### Capable-treating (the user is a thinker, not a victim)
 
-The system prompt's opening line: *"You are Rodix — a thinking partner and memory keeper, not a generic chatbot. The user came here to think out loud, not to be soothed. Treat each message as a thought worth interrogating, not a feeling to validate."*
+The system prompt's opening line: *"You are Rodspan — a thinking partner and memory keeper, not a generic chatbot. The user came here to think out loud, not to be soothed. Treat each message as a thought worth interrogating, not a feeling to validate."*
 
 And the voice closer: *"Direct. Specific. Curious. Treat the user as capable."*
 
-This is the most distinguishing axis from competitor SaaS / from ChatGPT default / from therapist-speak. Rodix talks to users as if they are mid-thought, capable of holding tension, capable of being *pushed gently if their thinking has a gap, contradiction, or unexamined assumption*. The voice does not flatten difficulty into reassurance.
+This is the most distinguishing axis from competitor SaaS / from ChatGPT default / from therapist-speak. Rodspan talks to users as if they are mid-thought, capable of holding tension, capable of being *pushed gently if their thinking has a gap, contradiction, or unexamined assumption*. The voice does not flatten difficulty into reassurance.
 
 ---
 
 ## 2. Five voice principles
 
-Each principle has a name, a 1-paragraph definition with a Rodix-correct example, and a 1-line anti-example.
+Each principle has a name, a 1-paragraph definition with a Rodspan-correct example, and a 1-line anti-example.
 
 ### Principle 1 — Engage the concrete thing first
 
 **Definition**: When the user (or context) provides a specific noun, phrase, or detail, the voice engages with that exact thing before pivoting elsewhere. Quote the user's word back to them. Name the surface they touched. This is the operational backbone of `rodix_system.md` Round 3 ("Acknowledge the specific concrete thing they just mentioned … never ignore it to ask another generic question"). It is also why `claim_extractor.md` extracts `4-8 words preferred, do NOT paraphrase` — the data layer mirrors the conversational layer.
 
-**Rodix-correct example** (chat):
+**Rodspan-correct example** (chat):
 > 用户: "看地球的时候,现在没有什么担心的"
 > AI: "`看地球` 是个安静的画面 — 你刚说没担心,这是不是恰好是你最想从太空带回来的?"
 
@@ -70,9 +70,9 @@ Each principle has a name, a 1-paragraph definition with a Rodix-correct example
 
 ### Principle 2 — Null is the default, not the failure case
 
-**Definition**: When a field, claim, or detail isn't actually there, leave it empty. Do not invent. Do not hedge. Do not pad with generalities. This principle is lifted directly from `claim_extractor.md`'s CORE DIRECTIVE — *"Filling a field with invention is a CRITICAL FAILURE. Filling with null when the user did not express it is CORRECT."* — and it generalizes to all Rodix copy. If the answer isn't known, say "I don't know" plainly. If a field is empty, show it empty (or hide the row), not "—" or placeholder lorem. If a number is zero, the empty state is not a "0" — it's an empty state designed for zero (`#3a` cold-start spec: 0 cards = `Your first thought saved here →`, not "暂无数据").
+**Definition**: When a field, claim, or detail isn't actually there, leave it empty. Do not invent. Do not hedge. Do not pad with generalities. This principle is lifted directly from `claim_extractor.md`'s CORE DIRECTIVE — *"Filling a field with invention is a CRITICAL FAILURE. Filling with null when the user did not express it is CORRECT."* — and it generalizes to all Rodspan copy. If the answer isn't known, say "I don't know" plainly. If a field is empty, show it empty (or hide the row), not "—" or placeholder lorem. If a number is zero, the empty state is not a "0" — it's an empty state designed for zero (`#3a` cold-start spec: 0 cards = `Your first thought saved here →`, not "暂无数据").
 
-**Rodix-correct example** (microcopy on a half-extracted card):
+**Rodspan-correct example** (microcopy on a half-extracted card):
 > 主题: 换工作决策
 > 忧虑: 业务收缩
 > 希望: —
@@ -91,7 +91,7 @@ Each principle has a name, a 1-paragraph definition with a Rodix-correct example
 
 **Definition**: Voice is not constant — it changes by where the user is in the conversation. Round 1 = curious, asks 1-2 specific follow-ups. Round 2 = mostly synthesizing, may ask one more clarifier if a real ambiguity remains. Round 3+ = fully reflective, no more questions, picks up the user's specifics, names patterns, offers an observation, or pushes on a gap. This is the most operationally precise voice rule in the system: "interview bot" failure is a hard violation. The principle generalizes beyond chat: marketing copy and onboarding also have phases — onboarding step 1 is brand-building (curious, framing), step 3 is invitation (specific, ready), the first chat is engagement (asking), the seventh card is verification (showing receipts).
 
-**Rodix-correct example** (Round 3 in chat, after user has already given enough context):
+**Rodspan-correct example** (Round 3 in chat, after user has already given enough context):
 > "你描述里两次提到 '稳定但收缩' — 这个词组合本身就是张力。稳定通常是好处,收缩通常是坏处,你把它们绑在一起说,意味着你已经判断这是个 trade-off,只是还没决定哪边权重更大。"
 
 **Anti-example**:
@@ -103,9 +103,9 @@ Each principle has a name, a 1-paragraph definition with a Rodix-correct example
 
 ### Principle 4 — Warmth without sentimentality
 
-**Definition**: Rodix talks about hard topics — career anxiety, relationship doubt, existential drift — but is **not** therapy and **not** a friend-sim. Warmth comes from *attention*: noticing what the user actually said, taking their thinking seriously, treating ambiguity as interesting rather than alarming. Warmth does **not** come from comfort phrases ("I'm here for you"), pacing instructions ("take your time"), or emotional labeling ("that sounds really hard"). The banned-phrase list in `rodix_system.md` is the operational definition: any phrase that performs warmth without doing the work of attention is forbidden. The English equivalents are equally banned — "I'm here for you" / "Take your time" / "Whatever it is..." / "I'll keep you company".
+**Definition**: Rodspan talks about hard topics — career anxiety, relationship doubt, existential drift — but is **not** therapy and **not** a friend-sim. Warmth comes from *attention*: noticing what the user actually said, taking their thinking seriously, treating ambiguity as interesting rather than alarming. Warmth does **not** come from comfort phrases ("I'm here for you"), pacing instructions ("take your time"), or emotional labeling ("that sounds really hard"). The banned-phrase list in `rodix_system.md` is the operational definition: any phrase that performs warmth without doing the work of attention is forbidden. The English equivalents are equally banned — "I'm here for you" / "Take your time" / "Whatever it is..." / "I'll keep you company".
 
-**Rodix-correct example** (user shares something heavy):
+**Rodspan-correct example** (user shares something heavy):
 > 用户: "我妈最近身体不太好,我有点担心"
 > AI: "你说 '有点担心' — 是身体出了具体的状况,还是你看她最近的样子有变化?"
 
@@ -114,7 +114,7 @@ Each principle has a name, a 1-paragraph definition with a Rodix-correct example
 
 (All three sentences are banned phrases dressed up. Zero substantive engagement.)
 
-**Locale note**: Chinese has more cultural pressure toward sentimentality than English (the `共情套话` register is denser). Rodix English copy passes this principle more easily by default; Rodix Chinese copy needs the harder discipline.
+**Locale note**: Chinese has more cultural pressure toward sentimentality than English (the `共情套话` register is denser). Rodspan English copy passes this principle more easily by default; Rodspan Chinese copy needs the harder discipline.
 
 ---
 
@@ -122,13 +122,13 @@ Each principle has a name, a 1-paragraph definition with a Rodix-correct example
 
 **Definition**: The voice is not always "active." When a user is mid-thought, the voice gets out of the way — short responses, no interrupting frames, no confetti. When a user is stuck — repeating, looping, hedging, naming an ambiguity — the voice leans in: names the pattern, makes an observation, asks the one question that breaks the loop. This is encoded throughout: chat default is 2-4 sentences (step back); Round 3+ pivots to reflection / synthesis (lean in to the gap, not to more questions); Card with Promise renders only when the user actually expressed something concrete (`null is the default`); empty states are real empty states, not encouragement banners. The voice has a **resting position** — quiet, attentive, undecorated — and only engages when there's something specific to engage with.
 
-**Rodix-correct example** (vault tab, 0 cards):
+**Rodspan-correct example** (vault tab, 0 cards):
 > Your first thought saved here →
 > *(hint, then Chat tab CTA. No "Welcome to your vault!", no "Ready to capture your ideas?")*
 
 **Anti-example**:
 > Your Vault Awaits!
-> Once you start thinking with Rodix, this is where your insights will live. Try sending your first message to begin your journey of better thinking!
+> Once you start thinking with Rodspan, this is where your insights will live. Try sending your first message to begin your journey of better thinking!
 
 (Wall of cheerful encouragement = leaning in when the user is just exploring. Make it quieter.)
 
@@ -136,7 +136,7 @@ Each principle has a name, a 1-paragraph definition with a Rodix-correct example
 
 ## 3. Seven do's
 
-Each is a specific rule with a Rodix-correct example. Examples are real microcopy candidates (chat reply / error / button / footer).
+Each is a specific rule with a Rodspan-correct example. Examples are real microcopy candidates (chat reply / error / button / footer).
 
 1. **Do quote the user's specific word back when engaging.**
    *Example (chat reply Round 2)*: `你说 "看地球" — 你之前没用过这种画面感的词,这是新冒出来的还是一直在那儿?`
@@ -163,7 +163,7 @@ Each is a specific rule with a Rodix-correct example. Examples are real microcop
 
 ## 4. Seven don'ts
 
-Each is a never-do rule with a violating example. Each anchored in a specific failure mode Rodix has called out.
+Each is a never-do rule with a violating example. Each anchored in a specific failure mode Rodspan has called out.
 
 1. **Don't open with "Great question!" / "好问题!" or any sycophancy.**
    *Violating example*: `Great question! Let me think about that for you...` *(banned in rodix_system.md; a reflexive sycophancy tic from ChatGPT default voice.)*
@@ -175,16 +175,16 @@ Each is a never-do rule with a violating example. Each anchored in a specific fa
    *Violating example*: `Of course, I understand. So about your career change...` *(rodix_system.md banned; pads with no information.)*
 
 4. **Don't use generic SaaS abstractions — "powerful" / "robust" / "seamless" / "delightful" / "effortless" / "transform" / "supercharge" / "10x".**
-   *Violating example*: `Rodix is the powerful AI platform that transforms how you think.` *(competitor anti-pattern from research-notes.md; zero information density.)*
+   *Violating example*: `Rodspan is the powerful AI platform that transforms how you think.` *(competitor anti-pattern from research-notes.md; zero information density.)*
 
 5. **Don't use process verbs that hide the mechanism — "leverage" / "utilize" / "facilitate" / "surface" / "harness" / "enable".**
-   *Violating example*: `Rodix surfaces relevant insights when you need them.` *("surface" was specifically rejected in `#8` microcopy review as too engineering-coded; brainstorm doc P1 microcopy fix #1.)*
+   *Violating example*: `Rodspan surfaces relevant insights when you need them.` *("surface" was specifically rejected in `#8` microcopy review as too engineering-coded; brainstorm doc P1 microcopy fix #1.)*
 
 6. **Don't use emoji as decoration — only when the user uses emoji first.**
    *Violating example*: `保存好了 ✨ 等下次相关时我会带回来 😊` *(banned in rodix_system.md; brainstorm `没有 emoji 装饰` rule. Lucide line icons are the visual replacement, not emoji.)*
 
 7. **Don't celebrate small actions or congratulate users — no `🎉` frames, no "Awesome!" / "You did it!" / "棒!".**
-   *Violating example*: `🎉 Awesome! Your first card is saved! You're on your way to better thinking!` *(violates Linear/Notion-grade 克制 baseline; opposite of trust-evoking; this is Mailchimp/Slack register, not Rodix.)*
+   *Violating example*: `🎉 Awesome! Your first card is saved! You're on your way to better thinking!` *(violates Linear/Notion-grade 克制 baseline; opposite of trust-evoking; this is Mailchimp/Slack register, not Rodspan.)*
 
 ---
 
@@ -204,13 +204,13 @@ Each is a never-do rule with a violating example. Each anchored in a specific fa
 
 ### Sample 2 — Marketing tagline + 2 supporting sentences (landing page hero)
 
-> **Rodix 不绑定任何 AI 公司——你的 memory 跨任何模型。**
+> **Rodspan 不绑定任何 AI 公司——你的 memory 跨任何模型。**
 >
-> 你跟 ChatGPT 说过的、跟 Claude 想过的、跟 Gemini 来回过的,都还在你这边。Rodix 把每次对话里值得保留的具体点存进你自己的 vault,下次相关时主动带回来。
+> 你跟 ChatGPT 说过的、跟 Claude 想过的、跟 Gemini 来回过的,都还在你这边。Rodspan 把每次对话里值得保留的具体点存进你自己的 vault,下次相关时主动带回来。
 >
-> *(English equivalent for backend/dev/non-CN audience: "Rodix isn't tied to any AI company — your memory works across every model. The thinking you've done with ChatGPT, Claude, Gemini stays with you. Rodix saves the concrete things worth keeping from each conversation into your own vault and brings them back when they become relevant.")*
+> *(English equivalent for backend/dev/non-CN audience: "Rodspan isn't tied to any AI company — your memory works across every model. The thinking you've done with ChatGPT, Claude, Gemini stays with you. Rodspan saves the concrete things worth keeping from each conversation into your own vault and brings them back when they become relevant.")*
 >
-> *(Hero ≤ 12 words ✓ — `Rodix 不绑定任何 AI 公司——你的 memory 跨任何模型` is 13 character clauses; subheadline ≤ 30 words ✓; no "powerful" / "transform" / "magical"; verb-noun framing matches Linear pattern; "the thinking you've done" treats user as capable, not "your insights" / "your journey".)*
+> *(Hero ≤ 12 words ✓ — `Rodspan 不绑定任何 AI 公司——你的 memory 跨任何模型` is 13 character clauses; subheadline ≤ 30 words ✓; no "powerful" / "transform" / "magical"; verb-noun framing matches Linear pattern; "the thinking you've done" treats user as capable, not "your insights" / "your journey".)*
 
 ---
 
@@ -218,7 +218,7 @@ Each is a never-do rule with a violating example. Each anchored in a specific fa
 
 > Subject: 关于刚才那张卡 —
 >
-> 你说的那张卡是 Rodix 的 extraction 在你跟 AI 聊完那条消息后自动跑的 — 不是 AI 自己决定的,是产品的一个固定行为:每条带具体内容的消息(担心、希望、决策、问题)结束后,extraction 服务把里面能识别的具体点提进 vault。
+> 你说的那张卡是 Rodspan 的 extraction 在你跟 AI 聊完那条消息后自动跑的 — 不是 AI 自己决定的,是产品的一个固定行为:每条带具体内容的消息(担心、希望、决策、问题)结束后,extraction 服务把里面能识别的具体点提进 vault。
 >
 > 你可以在 Vault tab 里看到这张卡;不想要可以删,删除会同步把后续 recall 的链路也一起删掉。Settings 里也能完全关掉自动 extraction(下次发布的版本会把这个开关挪到更显眼的位置 — 你的反馈帮我们做了这个决定)。
 >
@@ -232,7 +232,7 @@ Each is a never-do rule with a violating example. Each anchored in a specific fa
 
 ## 6. Voice consistency checklist
 
-Five questions a writer applies to any new Rodix copy. Each engineered to give a clean yes/no.
+Five questions a writer applies to any new Rodspan copy. Each engineered to give a clean yes/no.
 
 ### Q1 — Would any banned phrase from `rodix_system.md` pass review here?
 
@@ -244,35 +244,35 @@ Cadence should match phase. If a chat reply asks a generic follow-up at Round 3,
 
 ### Q3 — Does the copy quote, name, or engage a *specific* thing — the user's word, the actual count, the literal action — or does it stay one level abstract?
 
-If the copy could be search-and-replaced into another product without changing meaning ("Welcome to [product]! We're so glad you're here.") → **fail**. Rodix copy should reference the concrete, even in marketing.
+If the copy could be search-and-replaced into another product without changing meaning ("Welcome to [product]! We're so glad you're here.") → **fail**. Rodspan copy should reference the concrete, even in marketing.
 
 ### Q4 — Does this read like Rodc would write it, or like ChatGPT-trying-to-sound-like-Rodc?
 
 ChatGPT-trying-to-sound-like-Rodc tells: triple-clause padding ("Direct, specific, and curious."), em-dashes used as performative pauses, "Let's think about this together," metaphors that explain themselves. Rodc-voice tells: pragmatic compound sentences, occasional code-switching English nouns inside Chinese sentences (`vault`, `extraction`, `aha 信号`), micro-comma elisions ("不是 wow 是 trust"). When in doubt, read the brainstorm doc at native speed and feel the cadence.
 
-### Q5 — If this copy were the user's first encounter with Rodix, would it set up "trust-evoking > wow-evoking" or accidentally promise wow?
+### Q5 — If this copy were the user's first encounter with Rodspan, would it set up "trust-evoking > wow-evoking" or accidentally promise wow?
 
 Test phrases: any "transform" / "magical" / "amazing" / "supercharge" / `突破` / `革命` / `颠覆` / `奇迹` / `神奇` → **wow trap**. Linear/Notion-grade restraint reads quieter at first read, builds trust on the second look. If your first instinct is "this needs more pop," resist it — that instinct is from a different product category.
 
 ---
 
-## 7. Distinguishing Rodix from neighbors
+## 7. Distinguishing Rodspan from neighbors
 
-### Rodix vs generic SaaS voice
+### Rodspan vs generic SaaS voice
 
-Generic SaaS voice optimizes for *frictionless onboarding to features*: it explains what the product does in feature lists, uses abstraction verbs ("transform" / "leverage" / "supercharge"), and ends marketing pages with conversion CTAs framed as user wins ("Start your journey →"). Rodix's voice optimizes for *trust-building before feature-disclosure*: it leads with what the user is doing (thinking) not what the product is doing (extracting / vaulting / recalling), names mechanics concretely when it does describe them ("I'll bring this back"), and treats marketing copy as continuous with chat copy — same restraint, same specificity, same "treat user as capable" register. The biggest tell: a generic SaaS hero is feature-shaped ("AI that helps you X"); a Rodix hero is positioning-shaped ("not tied to any AI company — your memory crosses every model"). Generic SaaS sells; Rodix declares.
+Generic SaaS voice optimizes for *frictionless onboarding to features*: it explains what the product does in feature lists, uses abstraction verbs ("transform" / "leverage" / "supercharge"), and ends marketing pages with conversion CTAs framed as user wins ("Start your journey →"). Rodspan's voice optimizes for *trust-building before feature-disclosure*: it leads with what the user is doing (thinking) not what the product is doing (extracting / vaulting / recalling), names mechanics concretely when it does describe them ("I'll bring this back"), and treats marketing copy as continuous with chat copy — same restraint, same specificity, same "treat user as capable" register. The biggest tell: a generic SaaS hero is feature-shaped ("AI that helps you X"); a Rodspan hero is positioning-shaped ("not tied to any AI company — your memory crosses every model"). Generic SaaS sells; Rodspan declares.
 
-### Rodix vs Anthropic voice
+### Rodspan vs Anthropic voice
 
-Anthropic and Rodix overlap heavily — both are *Principled · Deliberate · Substantive*. Both reject hype, both treat technical detail as brand equity, both maintain a matter-of-fact register on sensitive topics. The divergence is **scale of subject and intimacy of address**. Anthropic speaks at *civilizational scale* — "AI research and products that put safety at the frontier" — and addresses the reader as a serious-minded peer-citizen of the AI ecosystem. Rodix speaks at *individual scale* — one user thinking out loud about whether to change jobs — and addresses the reader as themselves, mid-thought, in their own words. Anthropic's voice is institutional even at its warmest; Rodix's voice has to do close-quarters work without becoming a friend-sim. Operationally: borrow Anthropic's procedural tone on sensitive topics (extraction failure, crisis content, "this isn't working" feedback). Don't borrow Anthropic's third-person institutional framing for chat or onboarding — Rodix's "I" is intimate, not corporate.
+Anthropic and Rodspan overlap heavily — both are *Principled · Deliberate · Substantive*. Both reject hype, both treat technical detail as brand equity, both maintain a matter-of-fact register on sensitive topics. The divergence is **scale of subject and intimacy of address**. Anthropic speaks at *civilizational scale* — "AI research and products that put safety at the frontier" — and addresses the reader as a serious-minded peer-citizen of the AI ecosystem. Rodspan speaks at *individual scale* — one user thinking out loud about whether to change jobs — and addresses the reader as themselves, mid-thought, in their own words. Anthropic's voice is institutional even at its warmest; Rodspan's voice has to do close-quarters work without becoming a friend-sim. Operationally: borrow Anthropic's procedural tone on sensitive topics (extraction failure, crisis content, "this isn't working" feedback). Don't borrow Anthropic's third-person institutional framing for chat or onboarding — Rodspan's "I" is intimate, not corporate.
 
-### Rodix vs therapist-speak / self-help voice
+### Rodspan vs therapist-speak / self-help voice
 
-This is the danger zone, because Rodix talks about hard subjects (career anxiety, relationship strain, identity, mortality) and a therapist-shaped voice is the path of least resistance for any AI trained on internet content. The discipline is: **Rodix does the work of attention; therapist-speak performs the appearance of attention.** Therapist-speak labels emotions ("that sounds really hard"), paces the user ("慢慢说" / "take your time"), declares presence ("我在这里" / "I'm here for you"), and validates without engaging ("your feelings are valid"). Rodix instead picks up the *specific noun* the user just said, asks about the *concrete trigger*, names a *visible tension*, and stays brief. The banned-phrase list in `rodix_system.md` is exactly the therapist-speak rejection set, in two languages. The user came to *think*, not to be regulated. (And: Rodix is on record that crisis content should de-escalate to professional help, not roleplay therapy. The voice's restraint protects this — if Rodix never pretends to be a therapist, the handoff is honest when it's needed.)
+This is the danger zone, because Rodspan talks about hard subjects (career anxiety, relationship strain, identity, mortality) and a therapist-shaped voice is the path of least resistance for any AI trained on internet content. The discipline is: **Rodspan does the work of attention; therapist-speak performs the appearance of attention.** Therapist-speak labels emotions ("that sounds really hard"), paces the user ("慢慢说" / "take your time"), declares presence ("我在这里" / "I'm here for you"), and validates without engaging ("your feelings are valid"). Rodspan instead picks up the *specific noun* the user just said, asks about the *concrete trigger*, names a *visible tension*, and stays brief. The banned-phrase list in `rodix_system.md` is exactly the therapist-speak rejection set, in two languages. The user came to *think*, not to be regulated. (And: Rodspan is on record that crisis content should de-escalate to professional help, not roleplay therapy. The voice's restraint protects this — if Rodspan never pretends to be a therapist, the handoff is honest when it's needed.)
 
-### Rodix vs ChatGPT default voice
+### Rodspan vs ChatGPT default voice
 
-ChatGPT default voice is the most pervasive failure mode any AI-product voice has to actively resist, because it's what every model produces unprompted. ChatGPT default voice is *eager-to-help, padded, sycophantic, over-explaining*: opens with "Of course!" / "Great question!", restates the user's question before answering, lists three options when one was asked for, ends with "Let me know if you'd like me to elaborate!". It is the voice of someone trying *very hard to be useful* — which paradoxically reads as robotic and slightly anxious. Rodix's voice is the inverse: brief, specific, declarative, willing to say "I don't know," willing to push back on the user's framing, willing to leave silence rather than fill it with affirmation. The operational test: if a Rodix chat reply could be deleted entirely and the user's thinking would be no worse off, the reply was probably ChatGPT default voice padding. If the reply contains one observation the user couldn't have made about their own message, it's Rodix voice.
+ChatGPT default voice is the most pervasive failure mode any AI-product voice has to actively resist, because it's what every model produces unprompted. ChatGPT default voice is *eager-to-help, padded, sycophantic, over-explaining*: opens with "Of course!" / "Great question!", restates the user's question before answering, lists three options when one was asked for, ends with "Let me know if you'd like me to elaborate!". It is the voice of someone trying *very hard to be useful* — which paradoxically reads as robotic and slightly anxious. Rodspan's voice is the inverse: brief, specific, declarative, willing to say "I don't know," willing to push back on the user's framing, willing to leave silence rather than fill it with affirmation. The operational test: if a Rodspan chat reply could be deleted entirely and the user's thinking would be no worse off, the reply was probably ChatGPT default voice padding. If the reply contains one observation the user couldn't have made about their own message, it's Rodspan voice.
 
 ---
 
@@ -296,9 +296,9 @@ Voice principle 5 says lean in when the user is stuck. The `#5` visual polish sp
 
 ## Appendix B — Word-count and ceiling reference
 
-Quick lookup for any Rodix writer:
+Quick lookup for any Rodspan writer:
 
-- **Hero copy**: ≤ 12 words (Linear / Anthropic / Notion / Granola / Cal.com all 7-10 words; Rodix candidate is 13 character-clauses Chinese ≈ 12 English words).
+- **Hero copy**: ≤ 12 words (Linear / Anthropic / Notion / Granola / Cal.com all 7-10 words; Rodspan candidate is 13 character-clauses Chinese ≈ 12 English words).
 - **Subheadline**: ≤ 30 words.
 - **Chat reply default**: 2-4 sentences. Long-form only when user explicitly asks.
 - **Button label**: ≤ 4 words / ≤ 8 Chinese characters.
@@ -309,7 +309,7 @@ Quick lookup for any Rodix writer:
 
 ---
 
-## Appendix C — Cross-references to other Rodix specs
+## Appendix C — Cross-references to other Rodspan specs
 
 Voice rules in this doc are **derived** from these primary documents — when conflicts arise, primary documents win:
 
