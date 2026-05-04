@@ -1113,17 +1113,19 @@ Rodc strategic decision; not blocking.
 
 **Why this is needed:** Initial §A.1 + §A.3 rename pass is per-file, not cross-file. Stage-2 review catches drift between files that emerged because rewrites happened independently.
 
-### §13.8 — Voice-guide update from real dogfood signal (NEW 2026-05-04)
+### §13.8 — Voice-guide update from CC simulated persona evals + Rodc self-test signal (NEW 2026-05-04, REFRAMED 2026-05-04 PM)
 
-**Trigger:** Rodc self-dogfood 5 rounds complete + friend dogfood feedback in.
+**Trigger:** Wave 2+ Tier 2 simulated persona verification complete (5 personas: Emma / Mike / Sara / Cherry Studio veteran / HN cold visitor) + Rodc self-test 5+ sessions documented.
 
 **Owner:** Rodc + CC.
 
 **Estimated effort:** 1-2h.
 
-**Scope:** voice-guide.md §5 sample passages may need update if real-API responses under Rodspan rename diverge from documented voice. Particularly relevant if LLM voice shifts post-rename per spec §4.1 LLM self-reference manual review.
+**Scope:** voice-guide.md §5 sample passages may need update if CC simulated persona outputs (post-rename, post-§A.6 system prompts updated) diverge from documented voice. Particularly relevant if LLM voice shifts post-rename per spec §4.1 LLM self-reference manual review.
 
-**Why this is needed:** Wave 1c verified system prompts under Rodix branding. After rename, LLM may self-identify differently. Real dogfood reveals if voice samples in voice-guide need update to match actual post-rename behavior.
+**Why this is needed:** Wave 1c verified system prompts under Rodix branding via CC simulated personas. After rename + Wave 1c.1 calibration P0 fixes, persona outputs may diverge. CC simulated dogfood is the primary feedback signal; Rodc self-test is the secondary reality check. Friend dogfood is NOT the trigger because Rodc does not have a viable friend cohort for product testing per Rodc constraint (anonymous solo founder, no warm dogfood network — see §A.2 framing note).
+
+**Why this reframing matters:** Earlier framing assumed friend dogfood would provide the validation signal. This was an inherited assumption from generic startup playbooks, not a verified fact about Rodc's actual situation. CC simulated personas + Rodc self-test is the operative validation model going forward.
 
 ### §13.9 — Visual identity integration (NEW 2026-05-04)
 
