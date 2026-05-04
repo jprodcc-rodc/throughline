@@ -1103,6 +1103,7 @@ Rodc strategic decision; not blocking.
 - Open Core mention placed appropriately (not over-promoted, not missing)
 - Voice oracle (post-§A.2 lock) reflected accurately in voice samples and marketing copy
 - Cherry Studio competitor framing consistent
+- Review §8 Open Core defensibility argument in `position-strategy.md` for over-claim — does the moat sustain if Rodc maintains throughline OSS canon? Add fragility caveat referencing §15.1 sunset clause if needed (the §8 argument as written treats "Rodc-as-canonical-maintainer" as moat asymmetry; the §15.1 sunset clause acknowledges the maintenance commitment may end if Rodspan ends — these two should be cross-referenced honestly rather than presented as independent strengths)
 
 **Output:** surface inconsistencies + Rodc Type-A decisions + commit fixes per file.
 
