@@ -1104,6 +1104,10 @@ Rodc strategic decision; not blocking.
 - Voice oracle (post-§A.2 lock) reflected accurately in voice samples and marketing copy
 - Cherry Studio competitor framing consistent
 - Review §8 Open Core defensibility argument in `position-strategy.md` for over-claim — does the moat sustain if Rodc maintains throughline OSS canon? Add fragility caveat referencing §15.1 sunset clause if needed (the §8 argument as written treats "Rodc-as-canonical-maintainer" as moat asymmetry; the §15.1 sunset clause acknowledges the maintenance commitment may end if Rodspan ends — these two should be cross-referenced honestly rather than presented as independent strengths)
+- Probe vendor recall mechanism (passive context inclusion vs. active relevance retrieval). Wave 1.6 verification report didn't probe whether ChatGPT/Gemini/Claude memory is fired pre-generation by trigger types or just included as system-level personalization. This is the strongest support for framing (c) "remembers thinking not profile" but currently unverified. Vendor docs likely don't describe internals; may require empirical testing or feature deduction.
+- Probe vendor memory limits/quotas. Wave 1.6 verification didn't establish whether vendors cap memory at N items, FIFO, or unlimited. If vendors cap and Rodspan does not, this is a marketing differentiator angle currently unsurfaced.
+- Verify vendor memory pricing tier consistency. Wave 1.6 verification noted ChatGPT free/paid split for memory; Gemini and Claude memory tier-availability not verified consistently. If §A.3 marketing claims "vendor memory often paid only" or similar, Gemini/Claude tier-availability needs verification first.
+- Verify vendor memory data training-use. Wave 1.6 verification didn't check whether ChatGPT/Gemini/Claude use memory data for model training. ChatGPT post-Sep-2025 changed default to opt-out; Anthropic API doesn't train on user data; Gemini status unverified. This grounds the "your data is yours" claim and should be triangulated before §A.3 marketing copy hardens.
 
 **Output:** surface inconsistencies + Rodc Type-A decisions + commit fixes per file.
 
