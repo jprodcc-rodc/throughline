@@ -59,6 +59,8 @@ This sentence is not a funnel-optimization decision. It is the negation that def
 
 **Product category and direct competitor.** Rodspan is an LLM chat client with a memory layer differentiator — same category as Cherry Studio, LobeChat, TypingMind, ChatBox, AnythingLLM, and the wider crop of BYO-API clients. It is *not* an LLM provider (ChatGPT / Claude / Gemini / Pi territory) and *not* a memory infrastructure tool (throughline OSS / mem0 / Letta — Rodspan is a chat tool that ships with memory built in, not a wrapper around other people's chat tools). Path A locked 2026-05-03: the user brings their own API key, Rodspan provides the chat client and memory layer, LLM cost is $0 to Rodspan. Direct competitor benchmark is Cherry Studio (free, open-source, no built-in memory). Differentiator wedge is the memory layer + interface polish on top of BYO-API economics.
 
+**The recall mechanism, briefly.** Active recall fires on four signal types — topic (a familiar subject returns), loose-end (you have an unresolved question on this), decision-precedent (you've made a similar decision before), and stance-drift (your current stance differs from your past stance). These are operational manifestations of *"remembers your thinking"* rather than *"remembers your profile"*. Full mechanism + per-type thresholds in §7 Decision 3.
+
 ---
 
 ## 4. Brand archetype
