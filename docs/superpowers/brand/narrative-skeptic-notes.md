@@ -14,7 +14,7 @@
 
 The arc bets the takeaway on the title and the closing tagline:
 
-> "ChatGPT remembers your name. Rodix remembers your thinking."
+> "ChatGPT remembers your name. Rodspan remembers your thinking."
 
 That bet is correct. The pitch is canonical, contrast-driven, and survives the 60-second test. But the arc places it in two structurally weak spots: the title (skimmed by half of stranger-readers) and the absolute final sentence of Closing (after a lot of paragraphs the reader is more likely to bail before hitting it). The pitch never appears in the body — Parts 1, 2, 3 do not bring the canonical contrast back even once. If the reader bails after Part 1 (most plausible failure mode at 60 seconds, given essay length), the pitch doesn't survive.
 
@@ -28,7 +28,7 @@ This is doing the most lifting in Part 1, but it is also the arc-most-vulnerable
 
 > "The thinking didn't compound — it reset every time."
 
-This appears in Part 1 paragraph 2. It is short, structurally specific, and carries the exact problem Rodix solves in 8 words. It is also verbatim from friends-intro. The arc has it but does not amplify it — surrounding it with longer, less-quotable sentences. Arc should anchor Part 1 with this sentence either at the start or end of paragraph 2, with whitespace around it. Currently it sits mid-paragraph, sandwiched.
+This appears in Part 1 paragraph 2. It is short, structurally specific, and carries the exact problem Rodspan solves in 8 words. It is also verbatim from friends-intro. The arc has it but does not amplify it — surrounding it with longer, less-quotable sentences. Arc should anchor Part 1 with this sentence either at the start or end of paragraph 2, with whitespace around it. Currently it sits mid-paragraph, sandwiched.
 
 **Why the arc didn't put it in the right spot:** the architect followed friends-intro paragraph rhythm, where the same sentence sits mid-paragraph. friends-intro can afford that because it is bullet-driven and re-states the same idea three different ways. The arc is essay-driven and does not get to repeat. The mid-paragraph placement that works for friends-intro fails the essay format.
 
@@ -49,7 +49,7 @@ This appears in Part 1 paragraph 2. It is short, structurally specific, and carr
 
 **Collapses or weakens:**
 
-- Part 3 paragraph 1 ("Rodix is the opposite of all four"). If by 2027 ChatGPT has shipped its 12th memory feature with cards-and-export, the *contrast* paragraph reads like Rodix is the second-mover. The arc doesn't pre-empt this. Position-strategy §4.1 gives the right defense — *"Lean harder into the combination of bets, not individual bets"* — but the arc does not encode this anywhere. If incumbents copy 2 of the 4, the arc has no reframe.
+- Part 3 paragraph 1 ("Rodspan is the opposite of all four"). If by 2027 ChatGPT has shipped its 12th memory feature with cards-and-export, the *contrast* paragraph reads like Rodspan is the second-mover. The arc doesn't pre-empt this. Position-strategy §4.1 gives the right defense — *"Lean harder into the combination of bets, not individual bets"* — but the arc does not encode this anywhere. If incumbents copy 2 of the 4, the arc has no reframe.
 - The "side-project example with cards on dates Sept 3 / Sept 19 / Oct 4" survives 2027 fine — concrete examples don't age out.
 - Closing paragraph "weeks, not months" — this becomes false within ~60 days of writing. Arc should keep it for launch period, but Closing has a shelf-life of 1-2 months from writing. Acceptable for launch artifact; not durable for evergreen essay.
 
@@ -114,7 +114,7 @@ The "second half of a multi-year build" line implies the first half had a differ
 
 **Verdict: Fails on fail mode 1 specifically, partially defends on the other two.**
 
-**Fail mode 1 (incumbents fix one of the four bets):** **Not defended.** The arc presents the 4-fold critique as a contrast Rodix wins definitively. It does not encode the position-strategy §4.1 defense — "the moat is the *combination* of bets, not individual bets." If a reader in 2027 learns that ChatGPT now ships markdown export, they have no narrative scaffolding from the arc that tells them "this doesn't change Rodix's bet." The arc treats the 4 bets as independently sufficient; position-strategy treats them as collectively required. Arc is structurally exposed here.
+**Fail mode 1 (incumbents fix one of the four bets):** **Not defended.** The arc presents the 4-fold critique as a contrast Rodspan wins definitively. It does not encode the position-strategy §4.1 defense — "the moat is the *combination* of bets, not individual bets." If a reader in 2027 learns that ChatGPT now ships markdown export, they have no narrative scaffolding from the arc that tells them "this doesn't change Rodspan's bet." The arc treats the 4 bets as independently sufficient; position-strategy treats them as collectively required. Arc is structurally exposed here.
 
 **Fail mode 2 (users want quick answers, not continuity):** **Defended cleanly.** The Closing section preserves verbatim — *"If you ask AI 'what's a good restaurant in Lisbon' twice a week and that's it, you don't need this. ChatGPT's fine."* This is the friends-intro fit-test specimen and the arc keeps it intact. The anti-target framing is present.
 
@@ -143,9 +143,9 @@ Confirmed via grep. friends-intro names Claude projects only as *"Claude project
 The arc imports the internal ranking into the public narrative. This creates two issues:
 
 1. **Voice fidelity:** "the most user-respectful of the three attempts" reads as a strategist's hedge, not a friend's blunt critique. friends-intro voice tends to flatten incumbents into a single category ("they all share the same broken design") and then make an exception only when the exception serves the user. The "most user-respectful" qualifier serves Anthropic's reputation (or Rodc's diplomacy), not the reader's understanding. It softens the 3-vendor critique unevenly.
-2. **Strategic risk:** Naming Anthropic as the "most user-respectful" might be read as a soft endorsement of Claude projects. It also leaves the arc weaker against Anthropic specifically, which is Rodix's most likely fast-follower competitor.
+2. **Strategic risk:** Naming Anthropic as the "most user-respectful" might be read as a soft endorsement of Claude projects. It also leaves the arc weaker against Anthropic specifically, which is Rodspan's most likely fast-follower competitor.
 
-**Recommendation: SOFTEN or CUT.** Arc should align with friends-intro register and treat Claude projects as one of three failures with a structural defect, without ranking them. If Rodc wants to preserve the diplomatic gesture toward Anthropic, do it elsewhere (e.g., in the Status section: "Anthropic is doing the closest thing to right; Rodix goes further"). But the current ranking-as-aside in the middle of an otherwise unified critique reads as architect-importing-internal-ranking. Severity: medium.
+**Recommendation: SOFTEN or CUT.** Arc should align with friends-intro register and treat Claude projects as one of three failures with a structural defect, without ranking them. If Rodc wants to preserve the diplomatic gesture toward Anthropic, do it elsewhere (e.g., in the Status section: "Anthropic is doing the closest thing to right; Rodspan goes further"). But the current ranking-as-aside in the middle of an otherwise unified critique reads as architect-importing-internal-ranking. Severity: medium.
 
 ---
 
@@ -222,7 +222,7 @@ This is the LLM-imitating-founder cadence flagged in Q3. friends-intro uses "sou
 
 ### Escalation 2 — Defensibility framing tension between arc and position-strategy
 
-**What's at stake:** Whether the arc's "Rodix is the opposite of all four" framing in Part 3 is the right hero-frame, vs. position-strategy §8's recommendation that *"the moat is what kind of product is structurally available to Rodc that is not available to a frontier vendor"*.
+**What's at stake:** Whether the arc's "Rodspan is the opposite of all four" framing in Part 3 is the right hero-frame, vs. position-strategy §8's recommendation that *"the moat is what kind of product is structurally available to Rodc that is not available to a frontier vendor"*.
 
 **What arc says:** Part 3 paragraph 1 leads with the four bets as direct contrasts. It does not encode position-strategy §4.1's "lean into the *combination* of bets" defense.
 
