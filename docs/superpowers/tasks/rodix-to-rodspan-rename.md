@@ -216,6 +216,8 @@ This file is `voice-guide.md` §5's reference oracle. Per voice-guide, friends-i
 
 **Audience for friends-intro (Rodc-locked 2026-05-03):** primary = Cherry Studio / LobeChat / TypingMind users (who don't know Rodc or throughline; need Path A wedge framing); secondary = friend cohort already invited to alpha (founder-note register). Mix per Q2=E. Voice should serve Cherry-Studio-adjacent power user primarily, friend cohort secondarily. CC drafts for primary; Rodc reviews secondary register fit.
 
+**Framing note (added 2026-05-04 PM):** `rodspan-friends-intro.md` operates as Rodc's self-reflection lens (primary use) + cold-launch voice oracle reference (secondary use). It is NOT primarily a friend invite document because Rodc does not have a viable friend cohort for product testing (anonymous solo founder; Asperger's-aware decision to not socially burden existing friends). The "friends-intro" file name is preserved historically; functional role is self-reflection lens. Periodic re-write by Rodc (every wave or major strategic shift) is the validation mechanism — when friends-intro feels off vs current product/strategy, that's signal to revise either the artifact or the product. CC must NOT auto-rewrite friends-intro (would defeat the lens function); only Rodc rewrites this file. CC may rewrite §A.3 marketing copy (cold-launch artifacts derived from brand-book + position-strategy + friends-intro triangulated).
+
 #### A.3 — Marketing & launch package (15 files)
 
 **BLOCKED until A.2 locked.** Friends-intro is voice oracle; marketing prose must reflect that.
